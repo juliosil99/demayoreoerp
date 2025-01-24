@@ -9,6 +9,7 @@ import {
   ArrowLeftRight,
   DollarSign,
   CreditCard,
+  FileXml,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -19,7 +20,8 @@ const menuItems = [
     label: "Sales",
     to: "/sales",
     submenu: [
-      { icon: CreditCard, label: "Payments Received", to: "/sales/payments" }
+      { icon: CreditCard, label: "Payments Received", to: "/sales/payments" },
+      { icon: FileXml, label: "Invoices", to: "/sales/invoices" }
     ]
   },
   { icon: Receipt, label: "Expenses", to: "/expenses" },

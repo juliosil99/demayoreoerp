@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      Invoices: {
+        Row: {
+          content_type: string | null
+          created_at: string | null
+          file_path: string
+          filename: string
+          id: number
+          invoice_date: string | null
+          invoice_number: string | null
+          processed: boolean | null
+          size: number | null
+          status: string | null
+          total_amount: number | null
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string | null
+          file_path: string
+          filename: string
+          id?: number
+          invoice_date?: string | null
+          invoice_number?: string | null
+          processed?: boolean | null
+          size?: number | null
+          status?: string | null
+          total_amount?: number | null
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string | null
+          file_path?: string
+          filename?: string
+          id?: number
+          invoice_date?: string | null
+          invoice_number?: string | null
+          processed?: boolean | null
+          size?: number | null
+          status?: string | null
+          total_amount?: number | null
+        }
+        Relationships: []
+      }
       Sales: {
         Row: {
           category: string | null
