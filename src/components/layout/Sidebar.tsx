@@ -7,11 +7,22 @@ import {
   FileText,
   BanknoteIcon,
   ArrowLeftRight,
+  DollarSign,
+  CreditCard,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", to: "/" },
+  {
+    icon: DollarSign,
+    label: "Sales",
+    to: "/sales",
+    submenu: [
+      { icon: CreditCard, label: "Payments Received", to: "/sales/payments" }
+    ]
+  },
+  { icon: Receipt, label: "Expenses", to: "/expenses" },
   { icon: Building2, label: "Contabilidad", to: "/accounting" },
   { icon: Receipt, label: "Cuentas por Cobrar", to: "/receivables" },
   { icon: Wallet, label: "Cuentas por Pagar", to: "/payables" },
@@ -28,19 +39,39 @@ export function Sidebar() {
       </div>
       <nav className="space-y-0.5">
         {menuItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
-                isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-              )
-            }
-          >
-            <item.icon className="h-4 w-4" />
-            {item.label}
-          </NavLink>
+          <div key={item.to}>
+            <NavLink
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
+                  isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                )
+              }
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </NavLink>
+            {item.submenu && (
+              <div className="ml-6 mt-1 space-y-1">
+                {item.submenu.map((subItem) => (
+                  <NavLink
+                    key={subItem.to}
+                    to={subItem.to}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
+                        isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                      )
+                    }
+                  >
+                    <subItem.icon className="h-4 w-4" />
+                    {subItem.label}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </nav>
     </div>

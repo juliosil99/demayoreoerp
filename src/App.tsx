@@ -37,6 +37,8 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="sales" element={<Sales />} />
+            <Route path="sales/payments" element={<Sales />} />
+            <Route path="expenses" element={<Sales />} />
           </Route>
         </Routes>
       </Router>
