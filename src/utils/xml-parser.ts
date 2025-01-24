@@ -6,6 +6,26 @@ export const parseXMLContent = (xmlContent: string) => {
   const emisor = xmlDoc.getElementsByTagName("cfdi:Emisor")[0];
   const receptor = xmlDoc.getElementsByTagName("cfdi:Receptor")[0];
   const timbreFiscal = xmlDoc.getElementsByTagName("tfd:TimbreFiscalDigital")[0];
+  const conceptos = xmlDoc.getElementsByTagName("cfdi:Conceptos")[0];
+  
+  // Parse product details
+  const products = Array.from(conceptos?.getElementsByTagName("cfdi:Concepto") || []).map(concepto => ({
+    description: concepto.getAttribute("Descripcion"),
+    quantity: parseFloat(concepto.getAttribute("Cantidad") || "0"),
+    unit: concepto.getAttribute("Unidad"),
+    unitValue: parseFloat(concepto.getAttribute("ValorUnitario") || "0"),
+    amount: parseFloat(concepto.getAttribute("Importe") || "0"),
+    productKey: concepto.getAttribute("ClaveProdServ"),
+    unitKey: concepto.getAttribute("ClaveUnidad"),
+  }));
+
+  // Calculate total tax amount from Traslados
+  let totalTaxAmount = 0;
+  const impuestos = xmlDoc.getElementsByTagName("cfdi:Impuestos")[0];
+  const traslados = impuestos?.getElementsByTagName("cfdi:Traslado") || [];
+  Array.from(traslados).forEach(traslado => {
+    totalTaxAmount += parseFloat(traslado.getAttribute("Importe") || "0");
+  });
 
   return {
     uuid: timbreFiscal?.getAttribute("UUID") || null,
@@ -18,6 +38,8 @@ export const parseXMLContent = (xmlContent: string) => {
     payment_form: comprobante?.getAttribute("FormaPago") || null,
     subtotal: parseFloat(comprobante?.getAttribute("SubTotal") || "0"),
     exchange_rate: parseFloat(comprobante?.getAttribute("TipoCambio") || "1"),
+    invoice_type: comprobante?.getAttribute("TipoDeComprobante") || null,
+    version: comprobante?.getAttribute("Version") || null,
     issuer_rfc: emisor?.getAttribute("Rfc") || null,
     issuer_name: emisor?.getAttribute("Nombre") || null,
     issuer_tax_regime: emisor?.getAttribute("RegimenFiscal") || null,
@@ -31,5 +53,7 @@ export const parseXMLContent = (xmlContent: string) => {
     sat_certificate_number: timbreFiscal?.getAttribute("NoCertificadoSAT") || null,
     cfdi_stamp: timbreFiscal?.getAttribute("SelloCFD") || null,
     sat_stamp: timbreFiscal?.getAttribute("SelloSAT") || null,
+    tax_amount: totalTaxAmount,
+    products: products,
   };
 };
