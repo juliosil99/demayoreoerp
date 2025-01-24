@@ -9,8 +9,8 @@ const Invoices = () => {
     queryKey: ["invoices"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("Invoices")
-        .select("*")
+        .from("invoices")
+        .select("*, invoice_products(*)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
