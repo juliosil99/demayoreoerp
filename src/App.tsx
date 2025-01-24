@@ -21,22 +21,13 @@ function App() {
             path="/"
             element={
               <PrivateRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
+                <Layout />
               </PrivateRoute>
             }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
+          </Route>
         </Routes>
       </Router>
       <Toaster />
