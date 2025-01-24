@@ -1,4 +1,4 @@
-export interface SaleBase {
+export interface SalesBase {
   category: string | null
   Channel: string | null
   city: string | null
@@ -26,8 +26,8 @@ export interface SaleBase {
 }
 
 export interface SalesTable {
-  Row: SaleBase & { id: number; created_at: string }
-  Insert: Partial<SaleBase & { id?: number; created_at?: string }>
-  Update: Partial<SaleBase & { id?: number; created_at?: string }>
+  Row: SalesBase & { id: number, created_at: string }
+  Insert: Partial<SalesBase & { id?: number, created_at?: string }>
+  Update: Partial<SalesBase & { id?: number, created_at?: string }>
   Relationships: []
 }

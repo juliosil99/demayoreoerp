@@ -1,3 +1,7 @@
+import type { InvoiceProductsTable } from './invoice-products'
+import type { InvoicesTable } from './invoice'
+import type { SalesTable } from './sales'
+
 export type Json =
   | string
   | number
