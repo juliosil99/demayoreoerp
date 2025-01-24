@@ -1,11 +1,10 @@
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { FileX, FileText, Check, X } from "lucide-react";
+import { FileText, Check, X } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
-type Invoice = Database["public"]["Tables"]["Invoices"]["Row"];
+type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 
 export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
-  // Add logging to inspect the data
   console.log("Received invoices data:", invoices);
   
   const getStatusIcon = (status: string | null) => {
@@ -31,7 +30,6 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
       </TableHeader>
       <TableBody>
         {invoices?.map((invoice) => {
-          // Log each invoice object to inspect its structure
           console.log("Processing invoice:", invoice);
           
           return (
