@@ -10,6 +10,7 @@ import {
   DollarSign,
   CreditCard,
   FileX,
+  Users,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -25,6 +26,7 @@ const menuItems = [
     ]
   },
   { icon: Receipt, label: "Expenses", to: "/expenses" },
+  { icon: Users, label: "Contacts", to: "/contacts" },
   { icon: Building2, label: "Contabilidad", to: "/accounting" },
   { icon: Receipt, label: "Cuentas por Cobrar", to: "/receivables" },
   { icon: Wallet, label: "Cuentas por Pagar", to: "/payables" },

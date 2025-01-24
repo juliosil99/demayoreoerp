@@ -9,6 +9,7 @@ import Dashboard from "@/pages/Dashboard";
 import Sales from "@/pages/Sales";
 import Invoices from "@/pages/Invoices";
 import Banking from "@/pages/Banking";
+import Contacts from "@/pages/Contacts";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ function App() {
               <Route path="sales/payments" element={<Sales />} />
               <Route path="sales/invoices" element={<Invoices />} />
               <Route path="expenses" element={<Sales />} />
+              <Route path="contacts" element={<Contacts />} />
               <Route path="banking" element={<Banking />} />
             </Route>
           </Routes>

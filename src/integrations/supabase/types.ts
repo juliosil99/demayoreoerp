@@ -63,6 +63,45 @@ export type Database = {
         }
         Relationships: []
       }
+      contacts: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          id: string
+          name: string
+          phone: string | null
+          postal_code: string
+          rfc: string
+          tax_regime: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          postal_code: string
+          rfc: string
+          tax_regime: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          postal_code?: string
+          rfc?: string
+          tax_regime?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invoice_products: {
         Row: {
           amount: number | null
