@@ -1,6 +1,7 @@
 import type { InvoiceProductsTable } from './invoice-products'
 import type { InvoicesTable } from './invoice'
 import type { SalesTable } from './sales'
+import type { BankAccountsTable } from './bank-accounts'
 
 export type Json =
   | string
@@ -16,6 +17,7 @@ export type Database = {
       invoice_products: InvoiceProductsTable
       invoices: InvoicesTable
       Sales: SalesTable
+      bank_accounts: BankAccountsTable
     }
     Views: {
       [_ in never]: never

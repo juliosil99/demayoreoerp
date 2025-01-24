@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useToast } from "sonner";
+import { toast } from "sonner";
 import { BanknoteIcon, CreditCard } from "lucide-react";
 
 type AccountType = "Bank" | "Cash" | "Credit Card" | "Credit Simple";
@@ -45,8 +45,6 @@ export default function Banking() {
     type: "" as AccountType,
     balance: 0,
   });
-  
-  const toast = useToast();
 
   const { data: accounts, refetch } = useQuery({
     queryKey: ["bank-accounts"],
