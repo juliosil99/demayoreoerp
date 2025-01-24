@@ -9,6 +9,167 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      invoice_products: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          description: string | null
+          id: number
+          invoice_id: number | null
+          product_key: string | null
+          quantity: number | null
+          unit: string | null
+          unit_key: string | null
+          unit_value: number | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          invoice_id?: number | null
+          product_key?: string | null
+          quantity?: number | null
+          unit?: string | null
+          unit_key?: string | null
+          unit_value?: number | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          invoice_id?: number | null
+          product_key?: string | null
+          quantity?: number | null
+          unit?: string | null
+          unit_key?: string | null
+          unit_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_products_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          certificate_number: string | null
+          cfdi_stamp: string | null
+          content_type: string | null
+          created_at: string | null
+          currency: string | null
+          exchange_rate: number | null
+          file_path: string
+          filename: string
+          id: number
+          invoice_date: string | null
+          invoice_number: string | null
+          invoice_type: string | null
+          issuer_name: string | null
+          issuer_rfc: string | null
+          issuer_tax_regime: string | null
+          payment_form: string | null
+          payment_method: string | null
+          processed: boolean | null
+          receiver_cfdi_use: string | null
+          receiver_name: string | null
+          receiver_rfc: string | null
+          receiver_tax_regime: string | null
+          receiver_zip_code: string | null
+          sat_certificate_number: string | null
+          sat_stamp: string | null
+          serie: string | null
+          size: number | null
+          stamp_date: string | null
+          status: string | null
+          subtotal: number | null
+          tax_amount: number | null
+          total_amount: number | null
+          uuid: string | null
+          version: string | null
+          xml_content: string | null
+        }
+        Insert: {
+          certificate_number?: string | null
+          cfdi_stamp?: string | null
+          content_type?: string | null
+          created_at?: string | null
+          currency?: string | null
+          exchange_rate?: number | null
+          file_path: string
+          filename: string
+          id?: number
+          invoice_date?: string | null
+          invoice_number?: string | null
+          invoice_type?: string | null
+          issuer_name?: string | null
+          issuer_rfc?: string | null
+          issuer_tax_regime?: string | null
+          payment_form?: string | null
+          payment_method?: string | null
+          processed?: boolean | null
+          receiver_cfdi_use?: string | null
+          receiver_name?: string | null
+          receiver_rfc?: string | null
+          receiver_tax_regime?: string | null
+          receiver_zip_code?: string | null
+          sat_certificate_number?: string | null
+          sat_stamp?: string | null
+          serie?: string | null
+          size?: number | null
+          stamp_date?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          uuid?: string | null
+          version?: string | null
+          xml_content?: string | null
+        }
+        Update: {
+          certificate_number?: string | null
+          cfdi_stamp?: string | null
+          content_type?: string | null
+          created_at?: string | null
+          currency?: string | null
+          exchange_rate?: number | null
+          file_path?: string
+          filename?: string
+          id?: number
+          invoice_date?: string | null
+          invoice_number?: string | null
+          invoice_type?: string | null
+          issuer_name?: string | null
+          issuer_rfc?: string | null
+          issuer_tax_regime?: string | null
+          payment_form?: string | null
+          payment_method?: string | null
+          processed?: boolean | null
+          receiver_cfdi_use?: string | null
+          receiver_name?: string | null
+          receiver_rfc?: string | null
+          receiver_tax_regime?: string | null
+          receiver_zip_code?: string | null
+          sat_certificate_number?: string | null
+          sat_stamp?: string | null
+          serie?: string | null
+          size?: number | null
+          stamp_date?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          uuid?: string | null
+          version?: string | null
+          xml_content?: string | null
+        }
+        Relationships: []
+      }
       Invoices: {
         Row: {
           certificate_number: string | null

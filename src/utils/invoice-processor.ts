@@ -5,7 +5,7 @@ const checkDuplicateUUID = async (uuid: string | null) => {
   if (!uuid) return false;
   
   const { data, error } = await supabase
-    .from("Invoices")
+    .from("invoices")
     .select("id")
     .eq("uuid", uuid)
     .maybeSingle();
@@ -38,18 +38,40 @@ export const processInvoiceFile = async (file: File, xmlContent: string) => {
     return { success: false, isDuplicate: false };
   }
 
-  const { error: dbError } = await supabase.from("Invoices").insert({
-    filename: file.name,
-    file_path: filePath,
-    content_type: file.type,
-    size: file.size,
-    xml_content: xmlContent,
-    ...cfdiData,
-  });
+  // First insert the invoice
+  const { data: invoice, error: invoiceError } = await supabase
+    .from("invoices")
+    .insert({
+      filename: file.name,
+      file_path: filePath,
+      content_type: file.type,
+      size: file.size,
+      xml_content: xmlContent,
+      ...cfdiData,
+    })
+    .select()
+    .single();
 
-  if (dbError) {
-    console.error("Error inserting invoice data:", dbError);
+  if (invoiceError) {
+    console.error("Error inserting invoice data:", invoiceError);
     return { success: false, isDuplicate: false };
+  }
+
+  // Then insert the products if any
+  if (cfdiData.products && cfdiData.products.length > 0) {
+    const productsWithInvoiceId = cfdiData.products.map(product => ({
+      ...product,
+      invoice_id: invoice.id
+    }));
+
+    const { error: productsError } = await supabase
+      .from("invoice_products")
+      .insert(productsWithInvoiceId);
+
+    if (productsError) {
+      console.error("Error inserting product data:", productsError);
+      // We don't return false here since the invoice was already created
+    }
   }
 
   return { success: true, isDuplicate: false };
