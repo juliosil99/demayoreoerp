@@ -52,15 +52,18 @@ export default function CompanySetup() {
       }
       
       try {
-        const { data: company, error } = await supabase
+        const { data, error } = await supabase
           .from("companies")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle();
+          .select()
+          .limit(1);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error checking company:", error);
+          toast.error("Error al verificar la empresa");
+          return;
+        }
         
-        if (company) {
+        if (data && data.length > 0) {
           navigate("/dashboard");
         }
       } catch (error) {
