@@ -4,13 +4,13 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import Login from "@/pages/Login";
+import CompanySetup from "@/pages/CompanySetup";
 import Dashboard from "@/pages/Dashboard";
 import Sales from "@/pages/Sales";
 import Invoices from "@/pages/Invoices";
 import Banking from "@/pages/Banking";
 import "./App.css";
 
-// Create a client
 const queryClient = new QueryClient();
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -27,11 +27,14 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
-            <Route 
-              path="/login" 
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/company-setup"
               element={
-                <Login />
-              } 
+                <PrivateRoute>
+                  <CompanySetup />
+                </PrivateRoute>
+              }
             />
             <Route
               path="/"

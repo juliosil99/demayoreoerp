@@ -33,6 +33,36 @@ export type Database = {
         }
         Relationships: []
       }
+      companies: {
+        Row: {
+          codigo_postal: string
+          created_at: string | null
+          id: string
+          nombre: string
+          regimen_fiscal: string
+          rfc: string
+          user_id: string
+        }
+        Insert: {
+          codigo_postal: string
+          created_at?: string | null
+          id?: string
+          nombre: string
+          regimen_fiscal: string
+          rfc: string
+          user_id: string
+        }
+        Update: {
+          codigo_postal?: string
+          created_at?: string | null
+          id?: string
+          nombre?: string
+          regimen_fiscal?: string
+          rfc?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invoice_products: {
         Row: {
           amount: number | null

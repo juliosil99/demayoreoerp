@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -12,6 +13,16 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+
+  const checkCompanySetup = async (userId: string) => {
+    const { data: company } = await supabase
+      .from("companies")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+    
+    return !!company;
+  };
 
   const handleSubmit = async (e: React.FormEvent, isSignUp: boolean = false) => {
     e.preventDefault();
@@ -23,8 +34,17 @@ export default function Login() {
         toast.success("Account created successfully! Please sign in.");
       } else {
         await signIn(email, password);
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const hasCompany = await checkCompanySetup(user.id);
+          if (hasCompany) {
+            navigate("/dashboard");
+          } else {
+            navigate("/company-setup");
+          }
+        }
         toast.success("Logged in successfully!");
-        navigate("/dashboard");
       }
     } catch (error) {
       console.error("Authentication error:", error);
