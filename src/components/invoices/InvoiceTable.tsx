@@ -5,6 +5,9 @@ import type { Database } from "@/integrations/supabase/types";
 type Invoice = Database["public"]["Tables"]["Invoices"]["Row"];
 
 export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
+  // Add logging to inspect the data
+  console.log("Received invoices data:", invoices);
+  
   const getStatusIcon = (status: string | null) => {
     if (status === 'completed') return <Check className="h-4 w-4 text-green-500" />;
     if (status === 'error') return <X className="h-4 w-4 text-red-500" />;
@@ -27,55 +30,60 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {invoices?.map((invoice) => (
-          <TableRow key={invoice.id}>
-            <TableCell className="font-medium">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                {invoice.filename}
-              </div>
-            </TableCell>
-            <TableCell>
-              {invoice.invoice_date 
-                ? new Date(invoice.invoice_date).toLocaleDateString()
-                : new Date(invoice.created_at || "").toLocaleDateString()}
-            </TableCell>
-            <TableCell>
-              {invoice.serie 
-                ? `${invoice.serie}-${invoice.invoice_number}` 
-                : invoice.invoice_number || "-"}
-            </TableCell>
-            <TableCell>{invoice.invoice_type || "-"}</TableCell>
-            <TableCell>
-              <div className="flex flex-col">
-                <span>{invoice.issuer_name || "-"}</span>
-                <span className="text-xs text-muted-foreground">{invoice.issuer_rfc}</span>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="flex flex-col">
-                <span>{invoice.receiver_name || "-"}</span>
-                <span className="text-xs text-muted-foreground">{invoice.receiver_rfc}</span>
-              </div>
-            </TableCell>
-            <TableCell className="text-right">
-              {invoice.total_amount
-                ? `${invoice.currency || "MXN"} ${invoice.total_amount.toFixed(2)}`
-                : "-"}
-            </TableCell>
-            <TableCell className="text-right">
-              {invoice.tax_amount
-                ? `${invoice.currency || "MXN"} ${invoice.tax_amount.toFixed(2)}`
-                : "-"}
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                {getStatusIcon(invoice.status)}
-                <span>{invoice.status}</span>
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
+        {invoices?.map((invoice) => {
+          // Log each invoice object to inspect its structure
+          console.log("Processing invoice:", invoice);
+          
+          return (
+            <TableRow key={invoice.id}>
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  {invoice.filename}
+                </div>
+              </TableCell>
+              <TableCell>
+                {invoice.invoice_date 
+                  ? new Date(invoice.invoice_date).toLocaleDateString()
+                  : new Date(invoice.created_at || "").toLocaleDateString()}
+              </TableCell>
+              <TableCell>
+                {invoice.serie 
+                  ? `${invoice.serie}-${invoice.invoice_number}` 
+                  : invoice.invoice_number || "-"}
+              </TableCell>
+              <TableCell>{invoice.invoice_type || "-"}</TableCell>
+              <TableCell>
+                <div className="flex flex-col">
+                  <span>{invoice.issuer_name || "-"}</span>
+                  <span className="text-xs text-muted-foreground">{invoice.issuer_rfc}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-col">
+                  <span>{invoice.receiver_name || "-"}</span>
+                  <span className="text-xs text-muted-foreground">{invoice.receiver_rfc}</span>
+                </div>
+              </TableCell>
+              <TableCell className="text-right">
+                {invoice.total_amount
+                  ? `${invoice.currency || "MXN"} ${invoice.total_amount.toFixed(2)}`
+                  : "-"}
+              </TableCell>
+              <TableCell className="text-right">
+                {invoice.tax_amount
+                  ? `${invoice.currency || "MXN"} ${invoice.tax_amount.toFixed(2)}`
+                  : "-"}
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  {getStatusIcon(invoice.status)}
+                  <span>{invoice.status}</span>
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );
