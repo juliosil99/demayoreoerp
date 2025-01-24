@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Upload, FileXml } from "lucide-react";
+import { Upload, FileX } from "lucide-react";
 import { toast } from "sonner";
 
 const Invoices = () => {
@@ -113,7 +113,7 @@ const Invoices = () => {
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      <FileXml className="h-4 w-4" />
+                      <FileX className="h-4 w-4" />
                       {invoice.filename}
                     </div>
                   </TableCell>
