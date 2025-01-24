@@ -78,17 +78,17 @@ export default function Banking() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Bank Accounts Management</h1>
         <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <BanknoteIcon className="mr-2 h-4 w-4" />
               Add Account
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Add New Account</DialogTitle>
             </DialogHeader>
@@ -137,20 +137,26 @@ export default function Banking() {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-4">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
                 variant="outline"
                 onClick={() => setIsAddingAccount(false)}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
-              <Button onClick={handleAddAccount}>Add Account</Button>
+              <Button 
+                onClick={handleAddAccount}
+                className="w-full sm:w-auto"
+              >
+                Add Account
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

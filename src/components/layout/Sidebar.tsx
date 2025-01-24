@@ -35,9 +35,9 @@ const menuItems = [
 
 export function Sidebar() {
   return (
-    <div className="h-screen w-64 border-r bg-background px-3 py-4">
-      <div className="mb-8 px-3.5">
-        <h2 className="font-semibold text-lg text-primary">ERP System</h2>
+    <div className="h-full w-64 border-r bg-background p-4">
+      <div className="mb-8">
+        <h2 className="px-2 font-semibold text-lg text-primary">ERP System</h2>
       </div>
       <nav className="space-y-0.5">
         {menuItems.map((item) => (
