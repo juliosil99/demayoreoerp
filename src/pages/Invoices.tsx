@@ -63,50 +63,71 @@ const Invoices = () => {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      // Check if file is XML
-      if (!file.type.includes("xml")) {
-        toast.error("Please upload an XML file");
-        return;
-      }
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
 
       setUploading(true);
+      let successCount = 0;
+      let errorCount = 0;
 
-      // Read the XML file content
-      const xmlContent = await file.text();
+      // Process each file
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Check if file is XML
+        if (!file.type.includes("xml")) {
+          errorCount++;
+          continue;
+        }
 
-      // Parse XML and extract CFDI data
-      const cfdiData = parseXMLContent(xmlContent);
+        try {
+          // Read the XML file content
+          const xmlContent = await file.text();
 
-      // Upload file to Supabase Storage
-      const fileExt = file.name.split(".").pop();
-      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+          // Parse XML and extract CFDI data
+          const cfdiData = parseXMLContent(xmlContent);
 
-      const { error: uploadError } = await supabase.storage
-        .from("invoices")
-        .upload(filePath, file);
+          // Upload file to Supabase Storage
+          const fileExt = file.name.split(".").pop();
+          const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
-      if (uploadError) throw uploadError;
+          const { error: uploadError } = await supabase.storage
+            .from("invoices")
+            .upload(filePath, file);
 
-      // Create invoice record with CFDI data
-      const { error: dbError } = await supabase.from("Invoices").insert({
-        filename: file.name,
-        file_path: filePath,
-        content_type: file.type,
-        size: file.size,
-        xml_content: xmlContent,
-        ...cfdiData,
-      });
+          if (uploadError) throw uploadError;
 
-      if (dbError) throw dbError;
+          // Create invoice record with CFDI data
+          const { error: dbError } = await supabase.from("Invoices").insert({
+            filename: file.name,
+            file_path: filePath,
+            content_type: file.type,
+            size: file.size,
+            xml_content: xmlContent,
+            ...cfdiData,
+          });
 
-      toast.success("Invoice uploaded and processed successfully");
-      refetch();
+          if (dbError) throw dbError;
+
+          successCount++;
+        } catch (error) {
+          console.error(`Error processing file ${file.name}:`, error);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`Successfully processed ${successCount} invoice(s)`);
+        refetch();
+      }
+      
+      if (errorCount > 0) {
+        toast.error(`Failed to process ${errorCount} file(s)`);
+      }
+
     } catch (error) {
-      console.error("Error uploading file:", error);
-      toast.error("Error uploading and processing file");
+      console.error("Error uploading files:", error);
+      toast.error("Error uploading and processing files");
     } finally {
       setUploading(false);
     }
@@ -121,6 +142,7 @@ const Invoices = () => {
             type="file"
             accept=".xml"
             onChange={handleFileUpload}
+            multiple
             disabled={uploading}
             className="max-w-xs"
           />
