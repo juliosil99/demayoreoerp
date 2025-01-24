@@ -28,7 +28,6 @@ const Invoices = () => {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
     
-    // Get the root comprobante element
     const comprobante = xmlDoc.getElementsByTagName("cfdi:Comprobante")[0];
     const emisor = xmlDoc.getElementsByTagName("cfdi:Emisor")[0];
     const receptor = xmlDoc.getElementsByTagName("cfdi:Receptor")[0];
@@ -68,9 +67,9 @@ const Invoices = () => {
       .from("Invoices")
       .select("id")
       .eq("uuid", uuid)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== "PGRST116") {
+    if (error) {
       console.error("Error checking for duplicate UUID:", error);
       return false;
     }
@@ -88,31 +87,23 @@ const Invoices = () => {
       let errorCount = 0;
       let duplicateCount = 0;
 
-      // Process each file
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         
-        // Check if file is XML
         if (!file.type.includes("xml")) {
           errorCount++;
           continue;
         }
 
         try {
-          // Read the XML file content
           const xmlContent = await file.text();
-
-          // Parse XML and extract CFDI data
           const cfdiData = parseXMLContent(xmlContent);
-
-          // Check for duplicate UUID
           const isDuplicate = await checkDuplicateUUID(cfdiData.uuid);
           if (isDuplicate) {
             duplicateCount++;
             continue;
           }
 
-          // Upload file to Supabase Storage
           const fileExt = file.name.split(".").pop();
           const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
@@ -122,7 +113,6 @@ const Invoices = () => {
 
           if (uploadError) throw uploadError;
 
-          // Create invoice record with CFDI data
           const { error: dbError } = await supabase.from("Invoices").insert({
             filename: file.name,
             file_path: filePath,
