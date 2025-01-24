@@ -7,16 +7,24 @@ import Dashboard from "@/pages/Dashboard";
 import "./App.css";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
+  console.log("PrivateRoute rendering");
   const { user } = useAuth();
+  console.log("User auth state:", !!user);
   return user ? children : <Navigate to="/login" />;
 }
 
 function App() {
+  console.log("App component rendering");
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route 
+            path="/login" 
+            element={
+              <Login />
+            } 
+          />
           <Route
             path="/"
             element={
