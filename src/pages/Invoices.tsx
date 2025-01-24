@@ -24,6 +24,43 @@ const Invoices = () => {
     },
   });
 
+  const parseXMLContent = (xmlContent: string) => {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
+    
+    // Get the root comprobante element
+    const comprobante = xmlDoc.getElementsByTagName("cfdi:Comprobante")[0];
+    const emisor = xmlDoc.getElementsByTagName("cfdi:Emisor")[0];
+    const receptor = xmlDoc.getElementsByTagName("cfdi:Receptor")[0];
+    const timbreFiscal = xmlDoc.getElementsByTagName("tfd:TimbreFiscalDigital")[0];
+
+    return {
+      uuid: timbreFiscal?.getAttribute("UUID") || null,
+      serie: comprobante?.getAttribute("Serie") || null,
+      invoice_number: comprobante?.getAttribute("Folio") || null,
+      invoice_date: comprobante?.getAttribute("Fecha") || null,
+      total_amount: parseFloat(comprobante?.getAttribute("Total") || "0"),
+      currency: comprobante?.getAttribute("Moneda") || null,
+      payment_method: comprobante?.getAttribute("MetodoPago") || null,
+      payment_form: comprobante?.getAttribute("FormaPago") || null,
+      subtotal: parseFloat(comprobante?.getAttribute("SubTotal") || "0"),
+      exchange_rate: parseFloat(comprobante?.getAttribute("TipoCambio") || "1"),
+      issuer_rfc: emisor?.getAttribute("Rfc") || null,
+      issuer_name: emisor?.getAttribute("Nombre") || null,
+      issuer_tax_regime: emisor?.getAttribute("RegimenFiscal") || null,
+      receiver_rfc: receptor?.getAttribute("Rfc") || null,
+      receiver_name: receptor?.getAttribute("Nombre") || null,
+      receiver_tax_regime: receptor?.getAttribute("RegimenFiscalReceptor") || null,
+      receiver_cfdi_use: receptor?.getAttribute("UsoCFDI") || null,
+      receiver_zip_code: receptor?.getAttribute("DomicilioFiscalReceptor") || null,
+      certificate_number: comprobante?.getAttribute("NoCertificado") || null,
+      stamp_date: timbreFiscal?.getAttribute("FechaTimbrado") || null,
+      sat_certificate_number: timbreFiscal?.getAttribute("NoCertificadoSAT") || null,
+      cfdi_stamp: timbreFiscal?.getAttribute("SelloCFD") || null,
+      sat_stamp: timbreFiscal?.getAttribute("SelloSAT") || null,
+    };
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       const file = event.target.files?.[0];
@@ -37,6 +74,12 @@ const Invoices = () => {
 
       setUploading(true);
 
+      // Read the XML file content
+      const xmlContent = await file.text();
+
+      // Parse XML and extract CFDI data
+      const cfdiData = parseXMLContent(xmlContent);
+
       // Upload file to Supabase Storage
       const fileExt = file.name.split(".").pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
@@ -47,28 +90,30 @@ const Invoices = () => {
 
       if (uploadError) throw uploadError;
 
-      // Create invoice record
+      // Create invoice record with CFDI data
       const { error: dbError } = await supabase.from("Invoices").insert({
         filename: file.name,
         file_path: filePath,
         content_type: file.type,
         size: file.size,
+        xml_content: xmlContent,
+        ...cfdiData,
       });
 
       if (dbError) throw dbError;
 
-      toast.success("Invoice uploaded successfully");
+      toast.success("Invoice uploaded and processed successfully");
       refetch();
     } catch (error) {
       console.error("Error uploading file:", error);
-      toast.error("Error uploading file");
+      toast.error("Error uploading and processing file");
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Invoices</h1>
         <div className="flex items-center gap-4">
@@ -101,9 +146,10 @@ const Invoices = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>File Name</TableHead>
-                <TableHead>Date Uploaded</TableHead>
+                <TableHead>Date</TableHead>
                 <TableHead>Invoice Number</TableHead>
-                <TableHead>Invoice Date</TableHead>
+                <TableHead>Issuer</TableHead>
+                <TableHead>Receiver</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
@@ -118,17 +164,14 @@ const Invoices = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {new Date(invoice.created_at).toLocaleDateString()}
+                    {new Date(invoice.created_at || "").toLocaleDateString()}
                   </TableCell>
                   <TableCell>{invoice.invoice_number || "-"}</TableCell>
-                  <TableCell>
-                    {invoice.invoice_date
-                      ? new Date(invoice.invoice_date).toLocaleDateString()
-                      : "-"}
-                  </TableCell>
+                  <TableCell>{invoice.issuer_name || "-"}</TableCell>
+                  <TableCell>{invoice.receiver_name || "-"}</TableCell>
                   <TableCell>
                     {invoice.total_amount
-                      ? `$${invoice.total_amount.toFixed(2)}`
+                      ? `${invoice.currency || "MXN"} ${invoice.total_amount.toFixed(2)}`
                       : "-"}
                   </TableCell>
                   <TableCell>{invoice.status}</TableCell>
