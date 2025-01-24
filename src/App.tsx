@@ -7,6 +7,7 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Sales from "@/pages/Sales";
 import Invoices from "@/pages/Invoices";
+import Banking from "@/pages/Banking";
 import "./App.css";
 
 // Create a client
@@ -46,6 +47,7 @@ function App() {
               <Route path="sales/payments" element={<Sales />} />
               <Route path="sales/invoices" element={<Invoices />} />
               <Route path="expenses" element={<Sales />} />
+              <Route path="banking" element={<Banking />} />
             </Route>
           </Routes>
         </Router>
