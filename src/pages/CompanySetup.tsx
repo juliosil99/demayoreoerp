@@ -46,16 +46,26 @@ export default function CompanySetup() {
 
   useEffect(() => {
     const checkExistingCompany = async () => {
-      if (!user) return;
+      if (!user) {
+        navigate("/login");
+        return;
+      }
       
-      const { data: company } = await supabase
-        .from("companies")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
+      try {
+        const { data: company, error } = await supabase
+          .from("companies")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-      if (company) {
-        navigate("/dashboard");
+        if (error) throw error;
+        
+        if (company) {
+          navigate("/dashboard");
+        }
+      } catch (error) {
+        console.error("Error checking company:", error);
+        toast.error("Error al verificar la empresa");
       }
     };
 
@@ -63,16 +73,20 @@ export default function CompanySetup() {
   }, [user, navigate]);
 
   const onSubmit = async (data: CompanyFormData) => {
-    if (!user) return;
+    if (!user) {
+      toast.error("Debes iniciar sesión para continuar");
+      navigate("/login");
+      return;
+    }
     
     setIsLoading(true);
     try {
-      const { error } = await supabase.from("companies").insert([
-        {
+      const { error } = await supabase
+        .from("companies")
+        .insert([{
           ...data,
           user_id: user.id,
-        },
-      ]);
+        }]);
 
       if (error) throw error;
 
