@@ -2,16 +2,18 @@ import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { Outlet } from "react-router-dom";
 
-export function Layout() {
+const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>
   );
-}
+};
+
+export default Layout;
