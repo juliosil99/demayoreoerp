@@ -61,6 +61,23 @@ const Invoices = () => {
     };
   };
 
+  const checkDuplicateUUID = async (uuid: string | null) => {
+    if (!uuid) return false;
+    
+    const { data, error } = await supabase
+      .from("Invoices")
+      .select("id")
+      .eq("uuid", uuid)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      console.error("Error checking for duplicate UUID:", error);
+      return false;
+    }
+
+    return !!data;
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       const files = event.target.files;
@@ -69,6 +86,7 @@ const Invoices = () => {
       setUploading(true);
       let successCount = 0;
       let errorCount = 0;
+      let duplicateCount = 0;
 
       // Process each file
       for (let i = 0; i < files.length; i++) {
@@ -86,6 +104,13 @@ const Invoices = () => {
 
           // Parse XML and extract CFDI data
           const cfdiData = parseXMLContent(xmlContent);
+
+          // Check for duplicate UUID
+          const isDuplicate = await checkDuplicateUUID(cfdiData.uuid);
+          if (isDuplicate) {
+            duplicateCount++;
+            continue;
+          }
 
           // Upload file to Supabase Storage
           const fileExt = file.name.split(".").pop();
@@ -123,6 +148,10 @@ const Invoices = () => {
       
       if (errorCount > 0) {
         toast.error(`Failed to process ${errorCount} file(s)`);
+      }
+
+      if (duplicateCount > 0) {
+        toast.warning(`Skipped ${duplicateCount} duplicate invoice(s)`);
       }
 
     } catch (error) {
