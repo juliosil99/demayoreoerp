@@ -170,7 +170,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       Invoices: {
         Row: {
           certificate_number: string | null
@@ -184,7 +183,6 @@ export type Database = {
           id: number
           invoice_date: string | null
           invoice_number: string | null
-          invoice_type: string | null
           issuer_name: string | null
           issuer_rfc: string | null
           issuer_tax_regime: string | null
@@ -220,7 +218,6 @@ export type Database = {
           id?: number
           invoice_date?: string | null
           invoice_number?: string | null
-          invoice_type?: string | null
           issuer_name?: string | null
           issuer_rfc?: string | null
           issuer_tax_regime?: string | null
@@ -256,7 +253,6 @@ export type Database = {
           id?: number
           invoice_date?: string | null
           invoice_number?: string | null
-          invoice_type?: string | null
           issuer_name?: string | null
           issuer_rfc?: string | null
           issuer_tax_regime?: string | null
@@ -282,7 +278,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       Sales: {
         Row: {
           category: string | null
@@ -482,4 +477,3 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
