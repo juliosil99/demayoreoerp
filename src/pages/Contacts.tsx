@@ -69,12 +69,16 @@ export default function Contacts() {
 
   const createContact = useMutation({
     mutationFn: async (values: ContactFormValues) => {
-      const { data, error } = await supabase.from("contacts").insert([
-        {
-          ...values,
-          user_id: user?.id,
-        },
-      ]);
+      if (!user?.id) throw new Error("User not authenticated");
+      
+      const contactData = {
+        ...values,
+        user_id: user.id,
+      };
+
+      const { data, error } = await supabase
+        .from("contacts")
+        .insert([contactData]);
 
       if (error) throw error;
       return data;
