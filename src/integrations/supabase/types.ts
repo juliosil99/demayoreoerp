@@ -33,6 +33,62 @@ export type Database = {
         }
         Relationships: []
       }
+      chart_of_accounts: {
+        Row: {
+          account_type: string
+          account_use: string | null
+          code: string
+          created_at: string | null
+          id: string
+          is_group: boolean | null
+          level: number
+          name: string
+          parent_id: string | null
+          path: string | null
+          sat_code: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_type: string
+          account_use?: string | null
+          code: string
+          created_at?: string | null
+          id?: string
+          is_group?: boolean | null
+          level: number
+          name: string
+          parent_id?: string | null
+          path?: string | null
+          sat_code?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_type?: string
+          account_use?: string | null
+          code?: string
+          created_at?: string | null
+          id?: string
+          is_group?: boolean | null
+          level?: number
+          name?: string
+          parent_id?: string | null
+          path?: string | null
+          sat_code?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_of_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           codigo_postal: string
