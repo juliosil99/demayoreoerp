@@ -71,39 +71,56 @@ export default function Contacts() {
     mutationFn: async (values: ContactFormValues) => {
       if (!user?.id) throw new Error("User not authenticated");
 
+      console.log('=== Debug Information ===');
+      console.log('1. User ID:', user.id);
+      console.log('2. Form Values:', values);
+      console.log('3. Contact Schema:', contactSchema);
+      console.log('4. Form State:', form.getValues());
+      console.log('5. Form Errors:', form.formState.errors);
+
       const contactData = {
         ...values,
         user_id: user.id,
       };
 
-      console.log('Contact data to be inserted:', contactData);
+      console.log('6. Contact Data to be inserted:', contactData);
 
-      const { data, error } = await supabase
-        .from("contacts")
-        .insert([contactData])
-        .select()
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from("contacts")
+          .insert([contactData])
+          .select()
+          .single();
 
-      if (error) {
-        console.error('Supabase error:', error);
+        console.log('7. Supabase Response:', { data, error });
+
+        if (error) {
+          console.error('8. Supabase Error:', error);
+          throw error;
+        }
+
+        console.log('9. Successfully inserted data:', data);
+        return data;
+      } catch (error) {
+        console.error('10. Caught Error:', error);
         throw error;
       }
-
-      return data;
     },
     onSuccess: () => {
+      console.log('11. Mutation Success - Invalidating queries and resetting form');
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
       setIsCreating(false);
       form.reset();
       toast.success("Contact created successfully");
     },
     onError: (error) => {
-      console.error("Error creating contact:", error);
+      console.error("12. Mutation Error:", error);
       toast.error("Failed to create contact");
     },
   });
 
   const onSubmit = (values: ContactFormValues) => {
+    console.log('13. Form Submit Values:', values);
     createContact.mutate(values);
   };
 
