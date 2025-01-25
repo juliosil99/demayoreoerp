@@ -114,14 +114,14 @@ export function AccountForm({ onClose, account, parentAccounts }: AccountFormPro
       <div className="space-y-2">
         <label className="text-sm font-medium">Parent Account</label>
         <Select
-          value={formData.parent_id || ""}
-          onValueChange={(value) => setFormData({ ...formData, parent_id: value || null })}
+          value={formData.parent_id || "none"}
+          onValueChange={(value) => setFormData({ ...formData, parent_id: value === "none" ? null : value })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select parent account" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">No parent</SelectItem>
+            <SelectItem value="none">No parent</SelectItem>
             {parentAccounts.map((parent) => (
               <SelectItem key={parent.id} value={parent.id}>
                 {parent.code} - {parent.name}
