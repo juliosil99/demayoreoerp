@@ -60,10 +60,19 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
     mutationFn: async (values: ContactFormValues) => {
       if (!user?.id) throw new Error("User not authenticated");
 
+      // Log the contact data being sent
+      console.log("Creating contact with data:", {
+        ...values,
+        user_id: user.id,
+      });
+
       const contactData = {
         ...values,
         user_id: user.id,
       };
+
+      // Log the exact type of contactData
+      console.log("Contact data type:", typeof contactData, contactData);
 
       const { data, error } = await supabase
         .from("contacts")
@@ -71,10 +80,18 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
         .select()
         .single();
 
-      if (error) throw error;
+      // Log any potential errors
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      // Log successful response
+      console.log("Supabase response:", data);
       return data;
     },
     onSuccess: () => {
+      console.log("Contact created successfully");
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
       form.reset();
       onSuccess();
@@ -87,6 +104,7 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
   });
 
   const onSubmit = (values: ContactFormValues) => {
+    console.log("Form values before submission:", values);
     createContact.mutate(values);
   };
 
