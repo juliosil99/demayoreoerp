@@ -10,6 +10,7 @@ import Sales from "@/pages/Sales";
 import Invoices from "@/pages/Invoices";
 import Banking from "@/pages/Banking";
 import Contacts from "@/pages/Contacts";
+import ChartOfAccounts from "@/pages/ChartOfAccounts";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,7 @@ function App() {
               <Route path="expenses" element={<Sales />} />
               <Route path="contacts" element={<Contacts />} />
               <Route path="banking" element={<Banking />} />
+              <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
             </Route>
           </Routes>
         </Router>

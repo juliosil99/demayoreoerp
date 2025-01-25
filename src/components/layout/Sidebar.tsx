@@ -11,6 +11,8 @@ import {
   CreditCard,
   FileX,
   Users,
+  BookOpen,
+  Plus,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -27,7 +29,14 @@ const menuItems = [
   },
   { icon: Receipt, label: "Expenses", to: "/expenses" },
   { icon: Users, label: "Contacts", to: "/contacts" },
-  { icon: Building2, label: "Contabilidad", to: "/accounting" },
+  { 
+    icon: Building2, 
+    label: "Contabilidad", 
+    to: "/accounting",
+    submenu: [
+      { icon: BookOpen, label: "Catálogo de Cuentas", to: "/accounting/chart-of-accounts" }
+    ]
+  },
   { icon: Receipt, label: "Cuentas por Cobrar", to: "/receivables" },
   { icon: Wallet, label: "Cuentas por Pagar", to: "/payables" },
   { icon: BanknoteIcon, label: "Bancos", to: "/banking" },
