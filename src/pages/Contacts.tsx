@@ -36,6 +36,12 @@ const contactSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactSchema>;
 
+type Contact = ContactFormValues & {
+  id: string;
+  created_at: string;
+  user_id: string;
+};
+
 export default function Contacts() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -63,7 +69,7 @@ export default function Contacts() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as Contact[];
     },
   });
 
@@ -88,7 +94,7 @@ export default function Contacts() {
       try {
         const { data, error } = await supabase
           .from("contacts")
-          .insert([contactData])
+          .insert(contactData)
           .select()
           .single();
 
