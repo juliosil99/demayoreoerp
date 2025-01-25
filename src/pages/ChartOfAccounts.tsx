@@ -3,8 +3,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Plus, ChevronRight, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { AccountDialog } from "@/components/chart-of-accounts/AccountDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Account {
   id: string;
@@ -21,7 +32,12 @@ interface Account {
 
 export default function ChartOfAccounts() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<Account | undefined>();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<Account | undefined>();
 
   const { data: accounts, isLoading } = useQuery({
     queryKey: ['chart-of-accounts'],
@@ -52,15 +68,46 @@ export default function ChartOfAccounts() {
   };
 
   const handleAddAccount = () => {
-    toast.info("Add account functionality coming soon");
+    setSelectedAccount(undefined);
+    setDialogOpen(true);
   };
 
   const handleEditAccount = (account: Account) => {
-    toast.info(`Edit account ${account.name} coming soon`);
+    setSelectedAccount(account);
+    setDialogOpen(true);
   };
 
-  const handleDeleteAccount = (account: Account) => {
-    toast.info(`Delete account ${account.name} coming soon`);
+  const handleDeleteAccount = async () => {
+    if (!accountToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('chart_of_accounts')
+        .delete()
+        .eq('id', accountToDelete.id);
+
+      if (error) throw error;
+
+      toast.success("Account deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ['chart-of-accounts'] });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error("Error deleting account");
+    } finally {
+      setDeleteDialogOpen(false);
+      setAccountToDelete(undefined);
+    }
+  };
+
+  const confirmDelete = (account: Account) => {
+    setAccountToDelete(account);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    setSelectedAccount(undefined);
+    queryClient.invalidateQueries({ queryKey: ['chart-of-accounts'] });
   };
 
   const renderAccount = (account: Account, depth: number = 0) => {
@@ -100,7 +147,7 @@ export default function ChartOfAccounts() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleDeleteAccount(account)}
+              onClick={() => confirmDelete(account)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -119,6 +166,7 @@ export default function ChartOfAccounts() {
   }
 
   const rootAccounts = accounts?.filter(account => !account.parent_id) || [];
+  const parentAccounts = accounts?.map(({ id, code, name }) => ({ id, code, name })) || [];
 
   return (
     <div className="space-y-6 p-6">
@@ -143,6 +191,31 @@ export default function ChartOfAccounts() {
           </div>
         )}
       </div>
+
+      <AccountDialog
+        isOpen={dialogOpen}
+        onClose={handleDialogClose}
+        account={selectedAccount}
+        parentAccounts={parentAccounts}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente la cuenta
+              {accountToDelete && ` "${accountToDelete.code} - ${accountToDelete.name}"`}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAccount}>
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
