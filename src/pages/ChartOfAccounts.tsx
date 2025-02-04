@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Plus, ChevronRight, ChevronDown, Pencil, Trash2, Download } from "lucide-react";
@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AccountDialog } from "@/components/chart-of-accounts/AccountDialog";
+import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +33,7 @@ interface Account {
 
 export default function ChartOfAccounts() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -39,12 +41,23 @@ export default function ChartOfAccounts() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<Account | undefined>();
 
+  useEffect(() => {
+    if (!user) {
+      toast.error("Please log in to access this page");
+      navigate("/login");
+    }
+  }, [user, navigate]);
+
   const { data: accounts, isLoading } = useQuery({
     queryKey: ['chart-of-accounts'],
     queryFn: async () => {
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
       const { data, error } = await supabase
         .from('chart_of_accounts')
         .select('*')
+        .eq('user_id', user.id)
         .order('path');
       
       if (error) {
@@ -53,6 +66,7 @@ export default function ChartOfAccounts() {
       }
       return data as Account[];
     },
+    enabled: !!user, // Only run query if user is authenticated
   });
 
   const handleExportAccounts = () => {
@@ -109,13 +123,14 @@ export default function ChartOfAccounts() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!accountToDelete) return;
+    if (!accountToDelete || !user) return;
 
     try {
       const { error } = await supabase
         .from('chart_of_accounts')
         .delete()
-        .eq('id', accountToDelete.id);
+        .eq('id', accountToDelete.id)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -191,6 +206,10 @@ export default function ChartOfAccounts() {
       </div>
     );
   };
+
+  if (!user) {
+    return null; // Don't render anything while redirecting
+  }
 
   if (isLoading) {
     return <div className="p-6">Loading...</div>;

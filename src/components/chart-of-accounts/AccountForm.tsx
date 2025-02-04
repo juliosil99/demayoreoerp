@@ -36,7 +36,10 @@ export function AccountForm({ onClose, account, parentAccounts }: AccountFormPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user) {
+      toast.error("Please log in to perform this action");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -50,7 +53,8 @@ export function AccountForm({ onClose, account, parentAccounts }: AccountFormPro
         const { error } = await supabase
           .from("chart_of_accounts")
           .update(data)
-          .eq("id", account.id);
+          .eq("id", account.id)
+          .eq("user_id", user.id); // Add user_id check
         
         if (error) throw error;
         toast.success("Account updated successfully");
