@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Plus, ChevronRight, ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { Plus, ChevronRight, ChevronDown, Pencil, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +54,37 @@ export default function ChartOfAccounts() {
       return data as Account[];
     },
   });
+
+  const handleExportAccounts = () => {
+    if (!accounts) return;
+
+    // Create CSV content
+    const headers = ['Code', 'Name', 'Type', 'Level', 'SAT Code', 'Account Use'];
+    const csvContent = [
+      headers.join(','),
+      ...accounts.map(account => [
+        account.code,
+        `"${account.name}"`,
+        account.account_type,
+        account.level,
+        account.sat_code || '',
+        account.account_use || ''
+      ].join(','))
+    ].join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'chart_of_accounts.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success('Chart of accounts exported successfully');
+  };
 
   const toggleExpand = (accountId: string) => {
     setExpandedAccounts(prev => {
@@ -172,10 +203,16 @@ export default function ChartOfAccounts() {
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Catálogo de Cuentas</h1>
-        <Button onClick={handleAddAccount}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nueva Cuenta
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleExportAccounts} variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Exportar
+          </Button>
+          <Button onClick={handleAddAccount}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Cuenta
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-lg border">
