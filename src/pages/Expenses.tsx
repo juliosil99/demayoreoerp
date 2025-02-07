@@ -28,13 +28,14 @@ export default function Expenses() {
     queryKey: ["expenses", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("expenses")
+        .from('expenses')
         .select(`
           *,
-          bank_accounts(name),
-          chart_of_accounts(name, code),
-          contacts(name)
+          bank_accounts (name),
+          chart_of_accounts (name, code),
+          contacts (name)
         `)
+        .eq('user_id', user!.id)
         .order('date', { ascending: false });
 
       if (error) throw error;

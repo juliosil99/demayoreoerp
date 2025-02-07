@@ -78,6 +78,7 @@ export function ExpenseForm() {
         user_id: user.id,
         amount: parseFloat(values.amount),
         tax_amount: values.tax_amount ? parseFloat(values.tax_amount) : null,
+        account_id: parseInt(values.account_id),
       };
 
       const { data, error } = await supabase
