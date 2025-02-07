@@ -158,6 +158,45 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_invoice_relations: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          expense_id: string
+          id: string
+          invoice_id: number
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          expense_id: string
+          id?: string
+          invoice_id: number
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          expense_id?: string
+          id?: string
+          invoice_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_invoice_relations_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_invoice_relations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           account_id: number
@@ -168,7 +207,6 @@ export type Database = {
           date: string
           description: string
           id: string
-          invoice_id: number | null
           notes: string | null
           payment_method: string
           reference_number: string | null
@@ -185,7 +223,6 @@ export type Database = {
           date: string
           description: string
           id?: string
-          invoice_id?: number | null
           notes?: string | null
           payment_method: string
           reference_number?: string | null
@@ -202,7 +239,6 @@ export type Database = {
           date?: string
           description?: string
           id?: string
-          invoice_id?: number | null
           notes?: string | null
           payment_method?: string
           reference_number?: string | null
@@ -223,13 +259,6 @@ export type Database = {
             columns: ["chart_account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "expenses_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {

@@ -11,6 +11,14 @@ const Reconciliation = () => {
   const { data: expenses } = useQuery({
     queryKey: ["unreconciled-expenses", user?.id],
     queryFn: async () => {
+      const { data: relations, error: relationsError } = await supabase
+        .from("expense_invoice_relations")
+        .select("expense_id");
+
+      if (relationsError) throw relationsError;
+
+      const reconciledExpenseIds = relations?.map(r => r.expense_id) || [];
+
       const { data, error } = await supabase
         .from("expenses")
         .select(`
@@ -19,8 +27,8 @@ const Reconciliation = () => {
           chart_of_accounts (name, code),
           contacts (name)
         `)
-        .is("invoice_id", null)
         .eq("user_id", user!.id)
+        .not("id", "in", `(${reconciledExpenseIds.join(",")})`)
         .order("date", { ascending: false });
 
       if (error) throw error;
@@ -49,7 +57,7 @@ const Reconciliation = () => {
       
       <Card>
         <CardHeader>
-          <CardTitle>Gastos sin Conciliar</CardTitle>
+          <CardTitle>Arrastra los gastos hacia las facturas para conciliarlos</CardTitle>
         </CardHeader>
         <CardContent>
           <ReconciliationTable expenses={expenses || []} invoices={invoices || []} />
