@@ -29,7 +29,7 @@ export function ExpenseFormFields({
     <>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Date</Label>
+          <Label>Fecha</Label>
           <Input
             type="date"
             value={formData.date}
@@ -39,7 +39,7 @@ export function ExpenseFormFields({
         </div>
 
         <div className="space-y-2">
-          <Label>Amount</Label>
+          <Label>Monto</Label>
           <Input
             type="number"
             step="0.01"
@@ -50,7 +50,7 @@ export function ExpenseFormFields({
         </div>
 
         <div className="space-y-2">
-          <Label>Description</Label>
+          <Label>Descripción</Label>
           <Input
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -59,13 +59,13 @@ export function ExpenseFormFields({
         </div>
 
         <div className="space-y-2">
-          <Label>Bank Account</Label>
+          <Label>Cuenta Bancaria</Label>
           <Select
             value={formData.account_id}
             onValueChange={(value) => setFormData({ ...formData, account_id: value })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select account" />
+              <SelectValue placeholder="Seleccionar cuenta" />
             </SelectTrigger>
             <SelectContent>
               {bankAccounts?.map((account) => (
@@ -78,13 +78,13 @@ export function ExpenseFormFields({
         </div>
 
         <div className="space-y-2">
-          <Label>Expense Account</Label>
+          <Label>Cuenta de Gasto</Label>
           <Select
             value={formData.chart_account_id}
             onValueChange={(value) => setFormData({ ...formData, chart_account_id: value })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select expense account" />
+              <SelectValue placeholder="Seleccionar cuenta de gasto" />
             </SelectTrigger>
             <SelectContent>
               {chartAccounts?.map((account) => (
@@ -97,25 +97,25 @@ export function ExpenseFormFields({
         </div>
 
         <div className="space-y-2">
-          <Label>Payment Method</Label>
+          <Label>Método de Pago</Label>
           <Select
             value={formData.payment_method}
             onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select payment method" />
+              <SelectValue placeholder="Seleccionar método de pago" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="cash">Cash</SelectItem>
-              <SelectItem value="transfer">Transfer</SelectItem>
-              <SelectItem value="check">Check</SelectItem>
-              <SelectItem value="credit_card">Credit Card</SelectItem>
+              <SelectItem value="cash">Efectivo</SelectItem>
+              <SelectItem value="transfer">Transferencia</SelectItem>
+              <SelectItem value="check">Cheque</SelectItem>
+              <SelectItem value="credit_card">Tarjeta de Crédito</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Label>Reference Number</Label>
+          <Label>Número de Referencia</Label>
           <Input
             value={formData.reference_number}
             onChange={(e) => setFormData({ ...formData, reference_number: e.target.value })}
@@ -123,13 +123,13 @@ export function ExpenseFormFields({
         </div>
 
         <div className="space-y-2">
-          <Label>Supplier</Label>
+          <Label>Proveedor</Label>
           <Select
             value={formData.supplier_id}
             onValueChange={(value) => setFormData({ ...formData, supplier_id: value })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select supplier" />
+              <SelectValue placeholder="Seleccionar proveedor" />
             </SelectTrigger>
             <SelectContent>
               {suppliers?.map((supplier) => (
@@ -142,7 +142,7 @@ export function ExpenseFormFields({
         </div>
 
         <div className="space-y-2">
-          <Label>Tax Amount</Label>
+          <Label>Monto de Impuestos</Label>
           <Input
             type="number"
             step="0.01"
@@ -153,7 +153,7 @@ export function ExpenseFormFields({
       </div>
 
       <div className="space-y-2">
-        <Label>Notes</Label>
+        <Label>Notas</Label>
         <Input
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}

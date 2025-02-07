@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ContactForm from "@/components/contacts/ContactForm";
@@ -9,9 +10,9 @@ export default function Contacts() {
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Contacts</h1>
+        <h1 className="text-2xl font-bold">Contactos</h1>
         <Button onClick={() => setIsCreating(!isCreating)}>
-          {isCreating ? "Cancel" : "Add Contact"}
+          {isCreating ? "Cancelar" : "Agregar Contacto"}
         </Button>
       </div>
 

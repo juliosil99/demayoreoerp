@@ -31,7 +31,7 @@ export default function Login() {
     try {
       if (isSignUp) {
         await signUp(email, password);
-        toast.success("Account created successfully! Please sign in.");
+        toast.success("Cuenta creada exitosamente! Por favor, inicia sesión.");
       } else {
         await signIn(email, password);
         const { data: { user } } = await supabase.auth.getUser();
@@ -44,11 +44,11 @@ export default function Login() {
             navigate("/company-setup");
           }
         }
-        toast.success("Logged in successfully!");
+        toast.success("Inició sesión exitosamente!");
       }
     } catch (error) {
-      console.error("Authentication error:", error);
-      toast.error(error instanceof Error ? error.message : "Authentication failed");
+      console.error("Error de autenticación:", error);
+      toast.error(error instanceof Error ? error.message : "Error de autenticación");
     } finally {
       setIsLoading(false);
     }
@@ -58,15 +58,15 @@ export default function Login() {
     <div className="container flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Welcome Back</CardTitle>
-          <CardDescription>Sign in to your account to continue</CardDescription>
+          <CardTitle>Bienvenido de nuevo</CardTitle>
+          <CardDescription>Inicia sesión en tu cuenta para continuar</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
             <div className="space-y-2">
               <Input
                 type="email"
-                placeholder="Email"
+                placeholder="Correo electrónico"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -75,7 +75,7 @@ export default function Login() {
             <div className="space-y-2">
               <Input
                 type="password"
-                placeholder="Password"
+                placeholder="Contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -87,7 +87,7 @@ export default function Login() {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? "Loading..." : "Sign In"}
+                {isLoading ? "Cargando..." : "Iniciar Sesión"}
               </Button>
               <Button
                 type="button"
@@ -96,7 +96,7 @@ export default function Login() {
                 disabled={isLoading}
                 onClick={(e) => handleSubmit(e, true)}
               >
-                Create Account
+                Crear Cuenta
               </Button>
             </div>
           </form>

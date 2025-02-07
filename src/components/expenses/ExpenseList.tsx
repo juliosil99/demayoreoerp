@@ -23,7 +23,7 @@ interface ExpenseListProps {
 
 export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   if (isLoading) {
-    return <div>Loading expenses...</div>;
+    return <div>Cargando gastos...</div>;
   }
 
   return (
@@ -31,14 +31,14 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Bank Account</TableHead>
-            <TableHead>Expense Account</TableHead>
-            <TableHead>Supplier</TableHead>
-            <TableHead>Payment Method</TableHead>
-            <TableHead>Reference</TableHead>
+            <TableHead>Fecha</TableHead>
+            <TableHead>Descripción</TableHead>
+            <TableHead>Monto</TableHead>
+            <TableHead>Cuenta Bancaria</TableHead>
+            <TableHead>Cuenta de Gasto</TableHead>
+            <TableHead>Proveedor</TableHead>
+            <TableHead>Método de Pago</TableHead>
+            <TableHead>Referencia</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -53,7 +53,11 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
               </TableCell>
               <TableCell>{expense.contacts?.name || '-'}</TableCell>
               <TableCell className="capitalize">
-                {expense.payment_method.replace('_', ' ')}
+                {expense.payment_method === 'cash' ? 'Efectivo' :
+                 expense.payment_method === 'transfer' ? 'Transferencia' :
+                 expense.payment_method === 'check' ? 'Cheque' :
+                 expense.payment_method === 'credit_card' ? 'Tarjeta de Crédito' :
+                 expense.payment_method.replace('_', ' ')}
               </TableCell>
               <TableCell>{expense.reference_number || '-'}</TableCell>
             </TableRow>

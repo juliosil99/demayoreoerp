@@ -47,17 +47,17 @@ export default function Expenses() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Expenses</h1>
+        <h1 className="text-2xl font-bold">Gastos</h1>
         <Dialog>
           <DialogTrigger asChild>
             <Button>
               <PlusIcon className="w-4 h-4 mr-2" />
-              Add Expense
+              Agregar Gasto
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Add New Expense</DialogTitle>
+              <DialogTitle>Agregar Nuevo Gasto</DialogTitle>
             </DialogHeader>
             <ExpenseForm />
           </DialogContent>

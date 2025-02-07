@@ -33,13 +33,13 @@ const Sales = () => {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Sales Overview</h1>
+        <h1 className="text-3xl font-bold">Resumen de Ventas</h1>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+            <CardTitle className="text-sm font-medium">Ventas Totales</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -48,7 +48,7 @@ const Sales = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
+            <CardTitle className="text-sm font-medium">Ganancia Total</CardTitle>
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -57,7 +57,7 @@ const Sales = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Margin</CardTitle>
+            <CardTitle className="text-sm font-medium">Margen Promedio</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -68,19 +68,19 @@ const Sales = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Sales</CardTitle>
+          <CardTitle>Ventas Recientes</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Order #</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Customer ID</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Profit</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead>No. Orden</TableHead>
+                <TableHead>Producto</TableHead>
+                <TableHead>ID Cliente</TableHead>
+                <TableHead className="text-right">Monto</TableHead>
+                <TableHead className="text-right">Ganancia</TableHead>
+                <TableHead>Estado</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
