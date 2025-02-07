@@ -36,7 +36,7 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
     try {
       const { error } = await supabase
         .from("expenses")
-        .update({ invoice_id: parseInt(invoiceId) })
+        .update({ invoice_id: parseInt(invoiceId, 10) })
         .eq("id", expenseId)
         .eq("user_id", user!.id);
 
@@ -46,7 +46,7 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
       const { error: invoiceError } = await supabase
         .from("invoices")
         .update({ processed: true })
-        .eq("id", invoiceId);
+        .eq("id", parseInt(invoiceId, 10));
 
       if (invoiceError) throw invoiceError;
 
