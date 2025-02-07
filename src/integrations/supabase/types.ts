@@ -158,6 +158,79 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          account_id: number
+          amount: number
+          category: string | null
+          chart_account_id: string
+          created_at: string | null
+          date: string
+          description: string
+          id: string
+          notes: string | null
+          payment_method: string
+          reference_number: string | null
+          supplier_id: string | null
+          tax_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          account_id: number
+          amount: number
+          category?: string | null
+          chart_account_id: string
+          created_at?: string | null
+          date: string
+          description: string
+          id?: string
+          notes?: string | null
+          payment_method: string
+          reference_number?: string | null
+          supplier_id?: string | null
+          tax_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          account_id?: number
+          amount?: number
+          category?: string | null
+          chart_account_id?: string
+          created_at?: string | null
+          date?: string
+          description?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          reference_number?: string | null
+          supplier_id?: string | null
+          tax_amount?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_chart_account_id_fkey"
+            columns: ["chart_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_products: {
         Row: {
           amount: number | null
