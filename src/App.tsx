@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -11,6 +12,7 @@ import Invoices from "@/pages/Invoices";
 import Banking from "@/pages/Banking";
 import Contacts from "@/pages/Contacts";
 import ChartOfAccounts from "@/pages/ChartOfAccounts";
+import Expenses from "@/pages/Expenses";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -51,7 +53,7 @@ function App() {
               <Route path="sales" element={<Sales />} />
               <Route path="sales/payments" element={<Sales />} />
               <Route path="sales/invoices" element={<Invoices />} />
-              <Route path="expenses" element={<Sales />} />
+              <Route path="expenses" element={<Expenses />} />
               <Route path="contacts" element={<Contacts />} />
               <Route path="banking" element={<Banking />} />
               <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
