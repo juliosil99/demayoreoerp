@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { ExpenseList } from "@/components/expenses/ExpenseList";
+import { ExpenseFilters } from "@/components/expenses/ExpenseFilters";
 import {
   Dialog,
   DialogContent,
@@ -13,30 +14,53 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PlusIcon } from "lucide-react";
+import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
   bank_accounts: { name: string };
   chart_of_accounts: { name: string; code: string };
   contacts: { name: string } | null;
+  invoices: { uuid: string; invoice_number: string } | null;
+};
+
+type Filters = {
+  supplier_id?: string;
+  account_id?: number;
+  unreconciled?: boolean;
 };
 
 export default function Expenses() {
   const { user } = useAuth();
+  const [filters, setFilters] = useState<Filters>({});
 
   const { data: expenses, isLoading } = useQuery({
-    queryKey: ["expenses", user?.id],
+    queryKey: ["expenses", user?.id, filters],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('expenses')
         .select(`
           *,
           bank_accounts (name),
           chart_of_accounts (name, code),
-          contacts (name)
+          contacts (name),
+          invoices (uuid, invoice_number)
         `)
-        .eq('user_id', user!.id)
-        .order('date', { ascending: false });
+        .eq('user_id', user!.id);
+
+      if (filters.supplier_id) {
+        query = query.eq('supplier_id', filters.supplier_id);
+      }
+      if (filters.account_id) {
+        query = query.eq('account_id', filters.account_id);
+      }
+      if (filters.unreconciled) {
+        query = query.is('invoice_id', null);
+      }
+
+      query = query.order('date', { ascending: false });
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as Expense[];
@@ -64,6 +88,7 @@ export default function Expenses() {
         </Dialog>
       </div>
 
+      <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
       <ExpenseList expenses={expenses || []} isLoading={isLoading} />
     </div>
   );

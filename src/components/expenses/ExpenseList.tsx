@@ -14,6 +14,7 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
   bank_accounts: { name: string };
   chart_of_accounts: { name: string; code: string };
   contacts: { name: string } | null;
+  invoices: { uuid: string; invoice_number: string } | null;
 };
 
 interface ExpenseListProps {
@@ -39,6 +40,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
             <TableHead>Proveedor</TableHead>
             <TableHead>Método de Pago</TableHead>
             <TableHead>Referencia</TableHead>
+            <TableHead>Factura</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -60,6 +62,11 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
                  expense.payment_method.replace('_', ' ')}
               </TableCell>
               <TableCell>{expense.reference_number || '-'}</TableCell>
+              <TableCell>
+                {expense.invoices ? 
+                  `${expense.invoices.invoice_number || expense.invoices.uuid}` : 
+                  'Sin conciliar'}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
