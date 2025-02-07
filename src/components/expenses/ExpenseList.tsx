@@ -8,18 +8,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
+import type { Database } from "@/integrations/supabase/types/base";
 
-interface Expense {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
+type Expense = Database['public']['Tables']['expenses']['Row'] & {
   bank_accounts: { name: string };
   chart_of_accounts: { name: string; code: string };
   contacts: { name: string } | null;
-  payment_method: string;
-  reference_number: string | null;
-}
+};
 
 interface ExpenseListProps {
   expenses: Expense[];

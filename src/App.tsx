@@ -18,14 +18,11 @@ import "./App.css";
 const queryClient = new QueryClient();
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  console.log("PrivateRoute rendering");
   const { user } = useAuth();
-  console.log("User auth state:", !!user);
   return user ? children : <Navigate to="/login" />;
 }
 
 function App() {
-  console.log("App component rendering");
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

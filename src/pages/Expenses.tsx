@@ -13,6 +13,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PlusIcon } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types/base";
+
+type Expense = Database['public']['Tables']['expenses']['Row'] & {
+  bank_accounts: { name: string };
+  chart_of_accounts: { name: string; code: string };
+  contacts: { name: string } | null;
+};
 
 export default function Expenses() {
   const { user } = useAuth();
@@ -31,7 +38,7 @@ export default function Expenses() {
         .order('date', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as Expense[];
     },
     enabled: !!user,
   });
