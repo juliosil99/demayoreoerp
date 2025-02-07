@@ -61,16 +61,16 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
       <div className="space-y-2">
         <Label>Proveedor</Label>
         <Select
-          value={filters.supplier_id || ""}
+          value={filters.supplier_id || "all_suppliers"}
           onValueChange={(value) =>
-            onFiltersChange({ ...filters, supplier_id: value || undefined })
+            onFiltersChange({ ...filters, supplier_id: value === "all_suppliers" ? undefined : value })
           }
         >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Todos los proveedores" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos los proveedores</SelectItem>
+            <SelectItem value="all_suppliers">Todos los proveedores</SelectItem>
             {suppliers?.map((supplier) => (
               <SelectItem key={supplier.id} value={supplier.id}>
                 {supplier.name}
@@ -83,16 +83,16 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
       <div className="space-y-2">
         <Label>Cuenta Bancaria</Label>
         <Select
-          value={filters.account_id?.toString() || ""}
+          value={filters.account_id?.toString() || "all_accounts"}
           onValueChange={(value) =>
-            onFiltersChange({ ...filters, account_id: value ? parseInt(value) : undefined })
+            onFiltersChange({ ...filters, account_id: value === "all_accounts" ? undefined : parseInt(value) })
           }
         >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Todas las cuentas" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas las cuentas</SelectItem>
+            <SelectItem value="all_accounts">Todas las cuentas</SelectItem>
             {bankAccounts?.map((account) => (
               <SelectItem key={account.id} value={account.id.toString()}>
                 {account.name}
