@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      accounts_payable_expenses: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string
+          id: string
+          invoice_id: number
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description: string
+          id?: string
+          invoice_id: number
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string
+          id?: string
+          invoice_id?: number
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_payable_expenses_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_invoice"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_accounts: {
         Row: {
           balance: number | null
@@ -165,6 +210,7 @@ export type Database = {
           expense_id: string
           id: string
           invoice_id: number
+          reconciled_amount: number | null
         }
         Insert: {
           amount?: number | null
@@ -172,6 +218,7 @@ export type Database = {
           expense_id: string
           id?: string
           invoice_id: number
+          reconciled_amount?: number | null
         }
         Update: {
           amount?: number | null
@@ -179,6 +226,7 @@ export type Database = {
           expense_id?: string
           id?: string
           invoice_id?: number
+          reconciled_amount?: number | null
         }
         Relationships: [
           {
@@ -334,6 +382,7 @@ export type Database = {
           issuer_name: string | null
           issuer_rfc: string | null
           issuer_tax_regime: string | null
+          paid_amount: number | null
           payment_form: string | null
           payment_method: string | null
           processed: boolean | null
@@ -371,6 +420,7 @@ export type Database = {
           issuer_name?: string | null
           issuer_rfc?: string | null
           issuer_tax_regime?: string | null
+          paid_amount?: number | null
           payment_form?: string | null
           payment_method?: string | null
           processed?: boolean | null
@@ -408,6 +458,7 @@ export type Database = {
           issuer_name?: string | null
           issuer_rfc?: string | null
           issuer_tax_regime?: string | null
+          paid_amount?: number | null
           payment_form?: string | null
           payment_method?: string | null
           processed?: boolean | null

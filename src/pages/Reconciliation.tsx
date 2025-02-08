@@ -42,7 +42,7 @@ const Reconciliation = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoices")
-        .select("*")
+        .select("*, paid_amount")
         .is("processed", false)
         .order("invoice_date", { ascending: false });
 
