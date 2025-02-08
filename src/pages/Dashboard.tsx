@@ -19,10 +19,16 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchCompanyData = async () => {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error("No user found");
+        }
+
         const { data, error } = await supabase
           .from("companies")
           .select("*")
-          .single();
+          .eq("user_id", user.id)
+          .maybeSingle();
 
         if (error) {
           throw error;
