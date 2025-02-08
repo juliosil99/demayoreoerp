@@ -28,6 +28,19 @@ export default function ContactList({ onEdit }: ContactListProps) {
 
   const deleteContact = useMutation({
     mutationFn: async (id: string) => {
+      // First check if the contact is referenced in expenses
+      const { data: expenses, error: checkError } = await supabase
+        .from("expenses")
+        .select("id")
+        .eq("supplier_id", id)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (expenses && expenses.length > 0) {
+        throw new Error("This contact cannot be deleted because it is referenced in expenses.");
+      }
+
       const { error } = await supabase
         .from("contacts")
         .delete()
@@ -41,7 +54,11 @@ export default function ContactList({ onEdit }: ContactListProps) {
     },
     onError: (error) => {
       console.error("Error deleting contact:", error);
-      toast.error("Failed to delete contact");
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to delete contact");
+      }
     },
   });
 
