@@ -57,7 +57,7 @@ const Reconciliation = () => {
       
       <Card>
         <CardHeader>
-          <CardTitle>Arrastra los gastos hacia las facturas para conciliarlos</CardTitle>
+          <CardTitle>Selecciona un gasto y busca la factura correspondiente</CardTitle>
         </CardHeader>
         <CardContent>
           <ReconciliationTable expenses={expenses || []} invoices={invoices || []} />
