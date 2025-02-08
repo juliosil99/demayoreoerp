@@ -1,5 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Contact {
   id: string;
@@ -8,9 +12,18 @@ interface Contact {
   phone?: string;
   type: string;
   created_at: string;
+  tax_regime: string;
+  postal_code: string;
+  address?: string;
 }
 
-export default function ContactList() {
+interface ContactListProps {
+  onEdit: (contact: Contact) => void;
+}
+
+export default function ContactList({ onEdit }: ContactListProps) {
+  const queryClient = useQueryClient();
+
   const { data: contacts, isLoading } = useQuery({
     queryKey: ["contacts"],
     queryFn: async () => {
@@ -23,6 +36,31 @@ export default function ContactList() {
       return data as Contact[];
     },
   });
+
+  const deleteContact = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("contacts")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      toast.success("Contact deleted successfully");
+    },
+    onError: (error) => {
+      console.error("Error deleting contact:", error);
+      toast.error("Failed to delete contact");
+    },
+  });
+
+  const handleDelete = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this contact?")) {
+      deleteContact.mutate(id);
+    }
+  };
 
   if (isLoading) {
     return <div>Loading contacts...</div>;
@@ -46,6 +84,24 @@ export default function ContactList() {
                 Phone: {contact.phone}
               </p>
             )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(contact)}
+              title="Edit contact"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDelete(contact.id)}
+              title="Delete contact"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       ))}

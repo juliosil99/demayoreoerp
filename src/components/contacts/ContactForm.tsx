@@ -37,15 +37,25 @@ type ContactFormValues = z.infer<typeof contactSchema>;
 
 interface ContactFormProps {
   onSuccess: () => void;
+  contactToEdit?: {
+    id: string;
+    name: string;
+    rfc: string;
+    phone?: string;
+    type: string;
+    tax_regime: string;
+    postal_code: string;
+    address?: string;
+  };
 }
 
-export default function ContactForm({ onSuccess }: ContactFormProps) {
+export default function ContactForm({ onSuccess, contactToEdit }: ContactFormProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
-    defaultValues: {
+    defaultValues: contactToEdit || {
       name: "",
       rfc: "",
       phone: "",
@@ -63,35 +73,38 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
       const contactData = {
         ...values,
         user_id: user.id,
-        name: values.name,
-        rfc: values.rfc,
-        type: values.type,
-        tax_regime: values.tax_regime,
-        postal_code: values.postal_code,
       };
 
-      const { data, error } = await supabase
-        .from("contacts")
-        .insert([contactData])
-        .select()
-        .single();
+      if (contactToEdit) {
+        const { data, error } = await supabase
+          .from("contacts")
+          .update(contactData)
+          .eq("id", contactToEdit.id)
+          .select()
+          .single();
 
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from("contacts")
+          .insert([contactData])
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
       }
-
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
       form.reset();
       onSuccess();
-      toast.success("Contact created successfully");
+      toast.success(contactToEdit ? "Contact updated successfully" : "Contact created successfully");
     },
     onError: (error) => {
-      console.error("Error creating contact:", error);
-      toast.error("Failed to create contact");
+      console.error("Error saving contact:", error);
+      toast.error(contactToEdit ? "Failed to update contact" : "Failed to create contact");
     },
   });
 
@@ -212,7 +225,9 @@ export default function ContactForm({ onSuccess }: ContactFormProps) {
             )}
           />
 
-          <Button type="submit">Create Contact</Button>
+          <Button type="submit">
+            {contactToEdit ? "Update Contact" : "Create Contact"}
+          </Button>
         </form>
       </Form>
     </div>
