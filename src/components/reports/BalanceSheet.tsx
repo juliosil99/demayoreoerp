@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { addDays } from "date-fns";
 import { Loader2 } from "lucide-react";
+import { DateRange } from "react-day-picker";
 
 interface BalanceSheetProps {
   userId?: string;
@@ -12,13 +13,13 @@ interface BalanceSheetProps {
 
 export function BalanceSheet({ userId }: BalanceSheetProps) {
   const [loading, setLoading] = React.useState(false);
-  const [date, setDate] = React.useState({
+  const [date, setDate] = React.useState<DateRange>({
     from: new Date(),
     to: addDays(new Date(), 7),
   });
 
   const generateReport = async () => {
-    if (!userId) return;
+    if (!userId || !date.from || !date.to) return;
     setLoading(true);
     try {
       // Implementation pending - will be added in next iteration
@@ -40,7 +41,6 @@ export function BalanceSheet({ userId }: BalanceSheetProps) {
         </Button>
       </div>
       <div className="min-h-[400px] p-4 border rounded-lg">
-        {/* Report content will be added in next iteration */}
         <p className="text-center text-muted-foreground">
           Seleccione un rango de fechas y genere el reporte
         </p>
