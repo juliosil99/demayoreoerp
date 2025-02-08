@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/admin-client";
 import { toast } from "sonner";
 
 interface UserPermissions {
@@ -37,7 +38,7 @@ export default function UserManagement() {
   const { data: users, isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      const { data: { users }, error } = await supabase.auth.admin.listUsers({
+      const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers({
         page: 1,
         perPage: 100
       });
