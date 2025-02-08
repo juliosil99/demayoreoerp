@@ -671,6 +671,36 @@ export type Database = {
           },
         ]
       }
+      report_configurations: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          parameters: Json | null
+          report_type: Database["public"]["Enums"]["report_type"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          parameters?: Json | null
+          report_type: Database["public"]["Enums"]["report_type"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          parameters?: Json | null
+          report_type?: Database["public"]["Enums"]["report_type"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       Sales: {
         Row: {
           category: string | null
@@ -800,6 +830,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      report_type: "income_statement" | "cash_flow" | "balance_sheet"
     }
     CompositeTypes: {
       [_ in never]: never
