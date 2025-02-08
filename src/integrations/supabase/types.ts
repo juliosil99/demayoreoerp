@@ -590,6 +590,63 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          account_id: number
+          amount: number
+          client_id: string | null
+          created_at: string | null
+          date: string
+          id: string
+          notes: string | null
+          payment_method: string
+          reference_number: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: number
+          amount: number
+          client_id?: string | null
+          created_at?: string | null
+          date: string
+          id?: string
+          notes?: string | null
+          payment_method: string
+          reference_number?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: number
+          amount?: number
+          client_id?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          reference_number?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Sales: {
         Row: {
           category: string | null
