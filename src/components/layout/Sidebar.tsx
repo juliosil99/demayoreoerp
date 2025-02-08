@@ -13,7 +13,7 @@ import {
   FileX,
   Users,
   BookOpen,
-  Plus,
+  UserCog,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -43,6 +43,7 @@ const menuItems = [
   { icon: BanknoteIcon, label: "Bancos", to: "/banking" },
   { icon: ArrowLeftRight, label: "Conciliación", to: "/reconciliation" },
   { icon: FileText, label: "Reportes", to: "/reports" },
+  { icon: UserCog, label: "Administrar Usuarios", to: "/users" },
 ];
 
 export function Sidebar() {
