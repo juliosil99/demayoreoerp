@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,35 +36,39 @@ const contactSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactSchema>;
 
+interface Contact {
+  id: string;
+  name: string;
+  rfc: string;
+  phone?: string;
+  type: "client" | "supplier";
+  tax_regime: string;
+  postal_code: string;
+  address?: string;
+}
+
 interface ContactFormProps {
   onSuccess: () => void;
-  contactToEdit?: {
-    id: string;
-    name: string;
-    rfc: string;
-    phone?: string;
-    type: string;
-    tax_regime: string;
-    postal_code: string;
-    address?: string;
-  };
+  contactToEdit?: Contact;
 }
 
 export default function ContactForm({ onSuccess, contactToEdit }: ContactFormProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  const defaultValues: ContactFormValues = contactToEdit || {
+    name: "",
+    rfc: "",
+    phone: "",
+    type: "client",
+    tax_regime: "",
+    postal_code: "",
+    address: "",
+  };
+
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
-    defaultValues: contactToEdit || {
-      name: "",
-      rfc: "",
-      phone: "",
-      type: "client",
-      tax_regime: "",
-      postal_code: "",
-      address: "",
-    },
+    defaultValues,
   });
 
   const createContact = useMutation({
@@ -151,7 +156,7 @@ export default function ContactForm({ onSuccess, contactToEdit }: ContactFormPro
               <FormItem>
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -218,7 +223,7 @@ export default function ContactForm({ onSuccess, contactToEdit }: ContactFormPro
               <FormItem>
                 <FormLabel>Address</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
