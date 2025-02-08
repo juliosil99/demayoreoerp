@@ -8,6 +8,7 @@ import Login from "@/pages/Login";
 import CompanySetup from "@/pages/CompanySetup";
 import Dashboard from "@/pages/Dashboard";
 import Sales from "@/pages/Sales";
+import Payments from "@/pages/sales/Payments";
 import Invoices from "@/pages/Invoices";
 import Banking from "@/pages/Banking";
 import Contacts from "@/pages/Contacts";
@@ -49,7 +50,7 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="sales" element={<Sales />} />
-              <Route path="sales/payments" element={<Sales />} />
+              <Route path="sales/payments" element={<Payments />} />
               <Route path="sales/invoices" element={<Invoices />} />
               <Route path="expenses" element={<Expenses />} />
               <Route path="contacts" element={<Contacts />} />
