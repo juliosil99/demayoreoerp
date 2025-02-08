@@ -14,7 +14,12 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
   bank_accounts: { name: string };
   chart_of_accounts: { name: string; code: string };
   contacts: { name: string } | null;
-  invoices: { uuid: string; invoice_number: string } | null;
+  expense_invoice_relations?: {
+    invoice: {
+      uuid: string;
+      invoice_number: string;
+    }
+  }[];
 };
 
 interface ExpenseListProps {
@@ -63,8 +68,10 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
               </TableCell>
               <TableCell>{expense.reference_number || '-'}</TableCell>
               <TableCell>
-                {expense.invoices ? 
-                  `${expense.invoices.invoice_number || expense.invoices.uuid}` : 
+                {expense.expense_invoice_relations?.length ? 
+                  expense.expense_invoice_relations.map(relation => 
+                    relation.invoice.invoice_number || relation.invoice.uuid
+                  ).join(', ') : 
                   'Sin conciliar'}
               </TableCell>
             </TableRow>

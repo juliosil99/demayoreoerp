@@ -21,7 +21,12 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
   bank_accounts: { name: string };
   chart_of_accounts: { name: string; code: string };
   contacts: { name: string } | null;
-  invoices: { uuid: string; invoice_number: string } | null;
+  expense_invoice_relations?: {
+    invoice: {
+      uuid: string;
+      invoice_number: string;
+    }
+  }[];
 };
 
 type Filters = {
@@ -44,7 +49,9 @@ export default function Expenses() {
           bank_accounts (name),
           chart_of_accounts (name, code),
           contacts (name),
-          invoices (uuid, invoice_number)
+          expense_invoice_relations (
+            invoice:invoices (uuid, invoice_number)
+          )
         `)
         .eq('user_id', user!.id);
 
@@ -55,7 +62,7 @@ export default function Expenses() {
         query = query.eq('account_id', filters.account_id);
       }
       if (filters.unreconciled) {
-        query = query.is('invoice_id', null);
+        query = query.not('expense_invoice_relations.id', 'is', null);
       }
 
       query = query.order('date', { ascending: false });
