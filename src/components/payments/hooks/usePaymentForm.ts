@@ -26,7 +26,11 @@ const initialFormData: PaymentFormData = {
   notes: "",
 };
 
-export function usePaymentForm() {
+interface UsePaymentFormProps {
+  onSuccess?: () => void;
+}
+
+export function usePaymentForm({ onSuccess }: UsePaymentFormProps = {}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,6 +60,7 @@ export function usePaymentForm() {
       queryClient.invalidateQueries({ queryKey: ["payments"] });
       toast.success("Pago registrado exitosamente");
       setFormData(initialFormData);
+      onSuccess?.();
     },
     onError: (error) => {
       console.error("Error al registrar el pago:", error);

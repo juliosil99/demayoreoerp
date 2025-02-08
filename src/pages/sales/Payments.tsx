@@ -56,6 +56,10 @@ export default function Payments() {
     enabled: !!user,
   });
 
+  const handleSuccess = () => {
+    setIsAddingPayment(false);
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -71,7 +75,7 @@ export default function Payments() {
             <DialogHeader>
               <DialogTitle>Registrar Nuevo Pago</DialogTitle>
             </DialogHeader>
-            <PaymentForm />
+            <PaymentForm onSuccess={handleSuccess} />
           </DialogContent>
         </Dialog>
       </div>

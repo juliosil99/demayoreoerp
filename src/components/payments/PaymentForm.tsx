@@ -4,8 +4,14 @@ import { usePaymentForm } from "./hooks/usePaymentForm";
 import { usePaymentQueries } from "./hooks/usePaymentQueries";
 import { PaymentFormFields } from "./components/PaymentFormFields";
 
-export function PaymentForm() {
-  const { formData, setFormData, isSubmitting, handleSubmit } = usePaymentForm();
+interface PaymentFormProps {
+  onSuccess?: () => void;
+}
+
+export function PaymentForm({ onSuccess }: PaymentFormProps) {
+  const { formData, setFormData, isSubmitting, handleSubmit } = usePaymentForm({
+    onSuccess,
+  });
   const { bankAccounts, clients } = usePaymentQueries();
 
   return (
