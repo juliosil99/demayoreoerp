@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -17,18 +18,18 @@ import {
 import { NavLink } from "react-router-dom";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", to: "/" },
+  { icon: LayoutDashboard, label: "Panel de Control", to: "/" },
   {
     icon: DollarSign,
-    label: "Sales",
+    label: "Ventas",
     to: "/sales",
     submenu: [
-      { icon: CreditCard, label: "Payments Received", to: "/sales/payments" },
-      { icon: FileX, label: "Invoices", to: "/sales/invoices" }
+      { icon: CreditCard, label: "Pagos Recibidos", to: "/sales/payments" },
+      { icon: FileX, label: "Facturas", to: "/sales/invoices" }
     ]
   },
-  { icon: Receipt, label: "Expenses", to: "/expenses" },
-  { icon: Users, label: "Contacts", to: "/contacts" },
+  { icon: Receipt, label: "Gastos", to: "/expenses" },
+  { icon: Users, label: "Contactos", to: "/contacts" },
   { 
     icon: Building2, 
     label: "Contabilidad", 
@@ -48,7 +49,7 @@ export function Sidebar() {
   return (
     <div className="h-full w-64 border-r bg-background p-4">
       <div className="mb-8">
-        <h2 className="px-2 font-semibold text-lg text-primary">ERP System</h2>
+        <h2 className="px-2 font-semibold text-lg text-primary">Sistema ERP</h2>
       </div>
       <nav className="space-y-0.5">
         {menuItems.map((item) => (
