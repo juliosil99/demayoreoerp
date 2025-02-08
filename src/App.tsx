@@ -1,4 +1,5 @@
 
+import * as React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -27,44 +28,46 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <React.StrictMode>
       <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/company-setup"
-              element={
-                <PrivateRoute>
-                  <CompanySetup />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <Layout />
-                </PrivateRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="sales" element={<Sales />} />
-              <Route path="sales/payments" element={<Payments />} />
-              <Route path="sales/invoices" element={<Invoices />} />
-              <Route path="expenses" element={<Expenses />} />
-              <Route path="contacts" element={<Contacts />} />
-              <Route path="banking" element={<Banking />} />
-              <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
-              <Route path="reconciliation" element={<Reconciliation />} />
-              <Route path="users" element={<UserManagement />} />
-            </Route>
-          </Routes>
-        </Router>
-        <Toaster />
+        <QueryClientProvider client={queryClient}>
+          <Router>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/company-setup"
+                element={
+                  <PrivateRoute>
+                    <CompanySetup />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <Layout />
+                  </PrivateRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="sales" element={<Sales />} />
+                <Route path="sales/payments" element={<Payments />} />
+                <Route path="sales/invoices" element={<Invoices />} />
+                <Route path="expenses" element={<Expenses />} />
+                <Route path="contacts" element={<Contacts />} />
+                <Route path="banking" element={<Banking />} />
+                <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
+                <Route path="reconciliation" element={<Reconciliation />} />
+                <Route path="users" element={<UserManagement />} />
+              </Route>
+            </Routes>
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
       </AuthProvider>
-    </QueryClientProvider>
+    </React.StrictMode>
   );
 }
 
