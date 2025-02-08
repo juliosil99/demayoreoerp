@@ -590,30 +590,6 @@ export type Database = {
         }
         Relationships: []
       }
-      page_permissions: {
-        Row: {
-          can_access: boolean | null
-          created_at: string | null
-          id: string
-          page_path: string
-          user_id: string
-        }
-        Insert: {
-          can_access?: boolean | null
-          created_at?: string | null
-          id?: string
-          page_path: string
-          user_id: string
-        }
-        Update: {
-          can_access?: boolean | null
-          created_at?: string | null
-          id?: string
-          page_path?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       payments: {
         Row: {
           account_id: number
@@ -758,48 +734,15 @@ export type Database = {
         }
         Relationships: []
       }
-      user_roles: {
-        Row: {
-          created_at: string | null
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      has_page_access: {
-        Args: {
-          user_id: string
-          page: string
-        }
-        Returns: boolean
-      }
-      is_admin: {
-        Args: {
-          user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "admin" | "user"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
