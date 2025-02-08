@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { Contact, ContactFormValues } from "./types";
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -33,19 +34,6 @@ const contactSchema = z.object({
   postal_code: z.string().min(5, "Postal code must be 5 digits"),
   address: z.string().optional(),
 });
-
-type ContactFormValues = z.infer<typeof contactSchema>;
-
-interface Contact {
-  id: string;
-  name: string;
-  rfc: string;
-  phone?: string;
-  type: "client" | "supplier";
-  tax_regime: string;
-  postal_code: string;
-  address?: string;
-}
 
 interface ContactFormProps {
   onSuccess: () => void;

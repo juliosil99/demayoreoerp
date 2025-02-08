@@ -3,17 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ContactForm from "@/components/contacts/ContactForm";
 import ContactList from "@/components/contacts/ContactList";
-
-interface Contact {
-  id: string;
-  name: string;
-  rfc: string;
-  phone?: string;
-  type: string;
-  tax_regime: string;
-  postal_code: string;
-  address?: string;
-}
+import { Contact } from "@/components/contacts/types";
 
 export default function Contacts() {
   const [isCreating, setIsCreating] = useState(false);

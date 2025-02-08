@@ -4,18 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-
-interface Contact {
-  id: string;
-  name: string;
-  rfc: string;
-  phone?: string;
-  type: string;
-  created_at: string;
-  tax_regime: string;
-  postal_code: string;
-  address?: string;
-}
+import { Contact } from "./types";
 
 interface ContactListProps {
   onEdit: (contact: Contact) => void;
