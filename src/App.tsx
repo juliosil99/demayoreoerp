@@ -16,7 +16,6 @@ import Contacts from "@/pages/Contacts";
 import ChartOfAccounts from "@/pages/ChartOfAccounts";
 import Expenses from "@/pages/Expenses";
 import Reconciliation from "@/pages/Reconciliation";
-import UserManagement from "@/pages/UserManagement";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -60,7 +59,6 @@ function App() {
                 <Route path="banking" element={<Banking />} />
                 <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
                 <Route path="reconciliation" element={<Reconciliation />} />
-                <Route path="users" element={<UserManagement />} />
               </Route>
             </Routes>
           </Router>
