@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { BanknoteIcon, CreditCard } from "lucide-react";
+import { BanknoteIcon, CreditCard, Pencil, Trash2 } from "lucide-react";
 
 type AccountType = "Bank" | "Cash" | "Credit Card" | "Credit Simple";
 
@@ -40,6 +41,8 @@ interface BankAccount {
 
 export default function Banking() {
   const [isAddingAccount, setIsAddingAccount] = useState(false);
+  const [isEditingAccount, setIsEditingAccount] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [newAccount, setNewAccount] = useState({
     name: "",
     type: "" as AccountType,
@@ -75,6 +78,59 @@ export default function Banking() {
       console.error("Error agregando cuenta:", error);
       toast.error("Fallo al agregar cuenta");
     }
+  };
+
+  const handleEditAccount = async () => {
+    if (!selectedAccount) return;
+
+    try {
+      const { error } = await supabase
+        .from("bank_accounts")
+        .update({
+          name: newAccount.name,
+          type: newAccount.type,
+          balance: newAccount.balance,
+        })
+        .eq("id", selectedAccount.id);
+
+      if (error) throw error;
+
+      toast.success("Cuenta actualizada exitosamente");
+      setIsEditingAccount(false);
+      setSelectedAccount(null);
+      setNewAccount({ name: "", type: "" as AccountType, balance: 0 });
+      refetch();
+    } catch (error) {
+      console.error("Error actualizando cuenta:", error);
+      toast.error("Fallo al actualizar cuenta");
+    }
+  };
+
+  const handleDeleteAccount = async (account: BankAccount) => {
+    try {
+      const { error } = await supabase
+        .from("bank_accounts")
+        .delete()
+        .eq("id", account.id);
+
+      if (error) throw error;
+
+      toast.success("Cuenta eliminada exitosamente");
+      refetch();
+    } catch (error) {
+      console.error("Error eliminando cuenta:", error);
+      toast.error("Fallo al eliminar cuenta");
+    }
+  };
+
+  const openEditDialog = (account: BankAccount) => {
+    setSelectedAccount(account);
+    setNewAccount({
+      name: account.name,
+      type: account.type,
+      balance: account.balance,
+    });
+    setIsEditingAccount(true);
   };
 
   return (
@@ -154,6 +210,74 @@ export default function Banking() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={isEditingAccount} onOpenChange={setIsEditingAccount}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Editar Cuenta</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label>Nombre de la Cuenta</label>
+                <Input
+                  value={newAccount.name}
+                  onChange={(e) =>
+                    setNewAccount({ ...newAccount, name: e.target.value })
+                  }
+                  placeholder="Ingrese el nombre de la cuenta"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label>Tipo de Cuenta</label>
+                <Select
+                  value={newAccount.type}
+                  onValueChange={(value) =>
+                    setNewAccount({ ...newAccount, type: value as AccountType })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione el tipo de cuenta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Bank">Banco</SelectItem>
+                    <SelectItem value="Cash">Efectivo</SelectItem>
+                    <SelectItem value="Credit Card">Tarjeta de Crédito</SelectItem>
+                    <SelectItem value="Credit Simple">Crédito Simple</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <label>Saldo</label>
+                <Input
+                  type="number"
+                  value={newAccount.balance}
+                  onChange={(e) =>
+                    setNewAccount({
+                      ...newAccount,
+                      balance: parseFloat(e.target.value),
+                    })
+                  }
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditingAccount(false)}
+                className="w-full sm:w-auto"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleEditAccount}
+                className="w-full sm:w-auto"
+              >
+                Guardar Cambios
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="rounded-md border overflow-x-auto">
@@ -163,6 +287,7 @@ export default function Banking() {
               <TableHead>Nombre de la Cuenta</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Saldo</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -184,6 +309,24 @@ export default function Banking() {
                 </TableCell>
                 <TableCell className="text-right">
                   ${account.balance.toFixed(2)}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEditDialog(account)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteAccount(account)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
