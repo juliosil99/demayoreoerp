@@ -37,8 +37,14 @@ export default function UserManagement() {
   const { data: users, isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      const { data: { users }, error } = await supabase.auth.admin.listUsers();
-      if (error) throw error;
+      const { data: { users }, error } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 100
+      });
+      if (error) {
+        toast.error("Error al cargar usuarios: " + error.message);
+        throw error;
+      }
       return users;
     },
   });
@@ -54,7 +60,14 @@ export default function UserManagement() {
         .from("user_roles")
         .select("*");
 
-      if (pageError || roleError) throw pageError || roleError;
+      if (pageError) {
+        toast.error("Error al cargar permisos de página: " + pageError.message);
+        throw pageError;
+      }
+      if (roleError) {
+        toast.error("Error al cargar roles: " + roleError.message);
+        throw roleError;
+      }
 
       const permissionsMap: { [key: string]: UserPermissions } = {};
       
@@ -110,9 +123,9 @@ export default function UserManagement() {
       }));
 
       toast.success("Permisos actualizados");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating permissions:", error);
-      toast.error("Error al actualizar permisos");
+      toast.error("Error al actualizar permisos: " + error.message);
     }
   };
 
@@ -136,9 +149,9 @@ export default function UserManagement() {
       }));
 
       toast.success("Rol actualizado");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating role:", error);
-      toast.error("Error al actualizar rol");
+      toast.error("Error al actualizar rol: " + error.message);
     }
   };
 
