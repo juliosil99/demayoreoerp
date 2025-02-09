@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Plus, ChevronRight, ChevronDown, Pencil, Trash2, Download } from "lucide-react";
+import { Plus, ChevronRight, ChevronDown, Pencil, Trash2, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 
 interface Account {
   id: string;
@@ -98,6 +99,86 @@ export default function ChartOfAccounts() {
     URL.revokeObjectURL(url);
 
     toast.success('Chart of accounts exported successfully');
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.type !== "text/csv") {
+      toast.error("Please upload a CSV file");
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const rows = text.split('\n').map(row => row.split(','));
+      const headers = rows[0];
+
+      // Validate CSV structure
+      if (!headers.includes('Code') || !headers.includes('Name') || !headers.includes('Type')) {
+        toast.error("Invalid CSV format. Please use the correct template");
+        return;
+      }
+
+      const codeIndex = headers.indexOf('Code');
+      const nameIndex = headers.indexOf('Name');
+      const typeIndex = headers.indexOf('Type');
+      const levelIndex = headers.indexOf('Level');
+      const satCodeIndex = headers.indexOf('SAT Code');
+      const accountUseIndex = headers.indexOf('Account Use');
+
+      // Skip header row
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.length < 3) continue; // Skip empty rows
+
+        const { data, error } = await supabase
+          .from('chart_of_accounts')
+          .insert({
+            code: row[codeIndex]?.trim(),
+            name: row[nameIndex]?.trim().replace(/^"|"$/g, ''), // Remove quotes if present
+            account_type: row[typeIndex]?.trim(),
+            level: row[levelIndex] ? parseInt(row[levelIndex]) : 1,
+            sat_code: satCodeIndex >= 0 ? row[satCodeIndex]?.trim() : null,
+            account_use: accountUseIndex >= 0 ? row[accountUseIndex]?.trim() : null,
+            user_id: user.id,
+          });
+
+        if (error) {
+          console.error("Error importing row:", error);
+          toast.error(`Error importing account ${row[codeIndex]}: ${error.message}`);
+        }
+      }
+
+      toast.success("Accounts imported successfully");
+      queryClient.invalidateQueries({ queryKey: ['chart-of-accounts'] });
+    } catch (error) {
+      console.error("Error processing CSV:", error);
+      toast.error("Error processing CSV file");
+    }
+
+    // Reset file input
+    event.target.value = '';
+  };
+
+  const handleExportTemplate = () => {
+    const headers = ['Code', 'Name', 'Type', 'Level', 'SAT Code', 'Account Use'];
+    const csvContent = headers.join(',') + '\n';
+    const exampleRow = ['1000', 'Example Account', 'Assets', '1', 'SAT123', 'G01'].join(',');
+    const template = csvContent + exampleRow;
+
+    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'chart_of_accounts_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success('Template downloaded successfully');
   };
 
   const toggleExpand = (accountId: string) => {
@@ -223,6 +304,21 @@ export default function ChartOfAccounts() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Catálogo de Cuentas</h1>
         <div className="flex gap-2">
+          <Button onClick={handleExportTemplate} variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Descargar Plantilla
+          </Button>
+          <Input
+            type="file"
+            accept=".csv"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="csv-upload"
+          />
+          <Button onClick={() => document.getElementById('csv-upload')?.click()} variant="outline">
+            <Upload className="h-4 w-4 mr-2" />
+            Importar CSV
+          </Button>
           <Button onClick={handleExportAccounts} variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Exportar
