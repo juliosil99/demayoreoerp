@@ -1,13 +1,17 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { AccountReceivable } from "@/types/receivables";
+import { toast } from "sonner";
 
 const Receivables = () => {
+  const queryClient = useQueryClient();
+
   const { data: receivables, isLoading } = useQuery({
     queryKey: ["receivables"],
     queryFn: async () => {
@@ -22,6 +26,25 @@ const Receivables = () => {
 
       if (error) throw error;
       return data as AccountReceivable[];
+    },
+  });
+
+  const markAsPaid = useMutation({
+    mutationFn: async (receivableId: string) => {
+      const { error } = await supabase
+        .from('accounts_receivable')
+        .update({ status: 'paid' })
+        .eq('id', receivableId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["receivables"] });
+      toast.success("Receivable marked as paid and expense created");
+    },
+    onError: (error) => {
+      console.error('Error marking receivable as paid:', error);
+      toast.error("Failed to mark receivable as paid");
     },
   });
 
@@ -41,6 +64,10 @@ const Receivables = () => {
       style: 'currency',
       currency: 'MXN'
     }).format(amount);
+  };
+
+  const handleMarkAsPaid = (receivableId: string) => {
+    markAsPaid.mutate(receivableId);
   };
 
   return (
@@ -66,6 +93,7 @@ const Receivables = () => {
                   <TableHead>Fecha de Vencimiento</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Notas</TableHead>
+                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -96,6 +124,17 @@ const Receivables = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>{receivable.notes}</TableCell>
+                    <TableCell>
+                      {receivable.status === 'pending' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleMarkAsPaid(receivable.id)}
+                          disabled={markAsPaid.isPending}
+                        >
+                          Marcar como Pagado
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

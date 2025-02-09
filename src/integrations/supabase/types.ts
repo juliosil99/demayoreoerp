@@ -60,6 +60,7 @@ export type Database = {
           client_id: string | null
           created_at: string | null
           due_date: string
+          expense_id: string | null
           id: string
           invoice_id: number | null
           notes: string | null
@@ -72,6 +73,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string | null
           due_date: string
+          expense_id?: string | null
           id?: string
           invoice_id?: number | null
           notes?: string | null
@@ -84,6 +86,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string | null
           due_date?: string
+          expense_id?: string | null
           id?: string
           invoice_id?: number | null
           notes?: string | null
@@ -97,6 +100,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_receivable_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
             referencedColumns: ["id"]
           },
           {

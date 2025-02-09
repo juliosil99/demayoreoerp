@@ -9,6 +9,7 @@ export interface AccountReceivable {
   notes: string | null;
   created_at: string;
   payment_id: string | null;
+  expense_id: string | null;
   client?: {
     name: string;
     rfc: string;
