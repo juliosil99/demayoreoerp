@@ -43,7 +43,7 @@ export function BulkReconciliationDialog({
   onOpenChange,
   onReconcile,
 }: BulkReconciliationDialogProps) {
-  const [selectedChannel, setSelectedChannel] = useState<string>("");
+  const [selectedChannel, setSelectedChannel] = useState<string>("all"); // Changed initial value to "all"
   const [dateRange, setDateRange] = useState<{ from: string; to: string }>({
     from: format(new Date(), 'yyyy-MM-dd'),
     to: format(new Date(), 'yyyy-MM-dd'),
@@ -76,7 +76,7 @@ export function BulkReconciliationDialog({
         .is("reconciliation_id", null)
         .eq("statusPaid", "por cobrar");
 
-      if (selectedChannel) {
+      if (selectedChannel !== "all") { // Changed condition to check for "all"
         query = query.eq("Channel", selectedChannel);
       }
 
@@ -142,7 +142,7 @@ export function BulkReconciliationDialog({
                 <SelectValue placeholder="Seleccionar canal" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="amazon">Amazon</SelectItem>
                 <SelectItem value="mercadolibre">Mercado Libre</SelectItem>
                 <SelectItem value="walmart">Walmart</SelectItem>
