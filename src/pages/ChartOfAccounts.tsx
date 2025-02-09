@@ -2,8 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { AccountDialog } from "@/components/chart-of-accounts/AccountDialog";
 import { useNavigate } from "react-router-dom";
 import {
@@ -19,6 +18,8 @@ import {
 import { AccountsToolbar } from "@/components/chart-of-accounts/AccountsToolbar";
 import { AccountsList } from "@/components/chart-of-accounts/AccountsList";
 import { csvService } from "@/components/chart-of-accounts/services/csvService";
+import { useChartOfAccounts } from "@/components/chart-of-accounts/hooks/useChartOfAccounts";
+import { useDeleteAccount } from "@/components/chart-of-accounts/hooks/useDeleteAccount";
 
 interface Account {
   id: string;
@@ -43,33 +44,15 @@ export default function ChartOfAccounts() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<Account | undefined>();
 
+  const { data: accounts, isLoading } = useChartOfAccounts(user?.id);
+  const deleteAccountMutation = useDeleteAccount(user?.id);
+
   useEffect(() => {
     if (!user) {
       toast.error("Please log in to access this page");
       navigate("/login");
     }
   }, [user, navigate]);
-
-  const { data: accounts, isLoading } = useQuery({
-    queryKey: ['chart-of-accounts'],
-    queryFn: async () => {
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-      const { data, error } = await supabase
-        .from('chart_of_accounts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('path');
-      
-      if (error) {
-        toast.error('Error loading accounts');
-        throw error;
-      }
-      return data as Account[];
-    },
-    enabled: !!user,
-  });
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -105,26 +88,10 @@ export default function ChartOfAccounts() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!accountToDelete || !user) return;
-
-    try {
-      const { error } = await supabase
-        .from('chart_of_accounts')
-        .delete()
-        .eq('id', accountToDelete.id)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      toast.success("Account deleted successfully");
-      queryClient.invalidateQueries({ queryKey: ['chart-of-accounts'] });
-    } catch (error) {
-      console.error("Error deleting account:", error);
-      toast.error("Error deleting account");
-    } finally {
-      setDeleteDialogOpen(false);
-      setAccountToDelete(undefined);
-    }
+    if (!accountToDelete) return;
+    await deleteAccountMutation.mutateAsync(accountToDelete);
+    setDeleteDialogOpen(false);
+    setAccountToDelete(undefined);
   };
 
   const handleDialogClose = () => {
