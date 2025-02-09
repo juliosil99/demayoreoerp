@@ -83,6 +83,7 @@ export type Database = {
       accounts_receivable: {
         Row: {
           amount: number
+          client_id: string | null
           created_at: string | null
           description: string
           id: string
@@ -92,6 +93,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          client_id?: string | null
           created_at?: string | null
           description: string
           id?: string
@@ -101,6 +103,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          client_id?: string | null
           created_at?: string | null
           description?: string
           id?: string
@@ -114,6 +117,20 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_receivable_client_id_fkey1"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
           {
