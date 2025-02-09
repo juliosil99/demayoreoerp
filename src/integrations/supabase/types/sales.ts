@@ -1,3 +1,4 @@
+
 export interface SalesBase {
   category: string | null
   Channel: string | null
@@ -21,7 +22,7 @@ export interface SalesBase {
   shipping: number | null
   sku: string | null
   state: string | null
-  statusPaid: string | null
+  statusPaid: 'pending' | 'paid' | null
   supplierName: string | null
 }
 

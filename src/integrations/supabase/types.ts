@@ -91,6 +91,7 @@ export type Database = {
           description: string
           id: string
           invoice_id: number
+          sale_id: number | null
           status: string | null
           user_id: string
         }
@@ -101,6 +102,7 @@ export type Database = {
           description: string
           id?: string
           invoice_id: number
+          sale_id?: number | null
           status?: string | null
           user_id: string
         }
@@ -111,6 +113,7 @@ export type Database = {
           description?: string
           id?: string
           invoice_id?: number
+          sale_id?: number | null
           status?: string | null
           user_id?: string
         }
@@ -127,6 +130,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_receivable_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "Sales"
             referencedColumns: ["id"]
           },
           {
