@@ -1,4 +1,3 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -34,6 +33,7 @@ interface PayableFormData {
   invoice_id: number | null;
   amount: number;
   due_date: Date;
+  payment_term: number;
   notes: string | null;
 }
 
@@ -45,31 +45,38 @@ export function PayableFormFields({ form }: PayableFormFieldsProps) {
   const { data: clients } = useClientQuery();
   const { data: invoices } = useUnpaidInvoicesQuery();
 
+  console.log('PayableFormFields - form prop:', form);
+  console.log('PayableFormFields - clients:', clients);
+  console.log('PayableFormFields - invoices:', invoices);
+
   return (
     <>
       <FormField
         control={form.control}
         name="client_id"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Cliente</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar cliente" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {clients?.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.name} - {client.rfc}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field }) => {
+          console.log('client_id field:', field);
+          return (
+            <FormItem>
+              <FormLabel>Proveedor</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar proveedor" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {clients?.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name} - {client.rfc}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
 
       <FormField

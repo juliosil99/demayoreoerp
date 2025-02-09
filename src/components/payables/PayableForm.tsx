@@ -29,9 +29,19 @@ export function PayableForm({ onSubmit, isSubmitting }: PayableFormProps) {
     },
   });
 
+  // Add debug logs
+  console.log('Form object:', form);
+  console.log('Form values:', form.watch());
+  console.log('Form errors:', form.formState.errors);
+
+  const handleSubmit = (data: PayableFormData) => {
+    console.log('Submitting data:', data);
+    onSubmit(data);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <PayableFormFields form={form} />
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Guardando..." : "Guardar"}
