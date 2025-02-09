@@ -1,15 +1,12 @@
 
 export interface AccountReceivable {
   id: string;
-  invoice_id: number | null;
-  client_id: string | null;
+  user_id: string;
   amount: number;
-  due_date: string;
-  status: 'pending' | 'paid' | 'overdue';
-  notes: string | null;
+  description: string;
+  invoice_id: number;
   created_at: string;
-  payment_id: string | null;
-  expense_id: string | null;
+  status: 'pending' | 'paid';
   client?: {
     name: string;
     rfc: string;

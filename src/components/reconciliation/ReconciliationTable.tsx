@@ -83,10 +83,10 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
 
         remainingExpenseAmount -= reconciliationAmount;
 
-        // If there's remaining invoice amount, create accounts payable record
+        // If there's remaining invoice amount, create accounts receivable record
         if (invoice.total_amount > reconciliationAmount) {
           const { error: payableError } = await supabase
-            .from("accounts_payable_expenses")
+            .from("accounts_receivable")
             .insert([{
               user_id: user!.id,
               invoice_id: invoice.id,

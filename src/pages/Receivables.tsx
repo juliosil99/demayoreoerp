@@ -28,10 +28,10 @@ const Receivables = () => {
         .from("accounts_receivable")
         .select(`
           *,
-          client:contacts(name, rfc),
-          invoice:invoices(invoice_number, invoice_date)
+          client:contacts!accounts_receivable_client_id_fkey(name, rfc),
+          invoice:invoices!accounts_receivable_invoice_id_fkey(invoice_number, invoice_date)
         `)
-        .order('due_date', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as AccountReceivable[];
@@ -140,9 +140,8 @@ const Receivables = () => {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Factura</TableHead>
                   <TableHead>Monto</TableHead>
-                  <TableHead>Fecha de Vencimiento</TableHead>
+                  <TableHead>Descripción</TableHead>
                   <TableHead>Estado</TableHead>
-                  <TableHead>Notas</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -150,13 +149,15 @@ const Receivables = () => {
                 {receivables?.map((receivable) => (
                   <TableRow key={receivable.id}>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{receivable.client?.name}</div>
-                        <div className="text-sm text-muted-foreground">{receivable.client?.rfc}</div>
-                      </div>
+                      {receivable.client && (
+                        <div>
+                          <div className="font-medium">{receivable.client.name}</div>
+                          <div className="text-sm text-muted-foreground">{receivable.client.rfc}</div>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
-                      {receivable.invoice?.invoice_number && (
+                      {receivable.invoice && (
                         <div>
                           <div>{receivable.invoice.invoice_number}</div>
                           <div className="text-sm text-muted-foreground">
@@ -166,14 +167,12 @@ const Receivables = () => {
                       )}
                     </TableCell>
                     <TableCell>{formatCurrency(receivable.amount)}</TableCell>
-                    <TableCell>{format(new Date(receivable.due_date), 'dd/MM/yyyy')}</TableCell>
+                    <TableCell>{receivable.description}</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(receivable.status)}>
-                        {receivable.status === 'pending' ? 'Pendiente' : 
-                         receivable.status === 'paid' ? 'Pagado' : 'Vencido'}
+                        {receivable.status === 'pending' ? 'Pendiente' : 'Pagado'}
                       </Badge>
                     </TableCell>
-                    <TableCell>{receivable.notes}</TableCell>
                     <TableCell>
                       {receivable.status === 'pending' && (
                         <Button
