@@ -1,12 +1,14 @@
 
+interface Totals {
+  subtotal: number;
+  commission: number;
+  shipping: number;
+  retention: number;
+  total: number;
+}
+
 interface TotalsSummaryProps {
-  totals: {
-    subtotal: number;
-    commission: number;
-    shipping: number;
-    retention: number;
-    total: number;
-  };
+  totals: Totals;
 }
 
 export function TotalsSummary({ totals }: TotalsSummaryProps) {

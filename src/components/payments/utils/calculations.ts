@@ -6,7 +6,15 @@ interface Sale {
   retention?: number;
 }
 
-export const calculateTotals = (sales: Sale[]) => {
+interface Totals {
+  subtotal: number;
+  commission: number;
+  shipping: number;
+  retention: number;
+  total: number;
+}
+
+export const calculateTotals = (sales: Sale[]): Totals => {
   return sales?.reduce((acc, sale) => ({
     subtotal: acc.subtotal + (sale.price || 0),
     commission: acc.commission + (sale.comission || 0),
@@ -19,5 +27,5 @@ export const calculateTotals = (sales: Sale[]) => {
     shipping: 0,
     retention: 0,
     total: 0
-  });
+  } as Totals);
 };
