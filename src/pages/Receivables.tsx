@@ -28,8 +28,8 @@ const Receivables = () => {
         .from("accounts_receivable")
         .select(`
           *,
-          client:contacts!accounts_receivable_client_id_fkey(name, rfc),
-          invoice:invoices!accounts_receivable_invoice_id_fkey(invoice_number, invoice_date)
+          client:contacts(name, rfc),
+          invoice:invoices(invoice_number, invoice_date)
         `)
         .order('created_at', { ascending: false });
 

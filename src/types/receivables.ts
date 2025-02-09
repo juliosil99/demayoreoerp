@@ -5,6 +5,7 @@ export interface AccountReceivable {
   amount: number;
   description: string;
   invoice_id: number;
+  client_id?: string;
   created_at: string;
   status: 'pending' | 'paid';
   client?: {
