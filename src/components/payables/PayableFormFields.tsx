@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UseFormReturn } from "react-hook-form";
-import { useClientQuery, useUnpaidInvoicesQuery } from "../hooks/usePayableQueries";
+import { useClientQuery, useUnpaidInvoicesQuery } from "./hooks/usePayableQueries";
 
 interface PayableFormData {
   client_id: string;
