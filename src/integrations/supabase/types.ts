@@ -54,6 +54,67 @@ export type Database = {
           },
         ]
       }
+      accounts_receivable: {
+        Row: {
+          amount: number
+          client_id: string | null
+          created_at: string | null
+          due_date: string
+          id: string
+          invoice_id: number | null
+          notes: string | null
+          payment_id: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          created_at?: string | null
+          due_date: string
+          id?: string
+          invoice_id?: number | null
+          notes?: string | null
+          payment_id?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          invoice_id?: number | null
+          notes?: string | null
+          payment_id?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_receivable_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_receivable_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_receivable_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_accounts: {
         Row: {
           balance: number | null
