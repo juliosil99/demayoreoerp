@@ -20,6 +20,7 @@ export type Database = {
           invoice_id: number | null
           notes: string | null
           payment_id: string | null
+          payment_term: number
           status: string | null
           user_id: string
         }
@@ -33,6 +34,7 @@ export type Database = {
           invoice_id?: number | null
           notes?: string | null
           payment_id?: string | null
+          payment_term?: number
           status?: string | null
           user_id: string
         }
@@ -46,6 +48,7 @@ export type Database = {
           invoice_id?: number | null
           notes?: string | null
           payment_id?: string | null
+          payment_term?: number
           status?: string | null
           user_id?: string
         }

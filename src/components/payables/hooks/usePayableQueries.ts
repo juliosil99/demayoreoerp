@@ -4,12 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const useClientQuery = () => {
   return useQuery({
-    queryKey: ["clients"],
+    queryKey: ["suppliers"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contacts")
         .select("id, name, rfc")
-        .eq("type", "client");
+        .eq("type", "supplier");
 
       if (error) throw error;
       return data;

@@ -10,6 +10,7 @@ interface PayableFormData {
   invoice_id: number | null;
   amount: number;
   due_date: Date;
+  payment_term: number;
   notes: string | null;
 }
 
@@ -23,6 +24,7 @@ export function PayableForm({ onSubmit, isSubmitting }: PayableFormProps) {
     defaultValues: {
       invoice_id: null,
       amount: 0,
+      payment_term: 30,
       notes: null,
     },
   });
