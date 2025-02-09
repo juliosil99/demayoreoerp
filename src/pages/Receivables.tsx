@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +27,7 @@ const Receivables = () => {
         .from("accounts_receivable")
         .select(`
           *,
-          client:contacts(name, rfc),
+          client:contacts!fk_client(name, rfc),
           invoice:invoices(invoice_number, invoice_date)
         `)
         .order('created_at', { ascending: false });
