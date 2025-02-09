@@ -1,9 +1,10 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PaymentForm } from "@/components/payments/PaymentForm";
+import { BulkReconciliationDialog } from "@/components/payments/BulkReconciliationDialog";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +20,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, FileSpreadsheet } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 type Payment = {
   id: string;
@@ -35,7 +37,9 @@ type Payment = {
 
 export default function Payments() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [isAddingPayment, setIsAddingPayment] = useState(false);
+  const [showBulkReconciliation, setShowBulkReconciliation] = useState(false);
 
   const { data: payments, isLoading } = useQuery({
     queryKey: ["payments", user?.id],
@@ -56,6 +60,58 @@ export default function Payments() {
     enabled: !!user,
   });
 
+  const bulkReconcileMutation = useMutation({
+    mutationFn: async ({ salesIds, paymentData }: { 
+      salesIds: number[], 
+      paymentData: {
+        date: string;
+        amount: number;
+        account_id: number;
+        payment_method: string;
+        reference_number?: string;
+      }
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      // First create the payment record
+      const { data: payment, error: paymentError } = await supabase
+        .from('payments')
+        .insert([{
+          ...paymentData,
+          user_id: user.id,
+          status: 'completed'
+        }])
+        .select()
+        .single();
+
+      if (paymentError) throw paymentError;
+
+      // Then update all the sales records with the payment reference
+      const { error: salesError } = await supabase
+        .from('Sales')
+        .update({ 
+          reconciliation_id: payment.id,
+          statusPaid: 'cobrado',
+          datePaid: paymentData.date
+        })
+        .in('id', salesIds);
+
+      if (salesError) throw salesError;
+
+      return payment;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["unreconciled-sales"] });
+      toast.success("Ventas reconciliadas exitosamente");
+      setShowBulkReconciliation(false);
+    },
+    onError: (error) => {
+      console.error("Error en reconciliación:", error);
+      toast.error("Error al reconciliar las ventas");
+    }
+  });
+
   const handleSuccess = () => {
     setIsAddingPayment(false);
   };
@@ -64,21 +120,33 @@ export default function Payments() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Pagos Recibidos</h1>
-        <Dialog open={isAddingPayment} onOpenChange={setIsAddingPayment}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Agregar Pago
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Registrar Nuevo Pago</DialogTitle>
-            </DialogHeader>
-            <PaymentForm onSuccess={handleSuccess} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowBulkReconciliation(true)} variant="outline">
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Reconciliación Masiva
+          </Button>
+          <Dialog open={isAddingPayment} onOpenChange={setIsAddingPayment}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusIcon className="w-4 h-4 mr-2" />
+                Agregar Pago
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Registrar Nuevo Pago</DialogTitle>
+              </DialogHeader>
+              <PaymentForm onSuccess={handleSuccess} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      <BulkReconciliationDialog 
+        open={showBulkReconciliation}
+        onOpenChange={setShowBulkReconciliation}
+        onReconcile={bulkReconcileMutation.mutate}
+      />
 
       <div className="rounded-md border overflow-x-auto">
         <Table>

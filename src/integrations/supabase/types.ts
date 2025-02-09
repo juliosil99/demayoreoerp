@@ -824,6 +824,7 @@ export type Database = {
           Profit: number | null
           profitMargin: number | null
           Quantity: number | null
+          reconciliation_id: string | null
           retention: number | null
           shipping: number | null
           sku: string | null
@@ -852,6 +853,7 @@ export type Database = {
           Profit?: number | null
           profitMargin?: number | null
           Quantity?: number | null
+          reconciliation_id?: string | null
           retention?: number | null
           shipping?: number | null
           sku?: string | null
@@ -880,6 +882,7 @@ export type Database = {
           Profit?: number | null
           profitMargin?: number | null
           Quantity?: number | null
+          reconciliation_id?: string | null
           retention?: number | null
           shipping?: number | null
           sku?: string | null
@@ -887,7 +890,15 @@ export type Database = {
           statusPaid?: string | null
           supplierName?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "Sales_reconciliation_id_fkey"
+            columns: ["reconciliation_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
