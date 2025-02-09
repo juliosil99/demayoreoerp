@@ -20,7 +20,7 @@ const Receivables = () => {
           *,
           accounts_receivable!inner(id, status)
         `)
-        .eq('accounts_receivable.status', 'pending')
+        .eq('statusPaid', 'por cobrar')
         .order('date', { ascending: false });
 
       if (error) throw error;
@@ -33,7 +33,7 @@ const Receivables = () => {
       const { error: saleError } = await supabase
         .from('Sales')
         .update({ 
-          statusPaid: 'paid',
+          statusPaid: 'cobrado',
           datePaid: new Date().toISOString()
         })
         .eq('id', saleId);
@@ -99,7 +99,7 @@ const Receivables = () => {
                     <TableCell>{sale.idClient}</TableCell>
                     <TableCell className="text-right">{sale.price ? formatCurrency(sale.price) : 'N/A'}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">Pendiente</Badge>
+                      <Badge variant="secondary">Por Cobrar</Badge>
                     </TableCell>
                     <TableCell>
                       <Button
