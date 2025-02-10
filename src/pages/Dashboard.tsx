@@ -1,9 +1,10 @@
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Building } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Company {
   nombre: string;
@@ -13,6 +14,7 @@ interface Company {
 }
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -21,7 +23,8 @@ const Dashboard = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          throw new Error("No user found");
+          navigate("/login");
+          return;
         }
 
         const { data, error } = await supabase
@@ -31,6 +34,11 @@ const Dashboard = () => {
           .single();
 
         if (error) {
+          if (error.code === 'PGRST116') {
+            // No company found
+            navigate("/company-setup");
+            return;
+          }
           throw error;
         }
 
@@ -44,7 +52,7 @@ const Dashboard = () => {
     };
 
     fetchCompanyData();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return <div>Cargando...</div>;
