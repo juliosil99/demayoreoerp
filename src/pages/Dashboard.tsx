@@ -27,15 +27,19 @@ const Dashboard = () => {
           return;
         }
 
+        console.log("Fetching company data for user:", user.id); // Debug log
+
         const { data, error } = await supabase
           .from("companies")
           .select("*")
           .eq("user_id", user.id)
           .single();
 
+        console.log("Company data response:", { data, error }); // Debug log
+
         if (error) {
           if (error.code === 'PGRST116') {
-            // No company found
+            console.log("No company found, redirecting to setup"); // Debug log
             navigate("/company-setup");
             return;
           }
@@ -55,7 +59,11 @@ const Dashboard = () => {
   }, [navigate]);
 
   if (loading) {
-    return <div>Cargando...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="text-muted-foreground">Cargando...</div>
+      </div>
+    );
   }
 
   return (
@@ -73,6 +81,14 @@ const Dashboard = () => {
             <p><span className="font-medium">RFC:</span> {company.rfc}</p>
             <p><span className="font-medium">Código Postal:</span> {company.codigo_postal}</p>
             <p><span className="font-medium">Régimen Fiscal:</span> {company.regimen_fiscal}</p>
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/company-setup")}
+            >
+              Editar Información
+            </Button>
           </div>
         </div>
       ) : (
