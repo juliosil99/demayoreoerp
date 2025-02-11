@@ -3,23 +3,28 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Building } from "lucide-react";
+import { Building, CreditCard, BanknoteIcon, ReceiptIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { format, subDays } from "date-fns";
 
-interface Company {
-  nombre: string;
-  rfc: string;
-  codigo_postal: string;
-  regimen_fiscal: string;
+interface DashboardMetrics {
+  yesterdaySales: number;
+  unreconciled: number;
+  receivablesPending: number;
 }
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [company, setCompany] = useState<Company | null>(null);
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
+    yesterdaySales: 0,
+    unreconciled: 0,
+    receivablesPending: 0
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCompanyData = async () => {
+    const fetchMetrics = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -27,36 +32,55 @@ const Dashboard = () => {
           return;
         }
 
-        console.log("Fetching company data for user:", user.id);
+        const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
 
-        const { data, error } = await supabase
-          .from("companies")
-          .select("*")
-          .eq("user_id", user.id)
-          .single();
+        // Fetch yesterday's sales
+        const { data: salesData, error: salesError } = await supabase
+          .from("Sales")
+          .select('price')
+          .eq('date', yesterday);
 
-        console.log("Company data response:", { data, error });
+        if (salesError) throw salesError;
 
-        if (error) {
-          if (error.code === 'PGRST116') {
-            console.log("No company found, redirecting to setup");
-            navigate("/company-setup");
-            return;
-          }
-          throw error;
-        }
+        // Fetch unreconciled expenses
+        const { data: unreconciledData, error: unreconciledError } = await supabase
+          .from("expenses")
+          .select('amount')
+          .is('expense_invoice_relations', null);
 
-        setCompany(data);
+        if (unreconciledError) throw unreconciledError;
+
+        // Fetch pending receivables
+        const { data: receivablesData, error: receivablesError } = await supabase
+          .from("accounts_receivable")
+          .select('amount')
+          .eq('status', 'pending');
+
+        if (receivablesError) throw receivablesError;
+
+        setMetrics({
+          yesterdaySales: salesData?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0,
+          unreconciled: unreconciledData?.reduce((sum, exp) => sum + (exp.amount || 0), 0) || 0,
+          receivablesPending: receivablesData?.reduce((sum, rec) => sum + (rec.amount || 0), 0) || 0
+        });
+
       } catch (error) {
-        console.error("Error fetching company:", error);
-        toast.error("Error al cargar datos de la empresa");
+        console.error("Error fetching metrics:", error);
+        toast.error("Error al cargar métricas del panel");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCompanyData();
+    fetchMetrics();
   }, [navigate]);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(amount);
+  };
 
   if (loading) {
     return (
@@ -73,27 +97,43 @@ const Dashboard = () => {
         <h1 className="text-2xl font-bold">Panel de Control</h1>
       </div>
       
-      {company ? (
-        <div className="grid gap-4 p-6 border rounded-lg bg-card">
-          <h2 className="text-xl font-semibold">Información de la Empresa</h2>
-          <div className="grid gap-2">
-            <p><span className="font-medium">Nombre:</span> {company.nombre}</p>
-            <p><span className="font-medium">RFC:</span> {company.rfc}</p>
-            <p><span className="font-medium">Código Postal:</span> {company.codigo_postal}</p>
-            <p><span className="font-medium">Régimen Fiscal:</span> {company.regimen_fiscal}</p>
-          </div>
-          <div className="flex justify-end mt-4">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/company-setup?edit=true")}
-            >
-              Editar Información
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <p className="text-muted-foreground">No se encontró información de la empresa.</p>
-      )}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Ventas de Ayer
+            </CardTitle>
+            <BanknoteIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.yesterdaySales)}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Gastos por Conciliar
+            </CardTitle>
+            <ReceiptIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.unreconciled)}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Cuentas por Cobrar
+            </CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.receivablesPending)}</div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
