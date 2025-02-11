@@ -17,6 +17,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as z from "zod";
+import type { Database } from "@/integrations/supabase/types/base";
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 const profileFormSchema = z.object({
   first_name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -41,7 +44,7 @@ export default function Profile() {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Profile;
     },
   });
 
