@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, Loader2 } from "lucide-react";
 import type { BaseFieldProps } from "../types";
 import type { SelectOption } from "../types";
 
@@ -30,7 +30,7 @@ interface Props extends BaseFieldProps {
   chartAccounts: SelectOption[];
 }
 
-export function DescriptionAccountFields({ formData, setFormData, bankAccounts, chartAccounts }: Props) {
+export function DescriptionAccountFields({ formData, setFormData, bankAccounts = [], chartAccounts = [] }: Props) {
   const [openChartAccount, setOpenChartAccount] = useState(false);
 
   return (
@@ -54,7 +54,7 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts, 
             <SelectValue placeholder="Seleccionar cuenta" />
           </SelectTrigger>
           <SelectContent>
-            {bankAccounts?.map((account) => (
+            {bankAccounts.map((account) => (
               <SelectItem key={account.id} value={String(account.id)}>
                 {account.name}
               </SelectItem>
@@ -79,7 +79,7 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts, 
               <CommandInput placeholder="Buscar cuenta de gasto..." />
               <CommandEmpty>No se encontraron cuentas.</CommandEmpty>
               <CommandGroup className="max-h-60 overflow-auto">
-                {chartAccounts?.map((account) => (
+                {chartAccounts.map((account) => (
                   <CommandItem
                     key={account.id}
                     value={String(account.id)}

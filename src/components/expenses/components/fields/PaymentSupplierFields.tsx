@@ -21,14 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, Loader2 } from "lucide-react";
 import type { BaseFieldProps, SelectOption } from "../types";
 
 interface Props extends BaseFieldProps {
   suppliers: SelectOption[];
 }
 
-export function PaymentSupplierFields({ formData, setFormData, suppliers }: Props) {
+export function PaymentSupplierFields({ formData, setFormData, suppliers = [] }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -67,7 +67,7 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers }: Prop
               <CommandInput placeholder="Buscar proveedor..." />
               <CommandEmpty>No se encontraron proveedores.</CommandEmpty>
               <CommandGroup className="max-h-60 overflow-auto">
-                {suppliers?.map((supplier) => (
+                {suppliers.map((supplier) => (
                   <CommandItem
                     key={supplier.id}
                     value={String(supplier.id)}
