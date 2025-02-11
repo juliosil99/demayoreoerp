@@ -20,6 +20,7 @@ import Reports from "@/pages/Reports";
 import Accounting from "@/pages/Accounting";
 import Receivables from "@/pages/Receivables";
 import Payables from "@/pages/Payables";
+import Profile from "@/pages/Profile";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ function App() {
               >
                 <Route index element={<Dashboard />} />
                 <Route path="dashboard" element={<Dashboard />} />
+                <Route path="profile" element={<Profile />} />
                 <Route path="sales" element={<Sales />} />
                 <Route path="sales/payments" element={<Payments />} />
                 <Route path="sales/invoices" element={<Invoices />} />
