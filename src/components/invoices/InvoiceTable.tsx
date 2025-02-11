@@ -1,3 +1,4 @@
+
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { FileText, Check, X } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
@@ -53,15 +54,15 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>File Name</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Invoice Number</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Issuer</TableHead>
-            <TableHead>Receiver</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead className="text-right">Tax</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>Nombre del Archivo</TableHead>
+            <TableHead>Fecha</TableHead>
+            <TableHead>Número de Factura</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Emisor</TableHead>
+            <TableHead>Receptor</TableHead>
+            <TableHead className="text-right">Monto</TableHead>
+            <TableHead className="text-right">Impuesto</TableHead>
+            <TableHead>Estado</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -112,7 +113,9 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     {getStatusIcon(invoice.status)}
-                    <span>{invoice.status}</span>
+                    <span>{invoice.status === 'completed' ? 'Completado' : 
+                           invoice.status === 'error' ? 'Error' : 
+                           invoice.status}</span>
                   </div>
                 </TableCell>
               </TableRow>

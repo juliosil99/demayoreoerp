@@ -1,9 +1,9 @@
+
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
-import { parseXMLContent } from "@/utils/xml-parser";
 import { processInvoiceFile } from "@/utils/invoice-processor";
 
 export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void }) => {
@@ -45,21 +45,21 @@ export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void 
       }
 
       if (successCount > 0) {
-        toast.success(`Successfully processed ${successCount} invoice(s)`);
+        toast.success(`${successCount} factura(s) procesada(s) exitosamente`);
         onUploadSuccess();
       }
       
       if (errorCount > 0) {
-        toast.error(`Failed to process ${errorCount} file(s)`);
+        toast.error(`${errorCount} archivo(s) no pudieron ser procesados`);
       }
 
       if (duplicateCount > 0) {
-        toast.warning(`Skipped ${duplicateCount} duplicate invoice(s)`);
+        toast.warning(`${duplicateCount} factura(s) duplicada(s) omitida(s)`);
       }
 
     } catch (error) {
       console.error("Error uploading files:", error);
-      toast.error("Error uploading and processing files");
+      toast.error("Error al subir y procesar archivos");
     } finally {
       setUploading(false);
     }
@@ -77,11 +77,11 @@ export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void 
       />
       <Button disabled={uploading}>
         {uploading ? (
-          "Uploading..."
+          "Subiendo..."
         ) : (
           <>
             <Upload className="mr-2 h-4 w-4" />
-            Upload XML
+            Subir XML
           </>
         )}
       </Button>
