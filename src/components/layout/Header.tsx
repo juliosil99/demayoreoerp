@@ -60,7 +60,7 @@ export function Header({ children }: HeaderProps) {
                 <User className="mr-2 h-4 w-4" />
                 Perfil
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/company-setup?edit=true")}>
                 <Building2 className="mr-2 h-4 w-4" />
                 Empresa
               </DropdownMenuItem>
