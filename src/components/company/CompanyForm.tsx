@@ -2,34 +2,16 @@
 import { useForm } from "react-hook-form";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react"; // Added this import
+import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
 import { useNavigate } from "react-router-dom";
-import { useTaxRegimes } from "@/hooks/company/useTaxRegimes";
-
-type CompanyFormData = {
-  nombre: string;
-  rfc: string;
-  codigo_postal: string;
-  regimen_fiscal: string;
-};
+import { CompanyFormData } from "./types";
+import { CompanyNameField } from "./form-fields/CompanyNameField";
+import { RFCField } from "./form-fields/RFCField";
+import { PostalCodeField } from "./form-fields/PostalCodeField";
+import { TaxRegimeField } from "./form-fields/TaxRegimeField";
 
 interface CompanyFormProps {
   defaultValues?: CompanyFormData;
@@ -40,7 +22,6 @@ interface CompanyFormProps {
 
 export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess }: CompanyFormProps) {
   const navigate = useNavigate();
-  const { taxRegimes } = useTaxRegimes();
   const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<CompanyFormData>({
@@ -87,72 +68,10 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="nombre"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nombre de la Empresa</FormLabel>
-              <FormControl>
-                <Input placeholder="Nombre de la empresa" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="rfc"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>RFC</FormLabel>
-              <FormControl>
-                <Input placeholder="RFC" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="codigo_postal"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Código Postal</FormLabel>
-              <FormControl>
-                <Input placeholder="Código Postal" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="regimen_fiscal"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Régimen Fiscal</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un régimen fiscal" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {taxRegimes.map((regime) => (
-                    <SelectItem key={regime.key} value={regime.key}>
-                      {regime.key} - {regime.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <CompanyNameField form={form} />
+        <RFCField form={form} />
+        <PostalCodeField form={form} />
+        <TaxRegimeField form={form} />
 
         <Button
           type="submit"
