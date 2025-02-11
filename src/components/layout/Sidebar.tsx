@@ -15,12 +15,14 @@ import {
   BookOpen,
   UserCog,
   ChevronRight,
+  Building,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Panel de Control", to: "/" },
+  { icon: Building, label: "Mi Empresa", to: "/company-setup" },
   {
     icon: DollarSign,
     label: "Ventas",
