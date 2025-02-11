@@ -1,3 +1,4 @@
+
 import type { InvoiceProductsTable } from './invoice-products'
 import type { InvoicesTable } from './invoice'
 import type { SalesTable } from './sales'
@@ -20,21 +21,21 @@ export type Database = {
           id: string
           first_name: string | null
           last_name: string | null
-          phone: string | null
+          email: string | null
           created_at: string | null
         }
         Insert: {
           id: string
           first_name?: string | null
           last_name?: string | null
-          phone?: string | null
+          email?: string | null
           created_at?: string | null
         }
         Update: {
           id?: string
           first_name?: string | null
           last_name?: string | null
-          phone?: string | null
+          email?: string | null
           created_at?: string | null
         }
         Relationships: [
@@ -69,3 +70,4 @@ export type Database = {
 }
 
 export type PublicSchema = Database[Extract<keyof Database, "public">]
+
