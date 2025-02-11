@@ -88,6 +88,7 @@ export default function Profile() {
         title: "Perfil actualizado",
         description: "Tu perfil ha sido actualizado exitosamente",
       });
+      // Invalidate and refetch profile data
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
     onError: (error) => {
@@ -156,7 +157,12 @@ export default function Profile() {
                   </FormItem>
                 )}
               />
-              <Button type="submit">Guardar Cambios</Button>
+              <Button 
+                type="submit" 
+                disabled={updateProfile.isPending}
+              >
+                {updateProfile.isPending ? "Guardando..." : "Guardar Cambios"}
+              </Button>
             </form>
           </Form>
         </CardContent>
