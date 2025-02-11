@@ -22,14 +22,13 @@ interface DashboardMetrics {
   receivablesPending: number;
 }
 
-interface OldestInvoice {
-  id: number;
-  invoice_date: string | null;
-  invoice_number: string | null;
-  serie: string | null;
-  total_amount: number | null;
-  issuer_name: string | null;
-  receiver_name: string | null;
+interface OldestExpense {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  supplier_id: string | null;
+  payment_method: string;
 }
 
 const Dashboard = () => {
@@ -39,7 +38,7 @@ const Dashboard = () => {
     unreconciled: 0,
     receivablesPending: 0
   });
-  const [oldestInvoice, setOldestInvoice] = useState<OldestInvoice | null>(null);
+  const [oldestExpense, setOldestExpense] = useState<OldestExpense | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,7 +63,7 @@ const Dashboard = () => {
         // First get all reconciled invoice IDs
         const { data: relations, error: relationsError } = await supabase
           .from('expense_invoice_relations')
-          .select('invoice_id');
+          .select('expense_id');
 
         if (relationsError) throw relationsError;
 
@@ -76,8 +75,8 @@ const Dashboard = () => {
         if (expensesError) throw expensesError;
 
         // Filter out reconciled expenses
-        const reconciledInvoiceIds = relations?.map(r => r.invoice_id) || [];
-        const unreconciledExpenses = expenses || [];
+        const reconciledExpenseIds = relations?.map(r => r.expense_id) || [];
+        const unreconciledExpenses = expenses?.filter(exp => !reconciledExpenseIds.includes(exp.id)) || [];
 
         // Fetch pending receivables
         const { data: receivablesData, error: receivablesError } = await supabase
@@ -87,23 +86,23 @@ const Dashboard = () => {
 
         if (receivablesError) throw receivablesError;
 
-        // Fetch oldest unreconciled invoice
+        // Fetch oldest unreconciled expense
         let query = supabase
-          .from('invoices')
-          .select('id, invoice_date, invoice_number, serie, total_amount, issuer_name, receiver_name')
-          .order('invoice_date', { ascending: true })
+          .from('expenses')
+          .select('id, date, description, amount, supplier_id, payment_method')
+          .order('date', { ascending: true })
           .limit(1);
           
-        if (reconciledInvoiceIds.length > 0) {
-          query = query.not('id', 'in', `(${reconciledInvoiceIds.join(',')})`);
+        if (reconciledExpenseIds.length > 0) {
+          query = query.not('id', 'in', reconciledExpenseIds);
         }
         
-        const { data: oldestInvoiceData, error: oldestInvoiceError } = await query.maybeSingle();
+        const { data: oldestExpenseData, error: oldestExpenseError } = await query.maybeSingle();
 
-        if (oldestInvoiceError) {
-          console.error("Error fetching oldest invoice:", oldestInvoiceError);
+        if (oldestExpenseError) {
+          console.error("Error fetching oldest expense:", oldestExpenseError);
         } else {
-          setOldestInvoice(oldestInvoiceData);
+          setOldestExpense(oldestExpenseData);
         }
 
         setMetrics({
@@ -189,34 +188,28 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {oldestInvoice && (
+      {oldestExpense && (
         <Card>
           <CardHeader>
-            <CardTitle>Factura más Antigua por Conciliar</CardTitle>
+            <CardTitle>Gasto más Antiguo por Conciliar</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
-                  <TableHead>Número de Factura</TableHead>
-                  <TableHead>Emisor</TableHead>
-                  <TableHead>Receptor</TableHead>
-                  <TableHead className="text-right">Monto Total</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead>Método de Pago</TableHead>
+                  <TableHead className="text-right">Monto</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <TableRow>
-                  <TableCell>{formatDate(oldestInvoice.invoice_date)}</TableCell>
-                  <TableCell>
-                    {oldestInvoice.serie 
-                      ? `${oldestInvoice.serie}-${oldestInvoice.invoice_number}` 
-                      : oldestInvoice.invoice_number || '-'}
-                  </TableCell>
-                  <TableCell>{oldestInvoice.issuer_name || '-'}</TableCell>
-                  <TableCell>{oldestInvoice.receiver_name || '-'}</TableCell>
+                  <TableCell>{formatDate(oldestExpense.date)}</TableCell>
+                  <TableCell>{oldestExpense.description || '-'}</TableCell>
+                  <TableCell>{oldestExpense.payment_method || '-'}</TableCell>
                   <TableCell className="text-right">
-                    {formatCurrency(oldestInvoice.total_amount)}
+                    {formatCurrency(oldestExpense.amount)}
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -229,4 +222,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
