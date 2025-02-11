@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ContactForm from "@/components/contacts/ContactForm";
 import ContactList from "@/components/contacts/ContactList";
+import { ContactImporter } from "@/components/contacts/ContactImporter";
 import { Contact } from "@/components/contacts/types";
 
 export default function Contacts() {
@@ -23,14 +24,17 @@ export default function Contacts() {
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Contactos</h1>
-        <Button onClick={() => {
-          if (!isCreating) {
-            setContactToEdit(undefined);
-          }
-          setIsCreating(!isCreating);
-        }}>
-          {isCreating ? "Cancelar" : "Agregar Contacto"}
-        </Button>
+        <div className="flex gap-4">
+          <ContactImporter onSuccess={handleSuccess} />
+          <Button onClick={() => {
+            if (!isCreating) {
+              setContactToEdit(undefined);
+            }
+            setIsCreating(!isCreating);
+          }}>
+            {isCreating ? "Cancelar" : "Agregar Contacto"}
+          </Button>
+        </div>
       </div>
 
       {isCreating && (
