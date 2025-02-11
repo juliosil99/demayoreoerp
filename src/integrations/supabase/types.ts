@@ -1212,6 +1212,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      process_existing_invoices: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
