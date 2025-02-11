@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { ExpenseList } from "@/components/expenses/ExpenseList";
 import { ExpenseFilters } from "@/components/expenses/ExpenseFilters";
+import { ExpenseImporter } from "@/components/expenses/ExpenseImporter";
 import {
   Dialog,
   DialogContent,
@@ -39,7 +40,7 @@ export default function Expenses() {
   const { user } = useAuth();
   const [filters, setFilters] = useState<Filters>({});
 
-  const { data: expenses, isLoading } = useQuery({
+  const { data: expenses, isLoading, refetch } = useQuery({
     queryKey: ["expenses", user?.id, filters],
     queryFn: async () => {
       let query = supabase
@@ -79,20 +80,23 @@ export default function Expenses() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Gastos</h1>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Agregar Gasto
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Agregar Nuevo Gasto</DialogTitle>
-            </DialogHeader>
-            <ExpenseForm />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <ExpenseImporter onSuccess={refetch} />
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusIcon className="w-4 h-4 mr-2" />
+                Agregar Gasto
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Agregar Nuevo Gasto</DialogTitle>
+              </DialogHeader>
+              <ExpenseForm onSuccess={refetch} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <ExpenseFilters filters={filters} onFiltersChange={setFilters} />

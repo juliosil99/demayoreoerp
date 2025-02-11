@@ -403,6 +403,42 @@ export type Database = {
           },
         ]
       }
+      expense_imports: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          filename: string
+          id: string
+          processed_rows: number | null
+          status: string
+          total_rows: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          filename: string
+          id?: string
+          processed_rows?: number | null
+          status?: string
+          total_rows?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          filename?: string
+          id?: string
+          processed_rows?: number | null
+          status?: string
+          total_rows?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       expense_invoice_relations: {
         Row: {
           amount: number | null
