@@ -60,13 +60,13 @@ function App() {
                 <Route path="sales/invoices" element={<Invoices />} />
                 <Route path="expenses" element={<Expenses />} />
                 <Route path="expenses/reconciliation" element={<Reconciliation />} />
+                <Route path="expenses/receivables" element={<Receivables />} />
+                <Route path="expenses/payables" element={<Payables />} />
                 <Route path="contacts" element={<Contacts />} />
                 <Route path="banking" element={<Banking />} />
                 <Route path="accounting" element={<Accounting />} />
                 <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
                 <Route path="reports" element={<Reports />} />
-                <Route path="receivables" element={<Receivables />} />
-                <Route path="payables" element={<Payables />} />
               </Route>
             </Routes>
           </Router>

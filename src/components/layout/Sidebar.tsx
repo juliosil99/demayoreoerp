@@ -35,7 +35,9 @@ const menuItems = [
     label: "Gastos", 
     to: "/expenses",
     submenu: [
-      { icon: ArrowLeftRight, label: "Conciliación", to: "/expenses/reconciliation" }
+      { icon: ArrowLeftRight, label: "Conciliación", to: "/expenses/reconciliation" },
+      { icon: Receipt, label: "Cuentas por Cobrar", to: "/expenses/receivables" },
+      { icon: Wallet, label: "Cuentas por Pagar", to: "/expenses/payables" }
     ]
   },
   { icon: Users, label: "Contactos", to: "/contacts" },
@@ -47,8 +49,6 @@ const menuItems = [
       { icon: BookOpen, label: "Catálogo de Cuentas", to: "/accounting/chart-of-accounts" }
     ]
   },
-  { icon: Receipt, label: "Cuentas por Cobrar", to: "/receivables" },
-  { icon: Wallet, label: "Cuentas por Pagar", to: "/payables" },
   { icon: BanknoteIcon, label: "Bancos", to: "/banking" },
   { icon: FileText, label: "Reportes", to: "/reports" },
   { icon: UserCog, label: "Administrar Usuarios", to: "/users" },
