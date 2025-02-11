@@ -1052,6 +1052,27 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_regimes: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          key: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          key: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          key?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null

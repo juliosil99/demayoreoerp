@@ -23,6 +23,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type CompanyFormData = {
   nombre: string;
@@ -31,11 +38,17 @@ type CompanyFormData = {
   regimen_fiscal: string;
 };
 
+interface TaxRegime {
+  key: string;
+  description: string;
+}
+
 export default function CompanySetup() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [taxRegimes, setTaxRegimes] = useState<TaxRegime[]>([]);
   
   const form = useForm<CompanyFormData>({
     defaultValues: {
@@ -45,6 +58,25 @@ export default function CompanySetup() {
       regimen_fiscal: "",
     },
   });
+
+  useEffect(() => {
+    const loadTaxRegimes = async () => {
+      const { data, error } = await supabase
+        .from('tax_regimes')
+        .select('key, description')
+        .order('key');
+
+      if (error) {
+        console.error("Error loading tax regimes:", error);
+        toast.error("Error al cargar los regímenes fiscales");
+        return;
+      }
+
+      setTaxRegimes(data);
+    };
+
+    loadTaxRegimes();
+  }, []);
 
   useEffect(() => {
     const loadCompanyData = async () => {
@@ -61,15 +93,13 @@ export default function CompanySetup() {
           .single();
 
         if (error) {
-          if (error.code !== 'PGRST116') { // Si no es error de "no data", mostramos el error
+          if (error.code !== 'PGRST116') {
             console.error("Error checking company:", error);
             toast.error("Error al verificar la empresa");
           }
-          // Si no hay datos y no estamos editando, dejamos continuar para crear nueva empresa
           return;
         }
         
-        // Si encontramos datos y venimos del dashboard (edición)
         if (data && window.location.search.includes('edit=true')) {
           setIsEditing(true);
           form.reset({
@@ -79,7 +109,6 @@ export default function CompanySetup() {
             regimen_fiscal: data.regimen_fiscal,
           });
         } else if (data && !window.location.search.includes('edit=true')) {
-          // Si hay datos pero no estamos editando, redirigimos al dashboard
           navigate("/dashboard");
         }
       } catch (error) {
@@ -196,9 +225,20 @@ export default function CompanySetup() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Régimen Fiscal</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Régimen Fiscal" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un régimen fiscal" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {taxRegimes.map((regime) => (
+                          <SelectItem key={regime.key} value={regime.key}>
+                            {regime.key} - {regime.description}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
