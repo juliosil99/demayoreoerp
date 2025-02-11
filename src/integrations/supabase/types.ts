@@ -517,19 +517,23 @@ export type Database = {
         Row: {
           certificate_number: string | null
           cfdi_stamp: string | null
+          complement_type: string | null
           content_type: string | null
           created_at: string | null
           currency: string | null
           exchange_rate: number | null
           file_path: string
           filename: string
+          global_periodic_number: string | null
           id: number
           invoice_date: string | null
+          invoice_effect: string | null
           invoice_number: string | null
           invoice_type: string | null
           issuer_name: string | null
           issuer_rfc: string | null
           issuer_tax_regime: string | null
+          month_period: number | null
           paid_amount: number | null
           payment_form: string | null
           payment_method: string | null
@@ -551,23 +555,28 @@ export type Database = {
           uuid: string | null
           version: string | null
           xml_content: string | null
+          year_period: number | null
         }
         Insert: {
           certificate_number?: string | null
           cfdi_stamp?: string | null
+          complement_type?: string | null
           content_type?: string | null
           created_at?: string | null
           currency?: string | null
           exchange_rate?: number | null
           file_path: string
           filename: string
+          global_periodic_number?: string | null
           id?: number
           invoice_date?: string | null
+          invoice_effect?: string | null
           invoice_number?: string | null
           invoice_type?: string | null
           issuer_name?: string | null
           issuer_rfc?: string | null
           issuer_tax_regime?: string | null
+          month_period?: number | null
           paid_amount?: number | null
           payment_form?: string | null
           payment_method?: string | null
@@ -589,23 +598,28 @@ export type Database = {
           uuid?: string | null
           version?: string | null
           xml_content?: string | null
+          year_period?: number | null
         }
         Update: {
           certificate_number?: string | null
           cfdi_stamp?: string | null
+          complement_type?: string | null
           content_type?: string | null
           created_at?: string | null
           currency?: string | null
           exchange_rate?: number | null
           file_path?: string
           filename?: string
+          global_periodic_number?: string | null
           id?: number
           invoice_date?: string | null
+          invoice_effect?: string | null
           invoice_number?: string | null
           invoice_type?: string | null
           issuer_name?: string | null
           issuer_rfc?: string | null
           issuer_tax_regime?: string | null
+          month_period?: number | null
           paid_amount?: number | null
           payment_form?: string | null
           payment_method?: string | null
@@ -627,6 +641,7 @@ export type Database = {
           uuid?: string | null
           version?: string | null
           xml_content?: string | null
+          year_period?: number | null
         }
         Relationships: []
       }
@@ -946,6 +961,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sat_report_configurations: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          normal_complement: string
+          period_month: number
+          period_year: number
+          report_type: string
+          status: string | null
+          submitted_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          normal_complement?: string
+          period_month: number
+          period_year: number
+          report_type: string
+          status?: string | null
+          submitted_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          normal_complement?: string
+          period_month?: number
+          period_year?: number
+          report_type?: string
+          status?: string | null
+          submitted_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       tax_rates: {
         Row: {
