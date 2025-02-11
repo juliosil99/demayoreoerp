@@ -27,7 +27,7 @@ const Dashboard = () => {
           return;
         }
 
-        console.log("Fetching company data for user:", user.id); // Debug log
+        console.log("Fetching company data for user:", user.id);
 
         const { data, error } = await supabase
           .from("companies")
@@ -35,11 +35,11 @@ const Dashboard = () => {
           .eq("user_id", user.id)
           .single();
 
-        console.log("Company data response:", { data, error }); // Debug log
+        console.log("Company data response:", { data, error });
 
         if (error) {
           if (error.code === 'PGRST116') {
-            console.log("No company found, redirecting to setup"); // Debug log
+            console.log("No company found, redirecting to setup");
             navigate("/company-setup");
             return;
           }
@@ -85,7 +85,7 @@ const Dashboard = () => {
           <div className="flex justify-end mt-4">
             <Button
               variant="outline"
-              onClick={() => navigate("/company-setup")}
+              onClick={() => navigate("/company-setup?edit=true")}
             >
               Editar Información
             </Button>
