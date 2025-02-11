@@ -1,12 +1,37 @@
+
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { Outlet } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Add ResizeObserver cleanup
+  useEffect(() => {
+    const resizeCallback = () => {
+      // Debounce resize events
+      window.requestAnimationFrame(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+    };
+
+    const resizeObserver = new ResizeObserver(resizeCallback);
+    const element = document.documentElement;
+    
+    if (element) {
+      resizeObserver.observe(element);
+    }
+
+    return () => {
+      if (element) {
+        resizeObserver.unobserve(element);
+      }
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   return (
     <div className="flex h-screen bg-background">
