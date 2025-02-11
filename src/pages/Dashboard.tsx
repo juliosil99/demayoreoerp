@@ -42,14 +42,16 @@ const Dashboard = () => {
 
         if (salesError) throw salesError;
 
-        // Fetch unreconciled expenses (those not in expense_invoice_relations)
+        // First get all reconciled expense IDs
+        const { data: reconciledIds } = await supabase
+          .from('expense_invoice_relations')
+          .select('expense_id');
+
+        // Then fetch expenses not in the reconciled list
         const { data: unreconciledData, error: unreconciledError } = await supabase
           .from("expenses")
           .select('amount')
-          .not('id', 'in', (sq) => 
-            sq.from('expense_invoice_relations')
-              .select('expense_id')
-          );
+          .not('id', 'in', reconciledIds?.map(r => r.expense_id) || []);
 
         if (unreconciledError) throw unreconciledError;
 
