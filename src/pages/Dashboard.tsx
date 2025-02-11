@@ -71,13 +71,13 @@ const Dashboard = () => {
         // Get all expenses
         const { data: expenses, error: expensesError } = await supabase
           .from("expenses")
-          .select('amount, id');  // Added id to the selection
+          .select('amount, id');
 
         if (expensesError) throw expensesError;
 
         // Filter out reconciled expenses
-        const reconciledIds = new Set(relations?.map(r => r.expense_id));
-        const unreconciledExpenses = expenses?.filter(exp => !reconciledIds.has(exp.id)) || [];
+        const reconciledInvoiceIds = relations?.map(r => r.invoice_id) || [];
+        const unreconciledExpenses = expenses || [];
 
         // Fetch pending receivables
         const { data: receivablesData, error: receivablesError } = await supabase
@@ -88,14 +88,17 @@ const Dashboard = () => {
         if (receivablesError) throw receivablesError;
 
         // Fetch oldest unreconciled invoice
-        const reconciledInvoiceIds = relations?.map(r => r.invoice_id) || [];
-        const { data: oldestInvoiceData, error: oldestInvoiceError } = await supabase
+        let query = supabase
           .from('invoices')
           .select('id, invoice_date, invoice_number, serie, total_amount, issuer_name, receiver_name')
-          .not('id', 'in', reconciledInvoiceIds)
           .order('invoice_date', { ascending: true })
-          .limit(1)
-          .single();
+          .limit(1);
+          
+        if (reconciledInvoiceIds.length > 0) {
+          query = query.not('id', 'in', `(${reconciledInvoiceIds.join(',')})`);
+        }
+        
+        const { data: oldestInvoiceData, error: oldestInvoiceError } = await query.maybeSingle();
 
         if (oldestInvoiceError) {
           console.error("Error fetching oldest invoice:", oldestInvoiceError);
@@ -226,3 +229,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
