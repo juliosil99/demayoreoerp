@@ -29,16 +29,29 @@ export default function ContactList({ onEdit }: ContactListProps) {
   const deleteContact = useMutation({
     mutationFn: async (id: string) => {
       // First check if the contact is referenced in expenses
-      const { data: expenses, error: checkError } = await supabase
+      const { data: expenses, error: checkExpensesError } = await supabase
         .from("expenses")
         .select("id")
         .eq("supplier_id", id)
         .limit(1);
 
-      if (checkError) throw checkError;
+      if (checkExpensesError) throw checkExpensesError;
 
       if (expenses && expenses.length > 0) {
         throw new Error("Este contacto no puede ser eliminado porque está referenciado en gastos.");
+      }
+
+      // Check if the contact is referenced in payments
+      const { data: payments, error: checkPaymentsError } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("client_id", id)
+        .limit(1);
+
+      if (checkPaymentsError) throw checkPaymentsError;
+
+      if (payments && payments.length > 0) {
+        throw new Error("Este contacto no puede ser eliminado porque está referenciado en pagos.");
       }
 
       const { error } = await supabase
