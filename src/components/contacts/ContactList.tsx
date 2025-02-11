@@ -38,7 +38,7 @@ export default function ContactList({ onEdit }: ContactListProps) {
       if (checkError) throw checkError;
 
       if (expenses && expenses.length > 0) {
-        throw new Error("This contact cannot be deleted because it is referenced in expenses.");
+        throw new Error("Este contacto no puede ser eliminado porque está referenciado en gastos.");
       }
 
       const { error } = await supabase
@@ -50,26 +50,26 @@ export default function ContactList({ onEdit }: ContactListProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      toast.success("Contact deleted successfully");
+      toast.success("Contacto eliminado exitosamente");
     },
     onError: (error) => {
-      console.error("Error deleting contact:", error);
+      console.error("Error al eliminar contacto:", error);
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Failed to delete contact");
+        toast.error("Error al eliminar contacto");
       }
     },
   });
 
   const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this contact?")) {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este contacto?")) {
       deleteContact.mutate(id);
     }
   };
 
   if (isLoading) {
-    return <div>Loading contacts...</div>;
+    return <div>Cargando contactos...</div>;
   }
 
   return (
@@ -82,12 +82,12 @@ export default function ContactList({ onEdit }: ContactListProps) {
           <div>
             <h3 className="font-semibold">{contact.name}</h3>
             <p className="text-sm text-muted-foreground">
-              {contact.type.charAt(0).toUpperCase() + contact.type.slice(1)} •{" "}
+              {contact.type === 'client' ? 'Cliente' : 'Proveedor'} •{" "}
               {contact.rfc}
             </p>
             {contact.phone && (
               <p className="text-sm text-muted-foreground">
-                Phone: {contact.phone}
+                Teléfono: {contact.phone}
               </p>
             )}
           </div>
@@ -96,7 +96,7 @@ export default function ContactList({ onEdit }: ContactListProps) {
               variant="ghost"
               size="icon"
               onClick={() => onEdit(contact)}
-              title="Edit contact"
+              title="Editar contacto"
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -104,7 +104,7 @@ export default function ContactList({ onEdit }: ContactListProps) {
               variant="ghost"
               size="icon"
               onClick={() => handleDelete(contact.id)}
-              title="Delete contact"
+              title="Eliminar contacto"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

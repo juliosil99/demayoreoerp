@@ -29,7 +29,7 @@ export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
         name="name"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Name</FormLabel>
+            <FormLabel>Nombre</FormLabel>
             <FormControl>
               <Input {...field} />
             </FormControl>
@@ -57,7 +57,7 @@ export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
         name="phone"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Phone</FormLabel>
+            <FormLabel>Teléfono</FormLabel>
             <FormControl>
               <Input {...field} value={field.value || ""} />
             </FormControl>
@@ -71,16 +71,16 @@ export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
         name="type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Type</FormLabel>
+            <FormLabel>Tipo</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="client">Client</SelectItem>
-                <SelectItem value="supplier">Supplier</SelectItem>
+                <SelectItem value="client">Cliente</SelectItem>
+                <SelectItem value="supplier">Proveedor</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -93,7 +93,7 @@ export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
         name="tax_regime"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Tax Regime</FormLabel>
+            <FormLabel>Régimen Fiscal</FormLabel>
             <FormControl>
               <Input {...field} />
             </FormControl>
@@ -107,7 +107,7 @@ export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
         name="postal_code"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Postal Code</FormLabel>
+            <FormLabel>Código Postal</FormLabel>
             <FormControl>
               <Input {...field} />
             </FormControl>
@@ -121,7 +121,7 @@ export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
         name="address"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Address</FormLabel>
+            <FormLabel>Dirección</FormLabel>
             <FormControl>
               <Input {...field} value={field.value || ""} />
             </FormControl>
@@ -132,4 +132,3 @@ export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
     </>
   );
 };
-

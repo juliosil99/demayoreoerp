@@ -45,11 +45,10 @@ export default function ContactForm({ onSuccess, contactToEdit }: ContactFormPro
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <ContactFormFields form={form} />
           <Button type="submit">
-            {contactToEdit ? "Update Contact" : "Create Contact"}
+            {contactToEdit ? "Actualizar Contacto" : "Crear Contacto"}
           </Button>
         </form>
       </Form>
     </div>
   );
 }
-
