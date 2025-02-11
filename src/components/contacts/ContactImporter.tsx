@@ -52,9 +52,19 @@ export function ContactImporter({ onSuccess }: { onSuccess: () => void }) {
           // Validate contact data
           const validatedContact = contactSchema.parse(contactData);
           
+          // Insert contact with all required fields
           const { error } = await supabase
             .from('contacts')
-            .insert([{ ...validatedContact, user_id: user.id }]);
+            .insert([{
+              name: validatedContact.name,
+              rfc: validatedContact.rfc,
+              phone: validatedContact.phone,
+              type: validatedContact.type,
+              tax_regime: validatedContact.tax_regime,
+              postal_code: validatedContact.postal_code,
+              address: validatedContact.address,
+              user_id: user.id
+            }]);
 
           if (error) {
             console.error('Error importing contact:', error);
