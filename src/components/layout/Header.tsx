@@ -56,11 +56,11 @@ export function Header({ children }: HeaderProps) {
   };
 
   return (
-    <header className="bg-white border-b px-4 py-3 md:px-6">
+    <header className="bg-background border-b border-border px-4 py-3 md:px-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {children}
-          <h1 className="text-lg font-medium">Sistema ERP</h1>
+          <h1 className="text-lg font-medium text-foreground">Sistema ERP</h1>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <Button variant="ghost" size="icon" className="hidden md:inline-flex">
