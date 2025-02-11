@@ -34,7 +34,7 @@ const Layout = () => {
   }, []);
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex min-h-screen max-h-screen bg-background overflow-hidden">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -53,7 +53,7 @@ const Layout = () => {
       </div>
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col w-full overflow-hidden">
         <Header>
           <Button
             variant="ghost"
@@ -64,7 +64,7 @@ const Layout = () => {
             <Menu className="h-6 w-6" />
           </Button>
         </Header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6">
           <Outlet />
         </main>
       </div>

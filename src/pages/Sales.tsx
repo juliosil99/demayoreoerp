@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,12 +32,12 @@ const Sales = () => {
   const averageMargin = sales?.reduce((acc, sale) => acc + (sale.profitMargin || 0), 0) / (sales?.length || 1) || 0;
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Resumen de Ventas</h1>
+    <div className="space-y-6 w-full max-w-7xl mx-auto">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Resumen de Ventas</h1>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ventas Totales</CardTitle>
@@ -55,7 +56,7 @@ const Sales = () => {
             <div className="text-2xl font-bold">${totalProfit.toFixed(2)}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="sm:col-span-2 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Margen Promedio</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -70,33 +71,35 @@ const Sales = () => {
         <CardHeader>
           <CardTitle>Ventas Recientes</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>No. Orden</TableHead>
-                <TableHead>Producto</TableHead>
-                <TableHead>ID Cliente</TableHead>
-                <TableHead className="text-right">Monto</TableHead>
-                <TableHead className="text-right">Ganancia</TableHead>
-                <TableHead>Estado</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sales?.map((sale) => (
-                <TableRow key={sale.id}>
-                  <TableCell>{new Date(sale.date || "").toLocaleDateString()}</TableCell>
-                  <TableCell>{sale.orderNumber}</TableCell>
-                  <TableCell>{sale.productName}</TableCell>
-                  <TableCell>{sale.idClient}</TableCell>
-                  <TableCell className="text-right">${sale.price?.toFixed(2) || "0.00"}</TableCell>
-                  <TableCell className="text-right">${sale.Profit?.toFixed(2) || "0.00"}</TableCell>
-                  <TableCell>{sale.statusPaid}</TableCell>
+        <CardContent className="overflow-x-auto">
+          <div className="min-w-[800px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>No. Orden</TableHead>
+                  <TableHead>Producto</TableHead>
+                  <TableHead>ID Cliente</TableHead>
+                  <TableHead className="text-right">Monto</TableHead>
+                  <TableHead className="text-right">Ganancia</TableHead>
+                  <TableHead>Estado</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {sales?.map((sale) => (
+                  <TableRow key={sale.id}>
+                    <TableCell>{new Date(sale.date || "").toLocaleDateString()}</TableCell>
+                    <TableCell>{sale.orderNumber}</TableCell>
+                    <TableCell>{sale.productName}</TableCell>
+                    <TableCell>{sale.idClient}</TableCell>
+                    <TableCell className="text-right">${sale.price?.toFixed(2) || "0.00"}</TableCell>
+                    <TableCell className="text-right">${sale.Profit?.toFixed(2) || "0.00"}</TableCell>
+                    <TableCell>{sale.statusPaid}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

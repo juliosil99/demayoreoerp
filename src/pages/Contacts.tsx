@@ -21,17 +21,20 @@ export default function Contacts() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold">Contactos</h1>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4">
           <ContactImporter onSuccess={handleSuccess} />
-          <Button onClick={() => {
-            if (!isCreating) {
-              setContactToEdit(undefined);
-            }
-            setIsCreating(!isCreating);
-          }}>
+          <Button 
+            className="w-full sm:w-auto"
+            onClick={() => {
+              if (!isCreating) {
+                setContactToEdit(undefined);
+              }
+              setIsCreating(!isCreating);
+            }}
+          >
             {isCreating ? "Cancelar" : "Agregar Contacto"}
           </Button>
         </div>
