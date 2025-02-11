@@ -51,7 +51,7 @@ export default function Payments() {
         .order('date', { ascending: false });
 
       if (error) throw error;
-      return data as PaymentWithRelations[];
+      return data as unknown as PaymentWithRelations[];
     },
     enabled: !!user,
   });
@@ -141,7 +141,7 @@ export default function Payments() {
       payment_method: payment.payment_method,
       reference_number: payment.reference_number,
       client_id: payment.client_id,
-      account_id: payment.account_id,
+      account_id: Number(payment.account_id),
       notes: payment.notes,
     };
     setPaymentToEdit(paymentData);

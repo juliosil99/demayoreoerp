@@ -11,7 +11,7 @@ export type Payment = {
   payment_method: string;
   reference_number: string | null;
   client_id?: string;
-  account_id: string;
+  account_id: number;  // Cambiado de string a number
   notes?: string;
 };
 
