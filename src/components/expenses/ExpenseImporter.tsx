@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
-import { read, utils } from "xlsx";
+import { Upload, Download } from "lucide-react";
+import { read, utils, writeFile } from "xlsx";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import {
@@ -22,6 +22,42 @@ interface ExpenseImporterProps {
 export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
   const [isUploading, setIsUploading] = useState(false);
   const { user } = useAuth();
+
+  const downloadTemplate = () => {
+    const headers = [
+      'Fecha',
+      'Descripción',
+      'Monto',
+      'ID Cuenta',
+      'ID Cuenta Contable',
+      'Método de Pago',
+      'Número de Referencia',
+      'Notas',
+      'ID Proveedor',
+      'Categoría'
+    ];
+
+    const exampleData = [
+      {
+        'Fecha': format(new Date(), 'yyyy-MM-dd'),
+        'Descripción': 'Ejemplo de Gasto',
+        'Monto': '1000.00',
+        'ID Cuenta': '1',
+        'ID Cuenta Contable': 'UUID-de-la-cuenta',
+        'Método de Pago': 'cash',
+        'Número de Referencia': 'REF123',
+        'Notas': 'Ejemplo de notas',
+        'ID Proveedor': 'UUID-del-proveedor',
+        'Categoría': 'Servicios'
+      }
+    ];
+
+    const wb = utils.book_new();
+    const ws = utils.json_to_sheet(exampleData, { header: headers });
+    utils.book_append_sheet(wb, ws, "Template");
+    writeFile(wb, "plantilla_gastos.xlsx");
+    toast.success("Plantilla descargada exitosamente");
+  };
 
   const processFile = async (file: File) => {
     const data = await file.arrayBuffer();
@@ -138,9 +174,15 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
           <DialogTitle>Importar Gastos</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Sube un archivo CSV o XLSX con los siguientes encabezados:
-          </p>
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-muted-foreground">
+              Sube un archivo CSV o XLSX con los siguientes encabezados:
+            </p>
+            <Button variant="outline" onClick={downloadTemplate} size="sm">
+              <Download className="mr-2 h-4 w-4" />
+              Descargar Plantilla
+            </Button>
+          </div>
           <ul className="list-disc list-inside text-sm text-muted-foreground">
             <li>Fecha (Formato: YYYY-MM-DD)</li>
             <li>Descripción</li>
