@@ -94,7 +94,7 @@ const Dashboard = () => {
           .limit(1);
           
         if (reconciledExpenseIds.length > 0) {
-          query = query.not('id', 'in', reconciledExpenseIds);
+          query = query.not('id', 'in', `(${reconciledExpenseIds.join(',')})`);
         }
         
         const { data: oldestExpenseData, error: oldestExpenseError } = await query.maybeSingle();
