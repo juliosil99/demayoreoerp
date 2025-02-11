@@ -6,6 +6,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
+export type TaxDetails = {
+  iva: {
+    transferred: { rate: number; amount: number };
+    retained: { rate: number; amount: number };
+    creditable: { rate: number; amount: number };
+  };
+  isr: {
+    retained: { rate: number; amount: number };
+  };
+  ieps: {
+    transferred: { rate: number; amount: number };
+    retained: { rate: number; amount: number };
+  };
+};
+
 export type ExpenseFormData = {
   date: string;
   description: string;
@@ -18,6 +33,24 @@ export type ExpenseFormData = {
   supplier_id: string;
   category: string;
   tax_amount: string;
+  tax_regime: string;
+  is_deductible: boolean;
+  tax_details: TaxDetails;
+};
+
+const initialTaxDetails: TaxDetails = {
+  iva: {
+    transferred: { rate: 0, amount: 0 },
+    retained: { rate: 0, amount: 0 },
+    creditable: { rate: 0, amount: 0 }
+  },
+  isr: {
+    retained: { rate: 0, amount: 0 }
+  },
+  ieps: {
+    transferred: { rate: 0, amount: 0 },
+    retained: { rate: 0, amount: 0 }
+  }
 };
 
 const initialFormData: ExpenseFormData = {
@@ -32,6 +65,9 @@ const initialFormData: ExpenseFormData = {
   supplier_id: "",
   category: "",
   tax_amount: "",
+  tax_regime: "",
+  is_deductible: true,
+  tax_details: initialTaxDetails,
 };
 
 export function useExpenseForm() {
@@ -63,19 +99,19 @@ export function useExpenseForm() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      toast.success("Expense created successfully");
+      toast.success("Gasto creado exitosamente");
       setFormData(initialFormData);
     },
     onError: (error) => {
       console.error("Error creating expense:", error);
-      toast.error("Failed to create expense");
+      toast.error("Error al crear el gasto");
     },
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast.error("Please log in to perform this action");
+      toast.error("Por favor inicia sesión para realizar esta acción");
       return;
     }
 
