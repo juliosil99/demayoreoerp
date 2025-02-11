@@ -42,17 +42,23 @@ const Dashboard = () => {
 
         if (salesError) throw salesError;
 
-        // First get all expenses that are reconciled
-        const { data: unreconciledData, error: unreconciledError } = await supabase
-          .from("expenses")
-          .select('amount, id')
-          .not('id', 'in', (query) => 
-            query
-              .from('expense_invoice_relations')
-              .select('expense_id')
-          );
+        // First get all reconciled expense IDs
+        const { data: relations, error: relationsError } = await supabase
+          .from('expense_invoice_relations')
+          .select('expense_id');
 
-        if (unreconciledError) throw unreconciledError;
+        if (relationsError) throw relationsError;
+
+        // Get all expenses
+        const { data: expenses, error: expensesError } = await supabase
+          .from("expenses")
+          .select('amount');
+
+        if (expensesError) throw expensesError;
+
+        // Filter out reconciled expenses
+        const reconciledIds = new Set(relations?.map(r => r.expense_id));
+        const unreconciledExpenses = expenses?.filter(exp => !reconciledIds.has(exp.id)) || [];
 
         // Fetch pending receivables
         const { data: receivablesData, error: receivablesError } = await supabase
@@ -64,7 +70,7 @@ const Dashboard = () => {
 
         setMetrics({
           yesterdaySales: salesData?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0,
-          unreconciled: unreconciledData?.reduce((sum, exp) => sum + (exp.amount || 0), 0) || 0,
+          unreconciled: unreconciledExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0),
           receivablesPending: receivablesData?.reduce((sum, rec) => sum + (rec.amount || 0), 0) || 0
         });
 
