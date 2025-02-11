@@ -79,7 +79,7 @@ export default function ContactList({ onEdit }: ContactListProps) {
           key={contact.id}
           className="bg-card border border-border hover:border-primary/20 transition-colors p-4 rounded-lg shadow-sm flex justify-between items-center gap-4"
         >
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 text-left">
             <h3 className="font-semibold text-base truncate">{contact.name}</h3>
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-muted-foreground">
               <span>
