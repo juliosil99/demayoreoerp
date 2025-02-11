@@ -47,10 +47,10 @@ export function ContactImporter({ onSuccess }: { onSuccess: () => void }) {
       let successCount = 0;
       let errorCount = 0;
 
-      for (const contact of contacts) {
+      for (const contactData of contacts) {
         try {
           // Validate contact data
-          const validatedContact = contactSchema.parse(contact);
+          const validatedContact = contactSchema.parse(contactData);
           
           const { error } = await supabase
             .from('contacts')

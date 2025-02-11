@@ -56,9 +56,9 @@ export function BalanceSheet({ userId }: BalanceSheetProps) {
 
       if (receivablesError) throw receivablesError;
 
-      // Fetch accounts payable (unpaid expenses)
+      // Fetch accounts payable
       const { data: payablesData, error: payablesError } = await supabase
-        .from("accounts_payable_expenses")
+        .from("accounts_payable")
         .select("amount")
         .eq("status", "pending")
         .lte("created_at", format(date.to, "yyyy-MM-dd"));
@@ -68,7 +68,7 @@ export function BalanceSheet({ userId }: BalanceSheetProps) {
       // Calculate totals
       const bankTotal = bankAccountsData?.reduce((sum, account) => sum + (account.balance || 0), 0) || 0;
       const receivablesTotal = receivablesData?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0;
-      const payablesTotal = payablesData?.reduce((sum, expense) => sum + (expense.amount || 0), 0) || 0;
+      const payablesTotal = payablesData?.reduce((sum, payable) => sum + (payable.amount || 0), 0) || 0;
 
       // Calculate net income (this is simplified - in a real app you'd want to calculate this properly)
       const { data: salesData, error: salesError } = await supabase
