@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,7 @@ interface ContactListProps {
 export default function ContactList({ onEdit }: ContactListProps) {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "client" | "supplier">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "client" | "supplier" | "employee">("all");
 
   const { data: contacts, isLoading } = useQuery({
     queryKey: ["contacts"],
@@ -112,6 +111,19 @@ export default function ContactList({ onEdit }: ContactListProps) {
     return <div>Cargando contactos...</div>;
   }
 
+  const getContactTypeLabel = (type: string) => {
+    switch (type) {
+      case 'client':
+        return 'Cliente';
+      case 'supplier':
+        return 'Proveedor';
+      case 'employee':
+        return 'Empleado';
+      default:
+        return type;
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4">
@@ -128,7 +140,7 @@ export default function ContactList({ onEdit }: ContactListProps) {
           <Filter className="h-4 w-4 text-muted-foreground" />
           <Select
             value={typeFilter}
-            onValueChange={(value: "all" | "client" | "supplier") => setTypeFilter(value)}
+            onValueChange={(value: "all" | "client" | "supplier" | "employee") => setTypeFilter(value)}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filtrar por tipo" />
@@ -137,6 +149,7 @@ export default function ContactList({ onEdit }: ContactListProps) {
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="client">Clientes</SelectItem>
               <SelectItem value="supplier">Proveedores</SelectItem>
+              <SelectItem value="employee">Empleados</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -152,7 +165,7 @@ export default function ContactList({ onEdit }: ContactListProps) {
               <h3 className="font-semibold text-base truncate">{contact.name}</h3>
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-muted-foreground">
                 <span>
-                  {contact.type === 'client' ? 'Cliente' : 'Proveedor'} • {contact.rfc}
+                  {getContactTypeLabel(contact.type)} • {contact.rfc}
                 </span>
                 {contact.phone && (
                   <>

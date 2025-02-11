@@ -4,7 +4,7 @@ export interface Contact {
   name: string;
   rfc: string;
   phone?: string;
-  type: "client" | "supplier";
+  type: "client" | "supplier" | "employee";
   tax_regime: string;
   postal_code: string;
   address?: string;
@@ -15,7 +15,7 @@ export interface ContactFormValues {
   name: string;
   rfc: string;
   phone?: string;
-  type: "client" | "supplier";
+  type: "client" | "supplier" | "employee";
   tax_regime: string;
   postal_code: string;
   address?: string;

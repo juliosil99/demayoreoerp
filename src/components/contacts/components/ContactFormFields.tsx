@@ -81,6 +81,7 @@ export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
               <SelectContent>
                 <SelectItem value="client">Cliente</SelectItem>
                 <SelectItem value="supplier">Proveedor</SelectItem>
+                <SelectItem value="employee">Empleado</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
