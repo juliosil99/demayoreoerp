@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { PaymentForm } from "@/components/payments/PaymentForm";
+import { PaymentForm, Payment } from "@/components/payments/PaymentForm";
 import { BulkReconciliationDialog } from "@/components/payments/BulkReconciliationDialog";
 import {
   Dialog,
@@ -25,12 +25,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-type Payment = {
-  id: string;
-  date: string;
-  amount: number;
-  payment_method: string;
-  reference_number: string | null;
+type PaymentWithRelations = Payment & {
   contacts: { name: string } | null;
   bank_accounts: { name: string };
 };
@@ -56,7 +51,7 @@ export default function Payments() {
         .order('date', { ascending: false });
 
       if (error) throw error;
-      return data as Payment[];
+      return data as PaymentWithRelations[];
     },
     enabled: !!user,
   });
@@ -138,8 +133,18 @@ export default function Payments() {
     }
   };
 
-  const handleEdit = (payment: Payment) => {
-    setPaymentToEdit(payment);
+  const handleEdit = (payment: PaymentWithRelations) => {
+    const paymentData: Payment = {
+      id: payment.id,
+      date: payment.date,
+      amount: payment.amount,
+      payment_method: payment.payment_method,
+      reference_number: payment.reference_number,
+      client_id: payment.client_id,
+      account_id: payment.account_id,
+      notes: payment.notes,
+    };
+    setPaymentToEdit(paymentData);
     setIsAddingPayment(true);
   };
 
