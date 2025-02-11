@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useExpenseQueries } from "./hooks/useExpenseQueries";
 
 interface ExpenseImporterProps {
   onSuccess: () => void;
@@ -22,8 +22,12 @@ interface ExpenseImporterProps {
 export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
   const [isUploading, setIsUploading] = useState(false);
   const { user } = useAuth();
+  const { bankAccounts, chartAccounts, suppliers } = useExpenseQueries();
 
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
+    const wb = utils.book_new();
+
+    // Hoja principal para captura de gastos
     const headers = [
       'Fecha',
       'Descripción',
@@ -52,9 +56,46 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
       }
     ];
 
-    const wb = utils.book_new();
-    const ws = utils.json_to_sheet(exampleData, { header: headers });
-    utils.book_append_sheet(wb, ws, "Template");
+    // Crear hoja principal de gastos
+    const wsMain = utils.json_to_sheet(exampleData, { header: headers });
+    utils.book_append_sheet(wb, wsMain, "Gastos");
+
+    // Crear hoja de catálogo de cuentas bancarias
+    const bankAccountsData = bankAccounts?.map(account => ({
+      'ID Cuenta': account.id,
+      'Nombre de Cuenta': account.name,
+    })) || [];
+    const wsBankAccounts = utils.json_to_sheet(bankAccountsData);
+    utils.book_append_sheet(wb, wsBankAccounts, "Cuentas Bancarias");
+
+    // Crear hoja de catálogo de cuentas contables
+    const chartAccountsData = chartAccounts?.map(account => ({
+      'ID Cuenta Contable': account.id,
+      'Código': account.code,
+      'Nombre': account.name,
+    })) || [];
+    const wsChartAccounts = utils.json_to_sheet(chartAccountsData);
+    utils.book_append_sheet(wb, wsChartAccounts, "Cuentas Contables");
+
+    // Crear hoja de catálogo de proveedores
+    const suppliersData = suppliers?.map(supplier => ({
+      'ID Proveedor': supplier.id,
+      'Nombre': supplier.name,
+      'RFC': supplier.rfc || '',
+    })) || [];
+    const wsSuppliers = utils.json_to_sheet(suppliersData);
+    utils.book_append_sheet(wb, wsSuppliers, "Proveedores");
+
+    // Crear hoja de métodos de pago
+    const paymentMethodsData = [
+      { 'Código': 'cash', 'Descripción': 'Efectivo' },
+      { 'Código': 'transfer', 'Descripción': 'Transferencia' },
+      { 'Código': 'check', 'Descripción': 'Cheque' },
+      { 'Código': 'credit_card', 'Descripción': 'Tarjeta de Crédito' },
+    ];
+    const wsPaymentMethods = utils.json_to_sheet(paymentMethodsData);
+    utils.book_append_sheet(wb, wsPaymentMethods, "Métodos de Pago");
+
     writeFile(wb, "plantilla_gastos.xlsx");
     toast.success("Plantilla descargada exitosamente");
   };
