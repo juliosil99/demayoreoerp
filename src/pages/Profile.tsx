@@ -24,7 +24,6 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 const profileFormSchema = z.object({
   first_name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   last_name: z.string().min(2, "El apellido debe tener al menos 2 caracteres"),
-  phone: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -47,7 +46,7 @@ export default function Profile() {
       if (!data && !error) {
         const { data: newProfile, error: createError } = await supabase
           .from("profiles")
-          .insert([{ id: user?.id }])
+          .insert([{ id: user?.id, email: user?.email }])
           .select()
           .single();
 
@@ -65,12 +64,10 @@ export default function Profile() {
     defaultValues: {
       first_name: profile?.first_name || "",
       last_name: profile?.last_name || "",
-      phone: profile?.phone || "",
     },
     values: {
       first_name: profile?.first_name || "",
       last_name: profile?.last_name || "",
-      phone: profile?.phone || "",
     },
   });
 
@@ -144,19 +141,16 @@ export default function Profile() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teléfono</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Tu teléfono" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormItem>
+                <FormLabel>Correo Electrónico</FormLabel>
+                <FormControl>
+                  <Input 
+                    value={user?.email || ''} 
+                    disabled 
+                    className="bg-gray-50"
+                  />
+                </FormControl>
+              </FormItem>
               <Button 
                 type="submit" 
                 disabled={updateProfile.isPending}
