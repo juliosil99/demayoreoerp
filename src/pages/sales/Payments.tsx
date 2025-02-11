@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PlusIcon, FileSpreadsheet } from "lucide-react";
+import { PlusIcon, FileSpreadsheet, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -40,6 +40,7 @@ export default function Payments() {
   const queryClient = useQueryClient();
   const [isAddingPayment, setIsAddingPayment] = useState(false);
   const [showBulkReconciliation, setShowBulkReconciliation] = useState(false);
+  const [paymentToEdit, setPaymentToEdit] = useState<Payment | null>(null);
 
   const { data: payments, isLoading } = useQuery({
     queryKey: ["payments", user?.id],
@@ -58,6 +59,25 @@ export default function Payments() {
       return data as Payment[];
     },
     enabled: !!user,
+  });
+
+  const deletePaymentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('payments')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      toast.success("Pago eliminado exitosamente");
+    },
+    onError: (error) => {
+      console.error("Error al eliminar el pago:", error);
+      toast.error("Error al eliminar el pago");
+    }
   });
 
   const bulkReconcileMutation = useMutation({
@@ -112,8 +132,20 @@ export default function Payments() {
     }
   });
 
+  const handleDelete = (id: string) => {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este pago?")) {
+      deletePaymentMutation.mutate(id);
+    }
+  };
+
+  const handleEdit = (payment: Payment) => {
+    setPaymentToEdit(payment);
+    setIsAddingPayment(true);
+  };
+
   const handleSuccess = () => {
     setIsAddingPayment(false);
+    setPaymentToEdit(null);
   };
 
   return (
@@ -134,9 +166,11 @@ export default function Payments() {
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Registrar Nuevo Pago</DialogTitle>
+                <DialogTitle>
+                  {paymentToEdit ? "Editar Pago" : "Registrar Nuevo Pago"}
+                </DialogTitle>
               </DialogHeader>
-              <PaymentForm onSuccess={handleSuccess} />
+              <PaymentForm onSuccess={handleSuccess} paymentToEdit={paymentToEdit} />
             </DialogContent>
           </Dialog>
         </div>
@@ -158,6 +192,7 @@ export default function Payments() {
               <TableHead>Método de Pago</TableHead>
               <TableHead>Referencia</TableHead>
               <TableHead className="text-right">Monto</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -173,6 +208,26 @@ export default function Payments() {
                 </TableCell>
                 <TableCell>{payment.reference_number || '-'}</TableCell>
                 <TableCell className="text-right">${payment.amount.toFixed(2)}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(payment)}
+                      className="h-8 w-8"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(payment.id)}
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
