@@ -27,26 +27,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+
+      // Si la sesión existe pero no hay token de actualización, cerrar sesión
+      if (session && !session.refresh_token) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
     if (error) throw error;
+    
+    // Verificar que tenemos un token de actualización válido
+    if (!data.session?.refresh_token) {
+      throw new Error("No se pudo obtener un token de actualización válido");
+    }
   };
 
   const signUp = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
     });
     if (error) throw error;
   };
@@ -54,6 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    setSession(null);
+    setUser(null);
   };
 
   return (
