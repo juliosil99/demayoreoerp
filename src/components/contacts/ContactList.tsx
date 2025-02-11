@@ -41,17 +41,30 @@ export default function ContactList({ onEdit }: ContactListProps) {
         throw new Error("Este contacto no puede ser eliminado porque está referenciado en gastos.");
       }
 
-      // Check if the contact is referenced in payments
-      const { data: payments, error: checkPaymentsError } = await supabase
+      // Check if the contact is referenced in payments as a client
+      const { data: paymentsAsClient, error: checkPaymentsClientError } = await supabase
         .from("payments")
         .select("id")
         .eq("client_id", id)
         .limit(1);
 
-      if (checkPaymentsError) throw checkPaymentsError;
+      if (checkPaymentsClientError) throw checkPaymentsClientError;
 
-      if (payments && payments.length > 0) {
-        throw new Error("Este contacto no puede ser eliminado porque está referenciado en pagos.");
+      if (paymentsAsClient && paymentsAsClient.length > 0) {
+        throw new Error("Este contacto no puede ser eliminado porque está referenciado en pagos como cliente.");
+      }
+
+      // Check if the contact is referenced in payments as a supplier
+      const { data: paymentsAsSupplier, error: checkPaymentsSupplierError } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("supplier_id", id)
+        .limit(1);
+
+      if (checkPaymentsSupplierError) throw checkPaymentsSupplierError;
+
+      if (paymentsAsSupplier && paymentsAsSupplier.length > 0) {
+        throw new Error("Este contacto no puede ser eliminado porque está referenciado en pagos como proveedor.");
       }
 
       const { error } = await supabase
