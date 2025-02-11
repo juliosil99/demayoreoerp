@@ -46,11 +46,11 @@ const menuItems = [
     label: "Contabilidad", 
     to: "/accounting",
     submenu: [
-      { icon: BookOpen, label: "Catálogo de Cuentas", to: "/accounting/chart-of-accounts" }
+      { icon: BookOpen, label: "Catálogo de Cuentas", to: "/accounting/chart-of-accounts" },
+      { icon: BanknoteIcon, label: "Bancos", to: "/accounting/banking" },
+      { icon: FileText, label: "Reportes", to: "/accounting/reports" }
     ]
   },
-  { icon: BanknoteIcon, label: "Bancos", to: "/banking" },
-  { icon: FileText, label: "Reportes", to: "/reports" },
   { icon: UserCog, label: "Administrar Usuarios", to: "/users" },
 ];
 

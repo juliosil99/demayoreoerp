@@ -63,10 +63,10 @@ function App() {
                 <Route path="expenses/receivables" element={<Receivables />} />
                 <Route path="expenses/payables" element={<Payables />} />
                 <Route path="contacts" element={<Contacts />} />
-                <Route path="banking" element={<Banking />} />
                 <Route path="accounting" element={<Accounting />} />
                 <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
-                <Route path="reports" element={<Reports />} />
+                <Route path="accounting/banking" element={<Banking />} />
+                <Route path="accounting/reports" element={<Reports />} />
               </Route>
             </Routes>
           </Router>
