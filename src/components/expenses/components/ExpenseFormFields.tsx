@@ -4,8 +4,6 @@ import { Input } from "@/components/ui/input";
 import { DateAmountFields } from "./fields/DateAmountFields";
 import { DescriptionAccountFields } from "./fields/DescriptionAccountFields";
 import { PaymentSupplierFields } from "./fields/PaymentSupplierFields";
-import { TaxRegimeFields } from "./fields/TaxRegimeFields";
-import { TaxDetailsFields } from "./TaxDetailsFields";
 import type { ExpenseFormData } from "../hooks/useExpenseForm";
 
 interface ExpenseFormFieldsProps {
@@ -38,7 +36,6 @@ export function ExpenseFormFields({
           setFormData={setFormData}
           suppliers={suppliers}
         />
-        <TaxRegimeFields formData={formData} setFormData={setFormData} />
       </div>
 
       <div className="space-y-2">
@@ -46,14 +43,6 @@ export function ExpenseFormFields({
         <Input
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Detalles de Impuestos</Label>
-        <TaxDetailsFields
-          taxDetails={formData.tax_details}
-          onChange={(taxDetails) => setFormData({ ...formData, tax_details: taxDetails })}
         />
       </div>
     </div>

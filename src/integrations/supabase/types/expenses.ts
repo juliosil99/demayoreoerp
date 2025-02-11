@@ -14,7 +14,6 @@ export interface ExpensesTable {
     notes: string | null
     supplier_id: string | null
     category: string | null
-    tax_amount: number | null
   }
   Insert: {
     id?: string
@@ -30,7 +29,6 @@ export interface ExpensesTable {
     notes?: string | null
     supplier_id?: string | null
     category?: string | null
-    tax_amount?: number | null
   }
   Update: {
     id?: string
@@ -46,6 +44,5 @@ export interface ExpensesTable {
     notes?: string | null
     supplier_id?: string | null
     category?: string | null
-    tax_amount?: number | null
   }
 }

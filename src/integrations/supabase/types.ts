@@ -350,6 +350,7 @@ export type Database = {
           id: string
           invoice_id: number
           reconciled_amount: number | null
+          tax_details: Json | null
         }
         Insert: {
           amount?: number | null
@@ -358,6 +359,7 @@ export type Database = {
           id?: string
           invoice_id: number
           reconciled_amount?: number | null
+          tax_details?: Json | null
         }
         Update: {
           amount?: number | null
@@ -366,6 +368,7 @@ export type Database = {
           id?: string
           invoice_id?: number
           reconciled_amount?: number | null
+          tax_details?: Json | null
         }
         Relationships: [
           {
@@ -394,13 +397,10 @@ export type Database = {
           date: string
           description: string
           id: string
-          is_deductible: boolean | null
           notes: string | null
           payment_method: string
           reference_number: string | null
           supplier_id: string | null
-          tax_amount: number | null
-          tax_details: Json | null
           tax_regime: string | null
           user_id: string
         }
@@ -413,13 +413,10 @@ export type Database = {
           date: string
           description: string
           id?: string
-          is_deductible?: boolean | null
           notes?: string | null
           payment_method: string
           reference_number?: string | null
           supplier_id?: string | null
-          tax_amount?: number | null
-          tax_details?: Json | null
           tax_regime?: string | null
           user_id: string
         }
@@ -432,13 +429,10 @@ export type Database = {
           date?: string
           description?: string
           id?: string
-          is_deductible?: boolean | null
           notes?: string | null
           payment_method?: string
           reference_number?: string | null
           supplier_id?: string | null
-          tax_amount?: number | null
-          tax_details?: Json | null
           tax_regime?: string | null
           user_id?: string
         }
