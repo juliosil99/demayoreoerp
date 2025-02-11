@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ExpenseForm } from "./ExpenseForm";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -48,6 +48,7 @@ interface ExpenseListProps {
 
 export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const handleDelete = async (expense: Expense) => {
@@ -66,6 +67,17 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
       toast.error('Error al eliminar el gasto');
     }
   };
+
+  const handleOpenDialog = useCallback((expense: Expense) => {
+    setSelectedExpense(expense);
+    setIsDialogOpen(true);
+  }, []);
+
+  const handleCloseDialog = useCallback(() => {
+    setIsDialogOpen(false);
+    // Small delay to ensure smooth transitions
+    setTimeout(() => setSelectedExpense(null), 300);
+  }, []);
 
   if (isLoading) {
     return <div>Cargando gastos...</div>;
@@ -116,21 +128,28 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">
-                  <Dialog>
+                  <Dialog open={isDialogOpen && selectedExpense?.id === expense.id} onOpenChange={(open) => {
+                    if (!open) handleCloseDialog();
+                  }}>
                     <DialogTrigger asChild>
                       <Button 
                         variant="outline" 
                         size="icon"
-                        onClick={() => setSelectedExpense(expense)}
+                        onClick={() => handleOpenDialog(expense)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-[600px]">
                       <DialogHeader>
                         <DialogTitle>Editar Gasto</DialogTitle>
                       </DialogHeader>
-                      <ExpenseForm initialData={expense} />
+                      {selectedExpense && (
+                        <ExpenseForm 
+                          initialData={selectedExpense} 
+                          onSuccess={handleCloseDialog}
+                        />
+                      )}
                     </DialogContent>
                   </Dialog>
 

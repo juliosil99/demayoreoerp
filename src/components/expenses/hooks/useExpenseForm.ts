@@ -39,7 +39,7 @@ const initialFormData: ExpenseFormData = {
   category: "",
 };
 
-export function useExpenseForm(initialExpense?: Expense) {
+export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -100,6 +100,7 @@ export function useExpenseForm(initialExpense?: Expense) {
       if (!initialExpense) {
         setFormData(initialFormData);
       }
+      onSuccess?.();
     },
     onError: (error) => {
       console.error("Error with expense:", error);
