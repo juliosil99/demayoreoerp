@@ -11,6 +11,8 @@ export const useReconciliation = () => {
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
   const [selectedInvoices, setSelectedInvoices] = useState<any[]>([]);
   const [remainingAmount, setRemainingAmount] = useState<number>(0);
+  const [showAdjustmentDialog, setShowAdjustmentDialog] = useState(false);
+  const [adjustmentType, setAdjustmentType] = useState<"expense_excess" | "invoice_excess">("expense_excess");
 
   const handleInvoiceSelect = (invoice: any) => {
     const updatedInvoices = [...selectedInvoices, invoice];
@@ -21,13 +23,34 @@ export const useReconciliation = () => {
     const newRemainingAmount = selectedExpense?.amount - totalSelectedAmount;
     setRemainingAmount(newRemainingAmount);
 
-    // If all amount is reconciled, proceed with reconciliation
-    if (newRemainingAmount === 0) {
+    if (newRemainingAmount !== 0) {
+      setAdjustmentType(newRemainingAmount > 0 ? "expense_excess" : "invoice_excess");
+      setShowAdjustmentDialog(true);
+    } else {
       handleReconcile(updatedInvoices);
-    } else if (newRemainingAmount < 0) {
-      // Remove the last added invoice as it would exceed the expense amount
-      setSelectedInvoices(selectedInvoices);
-      toast.error("El monto total de las facturas excede el monto del gasto");
+    }
+  };
+
+  const handleAdjustmentConfirm = async (chartAccountId: string, notes: string) => {
+    try {
+      const { error: adjustmentError } = await supabase
+        .from("accounting_adjustments")
+        .insert([{
+          user_id: user!.id,
+          expense_id: selectedExpense.id,
+          invoice_id: selectedInvoices[selectedInvoices.length - 1].id,
+          amount: Math.abs(remainingAmount),
+          type: adjustmentType,
+          chart_account_id: chartAccountId,
+          notes
+        }]);
+
+      if (adjustmentError) throw adjustmentError;
+
+      handleReconcile(selectedInvoices);
+    } catch (error) {
+      console.error("Error al crear el ajuste:", error);
+      toast.error("Error al crear el ajuste contable");
     }
   };
 
@@ -44,7 +67,8 @@ export const useReconciliation = () => {
           .insert([{
             expense_id: selectedExpense.id,
             invoice_id: invoice.id,
-            reconciled_amount: reconciliationAmount
+            reconciled_amount: reconciliationAmount,
+            paid_amount: reconciliationAmount
           }]);
 
         if (relationError) throw relationError;
@@ -61,20 +85,6 @@ export const useReconciliation = () => {
         if (invoiceError) throw invoiceError;
 
         remainingExpenseAmount -= reconciliationAmount;
-
-        // If there's remaining invoice amount, create accounts receivable record
-        if (invoice.total_amount > reconciliationAmount) {
-          const { error: payableError } = await supabase
-            .from("accounts_receivable")
-            .insert([{
-              user_id: user!.id,
-              invoice_id: invoice.id,
-              amount: invoice.total_amount - reconciliationAmount,
-              description: `Monto pendiente por pagar de factura ${invoice.invoice_number || invoice.uuid}`
-            }]);
-
-          if (payableError) throw payableError;
-        }
       }
 
       toast.success("Gasto conciliado exitosamente");
@@ -92,6 +102,7 @@ export const useReconciliation = () => {
     setSelectedExpense(null);
     setSelectedInvoices([]);
     setRemainingAmount(0);
+    setShowAdjustmentDialog(false);
   };
 
   const [showInvoiceSearch, setShowInvoiceSearch] = useState(false);
@@ -110,6 +121,10 @@ export const useReconciliation = () => {
     setSearchTerm,
     handleInvoiceSelect,
     handleReconcile,
-    resetState
+    resetState,
+    showAdjustmentDialog,
+    setShowAdjustmentDialog,
+    adjustmentType,
+    handleAdjustmentConfirm
   };
 };

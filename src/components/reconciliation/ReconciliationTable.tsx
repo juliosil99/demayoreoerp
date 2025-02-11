@@ -2,6 +2,7 @@
 import { useReconciliation } from "./hooks/useReconciliation";
 import { ExpenseCard } from "./components/ExpenseCard";
 import { InvoiceSearchDialog } from "./components/InvoiceSearchDialog";
+import { AccountAdjustmentDialog } from "./components/AccountAdjustmentDialog";
 
 interface ReconciliationTableProps {
   expenses: any[];
@@ -18,7 +19,11 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
     setShowInvoiceSearch,
     searchTerm,
     setSearchTerm,
-    handleInvoiceSelect
+    handleInvoiceSelect,
+    showAdjustmentDialog,
+    setShowAdjustmentDialog,
+    adjustmentType,
+    handleAdjustmentConfirm
   } = useReconciliation();
 
   const filteredInvoices = invoices.filter((invoice) => {
@@ -56,6 +61,14 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
         onSearchChange={setSearchTerm}
         filteredInvoices={filteredInvoices}
         onInvoiceSelect={handleInvoiceSelect}
+      />
+
+      <AccountAdjustmentDialog
+        open={showAdjustmentDialog}
+        onOpenChange={setShowAdjustmentDialog}
+        amount={Math.abs(remainingAmount)}
+        type={adjustmentType}
+        onConfirm={handleAdjustmentConfirm}
       />
     </div>
   );

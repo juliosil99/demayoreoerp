@@ -9,6 +9,67 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      accounting_adjustments: {
+        Row: {
+          amount: number
+          chart_account_id: string
+          created_at: string | null
+          expense_id: string | null
+          id: string
+          invoice_id: number | null
+          notes: string | null
+          status: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          chart_account_id: string
+          created_at?: string | null
+          expense_id?: string | null
+          id?: string
+          invoice_id?: number | null
+          notes?: string | null
+          status?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          chart_account_id?: string
+          created_at?: string | null
+          expense_id?: string | null
+          id?: string
+          invoice_id?: number | null
+          notes?: string | null
+          status?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_adjustments_chart_account_id_fkey"
+            columns: ["chart_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_adjustments_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_adjustments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounts_payable: {
         Row: {
           amount: number
@@ -349,6 +410,7 @@ export type Database = {
           expense_id: string
           id: string
           invoice_id: number
+          paid_amount: number | null
           reconciled_amount: number | null
           tax_details: Json | null
         }
@@ -358,6 +420,7 @@ export type Database = {
           expense_id: string
           id?: string
           invoice_id: number
+          paid_amount?: number | null
           reconciled_amount?: number | null
           tax_details?: Json | null
         }
@@ -367,6 +430,7 @@ export type Database = {
           expense_id?: string
           id?: string
           invoice_id?: number
+          paid_amount?: number | null
           reconciled_amount?: number | null
           tax_details?: Json | null
         }
