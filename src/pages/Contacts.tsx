@@ -21,10 +21,10 @@ export default function Contacts() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div className="w-full max-w-5xl mx-auto space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h1 className="text-2xl font-bold">Contactos</h1>
-        <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-4">
+        <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
           <ContactImporter onSuccess={handleSuccess} />
           <Button 
             className="w-full sm:w-auto"
