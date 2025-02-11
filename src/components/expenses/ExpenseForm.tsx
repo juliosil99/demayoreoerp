@@ -3,9 +3,20 @@ import { Button } from "@/components/ui/button";
 import { useExpenseForm } from "./hooks/useExpenseForm";
 import { useExpenseQueries } from "./hooks/useExpenseQueries";
 import { ExpenseFormFields } from "./components/ExpenseFormFields";
+import type { Database } from "@/integrations/supabase/types/base";
 
-export function ExpenseForm() {
-  const { formData, setFormData, isSubmitting, handleSubmit } = useExpenseForm();
+type Expense = Database['public']['Tables']['expenses']['Row'] & {
+  bank_accounts: { name: string };
+  chart_of_accounts: { name: string; code: string };
+  contacts: { name: string } | null;
+};
+
+interface ExpenseFormProps {
+  initialData?: Expense;
+}
+
+export function ExpenseForm({ initialData }: ExpenseFormProps) {
+  const { formData, setFormData, isSubmitting, handleSubmit } = useExpenseForm(initialData);
   const { bankAccounts, chartAccounts, suppliers } = useExpenseQueries();
 
   return (
@@ -20,7 +31,7 @@ export function ExpenseForm() {
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Creating..." : "Create Expense"}
+          {isSubmitting ? "Guardando..." : initialData ? "Actualizar Gasto" : "Crear Gasto"}
         </Button>
       </div>
     </form>

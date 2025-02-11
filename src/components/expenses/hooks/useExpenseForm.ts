@@ -1,10 +1,17 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import type { Database } from "@/integrations/supabase/types/base";
+
+type Expense = Database['public']['Tables']['expenses']['Row'] & {
+  bank_accounts: { name: string };
+  chart_of_accounts: { name: string; code: string };
+  contacts: { name: string } | null;
+};
 
 export type ExpenseFormData = {
   date: string;
@@ -32,13 +39,30 @@ const initialFormData: ExpenseFormData = {
   category: "",
 };
 
-export function useExpenseForm() {
+export function useExpenseForm(initialExpense?: Expense) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<ExpenseFormData>(initialFormData);
 
-  const createExpense = useMutation({
+  useEffect(() => {
+    if (initialExpense) {
+      setFormData({
+        date: format(new Date(initialExpense.date), 'yyyy-MM-dd'),
+        description: initialExpense.description,
+        amount: initialExpense.amount.toString(),
+        account_id: initialExpense.account_id.toString(),
+        chart_account_id: initialExpense.chart_account_id,
+        payment_method: initialExpense.payment_method,
+        reference_number: initialExpense.reference_number || "",
+        notes: initialExpense.notes || "",
+        supplier_id: initialExpense.supplier_id || "",
+        category: initialExpense.category || "",
+      });
+    }
+  }, [initialExpense]);
+
+  const createOrUpdateExpense = useMutation({
     mutationFn: async (values: ExpenseFormData) => {
       if (!user?.id) throw new Error("User not authenticated");
 
@@ -49,23 +73,37 @@ export function useExpenseForm() {
         account_id: parseInt(values.account_id),
       };
 
-      const { data, error } = await supabase
-        .from("expenses")
-        .insert([expenseData])
-        .select()
-        .single();
+      if (initialExpense) {
+        const { data, error } = await supabase
+          .from("expenses")
+          .update(expenseData)
+          .eq('id', initialExpense.id)
+          .select()
+          .single();
 
-      if (error) throw error;
-      return data;
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from("expenses")
+          .insert([expenseData])
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      toast.success("Gasto creado exitosamente");
-      setFormData(initialFormData);
+      toast.success(initialExpense ? "Gasto actualizado exitosamente" : "Gasto creado exitosamente");
+      if (!initialExpense) {
+        setFormData(initialFormData);
+      }
     },
     onError: (error) => {
-      console.error("Error creating expense:", error);
-      toast.error("Error al crear el gasto");
+      console.error("Error with expense:", error);
+      toast.error(initialExpense ? "Error al actualizar el gasto" : "Error al crear el gasto");
     },
   });
 
@@ -78,7 +116,7 @@ export function useExpenseForm() {
 
     setIsSubmitting(true);
     try {
-      await createExpense.mutateAsync(formData);
+      await createOrUpdateExpense.mutateAsync(formData);
     } finally {
       setIsSubmitting(false);
     }

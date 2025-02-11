@@ -7,7 +7,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ExpenseForm } from "./ExpenseForm";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -28,6 +47,26 @@ interface ExpenseListProps {
 }
 
 export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const queryClient = useQueryClient();
+
+  const handleDelete = async (expense: Expense) => {
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('id', expense.id);
+
+      if (error) throw error;
+
+      toast.success('Gasto eliminado exitosamente');
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      toast.error('Error al eliminar el gasto');
+    }
+  };
+
   if (isLoading) {
     return <div>Cargando gastos...</div>;
   }
@@ -46,6 +85,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
             <TableHead>Método de Pago</TableHead>
             <TableHead>Referencia</TableHead>
             <TableHead>Factura</TableHead>
+            <TableHead>Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -73,6 +113,52 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
                     relation.invoice.invoice_number || relation.invoice.uuid
                   ).join(', ') : 
                   'Sin conciliar'}
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={() => setSelectedExpense(expense)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Editar Gasto</DialogTitle>
+                      </DialogHeader>
+                      <ExpenseForm initialData={expense} />
+                    </DialogContent>
+                  </Dialog>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="icon">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta acción no se puede deshacer. Esto eliminará permanentemente el gasto.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(expense)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Eliminar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </TableCell>
             </TableRow>
           ))}
