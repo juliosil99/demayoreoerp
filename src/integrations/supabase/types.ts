@@ -304,6 +304,44 @@ export type Database = {
         }
         Relationships: []
       }
+      diot_configurations: {
+        Row: {
+          created_at: string | null
+          id: string
+          operation_type: string
+          supplier_id: string
+          tax_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          operation_type: string
+          supplier_id: string
+          tax_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          operation_type?: string
+          supplier_id?: string
+          tax_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_supplier_id"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_invoice_relations: {
         Row: {
           amount: number | null
@@ -356,11 +394,14 @@ export type Database = {
           date: string
           description: string
           id: string
+          is_deductible: boolean | null
           notes: string | null
           payment_method: string
           reference_number: string | null
           supplier_id: string | null
           tax_amount: number | null
+          tax_details: Json | null
+          tax_regime: string | null
           user_id: string
         }
         Insert: {
@@ -372,11 +413,14 @@ export type Database = {
           date: string
           description: string
           id?: string
+          is_deductible?: boolean | null
           notes?: string | null
           payment_method: string
           reference_number?: string | null
           supplier_id?: string | null
           tax_amount?: number | null
+          tax_details?: Json | null
+          tax_regime?: string | null
           user_id: string
         }
         Update: {
@@ -388,11 +432,14 @@ export type Database = {
           date?: string
           description?: string
           id?: string
+          is_deductible?: boolean | null
           notes?: string | null
           payment_method?: string
           reference_number?: string | null
           supplier_id?: string | null
           tax_amount?: number | null
+          tax_details?: Json | null
+          tax_regime?: string | null
           user_id?: string
         }
         Relationships: [
@@ -899,6 +946,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tax_rates: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_retention: boolean | null
+          name: string
+          rate: number
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_retention?: boolean | null
+          name: string
+          rate: number
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_retention?: boolean | null
+          name?: string
+          rate?: number
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
