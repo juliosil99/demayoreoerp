@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TaxDetailsFields } from "./TaxDetailsFields";
 import type { ExpenseFormData } from "../hooks/useExpenseForm";
 
 interface ExpenseFormFieldsProps {
@@ -50,7 +51,7 @@ export function ExpenseFormFields({
   suppliers,
 }: ExpenseFormFieldsProps) {
   return (
-    <>
+    <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Fecha</Label>
@@ -184,16 +185,6 @@ export function ExpenseFormFields({
           />
         </div>
 
-        <div className="space-y-2">
-          <Label>Monto de Impuestos</Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={formData.tax_amount}
-            onChange={(e) => setFormData({ ...formData, tax_amount: e.target.value })}
-          />
-        </div>
-
         <div className="flex items-center space-x-2 pt-4">
           <Checkbox
             id="is_deductible"
@@ -213,6 +204,14 @@ export function ExpenseFormFields({
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         />
       </div>
-    </>
+
+      <div className="space-y-2">
+        <Label>Detalles de Impuestos</Label>
+        <TaxDetailsFields
+          taxDetails={formData.tax_details}
+          onChange={(taxDetails) => setFormData({ ...formData, tax_details: taxDetails })}
+        />
+      </div>
+    </div>
   );
 }
