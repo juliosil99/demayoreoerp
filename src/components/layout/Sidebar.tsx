@@ -14,8 +14,10 @@ import {
   Users,
   BookOpen,
   UserCog,
+  ChevronRight,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useState } from "react";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Panel de Control", to: "/" },
@@ -53,6 +55,15 @@ const menuItems = [
 ];
 
 export function Sidebar() {
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
+
+  const toggleSubmenu = (path: string) => {
+    setExpandedMenus(prev => ({
+      ...prev,
+      [path]: !prev[path]
+    }));
+  };
+
   return (
     <div className="h-full w-64 border-r bg-background p-4">
       <div className="mb-8">
@@ -61,20 +72,41 @@ export function Sidebar() {
       <nav className="space-y-0.5">
         {menuItems.map((item) => (
           <div key={item.to}>
-            <NavLink
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
-                  isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-                )
-              }
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </NavLink>
+            <div className="flex items-center">
+              <NavLink
+                to={item.to}
+                className={({ isActive }) =>
+                  cn(
+                    "flex flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
+                    isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                  )
+                }
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </NavLink>
+              {item.submenu && (
+                <button
+                  onClick={() => toggleSubmenu(item.to)}
+                  className="p-2 hover:bg-accent rounded-lg transition-colors"
+                  aria-label={expandedMenus[item.to] ? "Colapsar menú" : "Expandir menú"}
+                >
+                  <ChevronRight 
+                    className={cn(
+                      "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                      expandedMenus[item.to] && "transform rotate-90"
+                    )} 
+                  />
+                </button>
+              )}
+            </div>
             {item.submenu && (
-              <div className="ml-6 mt-1 space-y-1">
+              <div 
+                className={cn(
+                  "ml-6 space-y-1 overflow-hidden transition-all duration-200",
+                  expandedMenus[item.to] ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                )}
+              >
                 {item.submenu.map((subItem) => (
                   <NavLink
                     key={subItem.to}
