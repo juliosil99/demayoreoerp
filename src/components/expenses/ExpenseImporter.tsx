@@ -1,11 +1,9 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Upload, Download } from "lucide-react";
-import { read, utils, writeFile } from "xlsx";
-import { supabase } from "@/lib/supabase";
-import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +12,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useExpenseQueries } from "./hooks/useExpenseQueries";
+import { createExcelTemplate, processExpenseFile } from "./utils/excelUtils";
+import { importExpenses } from "./services/expenseImportService";
 
 interface ExpenseImporterProps {
   onSuccess: () => void;
@@ -25,99 +25,7 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
   const { bankAccounts, chartAccounts, suppliers } = useExpenseQueries();
 
   const downloadTemplate = async () => {
-    const wb = utils.book_new();
-
-    // Hoja principal para captura de gastos
-    const headers = [
-      'Fecha',
-      'Descripción',
-      'Monto',
-      'ID Cuenta',
-      'ID Cuenta Contable',
-      'Método de Pago',
-      'Número de Referencia',
-      'Notas',
-      'ID Proveedor',
-      'Categoría'
-    ];
-
-    const exampleData = [
-      {
-        'Fecha': format(new Date(), 'yyyy-MM-dd'),
-        'Descripción': 'Ejemplo de Gasto',
-        'Monto': '1000.00',
-        'ID Cuenta': '1',
-        'ID Cuenta Contable': 'UUID-de-la-cuenta',
-        'Método de Pago': 'cash',
-        'Número de Referencia': 'REF123',
-        'Notas': 'Ejemplo de notas',
-        'ID Proveedor': 'UUID-del-proveedor',
-        'Categoría': 'Servicios'
-      }
-    ];
-
-    // Crear hoja principal de gastos
-    const wsMain = utils.json_to_sheet(exampleData, { header: headers });
-    utils.book_append_sheet(wb, wsMain, "Gastos");
-
-    // Crear hoja de catálogo de cuentas bancarias
-    const bankAccountsData = bankAccounts?.map(account => ({
-      'ID Cuenta': account.id,
-      'Nombre de Cuenta': account.name,
-    })) || [];
-    const wsBankAccounts = utils.json_to_sheet(bankAccountsData);
-    utils.book_append_sheet(wb, wsBankAccounts, "Cuentas Bancarias");
-
-    // Crear hoja de catálogo de cuentas contables
-    const chartAccountsData = chartAccounts?.map(account => ({
-      'ID Cuenta Contable': account.id,
-      'Código': account.code,
-      'Nombre': account.name,
-    })) || [];
-    const wsChartAccounts = utils.json_to_sheet(chartAccountsData);
-    utils.book_append_sheet(wb, wsChartAccounts, "Cuentas Contables");
-
-    // Crear hoja de catálogo de proveedores
-    const suppliersData = suppliers?.map(supplier => ({
-      'ID Proveedor': supplier.id,
-      'Nombre': supplier.name,
-      'RFC': supplier.rfc || '',
-    })) || [];
-    const wsSuppliers = utils.json_to_sheet(suppliersData);
-    utils.book_append_sheet(wb, wsSuppliers, "Proveedores");
-
-    // Crear hoja de métodos de pago
-    const paymentMethodsData = [
-      { 'Código': 'cash', 'Descripción': 'Efectivo' },
-      { 'Código': 'transfer', 'Descripción': 'Transferencia' },
-      { 'Código': 'check', 'Descripción': 'Cheque' },
-      { 'Código': 'credit_card', 'Descripción': 'Tarjeta de Crédito' },
-    ];
-    const wsPaymentMethods = utils.json_to_sheet(paymentMethodsData);
-    utils.book_append_sheet(wb, wsPaymentMethods, "Métodos de Pago");
-
-    writeFile(wb, "plantilla_gastos.xlsx");
-    toast.success("Plantilla descargada exitosamente");
-  };
-
-  const processFile = async (file: File) => {
-    const data = await file.arrayBuffer();
-    const workbook = read(data);
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = utils.sheet_to_json(worksheet);
-
-    return jsonData.map((row: any) => ({
-      date: row.Fecha || row.date || format(new Date(), 'yyyy-MM-dd'),
-      description: row.Descripción || row.description || "",
-      amount: row.Monto || row.amount || 0,
-      account_id: row["ID Cuenta"] || row.account_id || "",
-      chart_account_id: row["ID Cuenta Contable"] || row.chart_account_id || "",
-      payment_method: (row["Método de Pago"] || row.payment_method || "cash").toLowerCase(),
-      reference_number: row["Número de Referencia"] || row.reference_number || "",
-      notes: row.Notas || row.notes || "",
-      supplier_id: row["ID Proveedor"] || row.supplier_id || "",
-      category: row.Categoría || row.category || "",
-    }));
+    createExcelTemplate(bankAccounts, chartAccounts, suppliers);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,58 +40,14 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
       }
 
       setIsUploading(true);
-      const expenses = await processFile(file);
+      const expenses = await processExpenseFile(file);
       
-      let successCount = 0;
-      let errorCount = 0;
-
-      // Create import record
-      const { data: importRecord, error: importError } = await supabase
-        .from('expense_imports')
-        .insert({
-          filename: file.name,
-          user_id: user.id,
-          total_rows: expenses.length
-        })
-        .select()
-        .single();
-
-      if (importError) {
-        toast.error('Error al registrar la importación');
-        return;
-      }
-
-      for (const expenseData of expenses) {
-        try {
-          const { error } = await supabase
-            .from('expenses')
-            .insert({
-              ...expenseData,
-              user_id: user.id,
-              amount: parseFloat(expenseData.amount.toString()),
-              account_id: parseInt(expenseData.account_id.toString())
-            });
-
-          if (error) {
-            console.error('Error importing expense:', error);
-            errorCount++;
-          } else {
-            successCount++;
-            
-            // Update import record progress
-            await supabase
-              .from('expense_imports')
-              .update({ 
-                processed_rows: successCount,
-                status: successCount === expenses.length ? 'completed' : 'processing'
-              })
-              .eq('id', importRecord.id);
-          }
-        } catch (error) {
-          console.error('Error processing expense:', error);
-          errorCount++;
-        }
-      }
+      const { successCount, errorCount } = await importExpenses(
+        expenses,
+        user.id,
+        file.name,
+        () => {} // You could add progress handling here if needed
+      );
 
       if (successCount > 0) {
         toast.success(`${successCount} gastos importados exitosamente`);
