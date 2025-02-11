@@ -41,7 +41,19 @@ export default function Profile() {
         .from("profiles")
         .select("*")
         .eq("id", user?.id)
-        .single();
+        .maybeSingle();
+
+      // If no profile exists, create one
+      if (!data && !error) {
+        const { data: newProfile, error: createError } = await supabase
+          .from("profiles")
+          .insert([{ id: user?.id }])
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        return newProfile as Profile;
+      }
 
       if (error) throw error;
       return data as Profile;
