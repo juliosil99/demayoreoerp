@@ -28,51 +28,44 @@ export default function ContactList({ onEdit }: ContactListProps) {
 
   const deleteContact = useMutation({
     mutationFn: async (id: string) => {
-      // First check if the contact is referenced in expenses
-      const { data: expenses, error: checkExpensesError } = await supabase
-        .from("expenses")
-        .select("id")
-        .eq("supplier_id", id)
-        .limit(1);
+      try {
+        // Check expenses references
+        const { data: expenses, error: expensesError } = await supabase
+          .from("expenses")
+          .select("id")
+          .eq("supplier_id", id)
+          .limit(1);
+        
+        if (expensesError) throw expensesError;
+        if (expenses?.length > 0) {
+          throw new Error("Este contacto no puede ser eliminado porque está referenciado en gastos.");
+        }
 
-      if (checkExpensesError) throw checkExpensesError;
+        // Check client payments references
+        const { data: clientPayments, error: clientError } = await supabase
+          .from("payments")
+          .select("id")
+          .eq("client_id", id)
+          .limit(1);
+        
+        if (clientError) throw clientError;
+        if (clientPayments?.length > 0) {
+          throw new Error("Este contacto no puede ser eliminado porque está referenciado en pagos como cliente.");
+        }
 
-      if (expenses && expenses.length > 0) {
-        throw new Error("Este contacto no puede ser eliminado porque está referenciado en gastos.");
+        // Delete the contact
+        const { error: deleteError } = await supabase
+          .from("contacts")
+          .delete()
+          .eq("id", id);
+
+        if (deleteError) throw deleteError;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error("Error al eliminar el contacto");
       }
-
-      // Check if the contact is referenced in payments as a client
-      const { data: paymentsAsClient, error: checkPaymentsClientError } = await supabase
-        .from("payments")
-        .select("id")
-        .eq("client_id", id)
-        .limit(1);
-
-      if (checkPaymentsClientError) throw checkPaymentsClientError;
-
-      if (paymentsAsClient && paymentsAsClient.length > 0) {
-        throw new Error("Este contacto no puede ser eliminado porque está referenciado en pagos como cliente.");
-      }
-
-      // Check if the contact is referenced in payments as a supplier
-      const { data: paymentsAsSupplier, error: checkPaymentsSupplierError } = await supabase
-        .from("payments")
-        .select("id")
-        .eq("supplier_id", id)
-        .limit(1);
-
-      if (checkPaymentsSupplierError) throw checkPaymentsSupplierError;
-
-      if (paymentsAsSupplier && paymentsAsSupplier.length > 0) {
-        throw new Error("Este contacto no puede ser eliminado porque está referenciado en pagos como proveedor.");
-      }
-
-      const { error } = await supabase
-        .from("contacts")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
