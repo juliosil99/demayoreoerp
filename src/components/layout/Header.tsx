@@ -1,5 +1,5 @@
 
-import { Bell, Settings, LogOut, User, Building2, Palette } from "lucide-react";
+import { Bell, Settings, LogOut, User, Building2, Palette, Sun, Moon, Laptop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -11,16 +11,36 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from "react";
 
 interface HeaderProps {
   children?: React.ReactNode;
 }
 
+type Theme = "light" | "dark" | "blue";
+
 export function Header({ children }: HeaderProps) {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("theme") as Theme) || "light";
+    }
+    return "light";
+  });
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   const handleSignOut = async () => {
     try {
@@ -64,10 +84,30 @@ export function Header({ children }: HeaderProps) {
                 <Building2 className="mr-2 h-4 w-4" />
                 Empresa
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Palette className="mr-2 h-4 w-4" />
-                Tema
-              </DropdownMenuItem>
+              
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Palette className="mr-2 h-4 w-4" />
+                  Tema
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as Theme)}>
+                    <DropdownMenuRadioItem value="light">
+                      <Sun className="mr-2 h-4 w-4" />
+                      Claro
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="dark">
+                      <Moon className="mr-2 h-4 w-4" />
+                      Oscuro
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="blue">
+                      <Laptop className="mr-2 h-4 w-4" />
+                      Azul
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
