@@ -14,6 +14,7 @@ import {
 import { useExpenseQueries } from "./hooks/useExpenseQueries";
 import { createExcelTemplate, processExpenseFile } from "./utils/excelUtils";
 import { importExpenses } from "./services/expenseImportService";
+import type { BankAccountsTable } from "@/integrations/supabase/types/bank-accounts";
 
 interface ExpenseImporterProps {
   onSuccess: () => void;
@@ -25,7 +26,11 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
   const { bankAccounts, chartAccounts, suppliers } = useExpenseQueries();
 
   const downloadTemplate = async () => {
-    createExcelTemplate(bankAccounts, chartAccounts, suppliers);
+    createExcelTemplate(
+      bankAccounts as BankAccountsTable["Row"][], 
+      chartAccounts, 
+      suppliers
+    );
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

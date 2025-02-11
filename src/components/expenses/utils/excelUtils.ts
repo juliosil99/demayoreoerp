@@ -1,5 +1,5 @@
 
-import { utils, writeFile } from "xlsx";
+import { utils, writeFile, read } from "xlsx";
 import { format } from "date-fns";
 import { BankAccountsTable } from "@/integrations/supabase/types/bank-accounts";
 import { toast } from "sonner";
@@ -97,7 +97,7 @@ export const createExcelTemplate = (
 
 export const processExpenseFile = async (file: File) => {
   const data = await file.arrayBuffer();
-  const workbook = utils.read(data);
+  const workbook = read(data);
   const worksheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = utils.sheet_to_json(worksheet);
 
