@@ -52,7 +52,7 @@ const Dashboard = () => {
         // Get all expenses
         const { data: expenses, error: expensesError } = await supabase
           .from("expenses")
-          .select('amount');
+          .select('amount, id');  // Added id to the selection
 
         if (expensesError) throw expensesError;
 
