@@ -7,11 +7,29 @@ import { Building, CreditCard, BanknoteIcon, ReceiptIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, subDays } from "date-fns";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface DashboardMetrics {
   yesterdaySales: number;
   unreconciled: number;
   receivablesPending: number;
+}
+
+interface OldestInvoice {
+  id: number;
+  invoice_date: string | null;
+  invoice_number: string | null;
+  serie: string | null;
+  total_amount: number | null;
+  issuer_name: string | null;
+  receiver_name: string | null;
 }
 
 const Dashboard = () => {
@@ -21,6 +39,7 @@ const Dashboard = () => {
     unreconciled: 0,
     receivablesPending: 0
   });
+  const [oldestInvoice, setOldestInvoice] = useState<OldestInvoice | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,10 +61,10 @@ const Dashboard = () => {
 
         if (salesError) throw salesError;
 
-        // First get all reconciled expense IDs
+        // First get all reconciled invoice IDs
         const { data: relations, error: relationsError } = await supabase
           .from('expense_invoice_relations')
-          .select('expense_id');
+          .select('invoice_id');
 
         if (relationsError) throw relationsError;
 
@@ -68,6 +87,22 @@ const Dashboard = () => {
 
         if (receivablesError) throw receivablesError;
 
+        // Fetch oldest unreconciled invoice
+        const reconciledInvoiceIds = relations?.map(r => r.invoice_id) || [];
+        const { data: oldestInvoiceData, error: oldestInvoiceError } = await supabase
+          .from('invoices')
+          .select('id, invoice_date, invoice_number, serie, total_amount, issuer_name, receiver_name')
+          .not('id', 'in', reconciledInvoiceIds)
+          .order('invoice_date', { ascending: true })
+          .limit(1)
+          .single();
+
+        if (oldestInvoiceError) {
+          console.error("Error fetching oldest invoice:", oldestInvoiceError);
+        } else {
+          setOldestInvoice(oldestInvoiceData);
+        }
+
         setMetrics({
           yesterdaySales: salesData?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0,
           unreconciled: unreconciledExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0),
@@ -85,11 +120,17 @@ const Dashboard = () => {
     fetchMetrics();
   }, [navigate]);
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | null) => {
+    if (amount === null) return '-';
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
       currency: 'MXN'
     }).format(amount);
+  };
+
+  const formatDate = (date: string | null) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('es-MX');
   };
 
   if (loading) {
@@ -144,6 +185,42 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {oldestInvoice && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Factura más Antigua por Conciliar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Número de Factura</TableHead>
+                  <TableHead>Emisor</TableHead>
+                  <TableHead>Receptor</TableHead>
+                  <TableHead className="text-right">Monto Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell>{formatDate(oldestInvoice.invoice_date)}</TableCell>
+                  <TableCell>
+                    {oldestInvoice.serie 
+                      ? `${oldestInvoice.serie}-${oldestInvoice.invoice_number}` 
+                      : oldestInvoice.invoice_number || '-'}
+                  </TableCell>
+                  <TableCell>{oldestInvoice.issuer_name || '-'}</TableCell>
+                  <TableCell>{oldestInvoice.receiver_name || '-'}</TableCell>
+                  <TableCell className="text-right">
+                    {formatCurrency(oldestInvoice.total_amount)}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
