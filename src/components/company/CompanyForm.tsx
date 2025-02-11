@@ -2,6 +2,7 @@
 import { useForm } from "react-hook-form";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react"; // Added this import
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
