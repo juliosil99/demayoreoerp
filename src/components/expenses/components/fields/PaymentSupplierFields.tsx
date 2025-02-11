@@ -45,7 +45,7 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers }: Prop
           </SelectTrigger>
           <SelectContent>
             {suppliers?.map((supplier) => (
-              <SelectItem key={supplier.id} value={supplier.id}>
+              <SelectItem key={supplier.id} value={String(supplier.id)}>
                 {supplier.name}
               </SelectItem>
             ))}

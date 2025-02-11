@@ -39,7 +39,7 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts, 
           </SelectTrigger>
           <SelectContent>
             {bankAccounts?.map((account) => (
-              <SelectItem key={account.id} value={account.id.toString()}>
+              <SelectItem key={account.id} value={String(account.id)}>
                 {account.name}
               </SelectItem>
             ))}
@@ -58,7 +58,7 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts, 
           </SelectTrigger>
           <SelectContent>
             {chartAccounts?.map((account) => (
-              <SelectItem key={account.id} value={account.id}>
+              <SelectItem key={account.id} value={String(account.id)}>
                 {account.code} - {account.name}
               </SelectItem>
             ))}
