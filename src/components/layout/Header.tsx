@@ -36,20 +36,20 @@ export function Header({ children }: HeaderProps) {
   };
 
   return (
-    <header className="border-b bg-background px-4 py-3 md:px-6">
+    <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-4 py-3 md:px-6 shadow-md">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {children}
           <h1 className="text-lg font-medium">Sistema ERP</h1>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
-          <Button variant="ghost" size="icon" className="hidden md:inline-flex">
+          <Button variant="ghost" size="icon" className="hidden md:inline-flex text-white hover:bg-blue-700">
             <Bell className="h-4 w-4" />
           </Button>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="hidden md:inline-flex">
+              <Button variant="ghost" size="icon" className="hidden md:inline-flex text-white hover:bg-blue-700">
                 <Settings className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -76,7 +76,12 @@ export function Header({ children }: HeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button variant="ghost" size="icon" onClick={handleSignOut}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleSignOut}
+            className="text-white hover:bg-blue-700"
+          >
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
