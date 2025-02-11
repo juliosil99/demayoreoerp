@@ -2,9 +2,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Search, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { Contact } from "./types";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
 
 interface ContactListProps {
   onEdit: (contact: Contact) => void;
@@ -12,6 +21,8 @@ interface ContactListProps {
 
 export default function ContactList({ onEdit }: ContactListProps) {
   const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "client" | "supplier">("all");
 
   const { data: contacts, isLoading } = useQuery({
     queryKey: ["contacts"],
@@ -87,53 +98,93 @@ export default function ContactList({ onEdit }: ContactListProps) {
     }
   };
 
+  const filteredContacts = contacts?.filter((contact) => {
+    const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         contact.rfc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (contact.phone && contact.phone.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesType = typeFilter === "all" || contact.type === typeFilter;
+    
+    return matchesSearch && matchesType;
+  });
+
   if (isLoading) {
     return <div>Cargando contactos...</div>;
   }
 
   return (
-    <div className="grid gap-3">
-      {contacts?.map((contact) => (
-        <div
-          key={contact.id}
-          className="bg-card border border-border hover:border-primary/20 transition-colors p-4 rounded-lg shadow-sm flex justify-between items-center gap-4"
-        >
-          <div className="flex-1 min-w-0 text-left">
-            <h3 className="font-semibold text-base truncate">{contact.name}</h3>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-muted-foreground">
-              <span>
-                {contact.type === 'client' ? 'Cliente' : 'Proveedor'} • {contact.rfc}
-              </span>
-              {contact.phone && (
-                <>
-                  <span className="hidden sm:inline">•</span>
-                  <span>Tel: {contact.phone}</span>
-                </>
-              )}
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre, RFC o teléfono..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select
+            value={typeFilter}
+            onValueChange={(value: "all" | "client" | "supplier") => setTypeFilter(value)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar por tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="client">Clientes</SelectItem>
+              <SelectItem value="supplier">Proveedores</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid gap-3">
+        {filteredContacts?.map((contact) => (
+          <div
+            key={contact.id}
+            className="bg-card border border-border hover:border-primary/20 transition-colors p-4 rounded-lg shadow-sm flex justify-between items-center gap-4"
+          >
+            <div className="flex-1 min-w-0 text-left">
+              <h3 className="font-semibold text-base truncate">{contact.name}</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-muted-foreground">
+                <span>
+                  {contact.type === 'client' ? 'Cliente' : 'Proveedor'} • {contact.rfc}
+                </span>
+                {contact.phone && (
+                  <>
+                    <span className="hidden sm:inline">•</span>
+                    <span>Tel: {contact.phone}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(contact)}
+                title="Editar contacto"
+                className="hover:bg-primary/10"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDelete(contact.id)}
+                title="Eliminar contacto"
+                className="hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-          <div className="flex gap-1 shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(contact)}
-              title="Editar contacto"
-              className="hover:bg-primary/10"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleDelete(contact.id)}
-              title="Eliminar contacto"
-              className="hover:bg-destructive/10"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
