@@ -13,15 +13,15 @@ export function ExpenseCard({ expense, onSelectExpense }: ExpenseCardProps) {
   return (
     <Card
       key={expense.id}
-      className="cursor-pointer hover:bg-gray-50"
+      className="cursor-pointer hover:bg-gray-50 transition-colors"
       onClick={() => onSelectExpense(expense)}
     >
-      <CardContent className="p-4">
+      <CardContent className="p-3 sm:p-4">
         <div className="grid gap-1">
           <div className="font-medium">
             {format(new Date(expense.date), "dd/MM/yyyy")}
           </div>
-          <div>{expense.description}</div>
+          <div className="text-sm sm:text-base">{expense.description}</div>
           <div className="text-sm text-muted-foreground">
             ${expense.amount.toFixed(2)}
           </div>
@@ -33,7 +33,8 @@ export function ExpenseCard({ expense, onSelectExpense }: ExpenseCardProps) {
           </div>
           <Button 
             variant="outline" 
-            className="mt-2"
+            size="sm"
+            className="mt-2 w-full sm:w-auto"
             onClick={(e) => {
               e.stopPropagation();
               onSelectExpense(expense);

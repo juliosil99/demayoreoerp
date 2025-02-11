@@ -39,16 +39,18 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-full">
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Gastos sin Conciliar</h3>
-        {expenses.map((expense) => (
-          <ExpenseCard
-            key={expense.id}
-            expense={expense}
-            onSelectExpense={handleExpenseSelect}
-          />
-        ))}
+        <h3 className="text-lg font-semibold px-2 sm:px-0">Gastos sin Conciliar</h3>
+        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {expenses.map((expense) => (
+            <ExpenseCard
+              key={expense.id}
+              expense={expense}
+              onSelectExpense={handleExpenseSelect}
+            />
+          ))}
+        </div>
       </div>
 
       <InvoiceSearchDialog

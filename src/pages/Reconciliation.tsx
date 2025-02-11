@@ -52,12 +52,14 @@ const Reconciliation = () => {
   });
 
   return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-3xl font-bold">Conciliación de Gastos</h1>
+    <div className="p-2 sm:p-6 space-y-4 sm:space-y-6">
+      <h1 className="text-2xl sm:text-3xl font-bold">Conciliación de Gastos</h1>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Selecciona un gasto y busca la factura correspondiente</CardTitle>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-2 sm:pb-4">
+          <CardTitle className="text-lg sm:text-xl">
+            Selecciona un gasto y busca la factura correspondiente
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <ReconciliationTable expenses={expenses || []} invoices={invoices || []} />
