@@ -28,7 +28,14 @@ const menuItems = [
       { icon: FileX, label: "Facturas", to: "/sales/invoices" }
     ]
   },
-  { icon: Receipt, label: "Gastos", to: "/expenses" },
+  { 
+    icon: Receipt, 
+    label: "Gastos", 
+    to: "/expenses",
+    submenu: [
+      { icon: ArrowLeftRight, label: "Conciliación", to: "/expenses/reconciliation" }
+    ]
+  },
   { icon: Users, label: "Contactos", to: "/contacts" },
   { 
     icon: Building2, 
@@ -41,7 +48,6 @@ const menuItems = [
   { icon: Receipt, label: "Cuentas por Cobrar", to: "/receivables" },
   { icon: Wallet, label: "Cuentas por Pagar", to: "/payables" },
   { icon: BanknoteIcon, label: "Bancos", to: "/banking" },
-  { icon: ArrowLeftRight, label: "Conciliación", to: "/reconciliation" },
   { icon: FileText, label: "Reportes", to: "/reports" },
   { icon: UserCog, label: "Administrar Usuarios", to: "/users" },
 ];
