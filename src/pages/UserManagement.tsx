@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { User } from "@supabase/supabase-js";
 import {
   Table,
   TableBody,
@@ -20,6 +19,13 @@ interface UserPermissions {
   role: 'admin' | 'user';
 }
 
+interface Profile {
+  id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+}
+
 const availablePages = [
   { path: "/dashboard", label: "Panel de Control" },
   { path: "/sales", label: "Ventas" },
@@ -33,18 +39,18 @@ const availablePages = [
 export default function UserManagement() {
   const [userPermissions, setUserPermissions] = useState<{ [key: string]: UserPermissions }>({});
 
-  const { data: users, isLoading } = useQuery({
-    queryKey: ["users"],
+  const { data: profiles, isLoading } = useQuery({
+    queryKey: ["profiles"],
     queryFn: async () => {
-      const { data: { users }, error } = await supabase.auth.admin.listUsers({
-        page: 1,
-        perPage: 100
-      });
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+      
       if (error) {
         toast.error("Error al cargar usuarios: " + error.message);
         throw error;
       }
-      return users;
+      return data as Profile[];
     },
   });
 
@@ -173,13 +179,13 @@ export default function UserManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map((user: User) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.email}</TableCell>
+            {profiles?.map((profile) => (
+              <TableRow key={profile.id}>
+                <TableCell>{profile.email}</TableCell>
                 <TableCell>
                   <select
-                    value={userPermissions[user.id]?.role || 'user'}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'user')}
+                    value={userPermissions[profile.id]?.role || 'user'}
+                    onChange={(e) => handleRoleChange(profile.id, e.target.value as 'admin' | 'user')}
                     className="border rounded p-1"
                   >
                     <option value="user">Usuario</option>
@@ -189,9 +195,9 @@ export default function UserManagement() {
                 {availablePages.map((page) => (
                   <TableCell key={page.path}>
                     <Checkbox
-                      checked={userPermissions[user.id]?.pages[page.path] || false}
+                      checked={userPermissions[profile.id]?.pages[page.path] || false}
                       onCheckedChange={(checked) => 
-                        handlePermissionChange(user.id, page.path, checked as boolean)
+                        handlePermissionChange(profile.id, page.path, checked as boolean)
                       }
                     />
                   </TableCell>
