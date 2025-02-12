@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { BanknoteIcon, CreditCard, Pencil, Trash2, ArrowLeftRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatCurrency } from "@/utils/formatters";
 
 type AccountType = "Bank" | "Cash" | "Credit Card" | "Credit Simple";
 
@@ -324,7 +325,7 @@ export default function Banking() {
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  ${account.balance.toFixed(2)}
+                  {formatCurrency(account.balance)}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
