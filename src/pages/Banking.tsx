@@ -27,7 +27,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { BanknoteIcon, CreditCard, Pencil, Trash2 } from "lucide-react";
+import { BanknoteIcon, CreditCard, Pencil, Trash2, ArrowLeftRight } from "lucide-react";
+import { format } from "date-fns";
 
 type AccountType = "Bank" | "Cash" | "Credit Card" | "Credit Simple";
 
@@ -39,10 +40,22 @@ interface BankAccount {
   created_at: string;
 }
 
+interface Transfer {
+  id: string;
+  date: string;
+  from_account_id: number;
+  to_account_id: number;
+  amount: number;
+  reference_number: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 export default function Banking() {
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [isEditingAccount, setIsEditingAccount] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
+  const [showTransfers, setShowTransfers] = useState(false);
   const [newAccount, setNewAccount] = useState({
     name: "",
     type: "" as AccountType,
@@ -60,6 +73,20 @@ export default function Banking() {
       if (error) throw error;
       return data as BankAccount[];
     },
+  });
+
+  const { data: transfers } = useQuery({
+    queryKey: ["account-transfers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("account_transfers")
+        .select("*, from_account:bank_accounts!from_account_id(name), to_account:bank_accounts!to_account_id(name)")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: showTransfers,
   });
 
   const handleAddAccount = async () => {
@@ -137,79 +164,89 @@ export default function Banking() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Gestión de Cuentas Bancarias</h1>
-        <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
-              <BanknoteIcon className="mr-2 h-4 w-4" />
-              Agregar Cuenta
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Agregar Nueva Cuenta</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <label>Nombre de la Cuenta</label>
-                <Input
-                  value={newAccount.name}
-                  onChange={(e) =>
-                    setNewAccount({ ...newAccount, name: e.target.value })
-                  }
-                  placeholder="Ingrese el nombre de la cuenta"
-                />
-              </div>
-              <div className="grid gap-2">
-                <label>Tipo de Cuenta</label>
-                <Select
-                  value={newAccount.type}
-                  onValueChange={(value) =>
-                    setNewAccount({ ...newAccount, type: value as AccountType })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione el tipo de cuenta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Bank">Banco</SelectItem>
-                    <SelectItem value="Cash">Efectivo</SelectItem>
-                    <SelectItem value="Credit Card">Tarjeta de Crédito</SelectItem>
-                    <SelectItem value="Credit Simple">Crédito Simple</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <label>Saldo Inicial</label>
-                <Input
-                  type="number"
-                  value={newAccount.balance}
-                  onChange={(e) =>
-                    setNewAccount({
-                      ...newAccount,
-                      balance: parseFloat(e.target.value),
-                    })
-                  }
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setIsAddingAccount(false)}
-                className="w-full sm:w-auto"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleAddAccount}
-                className="w-full sm:w-auto"
-              >
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowTransfers(!showTransfers)}
+            className="w-full sm:w-auto"
+          >
+            <ArrowLeftRight className="mr-2 h-4 w-4" />
+            {showTransfers ? "Ocultar Transferencias" : "Ver Transferencias"}
+          </Button>
+          <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto">
+                <BanknoteIcon className="mr-2 h-4 w-4" />
                 Agregar Cuenta
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Agregar Nueva Cuenta</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <label>Nombre de la Cuenta</label>
+                  <Input
+                    value={newAccount.name}
+                    onChange={(e) =>
+                      setNewAccount({ ...newAccount, name: e.target.value })
+                    }
+                    placeholder="Ingrese el nombre de la cuenta"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label>Tipo de Cuenta</label>
+                  <Select
+                    value={newAccount.type}
+                    onValueChange={(value) =>
+                      setNewAccount({ ...newAccount, type: value as AccountType })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione el tipo de cuenta" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Bank">Banco</SelectItem>
+                      <SelectItem value="Cash">Efectivo</SelectItem>
+                      <SelectItem value="Credit Card">Tarjeta de Crédito</SelectItem>
+                      <SelectItem value="Credit Simple">Crédito Simple</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <label>Saldo Inicial</label>
+                  <Input
+                    type="number"
+                    value={newAccount.balance}
+                    onChange={(e) =>
+                      setNewAccount({
+                        ...newAccount,
+                        balance: parseFloat(e.target.value),
+                      })
+                    }
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsAddingAccount(false)}
+                  className="w-full sm:w-auto"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleAddAccount}
+                  className="w-full sm:w-auto"
+                >
+                  Agregar Cuenta
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         <Dialog open={isEditingAccount} onOpenChange={setIsEditingAccount}>
           <DialogContent className="sm:max-w-[425px]">
@@ -280,13 +317,13 @@ export default function Banking() {
         </Dialog>
       </div>
 
-      <div className="rounded-md border overflow-x-auto">
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nombre de la Cuenta</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead className="text-right">Saldo</TableHead>
+              <TableHead className="text-right">Saldo Actual</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -333,6 +370,35 @@ export default function Banking() {
           </TableBody>
         </Table>
       </div>
+
+      {showTransfers && (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Cuenta Origen</TableHead>
+                <TableHead>Cuenta Destino</TableHead>
+                <TableHead className="text-right">Monto</TableHead>
+                <TableHead>Referencia</TableHead>
+                <TableHead>Notas</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transfers?.map((transfer: any) => (
+                <TableRow key={transfer.id}>
+                  <TableCell>{format(new Date(transfer.date), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell>{transfer.from_account.name}</TableCell>
+                  <TableCell>{transfer.to_account.name}</TableCell>
+                  <TableCell className="text-right">${transfer.amount.toFixed(2)}</TableCell>
+                  <TableCell>{transfer.reference_number || '-'}</TableCell>
+                  <TableCell>{transfer.notes || '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
