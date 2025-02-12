@@ -4,19 +4,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ReconciliationFiltersProps {
   selectedChannel: string;
   onChannelChange: (value: string) => void;
-  dateRange: { from: string; to: string };
-  onDateRangeChange: (range: { from: string; to: string }) => void;
+  orderNumbers: string;
+  onOrderNumbersChange: (value: string) => void;
 }
 
 export function ReconciliationFilters({
   selectedChannel,
   onChannelChange,
-  dateRange,
-  onDateRangeChange,
+  orderNumbers,
+  onOrderNumbersChange,
 }: ReconciliationFiltersProps) {
   const { data: channels } = useQuery({
     queryKey: ["sales-channels"],
@@ -33,40 +34,35 @@ export function ReconciliationFilters({
   });
 
   return (
-    <div className="grid grid-cols-3 gap-4 mb-4">
-      <div>
-        <Label>Canal</Label>
-        <Select
-          value={selectedChannel}
-          onValueChange={onChannelChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Seleccionar canal" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            {channels?.map((channel) => (
-              <SelectItem key={channel.id} value={channel.code}>
-                {channel.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Canal</Label>
+          <Select
+            value={selectedChannel}
+            onValueChange={onChannelChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar canal" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {channels?.map((channel) => (
+                <SelectItem key={channel.id} value={channel.code}>
+                  {channel.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div>
-        <Label>Desde</Label>
-        <Input
-          type="date"
-          value={dateRange.from}
-          onChange={(e) => onDateRangeChange({ ...dateRange, from: e.target.value })}
-        />
-      </div>
-      <div>
-        <Label>Hasta</Label>
-        <Input
-          type="date"
-          value={dateRange.to}
-          onChange={(e) => onDateRangeChange({ ...dateRange, to: e.target.value })}
+        <Label>Números de Orden (uno por línea)</Label>
+        <Textarea
+          value={orderNumbers}
+          onChange={(e) => onOrderNumbersChange(e.target.value)}
+          placeholder="Ingresa los números de orden a conciliar&#10;Ejemplo:&#10;ABC123&#10;XYZ789"
+          className="h-[200px] font-mono"
         />
       </div>
     </div>

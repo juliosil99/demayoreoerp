@@ -6,10 +6,7 @@ import { format } from "date-fns";
 
 export function useBulkReconciliation(open: boolean) {
   const [selectedChannel, setSelectedChannel] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<{ from: string; to: string }>({
-    from: format(new Date(), 'yyyy-MM-dd'),
-    to: format(new Date(), 'yyyy-MM-dd'),
-  });
+  const [orderNumbers, setOrderNumbers] = useState<string>("");
   const [paymentDetails, setPaymentDetails] = useState({
     date: format(new Date(), 'yyyy-MM-dd'),
     amount: 0,
@@ -30,36 +27,38 @@ export function useBulkReconciliation(open: boolean) {
   });
 
   const { data: unreconciled, isLoading } = useQuery({
-    queryKey: ["unreconciled-sales", selectedChannel, dateRange],
+    queryKey: ["unreconciled-sales", selectedChannel, orderNumbers],
     queryFn: async () => {
+      const orderNumbersList = orderNumbers
+        .split('\n')
+        .map(order => order.trim())
+        .filter(order => order.length > 0);
+
+      if (orderNumbersList.length === 0) return [];
+
       let query = supabase
         .from("Sales")
         .select("*")
         .is("reconciliation_id", null)
-        .eq("statusPaid", "por cobrar");
+        .eq("statusPaid", "por cobrar")
+        .in("orderNumber", orderNumbersList);
 
       if (selectedChannel !== "all") {
         query = query.eq("Channel", selectedChannel);
-      }
-
-      if (dateRange.from && dateRange.to) {
-        query = query
-          .gte("date", dateRange.from)
-          .lte("date", dateRange.to);
       }
 
       const { data, error } = await query;
       if (error) throw error;
       return data;
     },
-    enabled: open,
+    enabled: open && orderNumbers.trim().length > 0,
   });
 
   return {
     selectedChannel,
     setSelectedChannel,
-    dateRange,
-    setDateRange,
+    orderNumbers,
+    setOrderNumbers,
     paymentDetails,
     setPaymentDetails,
     bankAccounts,

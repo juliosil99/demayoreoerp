@@ -37,8 +37,8 @@ export function BulkReconciliationDialog({
   const {
     selectedChannel,
     setSelectedChannel,
-    dateRange,
-    setDateRange,
+    orderNumbers,
+    setOrderNumbers,
     paymentDetails,
     setPaymentDetails,
     bankAccounts,
@@ -71,8 +71,8 @@ export function BulkReconciliationDialog({
         <ReconciliationFilters
           selectedChannel={selectedChannel}
           onChannelChange={setSelectedChannel}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
+          orderNumbers={orderNumbers}
+          onOrderNumbersChange={setOrderNumbers}
         />
 
         <ReconciliationTable
