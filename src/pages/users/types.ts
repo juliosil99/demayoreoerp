@@ -12,6 +12,14 @@ export interface Profile {
   last_name: string | null;
 }
 
+export interface UserInvitation {
+  id: string;
+  email: string;
+  status: string;
+  role: 'admin' | 'user';
+  created_at: string;
+}
+
 export const availablePages = [
   { path: "/dashboard", label: "Panel de Control" },
   { path: "/sales", label: "Ventas" },

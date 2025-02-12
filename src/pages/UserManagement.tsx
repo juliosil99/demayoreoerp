@@ -1,5 +1,7 @@
 
 import { UsersTable } from "./users/components/UsersTable";
+import { InviteUserForm } from "./users/components/InviteUserForm";
+import { PendingInvitations } from "./users/components/PendingInvitations";
 import { useUserPermissions } from "./users/hooks/useUserPermissions";
 
 export default function UserManagement() {
@@ -18,6 +20,10 @@ export default function UserManagement() {
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-6">Administración de Usuarios</h1>
+      
+      <InviteUserForm />
+      <PendingInvitations />
+      
       <div className="rounded-md border">
         <UsersTable
           profiles={profiles}
