@@ -1,4 +1,3 @@
-
 import {
   Table,
   TableBody,
@@ -75,7 +74,6 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
 
   const handleCloseDialog = useCallback(() => {
     setIsDialogOpen(false);
-    // Small delay to ensure smooth transitions
     setTimeout(() => setSelectedExpense(null), 300);
   }, []);
 
@@ -103,7 +101,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
         <TableBody>
           {expenses.map((expense) => (
             <TableRow key={expense.id}>
-              <TableCell>{format(new Date(expense.date), 'MMM dd, yyyy')}</TableCell>
+              <TableCell>{format(new Date(expense.date + 'T00:00:00'), 'MMM dd, yyyy')}</TableCell>
               <TableCell>{expense.description}</TableCell>
               <TableCell>${expense.amount.toFixed(2)}</TableCell>
               <TableCell>{expense.bank_accounts.name}</TableCell>
