@@ -10,8 +10,9 @@ export function useExpenseQueries() {
         .from("bank_accounts")
         .select("*");
       if (error) throw error;
-      return data || [];
+      return data;
     },
+    initialData: [],
   });
 
   const { data: chartAccounts = [], isLoading: isLoadingChartAccounts } = useQuery({
@@ -22,8 +23,9 @@ export function useExpenseQueries() {
         .select("*")
         .eq("account_type", "expense");
       if (error) throw error;
-      return data || [];
+      return data;
     },
+    initialData: [],
   });
 
   const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
@@ -34,8 +36,9 @@ export function useExpenseQueries() {
         .select("*")
         .eq("type", "supplier");
       if (error) throw error;
-      return data || [];
+      return data;
     },
+    initialData: [],
   });
 
   const isLoading = isLoadingBankAccounts || isLoadingChartAccounts || isLoadingSuppliers;
