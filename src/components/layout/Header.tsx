@@ -1,5 +1,5 @@
 
-import { Bell, Settings, LogOut, User, Building2, Palette, Sun, Moon, Laptop } from "lucide-react";
+import { Bell, Settings, LogOut, User, Building2, Palette, Sun, Moon, Laptop, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -83,6 +83,10 @@ export function Header({ children }: HeaderProps) {
               <DropdownMenuItem onClick={() => navigate("/company-setup?edit=true")}>
                 <Building2 className="mr-2 h-4 w-4" />
                 Empresa
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/sales-channels")}>
+                <Settings2 className="mr-2 h-4 w-4" />
+                Canales de Venta
               </DropdownMenuItem>
               
               <DropdownMenuSub>

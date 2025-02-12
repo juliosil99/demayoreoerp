@@ -4,6 +4,7 @@ import type { InvoicesTable } from './invoice'
 import type { SalesTable } from './sales'
 import type { BankAccountsTable } from './bank-accounts'
 import type { ExpensesTable } from './expenses'
+import type { SalesChannelsTable } from './sales-channels'
 
 export type Json =
   | string
@@ -53,6 +54,7 @@ export type Database = {
       Sales: SalesTable
       bank_accounts: BankAccountsTable
       expenses: ExpensesTable
+      sales_channels: SalesChannelsTable
     }
     Views: {
       [_ in never]: never
@@ -70,4 +72,3 @@ export type Database = {
 }
 
 export type PublicSchema = Database[Extract<keyof Database, "public">]
-
