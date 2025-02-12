@@ -66,13 +66,17 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     mutationFn: async (values: ExpenseFormData) => {
       if (!user?.id) throw new Error("User not authenticated");
 
+      console.log("Fecha antes de crear el expense:", values.date);
+
       const expenseData = {
         ...values,
         user_id: user.id,
         amount: parseFloat(values.amount),
         account_id: parseInt(values.account_id),
-        date: values.date, // Enviamos la fecha directamente sin manipulación
+        date: values.date,
       };
+
+      console.log("Datos que se envían a Supabase:", expenseData);
 
       if (initialExpense) {
         const { data, error } = await supabase
@@ -83,6 +87,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
           .single();
 
         if (error) throw error;
+        console.log("Respuesta de Supabase (update):", data);
         return data;
       } else {
         const { data, error } = await supabase
@@ -92,10 +97,12 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
           .single();
 
         if (error) throw error;
+        console.log("Respuesta de Supabase (insert):", data);
         return data;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Datos después de guardar:", data);
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       toast.success(initialExpense ? "Gasto actualizado exitosamente" : "Gasto creado exitosamente");
       if (!initialExpense) {
@@ -116,6 +123,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       return;
     }
 
+    console.log("Fecha en el momento del submit:", formData.date);
     setIsSubmitting(true);
     try {
       await createOrUpdateExpense.mutateAsync(formData);
