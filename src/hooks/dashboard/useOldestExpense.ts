@@ -18,14 +18,19 @@ export const useOldestExpense = (reconciledExpenseIds: string[]) => {
     const fetchOldestExpense = async () => {
       let query = supabase
         .from('expenses')
-        .select('id, date, description, amount, supplier_id, payment_method')
+        .select(`
+          id, 
+          date, 
+          description, 
+          amount, 
+          supplier_id, 
+          payment_method,
+          expense_invoice_relations!left(id)
+        `)
+        .is('expense_invoice_relations.id', null)
         .order('date', { ascending: true })
         .limit(1);
         
-      if (reconciledExpenseIds.length > 0) {
-        query = query.not('id', 'in', `(${reconciledExpenseIds.join(',')})`);
-      }
-      
       const { data: oldestExpenseData, error: oldestExpenseError } = await query.maybeSingle();
 
       if (oldestExpenseError) {
