@@ -32,6 +32,7 @@ interface Props extends BaseFieldProps {
 
 export function DescriptionAccountFields({ formData, setFormData, bankAccounts = [], chartAccounts = [] }: Props) {
   const [openChartAccount, setOpenChartAccount] = useState(false);
+  const selectedAccount = chartAccounts.find(a => String(a.id) === formData.chart_account_id);
 
   return (
     <>
@@ -69,29 +70,31 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts =
           <PopoverTrigger asChild>
             <Input
               placeholder="Buscar cuenta de gasto..."
-              value={chartAccounts.find(a => String(a.id) === formData.chart_account_id)?.name || ""}
+              value={selectedAccount?.name || ""}
               readOnly
               className="cursor-pointer"
             />
           </PopoverTrigger>
           <PopoverContent className="p-0" align="start">
-            <Command shouldFilter={false}>
+            <Command defaultValue={formData.chart_account_id}>
               <CommandInput placeholder="Buscar cuenta de gasto..." />
               <CommandEmpty>No se encontraron cuentas.</CommandEmpty>
-              <CommandGroup className="max-h-60 overflow-auto">
+              <CommandGroup>
                 {chartAccounts.map((account) => (
                   <CommandItem
                     key={account.id}
                     value={String(account.id)}
-                    onSelect={(value) => {
-                      setFormData({ ...formData, chart_account_id: value });
+                    onSelect={() => {
+                      setFormData({ ...formData, chart_account_id: String(account.id) });
                       setOpenChartAccount(false);
                     }}
                   >
-                    {account.code} - {account.name}
-                    {String(account.id) === formData.chart_account_id && (
-                      <CheckIcon className="ml-2 h-4 w-4" />
-                    )}
+                    <div className="flex items-center justify-between w-full">
+                      <span>{account.code} - {account.name}</span>
+                      {String(account.id) === formData.chart_account_id && (
+                        <CheckIcon className="ml-2 h-4 w-4" />
+                      )}
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>

@@ -30,6 +30,7 @@ interface Props extends BaseFieldProps {
 
 export function PaymentSupplierFields({ formData, setFormData, suppliers = [] }: Props) {
   const [open, setOpen] = useState(false);
+  const selectedSupplier = suppliers.find(s => String(s.id) === formData.supplier_id);
 
   return (
     <>
@@ -57,29 +58,31 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers = [] }:
           <PopoverTrigger asChild>
             <Input
               placeholder="Buscar proveedor..."
-              value={suppliers.find(s => String(s.id) === formData.supplier_id)?.name || ""}
+              value={selectedSupplier?.name || ""}
               readOnly
               className="cursor-pointer"
             />
           </PopoverTrigger>
           <PopoverContent className="p-0" align="start">
-            <Command shouldFilter={false}>
+            <Command defaultValue={formData.supplier_id}>
               <CommandInput placeholder="Buscar proveedor..." />
               <CommandEmpty>No se encontraron proveedores.</CommandEmpty>
-              <CommandGroup className="max-h-60 overflow-auto">
+              <CommandGroup>
                 {suppliers.map((supplier) => (
                   <CommandItem
                     key={supplier.id}
                     value={String(supplier.id)}
-                    onSelect={(value) => {
-                      setFormData({ ...formData, supplier_id: value });
+                    onSelect={() => {
+                      setFormData({ ...formData, supplier_id: String(supplier.id) });
                       setOpen(false);
                     }}
                   >
-                    {supplier.name}
-                    {String(supplier.id) === formData.supplier_id && (
-                      <CheckIcon className="ml-2 h-4 w-4" />
-                    )}
+                    <div className="flex items-center justify-between w-full">
+                      <span>{supplier.name}</span>
+                      {String(supplier.id) === formData.supplier_id && (
+                        <CheckIcon className="ml-2 h-4 w-4" />
+                      )}
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
