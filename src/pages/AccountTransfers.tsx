@@ -107,8 +107,8 @@ export default function AccountTransfers() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+              <div className="md:col-span-2">
                 <Label>Cuenta Origen</Label>
                 <Select
                   value={formData.from_account_id}
@@ -127,11 +127,11 @@ export default function AccountTransfers() {
                 </Select>
               </div>
 
-              <div className="flex justify-center">
+              <div className="flex justify-center md:col-span-1">
                 <ArrowRight className="h-6 w-6" />
               </div>
 
-              <div className="md:col-start-2">
+              <div className="md:col-span-2">
                 <Label>Cuenta Destino</Label>
                 <Select
                   value={formData.to_account_id}
