@@ -10,10 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseAdmin } from "@/integrations/supabase/admin-client";
 import { toast } from "sonner";
 
 interface UserPermissions {
@@ -38,15 +36,12 @@ export default function UserManagement() {
   const { data: users, isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers({
-        page: 1,
-        perPage: 100
-      });
+      const { data: { users: authUsers }, error } = await supabase.auth.admin.list();
       if (error) {
         toast.error("Error al cargar usuarios: " + error.message);
         throw error;
       }
-      return users;
+      return authUsers;
     },
   });
 
