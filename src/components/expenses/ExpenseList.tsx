@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -9,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { es } from 'date-fns/locale';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -101,7 +103,9 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
         <TableBody>
           {expenses.map((expense) => (
             <TableRow key={expense.id}>
-              <TableCell>{format(new Date(expense.date + 'T00:00:00'), 'MMM dd, yyyy')}</TableCell>
+              <TableCell>
+                {format(new Date(expense.date + 'T00:00:00'), 'MMM dd, yyyy', { locale: es })}
+              </TableCell>
               <TableCell>{expense.description}</TableCell>
               <TableCell>${expense.amount.toFixed(2)}</TableCell>
               <TableCell>{expense.bank_accounts.name}</TableCell>
