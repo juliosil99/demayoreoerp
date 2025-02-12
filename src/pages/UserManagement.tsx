@@ -36,12 +36,15 @@ export default function UserManagement() {
   const { data: users, isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      const { data: { users: authUsers }, error } = await supabase.auth.admin.list();
+      const { data: { users }, error } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 100
+      });
       if (error) {
         toast.error("Error al cargar usuarios: " + error.message);
         throw error;
       }
-      return authUsers;
+      return users;
     },
   });
 
