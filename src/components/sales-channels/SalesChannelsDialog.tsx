@@ -52,13 +52,34 @@ export function SalesChannelsDialog({
     e.preventDefault();
     
     try {
+      const code = formData.code.toUpperCase();
+
+      // Si estamos editando, solo verificamos si el código ya existe si lo estamos cambiando
+      if (!selectedChannel || (selectedChannel && selectedChannel.code !== code)) {
+        // Verificar si el código ya existe
+        const { data: existingChannel } = await supabase
+          .from("sales_channels")
+          .select("id")
+          .eq("code", code)
+          .single();
+
+        if (existingChannel) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: `El código "${code}" ya está en uso. Por favor, elija otro código.`,
+          });
+          return;
+        }
+      }
+
       if (selectedChannel) {
         // Update existing channel
         const { error } = await supabase
           .from("sales_channels")
           .update({
             name: formData.name,
-            code: formData.code,
+            code: code,
             is_active: formData.is_active,
           })
           .eq("id", selectedChannel.id);
@@ -75,7 +96,7 @@ export function SalesChannelsDialog({
           .from("sales_channels")
           .insert({
             name: formData.name,
-            code: formData.code,
+            code: code,
             is_active: formData.is_active,
             user_id: user!.id,
           });
@@ -90,12 +111,12 @@ export function SalesChannelsDialog({
 
       onSuccess();
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Hubo un error al guardar el canal de venta.",
+        description: "Hubo un error al guardar el canal de venta. " + error.message,
       });
     }
   };
