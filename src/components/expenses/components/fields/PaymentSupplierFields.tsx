@@ -30,6 +30,7 @@ interface Props extends BaseFieldProps {
 
 export function PaymentSupplierFields({ formData, setFormData, suppliers = [] }: Props) {
   const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
   return (
     <>
@@ -63,7 +64,7 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers = [] }:
             />
           </PopoverTrigger>
           <PopoverContent className="p-0" align="start">
-            <Command>
+            <Command value={searchValue} onValueChange={setSearchValue}>
               <CommandInput placeholder="Buscar proveedor..." />
               <CommandEmpty>No se encontraron proveedores.</CommandEmpty>
               <CommandGroup className="max-h-60 overflow-auto">

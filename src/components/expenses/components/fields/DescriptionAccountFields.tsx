@@ -32,6 +32,7 @@ interface Props extends BaseFieldProps {
 
 export function DescriptionAccountFields({ formData, setFormData, bankAccounts = [], chartAccounts = [] }: Props) {
   const [openChartAccount, setOpenChartAccount] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
   return (
     <>
@@ -75,7 +76,7 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts =
             />
           </PopoverTrigger>
           <PopoverContent className="p-0" align="start">
-            <Command>
+            <Command value={searchValue} onValueChange={setSearchValue}>
               <CommandInput placeholder="Buscar cuenta de gasto..." />
               <CommandEmpty>No se encontraron cuentas.</CommandEmpty>
               <CommandGroup className="max-h-60 overflow-auto">
