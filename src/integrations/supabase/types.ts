@@ -9,6 +9,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      account_transfers: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string
+          from_account_id: number
+          id: string
+          notes: string | null
+          reference_number: string | null
+          status: string | null
+          to_account_id: number
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date: string
+          from_account_id: number
+          id?: string
+          notes?: string | null
+          reference_number?: string | null
+          status?: string | null
+          to_account_id: number
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string
+          from_account_id?: number
+          id?: string
+          notes?: string | null
+          reference_number?: string | null
+          status?: string | null
+          to_account_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_transfers_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_transfers_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounting_adjustments: {
         Row: {
           amount: number

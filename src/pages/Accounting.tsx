@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, FileText, Calculator } from "lucide-react";
+import { BookOpen, FileText, Calculator, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Accounting() {
@@ -26,6 +26,12 @@ export default function Accounting() {
       description: "Concilia tus cuentas y movimientos",
       icon: Calculator,
       route: "/reconciliation",
+    },
+    {
+      title: "Transferencias entre Cuentas",
+      description: "Gestiona movimientos entre tus cuentas",
+      icon: ArrowLeftRight,
+      route: "/accounting/transfers",
     },
   ];
 

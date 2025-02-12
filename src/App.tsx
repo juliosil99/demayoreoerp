@@ -18,6 +18,7 @@ import Expenses from "@/pages/Expenses";
 import Reconciliation from "@/pages/Reconciliation";
 import Reports from "@/pages/Reports";
 import Accounting from "@/pages/Accounting";
+import AccountTransfers from "@/pages/AccountTransfers";
 import Receivables from "@/pages/Receivables";
 import Payables from "@/pages/Payables";
 import Profile from "@/pages/Profile";
@@ -70,6 +71,7 @@ function App() {
                 <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
                 <Route path="accounting/banking" element={<Banking />} />
                 <Route path="accounting/reports" element={<Reports />} />
+                <Route path="accounting/transfers" element={<AccountTransfers />} />
                 <Route path="sales-channels" element={<SalesChannels />} />
               </Route>
             </Routes>
