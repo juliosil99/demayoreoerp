@@ -18,16 +18,20 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ initialData, onSuccess }: ExpenseFormProps) {
   const { formData, setFormData, isSubmitting, handleSubmit } = useExpenseForm(initialData, onSuccess);
-  const { bankAccounts, chartAccounts, suppliers } = useExpenseQueries();
+  const { bankAccounts, chartAccounts, suppliers, isLoading } = useExpenseQueries();
+
+  if (isLoading) {
+    return <div className="flex justify-center p-4">Cargando...</div>;
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <ExpenseFormFields
         formData={formData}
         setFormData={setFormData}
-        bankAccounts={bankAccounts || []}
-        chartAccounts={chartAccounts || []}
-        suppliers={suppliers || []}
+        bankAccounts={bankAccounts}
+        chartAccounts={chartAccounts}
+        suppliers={suppliers}
       />
 
       <div className="flex justify-end">

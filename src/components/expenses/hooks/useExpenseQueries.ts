@@ -3,18 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useExpenseQueries() {
-  const { data: bankAccounts } = useQuery({
+  const { data: bankAccounts = [], isLoading: isLoadingBankAccounts } = useQuery({
     queryKey: ["bankAccounts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*");
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
-  const { data: chartAccounts } = useQuery({
+  const { data: chartAccounts = [], isLoading: isLoadingChartAccounts } = useQuery({
     queryKey: ["chartAccounts"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -22,11 +22,11 @@ export function useExpenseQueries() {
         .select("*")
         .eq("account_type", "expense");
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
-  const { data: suppliers } = useQuery({
+  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
     queryKey: ["suppliers"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -34,13 +34,16 @@ export function useExpenseQueries() {
         .select("*")
         .eq("type", "supplier");
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
+
+  const isLoading = isLoadingBankAccounts || isLoadingChartAccounts || isLoadingSuppliers;
 
   return {
     bankAccounts,
     chartAccounts,
     suppliers,
+    isLoading,
   };
 }
