@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckIcon, Loader2 } from "lucide-react";
+import { CheckIcon } from "lucide-react";
 import type { BaseFieldProps } from "../types";
 import type { SelectOption } from "../types";
 
@@ -32,25 +32,6 @@ interface Props extends BaseFieldProps {
 
 export function DescriptionAccountFields({ formData, setFormData, bankAccounts = [], chartAccounts = [] }: Props) {
   const [openChartAccount, setOpenChartAccount] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-
-  useEffect(() => {
-    console.log('DescriptionAccountFields - Mounted');
-    console.log('Initial chartAccounts:', chartAccounts);
-    console.log('Initial bankAccounts:', bankAccounts);
-    console.log('Initial formData:', formData);
-    return () => {
-      console.log('DescriptionAccountFields - Unmounted');
-    };
-  }, []);
-
-  useEffect(() => {
-    console.log('Chart accounts updated:', chartAccounts);
-  }, [chartAccounts]);
-
-  useEffect(() => {
-    console.log('Search value changed:', searchValue);
-  }, [searchValue]);
 
   return (
     <>
@@ -84,52 +65,35 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts =
 
       <div className="space-y-2">
         <Label>Cuenta de Gasto</Label>
-        <Popover 
-          open={openChartAccount} 
-          onOpenChange={(isOpen) => {
-            console.log('Chart Account Popover state changed:', isOpen);
-            setOpenChartAccount(isOpen);
-          }}
-        >
+        <Popover open={openChartAccount} onOpenChange={setOpenChartAccount}>
           <PopoverTrigger asChild>
             <Input
               placeholder="Buscar cuenta de gasto..."
               value={chartAccounts.find(a => String(a.id) === formData.chart_account_id)?.name || ""}
               readOnly
               className="cursor-pointer"
-              onClick={() => console.log('Input clicked, current chartAccounts:', chartAccounts)}
             />
           </PopoverTrigger>
           <PopoverContent className="p-0" align="start">
-            <Command 
-              value={searchValue} 
-              onValueChange={(value) => {
-                console.log('Command value changed:', value);
-                setSearchValue(value);
-              }}
-            >
+            <Command shouldFilter={false}>
               <CommandInput placeholder="Buscar cuenta de gasto..." />
               <CommandEmpty>No se encontraron cuentas.</CommandEmpty>
               <CommandGroup className="max-h-60 overflow-auto">
-                {chartAccounts.map((account) => {
-                  console.log('Rendering account:', account);
-                  return (
-                    <CommandItem
-                      key={account.id}
-                      value={String(account.id)}
-                      onSelect={(value) => {
-                        console.log('Account selected:', value);
-                        setFormData({ ...formData, chart_account_id: value });
-                        setOpenChartAccount(false);
-                      }}
-                    >
-                      {account.code} - {account.name}
-                      {String(account.id) === formData.chart_account_id && (
-                        <CheckIcon className="ml-2 h-4 w-4" />
-                      )}
-                    </CommandItem>
-                  );
-                })}
+                {chartAccounts.map((account) => (
+                  <CommandItem
+                    key={account.id}
+                    value={String(account.id)}
+                    onSelect={(value) => {
+                      setFormData({ ...formData, chart_account_id: value });
+                      setOpenChartAccount(false);
+                    }}
+                  >
+                    {account.code} - {account.name}
+                    {String(account.id) === formData.chart_account_id && (
+                      <CheckIcon className="ml-2 h-4 w-4" />
+                    )}
+                  </CommandItem>
+                ))}
               </CommandGroup>
             </Command>
           </PopoverContent>
