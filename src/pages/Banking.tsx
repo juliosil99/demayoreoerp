@@ -63,6 +63,9 @@ export default function Banking() {
     balance: 0,
   });
 
+  console.log("Current user:", user);
+  console.log("Show transfers state:", showTransfers);
+
   const { data: accounts, refetch } = useQuery({
     queryKey: ["bank-accounts"],
     queryFn: async () => {
@@ -79,11 +82,15 @@ export default function Banking() {
     enabled: !!user?.id,
   });
 
-  const { data: transfers } = useQuery({
+  const { data: transfers, isLoading: transfersLoading, error: transfersError } = useQuery({
     queryKey: ["account-transfers"],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.log("No user ID available for transfers query");
+        return [];
+      }
 
+      console.log("Fetching transfers for user:", user.id);
       const { data, error } = await supabase
         .from("account_transfers")
         .select(`
@@ -94,10 +101,22 @@ export default function Banking() {
         .eq('user_id', user.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching transfers:", error);
+        throw error;
+      }
+      
+      console.log("Transfers data:", data);
       return data;
     },
     enabled: showTransfers && !!user?.id,
+  });
+
+  console.log("Transfers query state:", { 
+    isLoading: transfersLoading, 
+    error: transfersError, 
+    data: transfers,
+    enabled: showTransfers && !!user?.id
   });
 
   const handleAddAccount = async () => {
@@ -382,7 +401,15 @@ export default function Banking() {
         </Table>
       </div>
 
-      {showTransfers && transfers && transfers.length > 0 ? (
+      {transfersLoading ? (
+        <div className="text-center py-8 text-gray-500">
+          Cargando transferencias...
+        </div>
+      ) : transfersError ? (
+        <div className="text-center py-8 text-red-500">
+          Error al cargar transferencias: {transfersError.message}
+        </div>
+      ) : showTransfers && transfers && transfers.length > 0 ? (
         <div className="rounded-md border">
           <Table>
             <TableHeader>
