@@ -66,15 +66,12 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     mutationFn: async (values: ExpenseFormData) => {
       if (!user?.id) throw new Error("User not authenticated");
 
-      // Asegurarnos de que la fecha se mantenga sin cambios de zona horaria
-      const parsedDate = parseISO(values.date);
-      
       const expenseData = {
         ...values,
         user_id: user.id,
         amount: parseFloat(values.amount),
         account_id: parseInt(values.account_id),
-        date: format(parsedDate, 'yyyy-MM-dd'), // Formatear la fecha sin zona horaria
+        date: values.date, // Enviamos la fecha directamente sin manipulación
       };
 
       if (initialExpense) {
