@@ -30,7 +30,6 @@ const profileFormSchema = z.object({
 
 const emailFormSchema = z.object({
   newEmail: z.string().email("Correo electrónico inválido"),
-  password: z.string().min(6, "La contraseña es requerida"),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -83,7 +82,6 @@ export default function Profile() {
     resolver: zodResolver(emailFormSchema),
     defaultValues: {
       newEmail: "",
-      password: "",
     },
   });
 
@@ -115,7 +113,7 @@ export default function Profile() {
 
   const handleEmailUpdate = async (values: EmailFormValues) => {
     try {
-      await updateEmail(values.newEmail, values.password);
+      await updateEmail(values.newEmail);
       setIsEmailDialogOpen(false);
       emailForm.reset();
     } catch (error) {
@@ -194,19 +192,6 @@ export default function Profile() {
                                 <FormLabel>Nuevo Correo Electrónico</FormLabel>
                                 <FormControl>
                                   <Input placeholder="nuevo@email.com" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={emailForm.control}
-                            name="password"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Contraseña Actual</FormLabel>
-                                <FormControl>
-                                  <Input type="password" placeholder="Tu contraseña actual" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>

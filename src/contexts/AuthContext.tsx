@@ -10,7 +10,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateEmail: (newEmail: string, password: string) => Promise<void>;
+  updateEmail: (newEmail: string) => Promise<void>;
 };
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -76,20 +76,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
-  const updateEmail = async (newEmail: string, password: string) => {
+  const updateEmail = async (newEmail: string) => {
     try {
-      // Primero verificamos la contraseña actual
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user?.email || '',
-        password: password,
+      const { error } = await supabase.auth.updateUser({ 
+        email: newEmail,
       });
-
-      if (signInError) {
-        throw new Error("La contraseña actual es incorrecta");
-      }
-
-      // Si la contraseña es correcta, actualizamos el email
-      const { error } = await supabase.auth.updateUser({ email: newEmail });
       
       if (error) throw error;
 
