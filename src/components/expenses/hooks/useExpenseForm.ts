@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -66,11 +66,15 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     mutationFn: async (values: ExpenseFormData) => {
       if (!user?.id) throw new Error("User not authenticated");
 
+      // Asegurarnos de que la fecha se mantenga sin cambios de zona horaria
+      const parsedDate = parseISO(values.date);
+      
       const expenseData = {
         ...values,
         user_id: user.id,
         amount: parseFloat(values.amount),
         account_id: parseInt(values.account_id),
+        date: format(parsedDate, 'yyyy-MM-dd'), // Formatear la fecha sin zona horaria
       };
 
       if (initialExpense) {
