@@ -1,7 +1,9 @@
 
+import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ReconciliationFiltersProps {
   selectedChannel: string;
@@ -16,6 +18,20 @@ export function ReconciliationFilters({
   dateRange,
   onDateRangeChange,
 }: ReconciliationFiltersProps) {
+  const { data: channels } = useQuery({
+    queryKey: ["sales-channels"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sales_channels")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
     <div className="grid grid-cols-3 gap-4 mb-4">
       <div>
@@ -29,9 +45,11 @@ export function ReconciliationFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="amazon">Amazon</SelectItem>
-            <SelectItem value="mercadolibre">Mercado Libre</SelectItem>
-            <SelectItem value="walmart">Walmart</SelectItem>
+            {channels?.map((channel) => (
+              <SelectItem key={channel.id} value={channel.code}>
+                {channel.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
