@@ -22,6 +22,7 @@ import Receivables from "@/pages/Receivables";
 import Payables from "@/pages/Payables";
 import Profile from "@/pages/Profile";
 import SalesChannels from "@/pages/SalesChannels";
+import UserManagement from "@/pages/UserManagement";
 import "./App.css";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -68,6 +69,7 @@ function App() {
             <Route path="accounting/reports" element={<Reports />} />
             <Route path="accounting/transfers" element={<AccountTransfers />} />
             <Route path="sales-channels" element={<SalesChannels />} />
+            <Route path="users" element={<UserManagement />} />
           </Route>
         </Routes>
       </Router>
@@ -77,3 +79,4 @@ function App() {
 }
 
 export default App;
+
