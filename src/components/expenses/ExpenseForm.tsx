@@ -15,10 +15,14 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
 interface ExpenseFormProps {
   initialData?: Expense;
   onSuccess?: () => void;
+  onClose?: () => void;
 }
 
-export function ExpenseForm({ initialData, onSuccess }: ExpenseFormProps) {
-  const { formData, setFormData, isSubmitting, handleSubmit } = useExpenseForm(initialData, onSuccess);
+export function ExpenseForm({ initialData, onSuccess, onClose }: ExpenseFormProps) {
+  const { formData, setFormData, isSubmitting, handleSubmit } = useExpenseForm(initialData, () => {
+    onSuccess?.();
+    onClose?.();
+  });
   const { bankAccounts, chartAccounts, suppliers, isLoading } = useExpenseQueries();
 
   if (isLoading) {

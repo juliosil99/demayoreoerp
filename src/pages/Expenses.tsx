@@ -39,6 +39,7 @@ type Filters = {
 export default function Expenses() {
   const { user } = useAuth();
   const [filters, setFilters] = useState<Filters>({});
+  const [open, setOpen] = useState(false);
 
   const { data: expenses, isLoading, refetch } = useQuery({
     queryKey: ["expenses", user?.id, filters],
@@ -82,7 +83,7 @@ export default function Expenses() {
         <h1 className="text-2xl font-bold">Gastos</h1>
         <div className="flex gap-2">
           <ExpenseImporter onSuccess={refetch} />
-          <Dialog>
+          <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button>
                 <PlusIcon className="w-4 h-4 mr-2" />
@@ -93,7 +94,10 @@ export default function Expenses() {
               <DialogHeader>
                 <DialogTitle>Agregar Nuevo Gasto</DialogTitle>
               </DialogHeader>
-              <ExpenseForm onSuccess={refetch} />
+              <ExpenseForm 
+                onSuccess={refetch} 
+                onClose={() => setOpen(false)} 
+              />
             </DialogContent>
           </Dialog>
         </div>
