@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as z from "zod";
 import type { Database } from "@/integrations/supabase/types/base";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -26,12 +28,19 @@ const profileFormSchema = z.object({
   last_name: z.string().min(2, "El apellido debe tener al menos 2 caracteres"),
 });
 
+const emailFormSchema = z.object({
+  newEmail: z.string().email("Correo electrónico inválido"),
+  password: z.string().min(6, "La contraseña es requerida"),
+});
+
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
+type EmailFormValues = z.infer<typeof emailFormSchema>;
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, updateEmail } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile"],
@@ -42,7 +51,6 @@ export default function Profile() {
         .eq("id", user?.id)
         .maybeSingle();
 
-      // If no profile exists, create one
       if (!data && !error) {
         const { data: newProfile, error: createError } = await supabase
           .from("profiles")
@@ -71,6 +79,14 @@ export default function Profile() {
     },
   });
 
+  const emailForm = useForm<EmailFormValues>({
+    resolver: zodResolver(emailFormSchema),
+    defaultValues: {
+      newEmail: "",
+      password: "",
+    },
+  });
+
   const updateProfile = useMutation({
     mutationFn: async (values: ProfileFormValues) => {
       const { error } = await supabase
@@ -85,7 +101,6 @@ export default function Profile() {
         title: "Perfil actualizado",
         description: "Tu perfil ha sido actualizado exitosamente",
       });
-      // Invalidate and refetch profile data
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
     onError: (error) => {
@@ -97,6 +112,16 @@ export default function Profile() {
       });
     },
   });
+
+  const handleEmailUpdate = async (values: EmailFormValues) => {
+    try {
+      await updateEmail(values.newEmail, values.password);
+      setIsEmailDialogOpen(false);
+      emailForm.reset();
+    } catch (error) {
+      console.error("Error updating email:", error);
+    }
+  };
 
   async function onSubmit(values: ProfileFormValues) {
     updateProfile.mutate(values);
@@ -141,16 +166,61 @@ export default function Profile() {
                   </FormItem>
                 )}
               />
-              <FormItem>
+              <div className="space-y-2">
                 <FormLabel>Correo Electrónico</FormLabel>
-                <FormControl>
+                <div className="flex items-center gap-4">
                   <Input 
                     value={user?.email || ''} 
                     disabled 
-                    className="bg-gray-50"
+                    className="bg-gray-50 flex-1"
                   />
-                </FormControl>
-              </FormItem>
+                  <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button type="button" variant="outline">
+                        Cambiar Email
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Cambiar Correo Electrónico</DialogTitle>
+                      </DialogHeader>
+                      <Form {...emailForm}>
+                        <form onSubmit={emailForm.handleSubmit(handleEmailUpdate)} className="space-y-4">
+                          <FormField
+                            control={emailForm.control}
+                            name="newEmail"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Nuevo Correo Electrónico</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="nuevo@email.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={emailForm.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Contraseña Actual</FormLabel>
+                                <FormControl>
+                                  <Input type="password" placeholder="Tu contraseña actual" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <Button type="submit" className="w-full">
+                            Actualizar Email
+                          </Button>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
               <Button 
                 type="submit" 
                 disabled={updateProfile.isPending}

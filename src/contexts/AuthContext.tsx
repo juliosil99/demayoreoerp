@@ -2,6 +2,7 @@
 import * as React from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type AuthContextType = {
   session: Session | null;
@@ -9,6 +10,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  updateEmail: (newEmail: string, password: string) => Promise<void>;
 };
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -74,8 +76,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
+  const updateEmail = async (newEmail: string, password: string) => {
+    try {
+      // Primero verificamos la contraseña actual
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: password,
+      });
+
+      if (signInError) {
+        throw new Error("La contraseña actual es incorrecta");
+      }
+
+      // Si la contraseña es correcta, actualizamos el email
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      
+      if (error) throw error;
+
+      toast.success("Se ha enviado un enlace de confirmación a tu nuevo correo electrónico");
+    } catch (error: any) {
+      toast.error(error.message);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, user, signIn, signUp, signOut, updateEmail }}>
       {children}
     </AuthContext.Provider>
   );
