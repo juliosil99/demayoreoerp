@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { BanknoteIcon, CreditCard, Pencil, Trash2, ArrowLeftRight } from "lucide-react";
-import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 type AccountType = "Bank" | "Cash" | "Credit Card" | "Credit Simple";
@@ -40,31 +40,17 @@ interface BankAccount {
   created_at: string;
 }
 
-interface Transfer {
-  id: string;
-  date: string;
-  from_account_id: number;
-  to_account_id: number;
-  amount: number;
-  reference_number: string | null;
-  notes: string | null;
-  created_at: string;
-}
-
 export default function Banking() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [isEditingAccount, setIsEditingAccount] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
-  const [showTransfers, setShowTransfers] = useState(false);
   const [newAccount, setNewAccount] = useState({
     name: "",
     type: "" as AccountType,
     balance: 0,
   });
-
-  console.log("Current user:", user);
-  console.log("Show transfers state:", showTransfers);
 
   const { data: accounts, refetch } = useQuery({
     queryKey: ["bank-accounts"],
@@ -80,43 +66,6 @@ export default function Banking() {
       return data as BankAccount[];
     },
     enabled: !!user?.id,
-  });
-
-  const { data: transfers, isLoading: transfersLoading, error: transfersError } = useQuery({
-    queryKey: ["account-transfers"],
-    queryFn: async () => {
-      if (!user?.id) {
-        console.log("No user ID available for transfers query");
-        return [];
-      }
-
-      console.log("Fetching transfers for user:", user.id);
-      const { data, error } = await supabase
-        .from("account_transfers")
-        .select(`
-          *,
-          from_account:bank_accounts!from_account_id(name),
-          to_account:bank_accounts!to_account_id(name)
-        `)
-        .eq('user_id', user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching transfers:", error);
-        throw error;
-      }
-      
-      console.log("Transfers data:", data);
-      return data;
-    },
-    enabled: showTransfers && !!user?.id,
-  });
-
-  console.log("Transfers query state:", { 
-    isLoading: transfersLoading, 
-    error: transfersError, 
-    data: transfers,
-    enabled: showTransfers && !!user?.id
   });
 
   const handleAddAccount = async () => {
@@ -197,11 +146,11 @@ export default function Banking() {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => setShowTransfers(!showTransfers)}
+            onClick={() => navigate("/accounting/transfers")}
             className="w-full sm:w-auto"
           >
             <ArrowLeftRight className="mr-2 h-4 w-4" />
-            {showTransfers ? "Ocultar Transferencias" : "Ver Transferencias"}
+            Transferencias
           </Button>
           <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
             <DialogTrigger asChild>
@@ -400,47 +349,6 @@ export default function Banking() {
           </TableBody>
         </Table>
       </div>
-
-      {transfersLoading ? (
-        <div className="text-center py-8 text-gray-500">
-          Cargando transferencias...
-        </div>
-      ) : transfersError ? (
-        <div className="text-center py-8 text-red-500">
-          Error al cargar transferencias: {transfersError.message}
-        </div>
-      ) : showTransfers && transfers && transfers.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Cuenta Origen</TableHead>
-                <TableHead>Cuenta Destino</TableHead>
-                <TableHead className="text-right">Monto</TableHead>
-                <TableHead>Referencia</TableHead>
-                <TableHead>Notas</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transfers.map((transfer: any) => (
-                <TableRow key={transfer.id}>
-                  <TableCell>{format(new Date(transfer.date), 'dd/MM/yyyy')}</TableCell>
-                  <TableCell>{transfer.from_account.name}</TableCell>
-                  <TableCell>{transfer.to_account.name}</TableCell>
-                  <TableCell className="text-right">${transfer.amount.toFixed(2)}</TableCell>
-                  <TableCell>{transfer.reference_number || '-'}</TableCell>
-                  <TableCell>{transfer.notes || '-'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : showTransfers && (
-        <div className="text-center py-8 text-gray-500">
-          No hay transferencias para mostrar
-        </div>
-      )}
     </div>
   );
 }
