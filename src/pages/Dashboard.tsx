@@ -1,14 +1,11 @@
 
 import { Building, CreditCard, BanknoteIcon, ReceiptIcon } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
-import { useOldestExpense } from "@/hooks/dashboard/useOldestExpense";
 import { MetricCard } from "@/components/dashboard/MetricCard";
-import { OldestExpenseCard } from "@/components/dashboard/OldestExpenseCard";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 
 const Dashboard = () => {
   const { metrics, loading } = useDashboardMetrics();
-  const oldestExpense = useOldestExpense([]);
 
   if (loading) {
     return (
@@ -42,12 +39,6 @@ const Dashboard = () => {
           icon={CreditCard}
         />
       </div>
-
-      <OldestExpenseCard
-        expense={oldestExpense}
-        formatDate={formatDate}
-        formatCurrency={formatCurrency}
-      />
     </div>
   );
 };
