@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,6 +32,23 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers = [] }:
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
+  useEffect(() => {
+    console.log('PaymentSupplierFields - Mounted');
+    console.log('Initial suppliers:', suppliers);
+    console.log('Initial formData:', formData);
+    return () => {
+      console.log('PaymentSupplierFields - Unmounted');
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('Suppliers updated:', suppliers);
+  }, [suppliers]);
+
+  useEffect(() => {
+    console.log('Search value changed:', searchValue);
+  }, [searchValue]);
+
   return (
     <>
       <div className="space-y-2">
@@ -54,35 +71,52 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers = [] }:
 
       <div className="space-y-2">
         <Label>Proveedor</Label>
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover 
+          open={open} 
+          onOpenChange={(isOpen) => {
+            console.log('Popover state changed:', isOpen);
+            setOpen(isOpen);
+          }}
+        >
           <PopoverTrigger asChild>
             <Input
               placeholder="Buscar proveedor..."
               value={suppliers.find(s => String(s.id) === formData.supplier_id)?.name || ""}
               readOnly
               className="cursor-pointer"
+              onClick={() => console.log('Input clicked, current suppliers:', suppliers)}
             />
           </PopoverTrigger>
           <PopoverContent className="p-0" align="start">
-            <Command value={searchValue} onValueChange={setSearchValue}>
+            <Command 
+              value={searchValue} 
+              onValueChange={(value) => {
+                console.log('Command value changed:', value);
+                setSearchValue(value);
+              }}
+            >
               <CommandInput placeholder="Buscar proveedor..." />
               <CommandEmpty>No se encontraron proveedores.</CommandEmpty>
               <CommandGroup className="max-h-60 overflow-auto">
-                {suppliers.map((supplier) => (
-                  <CommandItem
-                    key={supplier.id}
-                    value={String(supplier.id)}
-                    onSelect={(value) => {
-                      setFormData({ ...formData, supplier_id: value });
-                      setOpen(false);
-                    }}
-                  >
-                    {supplier.name}
-                    {String(supplier.id) === formData.supplier_id && (
-                      <CheckIcon className="ml-2 h-4 w-4" />
-                    )}
-                  </CommandItem>
-                ))}
+                {suppliers.map((supplier) => {
+                  console.log('Rendering supplier:', supplier);
+                  return (
+                    <CommandItem
+                      key={supplier.id}
+                      value={String(supplier.id)}
+                      onSelect={(value) => {
+                        console.log('Supplier selected:', value);
+                        setFormData({ ...formData, supplier_id: value });
+                        setOpen(false);
+                      }}
+                    >
+                      {supplier.name}
+                      {String(supplier.id) === formData.supplier_id && (
+                        <CheckIcon className="ml-2 h-4 w-4" />
+                      )}
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             </Command>
           </PopoverContent>
