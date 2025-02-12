@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { BanknoteIcon, CreditCard, Pencil, Trash2, ArrowLeftRight } from "lucide-react";
 import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 type AccountType = "Bank" | "Cash" | "Credit Card" | "Credit Simple";
 
@@ -52,6 +52,7 @@ interface Transfer {
 }
 
 export default function Banking() {
+  const { user } = useAuth();
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [isEditingAccount, setIsEditingAccount] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
@@ -65,6 +66,8 @@ export default function Banking() {
   const { data: accounts, refetch } = useQuery({
     queryKey: ["bank-accounts"],
     queryFn: async () => {
+      if (!user?.id) return [];
+      
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*")
@@ -73,20 +76,28 @@ export default function Banking() {
       if (error) throw error;
       return data as BankAccount[];
     },
+    enabled: !!user?.id,
   });
 
   const { data: transfers } = useQuery({
     queryKey: ["account-transfers"],
     queryFn: async () => {
+      if (!user?.id) return [];
+
       const { data, error } = await supabase
         .from("account_transfers")
-        .select("*, from_account:bank_accounts!from_account_id(name), to_account:bank_accounts!to_account_id(name)")
+        .select(`
+          *,
+          from_account:bank_accounts!from_account_id(name),
+          to_account:bank_accounts!to_account_id(name)
+        `)
+        .eq('user_id', user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    enabled: showTransfers,
+    enabled: showTransfers && !!user?.id,
   });
 
   const handleAddAccount = async () => {
@@ -371,7 +382,7 @@ export default function Banking() {
         </Table>
       </div>
 
-      {showTransfers && (
+      {showTransfers && transfers && transfers.length > 0 ? (
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -385,7 +396,7 @@ export default function Banking() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transfers?.map((transfer: any) => (
+              {transfers.map((transfer: any) => (
                 <TableRow key={transfer.id}>
                   <TableCell>{format(new Date(transfer.date), 'dd/MM/yyyy')}</TableCell>
                   <TableCell>{transfer.from_account.name}</TableCell>
@@ -397,6 +408,10 @@ export default function Banking() {
               ))}
             </TableBody>
           </Table>
+        </div>
+      ) : showTransfers && (
+        <div className="text-center py-8 text-gray-500">
+          No hay transferencias para mostrar
         </div>
       )}
     </div>
