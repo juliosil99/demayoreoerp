@@ -64,7 +64,8 @@ export default function Expenses() {
         query = query.eq('account_id', filters.account_id);
       }
       if (filters.unreconciled) {
-        query = query.not('expense_invoice_relations.id', 'is', null);
+        // Cambiamos la condición para mostrar gastos sin conciliar
+        query = query.is('expense_invoice_relations', null);
       }
 
       query = query.order('date', { ascending: false });
