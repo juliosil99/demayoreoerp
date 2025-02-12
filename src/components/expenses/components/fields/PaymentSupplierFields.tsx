@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Command,
   CommandEmpty,
@@ -30,9 +29,12 @@ interface Props extends BaseFieldProps {
   suppliers: SelectOption[];
 }
 
-export function PaymentSupplierFields({ formData, setFormData, suppliers = [] }: Props) {
+export function PaymentSupplierFields({ formData, setFormData, suppliers }: Props) {
   const [open, setOpen] = useState(false);
-  const selectedSupplier = suppliers.find(s => String(s.id) === formData.supplier_id);
+  
+  // Ensure suppliers is always an array and find the selected one
+  const safeSuppliers = Array.isArray(suppliers) ? suppliers : [];
+  const selectedSupplier = safeSuppliers.find(s => String(s.id) === formData.supplier_id);
 
   return (
     <>
@@ -68,12 +70,12 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers = [] }:
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-full p-0">
-            <Command>
+          <PopoverContent className="w-full p-0" align="start">
+            <Command shouldFilter={false}>
               <CommandInput placeholder="Buscar proveedor..." />
               <CommandEmpty>No se encontró ningún proveedor.</CommandEmpty>
               <CommandGroup className="max-h-60 overflow-auto">
-                {suppliers.map((supplier) => (
+                {safeSuppliers.map((supplier) => (
                   <CommandItem
                     key={supplier.id}
                     value={supplier.name}
