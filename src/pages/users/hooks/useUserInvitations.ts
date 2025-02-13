@@ -11,6 +11,11 @@ export function useUserInvitations() {
   const { data: invitations, refetch } = useQuery({
     queryKey: ["user-invitations"],
     queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        throw new Error("No hay sesión activa");
+      }
+
       const { data, error } = await supabase
         .from('user_invitations')
         .select('*')
@@ -26,13 +31,18 @@ export function useUserInvitations() {
   });
 
   const createInvitationLog = async (invitationId: string, status: string, errorMessage?: string) => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      throw new Error("No hay sesión activa");
+    }
+
     const { error } = await supabase
       .from('invitation_logs')
       .insert({
         invitation_id: invitationId,
         status,
         error_message: errorMessage,
-        attempted_by: (await supabase.auth.getUser()).data.user?.id
+        attempted_by: session.session.user.id
       });
 
     if (error) {
@@ -43,6 +53,11 @@ export function useUserInvitations() {
   const inviteUser = async (email: string, role: 'admin' | 'user') => {
     try {
       setIsInviting(true);
+
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        throw new Error("No hay sesión activa");
+      }
       
       // Crear la invitación
       const { data: invitation, error: invitationError } = await supabase
@@ -50,7 +65,8 @@ export function useUserInvitations() {
         .insert({
           email,
           role,
-          status: 'pending'
+          status: 'pending',
+          invited_by: session.session.user.id
         })
         .select()
         .single();
