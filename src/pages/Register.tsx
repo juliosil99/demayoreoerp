@@ -60,12 +60,13 @@ export default function Register() {
       setLoading(true);
 
       // Registrar al usuario con Supabase Auth
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: invitation.email,
         password: password,
       });
 
       if (signUpError) throw signUpError;
+      if (!signUpData.user) throw new Error("No se pudo crear el usuario");
 
       // Actualizar el estado de la invitación
       const { error: updateError } = await supabase
@@ -76,11 +77,16 @@ export default function Register() {
       if (updateError) throw updateError;
 
       // Registrar en los logs
-      await supabase.from("invitation_logs").insert({
-        invitation_id: invitation.id,
+      const { error: logError } = await supabase.from("invitation_logs").insert({
         status: "completed",
         error_message: null,
+        attempted_by: signUpData.user.id,
+        id: invitation.id
       });
+
+      if (logError) {
+        console.error("Error creating log:", logError);
+      }
 
       toast.success("Registro completado exitosamente");
       navigate("/login");
@@ -88,12 +94,20 @@ export default function Register() {
       console.error("Error in registration:", error);
       toast.error(error.message || "Error al completar el registro");
       
+      // Obtener el usuario actual para el log de error
+      const { data: { session } } = await supabase.auth.getSession();
+      
       // Registrar el error en los logs
-      await supabase.from("invitation_logs").insert({
-        invitation_id: invitation.id,
+      const { error: logError } = await supabase.from("invitation_logs").insert({
         status: "error",
         error_message: error.message,
+        attempted_by: session?.user.id || invitation.invited_by, // Usar invited_by como fallback
+        id: invitation.id
       });
+
+      if (logError) {
+        console.error("Error creating error log:", logError);
+      }
     } finally {
       setLoading(false);
     }
