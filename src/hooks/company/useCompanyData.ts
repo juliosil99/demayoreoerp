@@ -30,9 +30,9 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           .from("companies")
           .select()
           .limit(1)
-          .single();
+          .maybeSingle();
 
-        if (anyCompanyError && anyCompanyError.code !== 'PGRST116') {
+        if (anyCompanyError) {
           console.error("Error checking for any company:", anyCompanyError);
           toast.error("Error al verificar la empresa");
           return;
@@ -50,13 +50,11 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
             .from("companies")
             .select()
             .eq("user_id", userId)
-            .single();
+            .maybeSingle();
 
           if (userCompanyError) {
-            if (userCompanyError.code !== 'PGRST116') {
-              console.error("Error checking user company:", userCompanyError);
-              toast.error("Error al verificar la empresa");
-            }
+            console.error("Error checking user company:", userCompanyError);
+            toast.error("Error al verificar la empresa");
             return;
           }
           
