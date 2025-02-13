@@ -59,20 +59,16 @@ export default function Register() {
     try {
       setLoading(true);
 
-      // Registrar al usuario con Supabase Auth
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: invitation.email,
-        password: password,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: {
-            email_confirmed: true // Marcar el email como confirmado
-          }
+      // Primero, intentamos crear el usuario con admin_key
+      const { data: adminAuthData, error: adminAuthError } = await supabase.functions.invoke('create-invited-user', {
+        body: {
+          email: invitation.email,
+          password: password,
+          role: invitation.role
         }
       });
 
-      if (signUpError) throw signUpError;
-      if (!signUpData.user) throw new Error("No se pudo crear el usuario");
+      if (adminAuthError || !adminAuthData) throw adminAuthError || new Error("Error al crear el usuario");
 
       // Actualizar el estado de la invitación
       const { error: updateError } = await supabase
@@ -86,7 +82,7 @@ export default function Register() {
       const { error: logError } = await supabase.from("invitation_logs").insert({
         status: "completed",
         error_message: null,
-        attempted_by: signUpData.user.id,
+        attempted_by: adminAuthData.user.id,
         id: invitation.id
       });
 
@@ -94,20 +90,30 @@ export default function Register() {
         console.error("Error creating log:", logError);
       }
 
+      // Iniciar sesión con el usuario recién creado
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: invitation.email,
+        password: password,
+      });
+
+      if (signInError) {
+        console.error("Error signing in:", signInError);
+        toast.error("Usuario creado pero hubo un error al iniciar sesión. Por favor, inicia sesión manualmente.");
+        navigate("/login");
+        return;
+      }
+
       toast.success("Registro completado exitosamente");
-      navigate("/login");
+      navigate("/");
     } catch (error: any) {
       console.error("Error in registration:", error);
       toast.error(error.message || "Error al completar el registro");
-      
-      // Obtener el usuario actual para el log de error
-      const { data: { session } } = await supabase.auth.getSession();
       
       // Registrar el error en los logs
       const { error: logError } = await supabase.from("invitation_logs").insert({
         status: "error",
         error_message: error.message,
-        attempted_by: session?.user.id || invitation.invited_by, // Usar invited_by como fallback
+        attempted_by: invitation.invited_by,
         id: invitation.id
       });
 
