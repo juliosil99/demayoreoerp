@@ -25,25 +25,45 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
       }
       
       try {
-        const { data, error } = await supabase
+        // Primero verificamos si hay alguna empresa configurada
+        const { data: anyCompany, error: anyCompanyError } = await supabase
           .from("companies")
           .select()
-          .eq("user_id", userId)
+          .limit(1)
           .single();
 
-        if (error) {
-          if (error.code !== 'PGRST116') {
-            console.error("Error checking company:", error);
-            toast.error("Error al verificar la empresa");
-          }
+        if (anyCompanyError && anyCompanyError.code !== 'PGRST116') {
+          console.error("Error checking for any company:", anyCompanyError);
+          toast.error("Error al verificar la empresa");
           return;
         }
-        
-        if (data && isEditMode) {
-          setIsEditing(true);
-          setCompanyData(data);
-        } else if (data && !isEditMode) {
+
+        // Si existe una empresa y no estamos en modo edición, redirigimos al dashboard
+        if (anyCompany && !isEditMode) {
           navigate("/dashboard");
+          return;
+        }
+
+        // Si estamos en modo edición, cargamos los datos de la empresa del usuario
+        if (isEditMode) {
+          const { data: userCompany, error: userCompanyError } = await supabase
+            .from("companies")
+            .select()
+            .eq("user_id", userId)
+            .single();
+
+          if (userCompanyError) {
+            if (userCompanyError.code !== 'PGRST116') {
+              console.error("Error checking user company:", userCompanyError);
+              toast.error("Error al verificar la empresa");
+            }
+            return;
+          }
+          
+          if (userCompany) {
+            setIsEditing(true);
+            setCompanyData(userCompany);
+          }
         }
       } catch (error) {
         console.error("Error checking company:", error);
