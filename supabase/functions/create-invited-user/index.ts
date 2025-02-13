@@ -20,21 +20,33 @@ serve(async (req) => {
 
     const { email, password, role } = await req.json()
 
-    // Primero creamos el usuario
+    // Primero creamos el usuario con confirmed_at ya establecido
     const { data: { user }, error: createError } = await supabaseClient.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { role }
+      user_metadata: { role },
+      app_metadata: {
+        email_confirmed_at: new Date().toISOString(),
+        email_confirm_sent_at: new Date().toISOString(),
+        confirmed_at: new Date().toISOString()
+      }
     })
 
     if (createError) throw createError
     if (!user) throw new Error('No se pudo crear el usuario')
 
-    // Luego actualizamos el usuario para confirmar el email
+    // Forzar la confirmación usando updateUserById
     const { error: updateError } = await supabaseClient.auth.admin.updateUserById(
       user.id,
-      { email_confirm: true }
+      { 
+        email_confirm: true,
+        app_metadata: {
+          email_confirmed_at: new Date().toISOString(),
+          email_confirm_sent_at: new Date().toISOString(),
+          confirmed_at: new Date().toISOString()
+        }
+      }
     )
 
     if (updateError) throw updateError
