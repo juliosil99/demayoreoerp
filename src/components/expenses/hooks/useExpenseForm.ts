@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -24,6 +24,7 @@ export type ExpenseFormData = {
   notes: string;
   supplier_id: string;
   category: string;
+  expense_type: 'operational' | 'inventory' | 'fixed_asset' | 'investment';
 };
 
 const initialFormData: ExpenseFormData = {
@@ -37,6 +38,7 @@ const initialFormData: ExpenseFormData = {
   notes: "",
   supplier_id: "",
   category: "",
+  expense_type: "operational",
 };
 
 export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void) {
@@ -58,6 +60,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
         notes: initialExpense.notes || "",
         supplier_id: initialExpense.supplier_id || "",
         category: initialExpense.category || "",
+        expense_type: initialExpense.expense_type || "operational",
       });
     }
   }, [initialExpense]);
