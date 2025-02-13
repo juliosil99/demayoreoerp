@@ -7,6 +7,7 @@ import { UserInvitation } from "../types";
 
 export function useUserInvitations() {
   const [isInviting, setIsInviting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   const { data: invitations, refetch } = useQuery({
     queryKey: ["user-invitations"],
@@ -47,6 +48,30 @@ export function useUserInvitations() {
 
     if (error) {
       console.error("Error creating invitation log:", error);
+    }
+  };
+
+  const resendInvitation = async (invitation: UserInvitation) => {
+    try {
+      setIsResending(true);
+      
+      // Registrar el intento de reenvío
+      await createInvitationLog(
+        invitation.id,
+        'resend_attempt',
+        'Intento de reenvío de invitación'
+      );
+
+      // Simular el envío de correo (aquí iría la lógica real de envío)
+      const emailError = new Error("Error al reenviar el correo electrónico");
+      await createInvitationLog(invitation.id, 'email_failed', emailError.message);
+      
+      toast.success("Se intentó reenviar la invitación pero hubo un error en el envío");
+    } catch (error: any) {
+      console.error("Error resending invitation:", error);
+      toast.error(error.message);
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -114,6 +139,8 @@ export function useUserInvitations() {
   return {
     invitations,
     inviteUser,
-    isInviting
+    isInviting,
+    resendInvitation,
+    isResending
   };
 }

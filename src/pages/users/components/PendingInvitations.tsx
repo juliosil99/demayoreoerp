@@ -7,11 +7,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { useUserInvitations } from "../hooks/useUserInvitations";
 import { format } from "date-fns";
+import { Send } from "lucide-react";
 
 export function PendingInvitations() {
-  const { invitations } = useUserInvitations();
+  const { invitations, resendInvitation, isResending } = useUserInvitations();
 
   if (!invitations?.length) return null;
 
@@ -26,6 +28,7 @@ export function PendingInvitations() {
               <TableHead>Rol</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>Fecha de Invitación</TableHead>
+              <TableHead>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -36,6 +39,19 @@ export function PendingInvitations() {
                 <TableCell>{invitation.status === 'pending' ? 'Pendiente' : 'Completada'}</TableCell>
                 <TableCell>
                   {format(new Date(invitation.created_at), 'dd/MM/yyyy HH:mm')}
+                </TableCell>
+                <TableCell>
+                  {invitation.status === 'pending' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => resendInvitation(invitation)}
+                      disabled={isResending}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Reenviar
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
