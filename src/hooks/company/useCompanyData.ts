@@ -11,6 +11,21 @@ interface CompanyData {
   regimen_fiscal: string;
 }
 
+export async function checkRFCExists(rfc: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("companies")
+    .select("rfc")
+    .eq("rfc", rfc)
+    .limit(1);
+
+  if (error) {
+    console.error("Error checking RFC:", error);
+    return false;
+  }
+
+  return data && data.length > 0;
+}
+
 export function useCompanyData(userId: string | undefined, isEditMode: boolean) {
   const navigate = useNavigate();
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);

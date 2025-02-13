@@ -12,6 +12,7 @@ import { CompanyNameField } from "./form-fields/CompanyNameField";
 import { RFCField } from "./form-fields/RFCField";
 import { PostalCodeField } from "./form-fields/PostalCodeField";
 import { TaxRegimeField } from "./form-fields/TaxRegimeField";
+import { checkRFCExists } from "@/hooks/company/useCompanyData";
 
 interface CompanyFormProps {
   defaultValues?: CompanyFormData;
@@ -36,13 +37,30 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
   const onSubmit = async (data: CompanyFormData) => {
     setIsLoading(true);
     try {
+      // Si estamos editando, no necesitamos verificar el RFC si no ha cambiado
+      if (!isEditing || (defaultValues && defaultValues.rfc !== data.rfc)) {
+        const rfcExists = await checkRFCExists(data.rfc);
+        if (rfcExists) {
+          toast.error("El RFC ya está registrado en el sistema");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       if (isEditing) {
         const { error } = await supabase
           .from("companies")
           .update(data)
           .eq("user_id", userId);
 
-        if (error) throw error;
+        if (error) {
+          if (error.code === '23505') {
+            toast.error("El RFC ya está registrado en el sistema");
+          } else {
+            toast.error("Error al actualizar la información");
+          }
+          throw error;
+        }
         toast.success("¡Información actualizada exitosamente!");
       } else {
         const { error } = await supabase
@@ -52,14 +70,20 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
             user_id: userId,
           }]);
 
-        if (error) throw error;
+        if (error) {
+          if (error.code === '23505') {
+            toast.error("El RFC ya está registrado en el sistema");
+          } else {
+            toast.error("Error al guardar la información");
+          }
+          throw error;
+        }
         toast.success("¡Empresa registrada exitosamente!");
       }
       onSubmitSuccess?.();
       navigate("/dashboard");
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Error al guardar la información");
     } finally {
       setIsLoading(false);
     }
