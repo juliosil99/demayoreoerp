@@ -58,6 +58,22 @@ export function useUserInvitations() {
       if (!session.session) {
         throw new Error("No hay sesión activa");
       }
+
+      // Verificar si ya existe una invitación para este email
+      const { data: existingInvitation } = await supabase
+        .from('user_invitations')
+        .select('id, status')
+        .eq('email', email)
+        .single();
+
+      if (existingInvitation) {
+        await createInvitationLog(
+          existingInvitation.id,
+          'duplicate',
+          'Ya existe una invitación para este email'
+        );
+        throw new Error("Ya existe una invitación para este email");
+      }
       
       // Crear la invitación
       const { data: invitation, error: invitationError } = await supabase
