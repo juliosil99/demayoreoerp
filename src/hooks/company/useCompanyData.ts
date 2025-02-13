@@ -27,41 +27,41 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
       try {
         // Si estamos en modo edición, intentamos cargar la empresa del usuario actual
         if (isEditMode) {
-          const { data: userCompany, error: userCompanyError } = await supabase
+          const { data, error } = await supabase
             .from("companies")
-            .select()
-            .eq("user_id", userId)
-            .maybeSingle();
+            .select("*")
+            .eq("user_id", userId);
 
-          if (userCompanyError) {
-            console.error("Error checking user company:", userCompanyError);
+          if (error) {
+            console.error("Error checking user company:", error);
             toast.error("Error al verificar la empresa");
+            setIsLoading(false);
             return;
           }
           
-          if (userCompany) {
+          if (data && data.length > 0) {
             setIsEditing(true);
-            setCompanyData(userCompany);
+            setCompanyData(data[0]);
           }
           setIsLoading(false);
           return;
         }
 
         // Si no estamos en modo edición, verificamos si existe alguna empresa
-        const { data: anyCompany, error: anyCompanyError } = await supabase
+        const { data, error } = await supabase
           .from("companies")
-          .select()
-          .limit(1)
-          .maybeSingle();
+          .select("*")
+          .limit(1);
 
-        if (anyCompanyError) {
-          console.error("Error checking for any company:", anyCompanyError);
+        if (error) {
+          console.error("Error checking for any company:", error);
           toast.error("Error al verificar la empresa");
+          setIsLoading(false);
           return;
         }
 
         // Si existe una empresa, redirigimos al dashboard
-        if (anyCompany) {
+        if (data && data.length > 0) {
           navigate("/dashboard");
           return;
         }
