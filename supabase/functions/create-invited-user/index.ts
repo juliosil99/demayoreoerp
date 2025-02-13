@@ -20,8 +20,8 @@ serve(async (req) => {
 
     const { email, password, role } = await req.json()
 
-    // Crear usuario usando el service_role key
-    const { data: userData, error: createError } = await supabaseClient.auth.admin.createUser({
+    // Primero creamos el usuario
+    const { data: { user }, error: createError } = await supabaseClient.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -29,13 +29,22 @@ serve(async (req) => {
     })
 
     if (createError) throw createError
+    if (!user) throw new Error('No se pudo crear el usuario')
+
+    // Luego actualizamos el usuario para confirmar el email
+    const { error: updateError } = await supabaseClient.auth.admin.updateUserById(
+      user.id,
+      { email_confirm: true }
+    )
+
+    if (updateError) throw updateError
 
     if (role === 'admin') {
       // Si el rol es admin, insertamos en user_roles
       const { error: roleError } = await supabaseClient
         .from('user_roles')
         .insert({
-          user_id: userData.user.id,
+          user_id: user.id,
           role: 'admin'
         })
 
@@ -43,13 +52,14 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ user: userData.user }),
+      JSON.stringify({ user }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
       }
     )
   } catch (error) {
+    console.error('Error in create-invited-user:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
