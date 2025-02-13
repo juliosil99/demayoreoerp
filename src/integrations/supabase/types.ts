@@ -471,6 +471,33 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          created_at: string | null
+          html_content: string
+          id: string
+          name: string
+          subject: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          html_content: string
+          id?: string
+          name: string
+          subject: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          html_content?: string
+          id?: string
+          name?: string
+          subject?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       expense_imports: {
         Row: {
           created_at: string | null
@@ -1308,6 +1335,7 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          invitation_token: string | null
           invited_by: string
           role: Database["public"]["Enums"]["app_role"] | null
           status: string | null
@@ -1316,6 +1344,7 @@ export type Database = {
           created_at?: string | null
           email: string
           id?: string
+          invitation_token?: string | null
           invited_by: string
           role?: Database["public"]["Enums"]["app_role"] | null
           status?: string | null
@@ -1324,6 +1353,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          invitation_token?: string | null
           invited_by?: string
           role?: Database["public"]["Enums"]["app_role"] | null
           status?: string | null
