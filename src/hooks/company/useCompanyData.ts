@@ -25,26 +25,7 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
       }
       
       try {
-        // Primero verificamos si hay alguna empresa configurada
-        const { data: anyCompany, error: anyCompanyError } = await supabase
-          .from("companies")
-          .select()
-          .limit(1)
-          .maybeSingle();
-
-        if (anyCompanyError) {
-          console.error("Error checking for any company:", anyCompanyError);
-          toast.error("Error al verificar la empresa");
-          return;
-        }
-
-        // Si existe una empresa y no estamos en modo edición, redirigimos al dashboard
-        if (anyCompany && !isEditMode) {
-          navigate("/dashboard");
-          return;
-        }
-
-        // Si estamos en modo edición, cargamos los datos de la empresa del usuario
+        // Si estamos en modo edición, intentamos cargar la empresa del usuario actual
         if (isEditMode) {
           const { data: userCompany, error: userCompanyError } = await supabase
             .from("companies")
@@ -62,11 +43,33 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
             setIsEditing(true);
             setCompanyData(userCompany);
           }
+          setIsLoading(false);
+          return;
         }
+
+        // Si no estamos en modo edición, verificamos si existe alguna empresa
+        const { data: anyCompany, error: anyCompanyError } = await supabase
+          .from("companies")
+          .select()
+          .limit(1)
+          .maybeSingle();
+
+        if (anyCompanyError) {
+          console.error("Error checking for any company:", anyCompanyError);
+          toast.error("Error al verificar la empresa");
+          return;
+        }
+
+        // Si existe una empresa, redirigimos al dashboard
+        if (anyCompany) {
+          navigate("/dashboard");
+          return;
+        }
+
+        setIsLoading(false);
       } catch (error) {
         console.error("Error checking company:", error);
         toast.error("Error al verificar la empresa");
-      } finally {
         setIsLoading(false);
       }
     };
