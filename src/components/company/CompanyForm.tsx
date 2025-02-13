@@ -37,53 +37,63 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
   const onSubmit = async (data: CompanyFormData) => {
     setIsLoading(true);
     try {
-      // Si estamos editando, no necesitamos verificar el RFC si no ha cambiado
+      // Verificar RFC solo si es nuevo registro o si cambió el RFC
       if (!isEditing || (defaultValues && defaultValues.rfc !== data.rfc)) {
+        console.log("🔍 Verifying RFC:", data.rfc);
         const rfcExists = await checkRFCExists(data.rfc);
         if (rfcExists) {
+          console.log("❌ RFC already exists");
           toast.error("El RFC ya está registrado en el sistema");
           setIsLoading(false);
           return;
         }
+        console.log("✅ RFC is available");
       }
 
       if (isEditing) {
+        console.log("📝 Updating company data...");
         const { error } = await supabase
           .from("companies")
           .update(data)
-          .eq("user_id", userId);
+          .eq("user_id", userId)
+          .select();
 
         if (error) {
-          if (error.code === '23505') {
-            toast.error("El RFC ya está registrado en el sistema");
-          } else {
-            toast.error("Error al actualizar la información");
-          }
-          throw error;
+          console.error("❌ Error updating company:", error);
+          toast.error(error.code === '23505' 
+            ? "El RFC ya está registrado en el sistema"
+            : "Error al actualizar la información");
+          return;
         }
+        
+        console.log("✅ Company updated successfully");
         toast.success("¡Información actualizada exitosamente!");
       } else {
+        console.log("📝 Creating new company...");
         const { error } = await supabase
           .from("companies")
           .insert([{
             ...data,
             user_id: userId,
-          }]);
+          }])
+          .select();
 
         if (error) {
-          if (error.code === '23505') {
-            toast.error("El RFC ya está registrado en el sistema");
-          } else {
-            toast.error("Error al guardar la información");
-          }
-          throw error;
+          console.error("❌ Error creating company:", error);
+          toast.error(error.code === '23505'
+            ? "El RFC ya está registrado en el sistema"
+            : "Error al guardar la información");
+          return;
         }
+
+        console.log("✅ Company created successfully");
         toast.success("¡Empresa registrada exitosamente!");
       }
+      
       onSubmitSuccess?.();
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error:", error);
+      console.error("❌ Unexpected error:", error);
     } finally {
       setIsLoading(false);
     }

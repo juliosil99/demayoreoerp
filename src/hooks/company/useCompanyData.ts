@@ -12,18 +12,21 @@ interface CompanyData {
 }
 
 export async function checkRFCExists(rfc: string): Promise<boolean> {
+  console.log("🔍 Checking if RFC exists:", rfc);
+  
   const { data, error } = await supabase
     .from("companies")
     .select("rfc")
     .eq("rfc", rfc)
-    .limit(1);
+    .maybeSingle();
 
   if (error) {
-    console.error("Error checking RFC:", error);
+    console.error("❌ Error checking RFC:", error);
     return false;
   }
 
-  return data && data.length > 0;
+  console.log("✅ RFC check result:", data);
+  return data !== null;
 }
 
 export function useCompanyData(userId: string | undefined, isEditMode: boolean) {
@@ -45,14 +48,14 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
       }
       
       try {
-        // Si estamos en modo edición, intentamos cargar la empresa del usuario actual
         if (isEditMode) {
           console.log("📝 Edit mode detected, fetching company for user:", userId);
           
           const { data, error } = await supabase
             .from("companies")
             .select("*")
-            .eq("user_id", userId);
+            .eq("user_id", userId)
+            .maybeSingle();
 
           console.log("Query response - data:", data);
           console.log("Query response - error:", error);
@@ -69,29 +72,30 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
             return;
           }
           
-          if (data && data.length > 0) {
-            console.log("✅ Company found for user:", data[0]);
+          if (data) {
+            console.log("✅ Company found for user:", data);
             setIsEditing(true);
-            setCompanyData(data[0]);
+            setCompanyData(data);
           } else {
             console.log("ℹ️ No company found for user");
+            navigate("/company-setup");
           }
           setIsLoading(false);
           return;
         }
 
-        // Si no estamos en modo edición, verificamos si existe alguna empresa
         console.log("🔍 Checking for any existing company...");
         const { data, error } = await supabase
           .from("companies")
           .select("*")
-          .limit(1);
+          .eq("user_id", userId)
+          .maybeSingle();
 
-        console.log("Query response for any company - data:", data);
-        console.log("Query response for any company - error:", error);
+        console.log("Query response for company check - data:", data);
+        console.log("Query response for company check - error:", error);
 
         if (error) {
-          console.error("❌ Error checking for any company:", error);
+          console.error("❌ Error checking for company:", error);
           console.error("Error details:", {
             message: error.message,
             details: error.details,
@@ -102,14 +106,13 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           return;
         }
 
-        // Si existe una empresa, redirigimos al dashboard
-        if (data && data.length > 0) {
-          console.log("✅ Existing company found, redirecting to dashboard");
+        if (data) {
+          console.log("✅ Company exists, redirecting to dashboard");
           navigate("/dashboard");
           return;
         }
 
-        console.log("ℹ️ No existing company found, staying on setup page");
+        console.log("ℹ️ No company found, staying on setup page");
         setIsLoading(false);
       } catch (error) {
         console.error("❌ Unexpected error:", error);
