@@ -63,6 +63,12 @@ export default function Register() {
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: invitation.email,
         password: password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            email_confirmed: true // Marcar el email como confirmado
+          }
+        }
       });
 
       if (signUpError) throw signUpError;
