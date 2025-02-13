@@ -55,12 +55,16 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
             .from("companies")
             .select("*")
             .eq("user_id", userId)
-            .maybeSingle();
+            .single();
 
           console.log("Query response - data:", data);
           console.log("Query response - error:", error);
 
-          if (error) {
+          if (error && error.code === 'PGRST116') {
+            console.log("ℹ️ No company found for user");
+            navigate("/company-setup");
+            return;
+          } else if (error) {
             console.error("❌ Error checking user company:", error);
             console.error("Error details:", {
               message: error.message,
@@ -72,36 +76,30 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
             return;
           }
           
-          if (data) {
-            console.log("✅ Company found for user:", data);
-            setIsEditing(true);
-            setCompanyData(data);
-          } else {
-            console.log("ℹ️ No company found for user");
-            navigate("/company-setup");
-          }
+          console.log("✅ Company found for user:", data);
+          setIsEditing(true);
+          setCompanyData(data);
           setIsLoading(false);
           return;
         }
 
         console.log("🔍 Checking if company exists...");
-        const { data: companyExists, error: companyError } = await supabase
+        const { data, error } = await supabase
           .from("companies")
           .select("*")
-          .limit(1)
-          .maybeSingle();
+          .limit(1);
 
-        console.log("Query response for company check - data:", companyExists);
-        console.log("Query response for company check - error:", companyError);
+        console.log("Query response for company check - data:", data);
+        console.log("Query response for company check - error:", error);
 
-        if (companyError) {
-          console.error("❌ Error checking for company:", companyError);
+        if (error) {
+          console.error("❌ Error checking for company:", error);
           toast.error("Error al verificar la empresa");
           setIsLoading(false);
           return;
         }
 
-        if (companyExists) {
+        if (data && data.length > 0) {
           console.log("✅ Company exists, redirecting to dashboard");
           navigate("/dashboard");
           return;
