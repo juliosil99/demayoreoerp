@@ -84,29 +84,24 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           return;
         }
 
-        console.log("🔍 Checking for any existing company...");
-        const { data, error } = await supabase
+        console.log("🔍 Checking if company exists...");
+        const { data: companyExists, error: companyError } = await supabase
           .from("companies")
           .select("*")
-          .eq("user_id", userId)
+          .limit(1)
           .maybeSingle();
 
-        console.log("Query response for company check - data:", data);
-        console.log("Query response for company check - error:", error);
+        console.log("Query response for company check - data:", companyExists);
+        console.log("Query response for company check - error:", companyError);
 
-        if (error) {
-          console.error("❌ Error checking for company:", error);
-          console.error("Error details:", {
-            message: error.message,
-            details: error.details,
-            hint: error.hint
-          });
+        if (companyError) {
+          console.error("❌ Error checking for company:", companyError);
           toast.error("Error al verificar la empresa");
           setIsLoading(false);
           return;
         }
 
-        if (data) {
+        if (companyExists) {
           console.log("✅ Company exists, redirecting to dashboard");
           navigate("/dashboard");
           return;
