@@ -40,6 +40,23 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("No se encontró la invitación");
     }
 
+    // Generar nuevo token si no existe
+    if (!invitation.invitation_token) {
+      const { data: updatedInvitation, error: updateError } = await supabase
+        .from("user_invitations")
+        .update({ invitation_token: crypto.randomUUID() })
+        .eq("id", invitationId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Error updating invitation token:", updateError);
+        throw new Error("Error al actualizar el token de invitación");
+      }
+
+      invitation.invitation_token = updatedInvitation.invitation_token;
+    }
+
     const { data: template, error: templateError } = await supabase
       .from("email_templates")
       .select("*")
@@ -51,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("No se encontró la plantilla de correo");
     }
 
-    // Generar el enlace de invitación
+    // Generar el enlace de invitación con el token
     const invitationLink = `${req.headers.get("origin")}/register?token=${invitation.invitation_token}`;
     const htmlContent = template.html_content.replace("{{invitationLink}}", invitationLink);
 
@@ -78,6 +95,16 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-invitation function:", error);
+    
+    // Log the error
+    if (error.invitationId) {
+      await supabase.from("invitation_logs").insert({
+        invitation_id: error.invitationId,
+        status: "error",
+        error_message: error.message,
+      });
+    }
+
     return new Response(
       JSON.stringify({ error: error.message }),
       {
