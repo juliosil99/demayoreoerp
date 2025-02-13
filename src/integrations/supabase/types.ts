@@ -628,6 +628,41 @@ export type Database = {
           },
         ]
       }
+      invitation_logs: {
+        Row: {
+          attempted_by: string
+          created_at: string
+          error_message: string | null
+          id: string
+          invitation_id: string | null
+          status: string
+        }
+        Insert: {
+          attempted_by: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          invitation_id?: string | null
+          status: string
+        }
+        Update: {
+          attempted_by?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          invitation_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_logs_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "user_invitations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_products: {
         Row: {
           amount: number | null
