@@ -62,11 +62,19 @@ export function useUserInvitations() {
         'Intento de reenvío de invitación'
       );
 
-      // Simular el envío de correo (aquí iría la lógica real de envío)
-      const emailError = new Error("Error al reenviar el correo electrónico");
-      await createInvitationLog(invitation.id, 'email_failed', emailError.message);
-      
-      toast.success("Se intentó reenviar la invitación pero hubo un error en el envío");
+      // Llamar a la Edge Function para enviar el correo
+      const { error } = await supabase.functions.invoke('send-invitation', {
+        body: { invitationId: invitation.id }
+      });
+
+      if (error) {
+        await createInvitationLog(invitation.id, 'email_failed', error.message);
+        throw new Error("Error al reenviar la invitación");
+      }
+
+      await createInvitationLog(invitation.id, 'email_sent', 'Correo reenviado exitosamente');
+      toast.success("Invitación reenviada exitosamente");
+      refetch();
     } catch (error: any) {
       console.error("Error resending invitation:", error);
       toast.error(error.message);
@@ -112,21 +120,28 @@ export function useUserInvitations() {
         .select()
         .single();
 
-      if (invitationError) {
+      if (invitationError || !invitation) {
         await createInvitationLog(
           invitation?.id || '00000000-0000-0000-0000-000000000000',
           'error',
-          invitationError.message
+          invitationError?.message || 'Error desconocido'
         );
-        throw invitationError;
+        throw invitationError || new Error('Error desconocido');
       }
 
-      // Simular el error de envío de correo por ahora
-      const emailError = new Error("Error al enviar el correo electrónico");
-      await createInvitationLog(invitation.id, 'email_failed', emailError.message);
+      // Enviar el correo de invitación usando la Edge Function
+      const { error: sendError } = await supabase.functions.invoke('send-invitation', {
+        body: { invitationId: invitation.id }
+      });
+
+      if (sendError) {
+        await createInvitationLog(invitation.id, 'email_failed', sendError.message);
+        toast.error("Invitación creada, pero hubo un error al enviar el correo");
+      } else {
+        await createInvitationLog(invitation.id, 'email_sent', 'Correo enviado exitosamente');
+        toast.success("Invitación enviada exitosamente");
+      }
       
-      // A pesar del error en el correo, la invitación fue creada
-      toast.success("Invitación creada, pero hubo un error al enviar el correo");
       refetch();
     } catch (error: any) {
       console.error("Error inviting user:", error);
