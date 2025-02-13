@@ -93,11 +93,15 @@ export function useUserInvitations() {
       }
 
       // Verificar si ya existe una invitación para este email
-      const { data: existingInvitation } = await supabase
+      const { data: existingInvitation, error: checkError } = await supabase
         .from('user_invitations')
         .select('id, status')
         .eq('email', email)
-        .single();
+        .maybeSingle();
+
+      if (checkError) {
+        throw checkError;
+      }
 
       if (existingInvitation) {
         await createInvitationLog(
