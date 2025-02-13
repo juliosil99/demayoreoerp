@@ -62,6 +62,19 @@ export function useUserInvitations() {
         'Intento de reenvío de invitación'
       );
 
+      // Generar nuevo token
+      const newToken = crypto.randomUUID();
+      
+      // Actualizar el token de la invitación
+      const { error: updateError } = await supabase
+        .from('user_invitations')
+        .update({ invitation_token: newToken })
+        .eq('id', invitation.id);
+
+      if (updateError) {
+        throw new Error("Error al actualizar el token de invitación");
+      }
+
       // Llamar a la Edge Function para enviar el correo
       const { error } = await supabase.functions.invoke('send-invitation', {
         body: { invitationId: invitation.id }
@@ -112,14 +125,16 @@ export function useUserInvitations() {
         throw new Error("Ya existe una invitación para este email");
       }
       
-      // Crear la invitación
+      // Crear la invitación con un nuevo token
+      const invitation_token = crypto.randomUUID();
       const { data: invitation, error: invitationError } = await supabase
         .from('user_invitations')
         .insert({
           email,
           role,
           status: 'pending',
-          invited_by: session.session.user.id
+          invited_by: session.session.user.id,
+          invitation_token
         })
         .select()
         .single();
