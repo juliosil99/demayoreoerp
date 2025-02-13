@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import Layout from "@/components/layout/Layout";
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import CompanySetup from "@/pages/CompanySetup";
 import Dashboard from "@/pages/Dashboard";
 import Sales from "@/pages/Sales";
@@ -23,7 +24,6 @@ import Payables from "@/pages/Payables";
 import Profile from "@/pages/Profile";
 import SalesChannels from "@/pages/SalesChannels";
 import UserManagement from "@/pages/UserManagement";
-import "./App.css";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -36,6 +36,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route
             path="/company-setup"
             element={
@@ -79,4 +80,3 @@ function App() {
 }
 
 export default App;
-
