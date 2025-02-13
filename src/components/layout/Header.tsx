@@ -1,47 +1,35 @@
-
 import { Bell, Settings, LogOut, User, Building2, Palette, Sun, Moon, Laptop, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
-
 interface HeaderProps {
   children?: React.ReactNode;
 }
-
 type Theme = "light" | "dark" | "blue";
-
-export function Header({ children }: HeaderProps) {
-  const { signOut } = useAuth();
+export function Header({
+  children
+}: HeaderProps) {
+  const {
+    signOut
+  } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
-      return (localStorage.getItem("theme") as Theme) || "light";
+      return localStorage.getItem("theme") as Theme || "light";
     }
     return "light";
   });
-
   useEffect(() => {
     const root = window.document.documentElement;
     root.setAttribute("data-theme", theme);
     localStorage.setItem("theme", theme);
   }, [theme]);
-
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -50,17 +38,15 @@ export function Header({ children }: HeaderProps) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to sign out. Please try again.",
+        description: "Failed to sign out. Please try again."
       });
     }
   };
-
-  return (
-    <header className="bg-background border-b border-border px-4 py-3 md:px-6">
+  return <header className="bg-background border-b border-border px-4 py-3 md:px-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {children}
-          <h1 className="text-lg font-medium text-foreground">Sistema ERP</h1>
+          <h1 className="text-lg font-medium text-foreground">demayoreo</h1>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <Button variant="ghost" size="icon" className="hidden md:inline-flex">
@@ -95,7 +81,7 @@ export function Header({ children }: HeaderProps) {
                   Tema
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
-                  <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as Theme)}>
+                  <DropdownMenuRadioGroup value={theme} onValueChange={value => setTheme(value as Theme)}>
                     <DropdownMenuRadioItem value="light">
                       <Sun className="mr-2 h-4 w-4" />
                       Claro
@@ -120,15 +106,10 @@ export function Header({ children }: HeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleSignOut}
-          >
+          <Button variant="ghost" size="icon" onClick={handleSignOut}>
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </div>
-    </header>
-  );
+    </header>;
 }
