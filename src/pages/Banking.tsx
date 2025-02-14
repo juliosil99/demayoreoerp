@@ -152,14 +152,13 @@ export default function Banking() {
             <ArrowLeftRight className="mr-2 h-4 w-4" />
             Transferencias
           </Button>
-          <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">
-                <BanknoteIcon className="mr-2 h-4 w-4" />
-                Agregar Cuenta
-              </Button>
-            </DialogTrigger>
-          </Dialog>
+          <Button 
+            className="w-full sm:w-auto"
+            onClick={() => setIsAddingAccount(true)}
+          >
+            <BanknoteIcon className="mr-2 h-4 w-4" />
+            Agregar Cuenta
+          </Button>
         </div>
       </div>
 
