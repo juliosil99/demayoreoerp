@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const emptyAccount: NewBankAccount = {
   name: "",
-  type: "" as const,
+  type: "Bank", // Asignamos un valor válido por defecto
   balance: 0,
 };
 
@@ -77,7 +77,6 @@ export function useBankAccounts() {
           name: newAccount.name,
           type: newAccount.type,
           balance: newAccount.balance,
-          chart_account_id: newAccount.chart_account_id,
         })
         .eq("id", selectedAccount.id);
 
@@ -117,7 +116,6 @@ export function useBankAccounts() {
       name: account.name,
       type: account.type,
       balance: account.balance,
-      chart_account_id: account.chart_account_id,
     });
     setIsEditingAccount(true);
   };

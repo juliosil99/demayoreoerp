@@ -14,22 +14,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-type AccountType = "Bank" | "Cash" | "Credit Card" | "Credit Simple";
-
-interface BankAccount {
-  name: string;
-  type: AccountType;
-  balance: number;
-  chart_account_id: string;
-}
+import type { NewBankAccount } from "./types";
 
 interface BankAccountDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: () => void;
-  account: BankAccount;
-  setAccount: (account: BankAccount) => void;
+  account: NewBankAccount;
+  setAccount: (account: NewBankAccount) => void;
   title: string;
   submitText: string;
   chartAccounts: any[];
@@ -67,7 +59,7 @@ export function BankAccountDialog({
             <Select
               value={account.type}
               onValueChange={(value) =>
-                setAccount({ ...account, type: value as AccountType })
+                setAccount({ ...account, type: value as NewBankAccount["type"] })
               }
             >
               <SelectTrigger>
