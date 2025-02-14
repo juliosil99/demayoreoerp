@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { BankAccountDialog } from "@/components/banking/BankAccountDialog";
 import { BankAccountsTable } from "@/components/banking/BankAccountsTable";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type AccountType = "Bank" | "Cash" | "Credit Card" | "Credit Simple";
 
@@ -36,7 +38,7 @@ export default function Banking() {
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [newAccount, setNewAccount] = useState(emptyAccount);
 
-  const { data: accounts, refetch } = useQuery({
+  const { data: accounts, isLoading: isLoadingAccounts, error: accountsError, refetch } = useQuery({
     queryKey: ["bank-accounts"],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -52,7 +54,7 @@ export default function Banking() {
     enabled: !!user?.id,
   });
 
-  const { data: chartAccounts } = useQuery({
+  const { data: chartAccounts, isLoading: isLoadingChartAccounts } = useQuery({
     queryKey: ["chart-accounts"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -139,6 +141,14 @@ export default function Banking() {
     setIsEditingAccount(true);
   };
 
+  if (accountsError) {
+    return (
+      <div className="p-4 text-red-500">
+        Error al cargar las cuentas. Por favor, intenta de nuevo.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -162,11 +172,19 @@ export default function Banking() {
         </div>
       </div>
 
-      <BankAccountsTable
-        accounts={accounts || []}
-        onEdit={openEditDialog}
-        onDelete={handleDeleteAccount}
-      />
+      {isLoadingAccounts ? (
+        <div className="space-y-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : (
+        <BankAccountsTable
+          accounts={accounts || []}
+          onEdit={openEditDialog}
+          onDelete={handleDeleteAccount}
+        />
+      )}
 
       <BankAccountDialog
         isOpen={isAddingAccount}
