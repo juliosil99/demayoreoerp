@@ -3,34 +3,13 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { BanknoteIcon, CreditCard, Pencil, Trash2, ArrowLeftRight } from "lucide-react";
+import { BanknoteIcon, ArrowLeftRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatCurrency } from "@/utils/formatters";
+import { BankAccountDialog } from "@/components/banking/BankAccountDialog";
+import { BankAccountsTable } from "@/components/banking/BankAccountsTable";
 
 type AccountType = "Bank" | "Cash" | "Credit Card" | "Credit Simple";
 
@@ -43,18 +22,20 @@ interface BankAccount {
   chart_account_id: string | null;
 }
 
+const emptyAccount = {
+  name: "",
+  type: "" as AccountType,
+  balance: 0,
+  chart_account_id: "",
+};
+
 export default function Banking() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [isEditingAccount, setIsEditingAccount] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
-  const [newAccount, setNewAccount] = useState({
-    name: "",
-    type: "" as AccountType,
-    balance: 0,
-    chart_account_id: "",
-  });
+  const [newAccount, setNewAccount] = useState(emptyAccount);
 
   const { data: accounts, refetch } = useQuery({
     queryKey: ["bank-accounts"],
@@ -96,7 +77,7 @@ export default function Banking() {
 
       toast.success("Cuenta agregada exitosamente");
       setIsAddingAccount(false);
-      setNewAccount({ name: "", type: "" as AccountType, balance: 0, chart_account_id: "" });
+      setNewAccount(emptyAccount);
       refetch();
     } catch (error) {
       console.error("Error agregando cuenta:", error);
@@ -123,7 +104,7 @@ export default function Banking() {
       toast.success("Cuenta actualizada exitosamente");
       setIsEditingAccount(false);
       setSelectedAccount(null);
-      setNewAccount({ name: "", type: "" as AccountType, balance: 0, chart_account_id: "" });
+      setNewAccount(emptyAccount);
       refetch();
     } catch (error) {
       console.error("Error actualizando cuenta:", error);
@@ -172,249 +153,45 @@ export default function Banking() {
             <ArrowLeftRight className="mr-2 h-4 w-4" />
             Transferencias
           </Button>
-          <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">
-                <BanknoteIcon className="mr-2 h-4 w-4" />
-                Agregar Cuenta
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Agregar Nueva Cuenta</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <label>Nombre de la Cuenta</label>
-                  <Input
-                    value={newAccount.name}
-                    onChange={(e) =>
-                      setNewAccount({ ...newAccount, name: e.target.value })
-                    }
-                    placeholder="Ingrese el nombre de la cuenta"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label>Tipo de Cuenta</label>
-                  <Select
-                    value={newAccount.type}
-                    onValueChange={(value) =>
-                      setNewAccount({ ...newAccount, type: value as AccountType })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione el tipo de cuenta" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Bank">Banco</SelectItem>
-                      <SelectItem value="Cash">Efectivo</SelectItem>
-                      <SelectItem value="Credit Card">Tarjeta de Crédito</SelectItem>
-                      <SelectItem value="Credit Simple">Crédito Simple</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <label>Cuenta Contable</label>
-                  <Select
-                    value={newAccount.chart_account_id}
-                    onValueChange={(value) =>
-                      setNewAccount({ ...newAccount, chart_account_id: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione la cuenta contable" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {chartAccounts?.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.code} - {account.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <label>Saldo Inicial</label>
-                  <Input
-                    type="number"
-                    value={newAccount.balance}
-                    onChange={(e) =>
-                      setNewAccount({
-                        ...newAccount,
-                        balance: parseFloat(e.target.value),
-                      })
-                    }
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsAddingAccount(false)}
-                  className="w-full sm:w-auto"
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  onClick={handleAddAccount}
-                  className="w-full sm:w-auto"
-                >
-                  Agregar Cuenta
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <DialogTrigger asChild>
+            <Button 
+              className="w-full sm:w-auto"
+              onClick={() => setIsAddingAccount(true)}
+            >
+              <BanknoteIcon className="mr-2 h-4 w-4" />
+              Agregar Cuenta
+            </Button>
+          </DialogTrigger>
         </div>
-
-        <Dialog open={isEditingAccount} onOpenChange={setIsEditingAccount}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Editar Cuenta</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <label>Nombre de la Cuenta</label>
-                <Input
-                  value={newAccount.name}
-                  onChange={(e) =>
-                    setNewAccount({ ...newAccount, name: e.target.value })
-                  }
-                  placeholder="Ingrese el nombre de la cuenta"
-                />
-              </div>
-              <div className="grid gap-2">
-                <label>Tipo de Cuenta</label>
-                <Select
-                  value={newAccount.type}
-                  onValueChange={(value) =>
-                    setNewAccount({ ...newAccount, type: value as AccountType })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione el tipo de cuenta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Bank">Banco</SelectItem>
-                    <SelectItem value="Cash">Efectivo</SelectItem>
-                    <SelectItem value="Credit Card">Tarjeta de Crédito</SelectItem>
-                    <SelectItem value="Credit Simple">Crédito Simple</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <label>Cuenta Contable</label>
-                <Select
-                  value={newAccount.chart_account_id}
-                  onValueChange={(value) =>
-                    setNewAccount({ ...newAccount, chart_account_id: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione la cuenta contable" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {chartAccounts?.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.code} - {account.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <label>Saldo</label>
-                <Input
-                  type="number"
-                  value={newAccount.balance}
-                  onChange={(e) =>
-                    setNewAccount({
-                      ...newAccount,
-                      balance: parseFloat(e.target.value),
-                    })
-                  }
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setIsEditingAccount(false)}
-                className="w-full sm:w-auto"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleEditAccount}
-                className="w-full sm:w-auto"
-              >
-                Guardar Cambios
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre de la Cuenta</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Cuenta Contable</TableHead>
-              <TableHead className="text-right">Saldo Actual</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {accounts?.map((account: any) => (
-              <TableRow key={account.id}>
-                <TableCell className="font-medium">{account.name}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {account.type === "Credit Card" ? (
-                      <CreditCard className="h-4 w-4" />
-                    ) : (
-                      <BanknoteIcon className="h-4 w-4" />
-                    )}
-                    {account.type === "Bank" ? "Banco" :
-                     account.type === "Cash" ? "Efectivo" :
-                     account.type === "Credit Card" ? "Tarjeta de Crédito" :
-                     "Crédito Simple"}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {account.chart_of_accounts ? 
-                    `${account.chart_of_accounts.code} - ${account.chart_of_accounts.name}` : 
-                    "No asignada"}
-                </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(account.balance)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEditDialog(account)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteAccount(account)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <BankAccountsTable
+        accounts={accounts || []}
+        onEdit={openEditDialog}
+        onDelete={handleDeleteAccount}
+      />
+
+      <BankAccountDialog
+        isOpen={isAddingAccount}
+        onOpenChange={setIsAddingAccount}
+        onSave={handleAddAccount}
+        account={newAccount}
+        setAccount={setNewAccount}
+        title="Agregar Nueva Cuenta"
+        submitText="Agregar Cuenta"
+        chartAccounts={chartAccounts || []}
+      />
+
+      <BankAccountDialog
+        isOpen={isEditingAccount}
+        onOpenChange={setIsEditingAccount}
+        onSave={handleEditAccount}
+        account={newAccount}
+        setAccount={setNewAccount}
+        title="Editar Cuenta"
+        submitText="Guardar Cambios"
+        chartAccounts={chartAccounts || []}
+      />
     </div>
   );
 }
