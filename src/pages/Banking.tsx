@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { BanknoteIcon, ArrowLeftRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -153,15 +152,14 @@ export default function Banking() {
             <ArrowLeftRight className="mr-2 h-4 w-4" />
             Transferencias
           </Button>
-          <DialogTrigger asChild>
-            <Button 
-              className="w-full sm:w-auto"
-              onClick={() => setIsAddingAccount(true)}
-            >
-              <BanknoteIcon className="mr-2 h-4 w-4" />
-              Agregar Cuenta
-            </Button>
-          </DialogTrigger>
+          <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto">
+                <BanknoteIcon className="mr-2 h-4 w-4" />
+                Agregar Cuenta
+              </Button>
+            </DialogTrigger>
+          </Dialog>
         </div>
       </div>
 
