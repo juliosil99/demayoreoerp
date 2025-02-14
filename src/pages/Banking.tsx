@@ -20,13 +20,19 @@ interface BankAccount {
   type: AccountType;
   balance: number;
   created_at: string;
-  chart_of_accounts?: {
+  chart_of_accounts: {
     code: string;
     name: string;
-  };
+  } | null;
 }
 
-const emptyAccount = {
+interface NewBankAccount {
+  name: string;
+  type: AccountType;
+  balance: number;
+}
+
+const emptyAccount: NewBankAccount = {
   name: "",
   type: "" as AccountType,
   balance: 0,
@@ -38,7 +44,7 @@ export default function Banking() {
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [isEditingAccount, setIsEditingAccount] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
-  const [newAccount, setNewAccount] = useState(emptyAccount);
+  const [newAccount, setNewAccount] = useState<NewBankAccount>(emptyAccount);
 
   const { data: accounts, isLoading: isLoadingAccounts, error: accountsError, refetch } = useQuery({
     queryKey: ["bank-accounts"],
@@ -47,11 +53,11 @@ export default function Banking() {
       
       const { data, error } = await supabase
         .from("bank_accounts")
-        .select("*, chart_of_accounts (name, code)")
+        .select("*, chart_of_accounts:chart_account_id(*)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as BankAccount[];
+      return data as unknown as BankAccount[];
     },
     enabled: !!user?.id,
   });
