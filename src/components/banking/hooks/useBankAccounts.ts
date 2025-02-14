@@ -26,27 +26,13 @@ export function useBankAccounts() {
       
       const { data, error } = await supabase
         .from("bank_accounts")
-        .select("*, chart_of_accounts:chart_account_id(*)")
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as unknown as BankAccount[];
     },
     enabled: !!user?.id,
-  });
-
-  const { data: chartAccounts, isLoading: isLoadingChartAccounts } = useQuery({
-    queryKey: ["chart-accounts"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("chart_of_accounts")
-        .select("*")
-        .in("account_type", ["asset", "liability"])
-        .order("code");
-
-      if (error) throw error;
-      return data;
-    },
   });
 
   const handleAddAccount = async () => {
@@ -124,8 +110,6 @@ export function useBankAccounts() {
     accounts,
     isLoadingAccounts,
     accountsError,
-    chartAccounts,
-    isLoadingChartAccounts,
     isAddingAccount,
     setIsAddingAccount,
     isEditingAccount,

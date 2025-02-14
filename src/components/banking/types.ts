@@ -7,10 +7,6 @@ export interface BankAccount {
   type: AccountType;
   balance: number;
   created_at: string;
-  chart_of_accounts: {
-    code: string;
-    name: string;
-  } | null;
 }
 
 export interface NewBankAccount {

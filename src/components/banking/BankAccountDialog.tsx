@@ -35,7 +35,6 @@ export function BankAccountDialog({
   setAccount,
   title,
   submitText,
-  chartAccounts,
 }: BankAccountDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -70,26 +69,6 @@ export function BankAccountDialog({
                 <SelectItem value="Cash">Efectivo</SelectItem>
                 <SelectItem value="Credit Card">Tarjeta de Crédito</SelectItem>
                 <SelectItem value="Credit Simple">Crédito Simple</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <label>Cuenta Contable</label>
-            <Select
-              value={account.chart_account_id}
-              onValueChange={(value) =>
-                setAccount({ ...account, chart_account_id: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccione la cuenta contable" />
-              </SelectTrigger>
-              <SelectContent>
-                {chartAccounts?.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.code} - {account.name}
-                  </SelectItem>
-                ))}
               </SelectContent>
             </Select>
           </div>

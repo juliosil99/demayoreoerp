@@ -10,20 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/utils/formatters";
-
-type AccountType = "Bank" | "Cash" | "Credit Card" | "Credit Simple";
-
-interface BankAccount {
-  id: number;
-  name: string;
-  type: AccountType;
-  balance: number;
-  created_at: string;
-  chart_of_accounts: {
-    code: string;
-    name: string;
-  } | null;
-}
+import type { BankAccount } from "./types";
 
 interface BankAccountsTableProps {
   accounts: BankAccount[];
@@ -39,7 +26,6 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
           <TableRow>
             <TableHead>Nombre de la Cuenta</TableHead>
             <TableHead>Tipo</TableHead>
-            <TableHead>Cuenta Contable</TableHead>
             <TableHead className="text-right">Saldo Actual</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
@@ -60,11 +46,6 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                    account.type === "Credit Card" ? "Tarjeta de Crédito" :
                    "Crédito Simple"}
                 </div>
-              </TableCell>
-              <TableCell>
-                {account.chart_of_accounts ? 
-                  `${account.chart_of_accounts.code} - ${account.chart_of_accounts.name}` : 
-                  "No asignada"}
               </TableCell>
               <TableCell className="text-right">
                 {formatCurrency(account.balance)}
