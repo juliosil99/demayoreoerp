@@ -10,7 +10,6 @@ export default function Banking() {
     accounts,
     isLoadingAccounts,
     accountsError,
-    chartAccounts,
     isAddingAccount,
     setIsAddingAccount,
     isEditingAccount,
@@ -57,7 +56,7 @@ export default function Banking() {
         setAccount={setNewAccount}
         title="Agregar Nueva Cuenta"
         submitText="Agregar Cuenta"
-        chartAccounts={chartAccounts || []}
+        chartAccounts={[]}
       />
 
       <BankAccountDialog
@@ -68,7 +67,7 @@ export default function Banking() {
         setAccount={setNewAccount}
         title="Editar Cuenta"
         submitText="Guardar Cambios"
-        chartAccounts={chartAccounts || []}
+        chartAccounts={[]}
       />
     </div>
   );
