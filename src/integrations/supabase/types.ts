@@ -287,6 +287,7 @@ export type Database = {
       bank_accounts: {
         Row: {
           balance: number | null
+          chart_account_id: string | null
           created_at: string | null
           id: number
           name: string
@@ -294,6 +295,7 @@ export type Database = {
         }
         Insert: {
           balance?: number | null
+          chart_account_id?: string | null
           created_at?: string | null
           id?: number
           name: string
@@ -301,12 +303,21 @@ export type Database = {
         }
         Update: {
           balance?: number | null
+          chart_account_id?: string | null
           created_at?: string | null
           id?: number
           name?: string
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_chart_account_id_fkey"
+            columns: ["chart_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chart_of_accounts: {
         Row: {
