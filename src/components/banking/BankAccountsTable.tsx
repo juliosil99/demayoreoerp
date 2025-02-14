@@ -19,7 +19,6 @@ interface BankAccount {
   type: AccountType;
   balance: number;
   created_at: string;
-  chart_account_id: string | null;
   chart_of_accounts?: {
     code: string;
     name: string;

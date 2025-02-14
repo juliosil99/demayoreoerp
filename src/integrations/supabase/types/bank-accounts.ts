@@ -1,3 +1,4 @@
+
 export interface BankAccountsTable {
   Row: {
     id: number

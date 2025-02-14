@@ -20,14 +20,16 @@ interface BankAccount {
   type: AccountType;
   balance: number;
   created_at: string;
-  chart_account_id: string | null;
+  chart_of_accounts?: {
+    code: string;
+    name: string;
+  };
 }
 
 const emptyAccount = {
   name: "",
   type: "" as AccountType,
   balance: 0,
-  chart_account_id: "",
 };
 
 export default function Banking() {
@@ -96,7 +98,6 @@ export default function Banking() {
           name: newAccount.name,
           type: newAccount.type,
           balance: newAccount.balance,
-          chart_account_id: newAccount.chart_account_id || null,
         })
         .eq("id", selectedAccount.id);
 
@@ -136,7 +137,6 @@ export default function Banking() {
       name: account.name,
       type: account.type,
       balance: account.balance,
-      chart_account_id: account.chart_account_id || "",
     });
     setIsEditingAccount(true);
   };
