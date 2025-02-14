@@ -1396,6 +1396,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      initialize_base_accounts: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       is_admin: {
         Args: {
           user_id: string
