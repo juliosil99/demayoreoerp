@@ -24,7 +24,6 @@ export type ExpenseFormData = {
   notes: string;
   supplier_id: string;
   category: string;
-  expense_type: 'operational' | 'inventory' | 'fixed_asset' | 'investment';
 };
 
 const initialFormData: ExpenseFormData = {
@@ -38,7 +37,6 @@ const initialFormData: ExpenseFormData = {
   notes: "",
   supplier_id: "",
   category: "",
-  expense_type: "operational",
 };
 
 export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void) {
@@ -60,7 +58,6 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
         notes: initialExpense.notes || "",
         supplier_id: initialExpense.supplier_id || "",
         category: initialExpense.category || "",
-        expense_type: initialExpense.expense_type || "operational",
       });
     }
   }, [initialExpense]);

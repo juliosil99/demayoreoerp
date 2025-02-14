@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { DateAmountFields } from "./fields/DateAmountFields";
 import { DescriptionAccountFields } from "./fields/DescriptionAccountFields";
 import { PaymentSupplierFields } from "./fields/PaymentSupplierFields";
-import { ExpenseTypeField } from "./fields/ExpenseTypeField";
 import type { ExpenseFormData } from "../hooks/useExpenseForm";
 
 interface ExpenseFormFieldsProps {
@@ -36,10 +35,6 @@ export function ExpenseFormFields({
           formData={formData} 
           setFormData={setFormData}
           suppliers={suppliers}
-        />
-        <ExpenseTypeField
-          formData={formData}
-          setFormData={setFormData}
         />
       </div>
 
