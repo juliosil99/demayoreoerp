@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -18,6 +20,22 @@ interface Props extends BaseFieldProps {
 }
 
 export function DescriptionAccountFields({ formData, setFormData, bankAccounts = [], chartAccounts = [] }: Props) {
+  // Agrupar cuentas por tipo
+  const groupedAccounts = chartAccounts.reduce((acc, account: any) => {
+    if (!acc[account.account_type]) {
+      acc[account.account_type] = [];
+    }
+    acc[account.account_type].push(account);
+    return acc;
+  }, {} as Record<string, typeof chartAccounts>);
+
+  // Traducir los tipos de cuenta
+  const accountTypeLabels: Record<string, string> = {
+    asset: "Activos",
+    liability: "Pasivos",
+    expense: "Gastos"
+  };
+
   return (
     <>
       <div className="space-y-2">
@@ -49,19 +67,24 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts =
       </div>
 
       <div className="space-y-2">
-        <Label>Cuenta de Gasto</Label>
+        <Label>Cuenta Contable</Label>
         <Select
           value={formData.chart_account_id}
           onValueChange={(value) => setFormData({ ...formData, chart_account_id: value })}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Seleccionar cuenta de gasto" />
+            <SelectValue placeholder="Seleccionar cuenta contable" />
           </SelectTrigger>
           <SelectContent>
-            {chartAccounts.map((account) => (
-              <SelectItem key={account.id} value={String(account.id)}>
-                {account.code} - {account.name}
-              </SelectItem>
+            {Object.entries(groupedAccounts).map(([type, accounts]) => (
+              <SelectGroup key={type}>
+                <SelectLabel>{accountTypeLabels[type] || type}</SelectLabel>
+                {accounts.map((account: any) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.code} - {account.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             ))}
           </SelectContent>
         </Select>

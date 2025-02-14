@@ -21,7 +21,8 @@ export function useExpenseQueries() {
       const { data, error } = await supabase
         .from("chart_of_accounts")
         .select("*")
-        .eq("account_type", "expense");
+        .in("account_type", ["expense", "asset", "liability"])
+        .order('code');
       if (error) throw error;
       return data;
     },
