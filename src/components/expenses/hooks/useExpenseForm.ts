@@ -92,7 +92,12 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
           .select('*, bank_accounts (name), chart_of_accounts (name, code), contacts (name)')
           .single();
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes("cuenta bancaria debe tener una cuenta contable")) {
+            throw new Error("La cuenta bancaria seleccionada debe tener una cuenta contable asignada. Por favor, configure la cuenta bancaria primero.");
+          }
+          throw error;
+        }
         console.log("Respuesta de Supabase (update):", data);
         return data;
       } else {
@@ -102,7 +107,12 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
           .select('*, bank_accounts (name), chart_of_accounts (name, code), contacts (name)')
           .single();
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes("cuenta bancaria debe tener una cuenta contable")) {
+            throw new Error("La cuenta bancaria seleccionada debe tener una cuenta contable asignada. Por favor, configure la cuenta bancaria primero.");
+          }
+          throw error;
+        }
         console.log("Respuesta de Supabase (insert):", data);
         return data;
       }
@@ -116,9 +126,9 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       }
       onSuccess?.();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error with expense:", error);
-      toast.error(initialExpense ? "Error al actualizar el gasto" : "Error al crear el gasto");
+      toast.error(error.message);
     },
   });
 
