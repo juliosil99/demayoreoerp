@@ -69,11 +69,17 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       console.log("Fecha antes de crear el expense:", values.date);
 
       const expenseData = {
-        ...values,
         user_id: user.id,
+        date: values.date,
+        description: values.description,
         amount: parseFloat(values.amount),
         account_id: parseInt(values.account_id),
-        date: values.date,
+        chart_account_id: values.chart_account_id,
+        payment_method: values.payment_method,
+        reference_number: values.reference_number || null,
+        notes: values.notes || null,
+        supplier_id: values.supplier_id || null,
+        category: values.category || null,
       };
 
       console.log("Datos que se envían a Supabase:", expenseData);
@@ -83,7 +89,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
           .from("expenses")
           .update(expenseData)
           .eq('id', initialExpense.id)
-          .select()
+          .select('*, bank_accounts (name), chart_of_accounts (name, code), contacts (name)')
           .single();
 
         if (error) throw error;
@@ -93,7 +99,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
         const { data, error } = await supabase
           .from("expenses")
           .insert([expenseData])
-          .select()
+          .select('*, bank_accounts (name), chart_of_accounts (name, code), contacts (name)')
           .single();
 
         if (error) throw error;
@@ -120,6 +126,11 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     e.preventDefault();
     if (!user) {
       toast.error("Por favor inicia sesión para realizar esta acción");
+      return;
+    }
+
+    if (!formData.chart_account_id) {
+      toast.error("Por favor selecciona una cuenta contable");
       return;
     }
 
