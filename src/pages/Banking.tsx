@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +40,7 @@ interface BankAccount {
   type: AccountType;
   balance: number;
   created_at: string;
+  chart_account_id: string | null;
 }
 
 export default function Banking() {
@@ -51,6 +53,7 @@ export default function Banking() {
     name: "",
     type: "" as AccountType,
     balance: 0,
+    chart_account_id: "",
   });
 
   const { data: accounts, refetch } = useQuery({
@@ -60,13 +63,27 @@ export default function Banking() {
       
       const { data, error } = await supabase
         .from("bank_accounts")
-        .select("*")
+        .select("*, chart_of_accounts (name, code)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as BankAccount[];
     },
     enabled: !!user?.id,
+  });
+
+  const { data: chartAccounts } = useQuery({
+    queryKey: ["chart-accounts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("chart_of_accounts")
+        .select("*")
+        .in("account_type", ["asset", "liability"])
+        .order("code");
+
+      if (error) throw error;
+      return data;
+    },
   });
 
   const handleAddAccount = async () => {
@@ -79,7 +96,7 @@ export default function Banking() {
 
       toast.success("Cuenta agregada exitosamente");
       setIsAddingAccount(false);
-      setNewAccount({ name: "", type: "" as AccountType, balance: 0 });
+      setNewAccount({ name: "", type: "" as AccountType, balance: 0, chart_account_id: "" });
       refetch();
     } catch (error) {
       console.error("Error agregando cuenta:", error);
@@ -97,6 +114,7 @@ export default function Banking() {
           name: newAccount.name,
           type: newAccount.type,
           balance: newAccount.balance,
+          chart_account_id: newAccount.chart_account_id || null,
         })
         .eq("id", selectedAccount.id);
 
@@ -105,7 +123,7 @@ export default function Banking() {
       toast.success("Cuenta actualizada exitosamente");
       setIsEditingAccount(false);
       setSelectedAccount(null);
-      setNewAccount({ name: "", type: "" as AccountType, balance: 0 });
+      setNewAccount({ name: "", type: "" as AccountType, balance: 0, chart_account_id: "" });
       refetch();
     } catch (error) {
       console.error("Error actualizando cuenta:", error);
@@ -136,6 +154,7 @@ export default function Banking() {
       name: account.name,
       type: account.type,
       balance: account.balance,
+      chart_account_id: account.chart_account_id || "",
     });
     setIsEditingAccount(true);
   };
@@ -191,6 +210,26 @@ export default function Banking() {
                       <SelectItem value="Cash">Efectivo</SelectItem>
                       <SelectItem value="Credit Card">Tarjeta de Crédito</SelectItem>
                       <SelectItem value="Credit Simple">Crédito Simple</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <label>Cuenta Contable</label>
+                  <Select
+                    value={newAccount.chart_account_id}
+                    onValueChange={(value) =>
+                      setNewAccount({ ...newAccount, chart_account_id: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione la cuenta contable" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {chartAccounts?.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.code} - {account.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -264,6 +303,26 @@ export default function Banking() {
                 </Select>
               </div>
               <div className="grid gap-2">
+                <label>Cuenta Contable</label>
+                <Select
+                  value={newAccount.chart_account_id}
+                  onValueChange={(value) =>
+                    setNewAccount({ ...newAccount, chart_account_id: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione la cuenta contable" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {chartAccounts?.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.code} - {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
                 <label>Saldo</label>
                 <Input
                   type="number"
@@ -303,12 +362,13 @@ export default function Banking() {
             <TableRow>
               <TableHead>Nombre de la Cuenta</TableHead>
               <TableHead>Tipo</TableHead>
+              <TableHead>Cuenta Contable</TableHead>
               <TableHead className="text-right">Saldo Actual</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {accounts?.map((account) => (
+            {accounts?.map((account: any) => (
               <TableRow key={account.id}>
                 <TableCell className="font-medium">{account.name}</TableCell>
                 <TableCell>
@@ -323,6 +383,11 @@ export default function Banking() {
                      account.type === "Credit Card" ? "Tarjeta de Crédito" :
                      "Crédito Simple"}
                   </div>
+                </TableCell>
+                <TableCell>
+                  {account.chart_of_accounts ? 
+                    `${account.chart_of_accounts.code} - ${account.chart_of_accounts.name}` : 
+                    "No asignada"}
                 </TableCell>
                 <TableCell className="text-right">
                   {formatCurrency(account.balance)}
