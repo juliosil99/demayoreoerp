@@ -37,6 +37,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (invitationError || !invitation) {
       console.error("Error obteniendo invitación:", invitationError);
+      console.error("ID de invitación buscado:", invitationId);
       throw new Error("No se encontró la invitación");
     }
 
@@ -62,6 +63,7 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error("Error al actualizar el token de invitación");
       }
 
+      console.log("Token actualizado:", updatedInvitation.invitation_token);
       invitation.invitation_token = updatedInvitation.invitation_token;
     }
 
@@ -91,6 +93,8 @@ const handler = async (req: Request): Promise<Response> => {
       ? `${inviterData.first_name || ''} ${inviterData.last_name || ''}`.trim()
       : inviterData?.email || "Un administrador";
     
+    console.log("Invitador:", inviterName);
+    
     // Plantilla de correo mejorada
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -112,32 +116,64 @@ const handler = async (req: Request): Promise<Response> => {
         
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #666; font-size: 12px;">
           <p>Este enlace expirará en 7 días. Si no reconoces esta invitación, puedes ignorar este correo.</p>
+          <p>ID de Invitación: ${invitation.id}</p>
+          <p>Token: ${invitation.invitation_token}</p>
         </div>
       </div>
     `;
 
+    console.log("Enviando correo a:", invitation.email);
+    console.log("Contenido del correo preparado");
+
     // Enviar el correo
-    const emailResponse = await resend.emails.send({
-      from: `${companyName} <onboarding@resend.dev>`,
-      to: [invitation.email],
-      subject: `Invitación a ${companyName}`,
-      html: htmlContent,
-    });
+    try {
+      const emailResponse = await resend.emails.send({
+        from: `${companyName} <onboarding@resend.dev>`,
+        to: [invitation.email],
+        subject: `Invitación a ${companyName}`,
+        html: htmlContent,
+      });
 
-    console.log("Correo enviado exitosamente:", emailResponse);
+      console.log("Correo enviado exitosamente:", emailResponse);
 
-    // Actualizar el log de invitación
-    await supabase.from("invitation_logs").insert({
-      invitation_id: invitationId,
-      status: "email_sent",
-      error_message: null,
-      attempted_by: invitation.invited_by
-    });
+      // Actualizar el log de invitación
+      await supabase.from("invitation_logs").insert({
+        invitation_id: invitationId,
+        status: "email_sent",
+        error_message: null,
+        attempted_by: invitation.invited_by
+      });
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+      // Return detailed success response
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Invitación enviada correctamente",
+          invitation: {
+            id: invitation.id,
+            email: invitation.email,
+            token: invitation.invitation_token,
+            link: invitationLink
+          }
+        }), 
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    } catch (emailError: any) {
+      console.error("Error enviando correo:", emailError);
+      
+      // Log the email error
+      await supabase.from("invitation_logs").insert({
+        invitation_id: invitationId,
+        status: "email_error",
+        error_message: emailError.message || "Error enviando correo",
+        attempted_by: invitation.invited_by
+      });
+      
+      throw new Error("Error al enviar el correo: " + (emailError.message || "Error desconocido"));
+    }
   } catch (error: any) {
     console.error("Error en función send-invitation:", error);
     
@@ -152,7 +188,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

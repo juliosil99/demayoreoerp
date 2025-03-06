@@ -16,6 +16,7 @@ export default function Register() {
   const [invitation, setInvitation] = useState<any>(null);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
+  const [tokenDebugInfo, setTokenDebugInfo] = useState<string>("");
   const token = searchParams.get("token");
 
   useEffect(() => {
@@ -26,11 +27,15 @@ export default function Register() {
     if (!token) {
       setTokenError("No se proporcionó un token de invitación");
       setVerifyingToken(false);
+      setTokenDebugInfo("Error: No token provided");
       return;
     }
 
     try {
       console.log("Verifying invitation token:", token);
+      
+      // Log token format and length
+      setTokenDebugInfo(`Token length: ${token.length}, Format: ${token.includes('-') ? 'UUID' : 'Other'}`);
       
       // First check if the token exists at all
       const { data: invitation, error } = await supabase
@@ -40,6 +45,16 @@ export default function Register() {
         .maybeSingle();
 
       console.log("Token verification result:", { invitation, error });
+      
+      // Add detailed debug information
+      if (error) {
+        setTokenDebugInfo(prev => `${prev}\nQuery error: ${error.message}, Code: ${error.code}`);
+      } else {
+        setTokenDebugInfo(prev => `${prev}\nQuery result: ${invitation ? 'Found' : 'Not found'}`);
+        if (invitation) {
+          setTokenDebugInfo(prev => `${prev}\nInvitation status: ${invitation.status}, Created: ${invitation.created_at}`);
+        }
+      }
 
       if (error) {
         console.error("Error verifying token:", error);
@@ -50,6 +65,7 @@ export default function Register() {
       
       if (!invitation) {
         setTokenError("Token de invitación no encontrado");
+        setTokenDebugInfo(prev => `${prev}\nResult: Token not found in database`);
         setVerifyingToken(false);
         return;
       }
@@ -58,8 +74,10 @@ export default function Register() {
       if (invitation.status !== "pending") {
         if (invitation.status === "completed") {
           setTokenError("Esta invitación ya ha sido utilizada");
+          setTokenDebugInfo(prev => `${prev}\nResult: Invitation already completed`);
         } else {
           setTokenError("Esta invitación ha expirado");
+          setTokenDebugInfo(prev => `${prev}\nResult: Invitation expired`);
           
           // Mark the invitation as expired in the database
           if (invitation.status !== "expired") {
@@ -67,6 +85,8 @@ export default function Register() {
               .from("user_invitations")
               .update({ status: "expired" })
               .eq("id", invitation.id);
+            
+            setTokenDebugInfo(prev => `${prev}\nAction: Marked invitation as expired`);
           }
         }
         setVerifyingToken(false);
@@ -74,10 +94,12 @@ export default function Register() {
       }
 
       setInvitation(invitation);
+      setTokenDebugInfo(prev => `${prev}\nResult: Valid invitation found for ${invitation.email}`);
       setVerifyingToken(false);
     } catch (error) {
       console.error("Error verifying token:", error);
       setTokenError("Error al verificar el token de invitación");
+      setTokenDebugInfo(prev => `${prev}\nException: ${error instanceof Error ? error.message : String(error)}`);
       setVerifyingToken(false);
     }
   };
@@ -184,6 +206,17 @@ export default function Register() {
             <AlertTriangle className="h-12 w-12 text-amber-500" />
             <h1 className="text-2xl font-bold text-red-600">Invitación no válida</h1>
             <p className="text-gray-600">{tokenError}</p>
+            
+            {/* Debug information section */}
+            <div className="w-full mt-8 text-left">
+              <h3 className="text-sm font-medium mb-2">Información de depuración:</h3>
+              <div className="bg-gray-100 p-3 rounded text-xs font-mono whitespace-pre-wrap overflow-auto max-h-48">
+                Token: {token}
+                {'\n'}
+                {tokenDebugInfo}
+              </div>
+            </div>
+            
             <Button 
               onClick={() => navigate("/login")} 
               className="mt-4"
