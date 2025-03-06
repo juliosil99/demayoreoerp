@@ -43,8 +43,9 @@ export default function CompanySetup() {
           
         console.log("CompanySetup: User company check result:", userCompany);
         
-        if (companyError && companyError.code !== "PGRST116") {
+        if (companyError) {
           console.error("CompanySetup: Error checking user company:", companyError);
+          throw companyError;
         }
         
         if (userCompany) {
@@ -53,41 +54,49 @@ export default function CompanySetup() {
           return;
         }
         
-        // Check for ANY invitation (either pending or completed)
-        const { data: anyInvitation, error: invitationError } = await supabase
+        // Check for ALL invitations related to this email
+        const { data: invitations, error: invitationError } = await supabase
           .from("user_invitations")
           .select("*")
-          .eq("email", user.email)
-          .maybeSingle();
+          .eq("email", user.email);
         
-        console.log("CompanySetup: Any invitation check result:", anyInvitation);
+        console.log("CompanySetup: All invitations for this user:", invitations);
         
         if (invitationError) {
           console.error("CompanySetup: Error checking invitations:", invitationError);
-          toast.error("Error al verificar estado de invitación");
+          throw invitationError;
         }
         
-        if (anyInvitation) {
-          // If invitation is completed, user is part of a company
-          if (anyInvitation.status === 'completed') {
-            console.log("CompanySetup: User was invited and completed setup, redirecting to dashboard");
-            navigate("/dashboard");
-            return;
-          } else {
-            // If invitation is pending, they should finish registration
-            console.log("CompanySetup: User was invited but registration not completed");
-            navigate(`/register?token=${anyInvitation.invitation_token}`);
-            return;
-          }
+        // Check for completed invitations
+        const completedInvitation = invitations?.find(inv => inv.status === 'completed');
+        
+        if (completedInvitation) {
+          console.log("CompanySetup: User has a completed invitation, redirecting to dashboard");
+          navigate("/dashboard");
+          return;
+        }
+        
+        // Check for pending invitations
+        const pendingInvitation = invitations?.find(inv => inv.status === 'pending');
+        
+        if (pendingInvitation) {
+          console.log("CompanySetup: User has a pending invitation, redirecting to registration");
+          navigate(`/register?token=${pendingInvitation.invitation_token}`);
+          return;
         }
         
         // Check if there's any company in the system
-        const { data: anyCompany } = await supabase
+        const { data: anyCompany, error: anyCompanyError } = await supabase
           .from("companies")
           .select("*")
           .limit(1);
             
         console.log("CompanySetup: Any company check result:", anyCompany);
+        
+        if (anyCompanyError) {
+          console.error("CompanySetup: Error checking for any company:", anyCompanyError);
+          throw anyCompanyError;
+        }
           
         if (anyCompany && anyCompany.length > 0) {
           console.log("CompanySetup: Companies exist but none belongs to this user");

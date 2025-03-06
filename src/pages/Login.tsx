@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,8 +29,9 @@ export default function Login() {
       
       console.log("Login: User company check result:", userCompany);
       
-      if (companyError && companyError.code !== "PGRST116") {
+      if (companyError) {
         console.error("Login: Error checking user company:", companyError);
+        throw companyError;
       }
       
       if (userCompany) {
@@ -41,32 +43,35 @@ export default function Login() {
       // If user doesn't have their own company, check if they were invited
       console.log("Login: User doesn't have a company, checking if invited...");
       
-      // Check for ANY invitation status (pending OR completed)
-      const { data: anyInvitation, error: invitationError } = await supabase
+      // Explicitly check for ANY invitation
+      const { data: invitations, error: invitationError } = await supabase
         .from("user_invitations")
         .select("*")
-        .eq("email", userEmail)
-        .maybeSingle();
+        .eq("email", userEmail);
       
-      console.log("Login: Invitation check (any status):", anyInvitation);
+      console.log("Login: All invitations for this email:", invitations);
       
       if (invitationError) {
-        console.error("Login: Error checking invitation:", invitationError);
+        console.error("Login: Error checking invitations:", invitationError);
+        throw invitationError;
       }
       
-      // User was invited (either pending or completed)
-      if (anyInvitation) {
-        // If invitation is completed, they're part of a company
-        if (anyInvitation.status === 'completed') {
-          console.log("Login: User was invited and completed setup, redirecting to dashboard");
-          navigate("/dashboard");
-          return;
-        } else {
-          // If invitation is pending, they should finish registration
-          console.log("Login: User was invited but registration not completed");
-          navigate(`/register?token=${anyInvitation.invitation_token}`);
-          return;
-        }
+      // Check if there's any completed invitation
+      const completedInvitation = invitations?.find(inv => inv.status === 'completed');
+      
+      if (completedInvitation) {
+        console.log("Login: User has a completed invitation, redirecting to dashboard");
+        navigate("/dashboard");
+        return;
+      }
+      
+      // Check if there's any pending invitation
+      const pendingInvitation = invitations?.find(inv => inv.status === 'pending');
+      
+      if (pendingInvitation) {
+        console.log("Login: User has a pending invitation, redirecting to registration");
+        navigate(`/register?token=${pendingInvitation.invitation_token}`);
+        return;
       }
       
       // Check if any company exists at all
@@ -81,7 +86,6 @@ export default function Login() {
       if (anyCompany && anyCompany.length > 0) {
         // Companies exist but this user doesn't have one and wasn't invited
         console.log("Login: Companies exist but none for this user and not invited");
-        // In this case, user should contact an admin to get invited
         toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
         return;
       } else {
@@ -91,7 +95,6 @@ export default function Login() {
       }
     } catch (err) {
       console.error("Login: Error in checkUserStatus:", err);
-      // Default to company setup on error
       toast.error("Error verificando el estado del usuario");
     }
   };

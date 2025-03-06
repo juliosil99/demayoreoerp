@@ -60,11 +60,7 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           console.log("Query response - data:", data);
           console.log("Query response - error:", error);
 
-          if (!data) {
-            console.log("ℹ️ No company found for user");
-            navigate("/company-setup");
-            return;
-          } else if (error) {
+          if (error) {
             console.error("❌ Error checking user company:", error);
             console.error("Error details:", {
               message: error.message,
@@ -73,6 +69,12 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
             });
             toast.error("Error al verificar la empresa");
             setIsLoading(false);
+            return;
+          }
+          
+          if (!data) {
+            console.log("ℹ️ No company found for user");
+            navigate("/company-setup");
             return;
           }
           
@@ -95,37 +97,40 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           return;
         }
         
-        // Check for ANY invitation (pending or completed)
-        const { data: anyInvitation, error: invitationError } = await supabase
+        // Get ALL invitations for this email
+        const { data: invitations, error: invitationError } = await supabase
           .from("user_invitations")
           .select("*")
-          .eq("email", userEmail)
-          .maybeSingle();
+          .eq("email", userEmail);
         
-        console.log("Any invitation found:", anyInvitation);
+        console.log("All invitations for user:", invitations);
         
         if (invitationError) {
-          console.error("❌ Error checking user invitation:", invitationError);
+          console.error("❌ Error checking user invitations:", invitationError);
           console.error("Error details:", {
             message: invitationError.message,
             details: invitationError.details,
             hint: invitationError.hint
           });
+          toast.error("Error al verificar estado de invitación");
         }
         
-        // User was invited (completed or pending)
-        if (anyInvitation) {
-          // If invitation is completed
-          if (anyInvitation.status === 'completed') {
-            console.log("✅ User was invited and completed setup, redirecting to dashboard");
-            navigate("/dashboard");
-            return;
-          } else {
-            // If invitation is pending
-            console.log("🔍 User was invited but setup is pending");
-            navigate(`/register?token=${anyInvitation.invitation_token}`);
-            return;
-          }
+        // Check for completed invitations
+        const completedInvitation = invitations?.find(inv => inv.status === 'completed');
+        
+        if (completedInvitation) {
+          console.log("✅ User has a completed invitation, redirecting to dashboard");
+          navigate("/dashboard");
+          return;
+        }
+        
+        // Check for pending invitations
+        const pendingInvitation = invitations?.find(inv => inv.status === 'pending');
+        
+        if (pendingInvitation) {
+          console.log("🔍 User has a pending invitation, redirecting to registration");
+          navigate(`/register?token=${pendingInvitation.invitation_token}`);
+          return;
         }
         
         // Check if user has their own company
@@ -161,6 +166,7 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
         
         if (anyCompanyError) {
           console.error("❌ Error checking for any company:", anyCompanyError);
+          toast.error("Error al verificar empresas existentes");
         }
         
         if (anyCompany && anyCompany.length > 0) {
