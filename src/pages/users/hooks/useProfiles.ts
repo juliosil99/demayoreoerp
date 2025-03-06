@@ -4,6 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Profile } from "../types";
 
+// Define types for the auth users response
+interface AuthUser {
+  id: string;
+  email?: string | null;
+  user_metadata?: {
+    first_name?: string | null;
+    last_name?: string | null;
+  } | null;
+}
+
+interface AuthUsersResponse {
+  users?: AuthUser[];
+}
+
 export function useProfiles() {
   return useQuery({
     queryKey: ["profiles"],
@@ -39,21 +53,15 @@ export function useProfiles() {
       console.log("Fetched profiles:", data);
       
       // Create missing profiles for users that exist in auth but not in profiles
-      if (authUsers?.users && authUsers.users.length > data.length) {
+      const authUsersData = authUsers as AuthUsersResponse;
+      
+      if (authUsersData?.users && authUsersData.users.length > data.length) {
         console.log("Some users don't have profiles, creating missing profiles...");
         
         const profileIds = data.map(profile => profile.id);
         
-        // Safely filter users by checking for proper structure
-        const missingUsers = authUsers.users.filter(user => {
-          return user && typeof user === 'object' && 'id' in user && 
-            typeof user.id === 'string' && !profileIds.includes(user.id);
-        });
-        
-        for (const user of missingUsers) {
-          // We've already filtered, so TypeScript should know user has an id property
-          // But we'll add an extra check just to be safe
-          if (user && typeof user === 'object' && 'id' in user) {
+        for (const user of authUsersData.users) {
+          if (user && typeof user === 'object' && 'id' in user && !profileIds.includes(user.id)) {
             const { error: insertError } = await supabase
               .from('profiles')
               .insert({
