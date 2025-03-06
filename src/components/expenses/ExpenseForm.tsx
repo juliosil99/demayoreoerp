@@ -14,12 +14,16 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
 
 interface ExpenseFormProps {
   initialData?: Expense;
+  expenseData?: Expense; // Add this for backward compatibility
   onSuccess?: () => void;
   onClose?: () => void;
 }
 
-export function ExpenseForm({ initialData, onSuccess, onClose }: ExpenseFormProps) {
-  const { formData, setFormData, isSubmitting, handleSubmit } = useExpenseForm(initialData, () => {
+export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: ExpenseFormProps) {
+  // Use expenseData as fallback for initialData for backwards compatibility
+  const dataToUse = initialData || expenseData;
+  
+  const { formData, setFormData, isSubmitting, handleSubmit } = useExpenseForm(dataToUse, () => {
     onSuccess?.();
     onClose?.();
   });
@@ -53,7 +57,7 @@ export function ExpenseForm({ initialData, onSuccess, onClose }: ExpenseFormProp
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Guardando..." : initialData ? "Actualizar Gasto" : "Crear Gasto"}
+          {isSubmitting ? "Guardando..." : dataToUse ? "Actualizar Gasto" : "Crear Gasto"}
         </Button>
       </div>
     </form>

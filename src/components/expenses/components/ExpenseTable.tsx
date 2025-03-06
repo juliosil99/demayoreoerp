@@ -21,7 +21,7 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
 
 interface ExpenseTableProps {
   expenses: Expense[];
-  onDelete: (expense: Expense) => Promise<void>;
+  onDelete: (expense: Expense) => Promise<{ success: boolean; log: string[] } | void>;
   onEdit: (expense: Expense) => void;
   isDialogOpen: boolean;
   selectedExpense: Expense | null;

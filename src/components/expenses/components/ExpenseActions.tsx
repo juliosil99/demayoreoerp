@@ -16,7 +16,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
@@ -108,7 +107,7 @@ export function ExpenseActions({
               <DialogTitle>Editar Gasto</DialogTitle>
             </DialogHeader>
             <ExpenseForm 
-              expenseData={selectedExpense} 
+              initialData={selectedExpense} 
               onSuccess={handleCloseDialog} 
               onClose={handleCloseDialog} 
             />
