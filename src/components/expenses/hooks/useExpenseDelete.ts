@@ -20,20 +20,35 @@ export function useExpenseDelete() {
     try {
       console.log("Intentando eliminar gasto con ID:", expense.id);
       
-      // Primero eliminamos los ajustes contables asociados
-      const { error: adjustmentsError } = await supabase
+      // First check if there are accounting adjustments
+      const { data: adjustments, error: checkError } = await supabase
         .from('accounting_adjustments')
-        .delete()
+        .select('id')
         .eq('expense_id', expense.id);
-      
-      if (adjustmentsError) {
-        console.error("Error al eliminar ajustes contables:", adjustmentsError);
-        setDeleteError(`Error al eliminar ajustes contables: ${adjustmentsError.message}`);
-        toast.error(`Error al eliminar ajustes contables: ${adjustmentsError.message}`);
-        throw adjustmentsError;
+        
+      if (checkError) {
+        console.error("Error al verificar ajustes contables:", checkError);
+        throw checkError;
       }
       
-      // Luego eliminamos las relaciones con facturas si existen
+      // Delete each adjustment individually to ensure they're all removed
+      if (adjustments && adjustments.length > 0) {
+        for (const adjustment of adjustments) {
+          const { error: adjDeleteError } = await supabase
+            .from('accounting_adjustments')
+            .delete()
+            .eq('id', adjustment.id);
+            
+          if (adjDeleteError) {
+            console.error(`Error al eliminar ajuste ${adjustment.id}:`, adjDeleteError);
+            setDeleteError(`Error al eliminar ajuste contable: ${adjDeleteError.message}`);
+            toast.error(`Error al eliminar ajuste contable: ${adjDeleteError.message}`);
+            throw adjDeleteError;
+          }
+        }
+      }
+      
+      // Delete invoice relations
       const { error: relationsError } = await supabase
         .from('expense_invoice_relations')
         .delete()
@@ -41,10 +56,10 @@ export function useExpenseDelete() {
       
       if (relationsError) {
         console.error("Error al eliminar relaciones con facturas:", relationsError);
-        // Continuamos a pesar de este error, ya que podría no haber relaciones
+        // Continue despite this error, as there might not be any relations
       }
 
-      // Finalmente eliminamos el gasto
+      // Finally delete the expense
       const { error } = await supabase
         .from('expenses')
         .delete()
@@ -53,9 +68,9 @@ export function useExpenseDelete() {
       if (error) {
         console.error("Error detallado al eliminar gasto:", error);
         
-        // Determinar el tipo de error para mostrar un mensaje más específico
+        // Determine the type of error to show a more specific message
         if (error.code === '23503') {
-          setDeleteError("Error al eliminar: Este gasto podría estar vinculado a otros registros en el sistema.");
+          setDeleteError(`Error al eliminar: ${error.message}`);
           toast.error("No se pudo eliminar el gasto, podría estar vinculado a otros registros");
         } else {
           setDeleteError(`Error al eliminar: ${error.message}`);
