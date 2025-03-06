@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +11,25 @@ export function useUserPermissions() {
   const { data: profiles, isLoading: isProfilesLoading } = useQuery({
     queryKey: ["profiles"],
     queryFn: async () => {
+      console.log("Fetching all user profiles...");
+      
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error("Error fetching auth users:", authError);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        if (error) {
+          toast.error("Error al cargar usuarios: " + error.message);
+          throw error;
+        }
+        
+        console.log("Fetched profiles directly:", data);
+        return data as Profile[];
+      }
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*');
@@ -20,6 +38,43 @@ export function useUserPermissions() {
         toast.error("Error al cargar usuarios: " + error.message);
         throw error;
       }
+      
+      console.log("Fetched profiles:", data);
+      
+      if (authUsers?.users && authUsers.users.length > data.length) {
+        console.log("Some users don't have profiles, creating missing profiles...");
+        
+        const profileIds = data.map(profile => profile.id);
+        const missingUsers = authUsers.users.filter(user => !profileIds.includes(user.id));
+        
+        for (const user of missingUsers) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              email: user.email,
+              first_name: user.user_metadata?.first_name || null,
+              last_name: user.user_metadata?.last_name || null,
+            });
+            
+          if (insertError) {
+            console.error("Error creating profile for user:", insertError);
+          }
+        }
+        
+        const { data: updatedProfiles, error: refetchError } = await supabase
+          .from('profiles')
+          .select('*');
+          
+        if (refetchError) {
+          toast.error("Error al recargar perfiles: " + refetchError.message);
+          throw refetchError;
+        }
+        
+        console.log("Updated profiles list:", updatedProfiles);
+        return updatedProfiles as Profile[];
+      }
+      
       return data as Profile[];
     },
   });
@@ -55,10 +110,10 @@ export function useUserPermissions() {
   });
 
   useEffect(() => {
-    if (pagePermissions && rolePermissions) {
+    if (profiles && (pagePermissions || rolePermissions)) {
+      console.log("Building permissions map with profiles:", profiles);
       const permissionsMap: { [key: string]: UserPermissions } = {};
       
-      // Inicializar con todos los usuarios
       profiles?.forEach(profile => {
         if (!permissionsMap[profile.id]) {
           permissionsMap[profile.id] = {
@@ -69,8 +124,7 @@ export function useUserPermissions() {
         }
       });
       
-      // Agregar permisos de páginas
-      pagePermissions.forEach((perm) => {
+      pagePermissions?.forEach((perm) => {
         if (!permissionsMap[perm.user_id]) {
           permissionsMap[perm.user_id] = {
             userId: perm.user_id,
@@ -81,8 +135,7 @@ export function useUserPermissions() {
         permissionsMap[perm.user_id].pages[perm.page_path] = perm.can_access;
       });
 
-      // Agregar roles
-      rolePermissions.forEach((role) => {
+      rolePermissions?.forEach((role) => {
         if (!permissionsMap[role.user_id]) {
           permissionsMap[role.user_id] = {
             userId: role.user_id,
@@ -94,12 +147,14 @@ export function useUserPermissions() {
         }
       });
 
+      console.log("Final permissions map:", permissionsMap);
       setUserPermissions(permissionsMap);
     }
   }, [pagePermissions, rolePermissions, profiles]);
 
   const handlePermissionChange = async (userId: string, page: string, checked: boolean) => {
     try {
+      console.log(`Updating permission for user ${userId}, page ${page} to ${checked}`);
       const { error } = await supabase
         .from("page_permissions")
         .upsert({
@@ -131,6 +186,7 @@ export function useUserPermissions() {
 
   const handleRoleChange = async (userId: string, role: 'admin' | 'user') => {
     try {
+      console.log(`Updating role for user ${userId} to ${role}`);
       const { error } = await supabase
         .from("user_roles")
         .upsert({

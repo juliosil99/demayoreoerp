@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export default function UserManagement() {
   const {
@@ -63,17 +65,33 @@ export default function UserManagement() {
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-6">Administración de Usuarios</h1>
       
-      <InviteUserForm />
-      <PendingInvitations />
-      
-      <div className="rounded-md border mt-8">
-        <UsersTable
-          profiles={profiles}
-          userPermissions={userPermissions}
-          onPermissionChange={handlePermissionChange}
-          onRoleChange={handleRoleChange}
-        />
-      </div>
+      {!profiles || profiles.length === 0 ? (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            No se pudieron cargar los usuarios. Por favor, recarga la página.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          <InviteUserForm />
+          <PendingInvitations />
+          
+          <div className="rounded-md border mt-8">
+            <UsersTable
+              profiles={profiles}
+              userPermissions={userPermissions}
+              onPermissionChange={handlePermissionChange}
+              onRoleChange={handleRoleChange}
+            />
+          </div>
+          
+          <div className="mt-4 text-sm text-muted-foreground">
+            <p>Total de usuarios: {profiles.length}</p>
+          </div>
+        </>
+      )}
     </div>
   );
 }
