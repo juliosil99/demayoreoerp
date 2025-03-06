@@ -15,18 +15,59 @@ interface CreateUserRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Edge function called with method:", req.method);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    const { email, password, role }: CreateUserRequest = await req.json();
+    console.log("Creating Supabase client with URL:", supabaseUrl ? "URL exists" : "URL missing");
+    
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      console.error("Missing environment variables");
+      return new Response(
+        JSON.stringify({ 
+          error: "Server configuration error: Missing environment variables" 
+        }),
+        { 
+          status: 500, 
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders 
+          } 
+        }
+      );
+    }
+    
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+    
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log("Request body parsed successfully");
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid request body format",
+          details: parseError instanceof Error ? parseError.message : "Unknown parsing error" 
+        }),
+        { 
+          status: 400, 
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders 
+          } 
+        }
+      );
+    }
+    
+    const { email, password, role }: CreateUserRequest = requestBody;
     
     console.log(`Creating user with email: ${email}, role: ${role}`);
     
@@ -54,8 +95,30 @@ const handler = async (req: Request): Promise<Response> => {
     
     if (createError) {
       console.error("Error creating user:", createError);
+      
+      // Special handling for already registered users
+      if (createError.message.includes("already been registered")) {
+        return new Response(
+          JSON.stringify({ 
+            error: "User already exists", 
+            message: createError.message,
+            code: "USER_EXISTS"
+          }),
+          { 
+            status: 409, 
+            headers: { 
+              "Content-Type": "application/json",
+              ...corsHeaders 
+            } 
+          }
+        );
+      }
+      
       return new Response(
-        JSON.stringify({ error: createError.message }),
+        JSON.stringify({ 
+          error: createError.message,
+          details: createError
+        }),
         { 
           status: 400, 
           headers: { 
@@ -65,6 +128,24 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+    
+    if (!userData || !userData.user) {
+      console.error("User creation succeeded but no user data returned");
+      return new Response(
+        JSON.stringify({ 
+          error: "Unknown error: User creation succeeded but no user data returned" 
+        }),
+        { 
+          status: 500, 
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders 
+          } 
+        }
+      );
+    }
+    
+    console.log("User created successfully, adding role");
     
     // Add user to the appropriate role
     if (role) {
@@ -80,6 +161,8 @@ const handler = async (req: Request): Promise<Response> => {
         // Log error but don't fail the process
       }
     }
+    
+    console.log("Returning successful response");
     
     return new Response(
       JSON.stringify({ 

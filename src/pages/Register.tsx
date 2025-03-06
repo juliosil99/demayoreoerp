@@ -181,7 +181,7 @@ export default function Register() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`
           },
           body: JSON.stringify({
             email: invitation.email,
@@ -191,15 +191,54 @@ export default function Register() {
         }
       );
       
-      // Check if the response was successful
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error response from Edge Function:", errorData);
-        throw new Error(errorData.error || "Error al crear el usuario");
+      console.log("Edge function response status:", response.status);
+      
+      // Get the response text first to debug
+      const responseText = await response.text();
+      console.log("Edge function raw response:", responseText);
+      
+      // Try to parse JSON only if there's content
+      let responseData;
+      try {
+        responseData = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error("Failed to parse response as JSON:", parseError);
+        throw new Error("Error en la respuesta del servidor: Formato inválido");
       }
       
-      const adminAuthData = await response.json();
-      console.log("User created successfully:", adminAuthData);
+      // Check if the response was successful
+      if (!response.ok) {
+        console.error("Error response from Edge Function:", responseData);
+        
+        // Handle user already exists case
+        if (responseData.code === "USER_EXISTS") {
+          console.log("User already exists, attempting to sign in instead");
+          
+          // Mark invitation as completed regardless
+          await supabase
+            .from("user_invitations")
+            .update({ status: "completed" })
+            .eq("id", invitation.id);
+            
+          // Try to sign in directly
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: invitation.email,
+            password: password,
+          });
+          
+          if (signInError) {
+            throw new Error("Esta cuenta ya existe pero la contraseña es incorrecta");
+          } else {
+            toast.success("Inicio de sesión exitoso con cuenta existente");
+            navigate("/dashboard");
+            return;
+          }
+        }
+        
+        throw new Error(responseData.error || "Error al crear el usuario");
+      }
+      
+      console.log("User created successfully:", responseData);
 
       // Actualizar el estado de la invitación
       const { error: updateError } = await supabase
@@ -217,7 +256,7 @@ export default function Register() {
         invitation_id: invitation.id,
         status: "completed",
         error_message: null,
-        attempted_by: adminAuthData.user.id
+        attempted_by: responseData.user.id
       });
 
       if (logError) {
