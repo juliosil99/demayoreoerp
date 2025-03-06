@@ -17,6 +17,9 @@ export function useUserPermissions() {
   useEffect(() => {
     if (profiles && (pagePermissions || rolePermissions)) {
       console.log("Building permissions map with profiles:", profiles);
+      console.log("Page permissions data:", pagePermissions);
+      console.log("Role permissions data:", rolePermissions);
+      
       const permissionsMap: { [key: string]: UserPermissions } = {};
       
       profiles?.forEach(profile => {

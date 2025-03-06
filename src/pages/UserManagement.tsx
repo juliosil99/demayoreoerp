@@ -43,6 +43,12 @@ export default function UserManagement() {
     }
   }, [user, isAdmin, isLoading, navigate]);
 
+  // Add debugging log to see what profiles we have
+  useEffect(() => {
+    console.log("UserManagement: Current profiles:", profiles);
+    console.log("UserManagement: Current permissions:", userPermissions);
+  }, [profiles, userPermissions]);
+
   if (isLoading || isCheckingPermission) {
     return (
       <div className="container mx-auto py-6">
