@@ -23,18 +23,32 @@ export default function CompanySetup() {
   useEffect(() => {
     // Check if user was invited and redirect if necessary
     const checkInvitationStatus = async () => {
-      if (!user?.email) return;
+      if (!user?.email) {
+        console.log("CompanySetup: No user email found, cannot check invitation status");
+        return;
+      }
       
-      const { data: invitationData } = await supabase
+      console.log("CompanySetup: Checking invitation status for email:", user.email);
+      
+      const { data: invitationData, error } = await supabase
         .from("user_invitations")
         .select("*")
         .eq("email", user.email)
         .eq("status", "completed")
         .maybeSingle();
       
+      console.log("CompanySetup: Invitation check result:", invitationData);
+      
+      if (error) {
+        console.error("CompanySetup: Error checking invitation status:", error);
+      }
+      
       if (invitationData) {
+        console.log("CompanySetup: User was invited, redirecting to dashboard");
         // User was invited, redirect to dashboard
         navigate("/dashboard");
+      } else {
+        console.log("CompanySetup: User was not invited or invitation not completed");
       }
     };
     

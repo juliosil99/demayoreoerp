@@ -16,38 +16,65 @@ export default function Login() {
   const navigate = useNavigate();
 
   const checkUserStatus = async (userId: string, userEmail: string) => {
+    console.log("Login: Checking user status for:", { userId, userEmail });
+    
     // Check if user was invited
-    const { data: invitationData } = await supabase
+    console.log("Login: Checking if user was invited...");
+    const { data: invitationData, error: invitationError } = await supabase
       .from("user_invitations")
       .select("*")
       .eq("email", userEmail)
       .eq("status", "completed")
       .maybeSingle();
     
+    console.log("Login: Invitation query result:", invitationData);
+    
+    if (invitationError) {
+      console.error("Login: Error checking invitation:", invitationError);
+    }
+    
     const wasInvited = !!invitationData;
+    console.log("Login: Was user invited?", wasInvited);
     
     // If user was invited, they don't need to configure company
     if (wasInvited) {
+      console.log("Login: User was invited, redirecting to dashboard");
       navigate("/dashboard");
       return;
     }
     
     // Check if company exists for this user
-    const { data: company } = await supabase
+    console.log("Login: Checking if company exists for this user...");
+    const { data: company, error: companyError } = await supabase
       .from("companies")
       .select("*")
       .eq("user_id", userId)
       .single();
     
+    console.log("Login: Company check result:", company);
+    
+    if (companyError && companyError.code !== "PGRST116") {
+      console.error("Login: Error checking company:", companyError);
+    }
+    
     // Check if any company exists at all
-    const { data: anyCompany } = await supabase
+    console.log("Login: Checking if any company exists...");
+    const { data: anyCompany, error: anyCompanyError } = await supabase
       .from("companies")
       .select("*")
       .limit(1);
     
+    console.log("Login: Any company check result:", anyCompany);
+    
+    if (anyCompanyError) {
+      console.error("Login: Error checking any company:", anyCompanyError);
+    }
+    
     if (company || (anyCompany && anyCompany.length > 0)) {
+      console.log("Login: Company exists, redirecting to dashboard");
       navigate("/dashboard");
     } else {
+      console.log("Login: No company found, redirecting to company setup");
       navigate("/company-setup");
     }
   };
@@ -58,14 +85,20 @@ export default function Login() {
 
     try {
       if (isSignUp) {
+        console.log("Login: Starting sign up process...");
         await signUp(email, password);
         toast.success("Cuenta creada exitosamente! Por favor, inicia sesión.");
       } else {
+        console.log("Login: Starting sign in process...");
         await signIn(email, password);
+        console.log("Login: Sign in successful, getting user...");
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user) {
+          console.log("Login: User authenticated successfully:", user.id);
           await checkUserStatus(user.id, user.email || "");
+        } else {
+          console.log("Login: No user found after authentication");
         }
         toast.success("Inició sesión exitosamente!");
       }

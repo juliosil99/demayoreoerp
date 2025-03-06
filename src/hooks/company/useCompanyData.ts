@@ -85,20 +85,47 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
 
         // Check if user was invited (via user_invitations)
         console.log("🔍 Checking if user was invited...");
+        const userResponse = await supabase.auth.getUser();
+        const userEmail = userResponse.data.user?.email;
+        console.log("Current user email:", userEmail);
+        
+        if (!userEmail) {
+          console.log("❌ No user email found");
+          setIsLoading(false);
+          return;
+        }
+        
         const { data: invitationData, error: invitationError } = await supabase
           .from("user_invitations")
           .select("*")
-          .eq("email", (await supabase.auth.getUser()).data.user?.email || "")
+          .eq("email", userEmail)
           .eq("status", "completed")
           .maybeSingle();
         
+        console.log("Invitation check query:", {
+          email: userEmail,
+          status: "completed"
+        });
         console.log("Invitation check result:", invitationData);
         
         if (invitationError) {
           console.error("❌ Error checking user invitation:", invitationError);
+          console.error("Error details:", {
+            message: invitationError.message,
+            details: invitationError.details,
+            hint: invitationError.hint
+          });
         }
         
         const wasInvited = !!invitationData;
+        console.log("Was user invited?", wasInvited);
+        
+        // If user was invited, redirect to dashboard immediately
+        if (wasInvited) {
+          console.log("✅ User was invited, redirecting to dashboard");
+          navigate("/dashboard");
+          return;
+        }
         
         // Check if company is already configured
         console.log("🔍 Checking if company exists...");
@@ -123,14 +150,7 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           return;
         }
         
-        // If user was invited but no company exists, they should still go to dashboard
-        // This handles the case where they were invited by someone who hasn't configured a company yet
-        if (wasInvited) {
-          console.log("✅ User was invited, redirecting to dashboard");
-          navigate("/dashboard");
-          return;
-        }
-
+        // If we get here, user was not invited and no company exists
         console.log("ℹ️ No company found, staying on setup page");
         setIsLoading(false);
       } catch (error) {
