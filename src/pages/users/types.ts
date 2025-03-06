@@ -22,6 +22,15 @@ export interface UserInvitation {
   invited_by?: string;
 }
 
+export interface InvitationLog {
+  id: string;
+  invitation_id: string;
+  status: string;
+  error_message: string | null;
+  attempted_by: string;
+  created_at: string;
+}
+
 export const availablePages = [
   { path: "/dashboard", label: "Panel de Control" },
   { path: "/sales", label: "Ventas" },

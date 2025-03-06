@@ -2,9 +2,46 @@
 // Email utility functions for the send-invitation edge function
 
 /**
+ * Interface for invitation data
+ */
+export interface Invitation {
+  id: string;
+  email: string;
+  status: string;
+  invited_by: string;
+  invitation_token: string;
+}
+
+/**
+ * Interface for company data
+ */
+export interface CompanyData {
+  nombre?: string;
+}
+
+/**
+ * Interface for inviter profile data
+ */
+export interface InviterProfile {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+}
+
+/**
+ * Interface for email response data
+ */
+export interface EmailResponse {
+  id: string;
+  from: string;
+  to: string;
+  status: string;
+}
+
+/**
  * Generates the HTML email content
  */
-export function generateEmailContent(invitation: any, invitationLink: string, companyName: string, inviterName: string) {
+export function generateEmailContent(invitation: Invitation, invitationLink: string, companyName: string, inviterName: string) {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
       <div style="text-align: center; margin-bottom: 20px;">
@@ -42,17 +79,28 @@ export const corsHeaders = {
 };
 
 /**
+ * Interface for error response
+ */
+export interface ErrorResponseData {
+  error: string;
+  stack?: string;
+  timestamp: string;
+}
+
+/**
  * Creates an error response with CORS headers
  */
-export function createErrorResponse(error: any, status = 500) {
+export function createErrorResponse(error: any, status = 500): Response {
   console.error("Error in function:", error);
   
+  const responseData: ErrorResponseData = {
+    error: error.message,
+    stack: error.stack,
+    timestamp: new Date().toISOString()
+  };
+  
   return new Response(
-    JSON.stringify({ 
-      error: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString()
-    }),
+    JSON.stringify(responseData),
     {
       status,
       headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -61,9 +109,18 @@ export function createErrorResponse(error: any, status = 500) {
 }
 
 /**
+ * Interface for success response
+ */
+export interface SuccessResponseData<T = any> {
+  success: boolean;
+  message?: string;
+  [key: string]: any;
+}
+
+/**
  * Creates a success response with CORS headers
  */
-export function createSuccessResponse(data: any, status = 200) {
+export function createSuccessResponse<T>(data: T, status = 200): Response {
   return new Response(
     JSON.stringify(data), 
     {
@@ -74,9 +131,31 @@ export function createSuccessResponse(data: any, status = 200) {
 }
 
 /**
+ * Interface for Supabase client
+ */
+export interface SupabaseClient {
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (column: string, value: any) => {
+        maybeSingle: () => Promise<{ data: any, error: any }>;
+        single: () => Promise<{ data: any, error: any }>;
+      };
+    };
+    update: (data: any) => {
+      eq: (column: string, value: any) => {
+        select: (columns?: string) => {
+          single: () => Promise<{ data: any, error: any }>;
+        };
+      };
+    };
+    insert: (data: any) => Promise<{ data: any, error: any }>;
+  };
+}
+
+/**
  * Verifies that a token exists in the database
  */
-export async function verifyTokenInDatabase(supabase: any, token: string) {
+export async function verifyTokenInDatabase(supabase: SupabaseClient, token: string): Promise<void> {
   const { data: tokenCheck, error: tokenCheckError } = await supabase
     .from("user_invitations")
     .select("id")

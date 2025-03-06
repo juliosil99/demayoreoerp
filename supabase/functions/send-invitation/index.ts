@@ -3,6 +3,11 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 import { 
+  Invitation,
+  CompanyData,
+  InviterProfile,
+  EmailResponse,
+  SupabaseClient,
   generateEmailContent, 
   corsHeaders, 
   createErrorResponse, 
@@ -20,10 +25,17 @@ interface InvitationRequest {
   invitationId: string;
 }
 
+interface InvitationLogEntry {
+  invitation_id: string;
+  status: string;
+  error_message: string | null;
+  attempted_by: string;
+}
+
 /**
  * Fetches invitation data from the database
  */
-async function getInvitationData(invitationId: string) {
+async function getInvitationData(invitationId: string): Promise<Invitation> {
   console.log("Procesando invitación:", invitationId);
 
   const { data: invitation, error: invitationError } = await supabase
@@ -39,13 +51,13 @@ async function getInvitationData(invitationId: string) {
   }
 
   console.log("Invitación encontrada:", invitation);
-  return invitation;
+  return invitation as Invitation;
 }
 
 /**
  * Generates or validates the invitation token
  */
-async function ensureInvitationToken(invitation: any) {
+async function ensureInvitationToken(invitation: Invitation): Promise<Invitation> {
   // Generate new token if needed
   if (!invitation.invitation_token) {
     console.log("Generando nuevo token de invitación");
@@ -73,7 +85,7 @@ async function ensureInvitationToken(invitation: any) {
   }
 
   // Verify token exists in database
-  await verifyTokenInDatabase(supabase, invitation.invitation_token);
+  await verifyTokenInDatabase(supabase as unknown as SupabaseClient, invitation.invitation_token);
   
   return invitation;
 }
@@ -81,29 +93,30 @@ async function ensureInvitationToken(invitation: any) {
 /**
  * Gets company information for the email
  */
-async function getCompanyInfo(invitedById: string) {
+async function getCompanyInfo(invitedById: string): Promise<string> {
   const { data: companyData, error: companyError } = await supabase
     .from("companies")
     .select("nombre")
     .eq("user_id", invitedById)
     .maybeSingle();
 
-  return companyData?.nombre || "Sistema ERP";
+  return (companyData as CompanyData)?.nombre || "Sistema ERP";
 }
 
 /**
  * Gets inviter information
  */
-async function getInviterInfo(inviterId: string) {
+async function getInviterInfo(inviterId: string): Promise<string> {
   const { data: inviterData, error: inviterError } = await supabase
     .from("profiles")
     .select("first_name, last_name, email")
     .eq("id", inviterId)
     .maybeSingle();
 
-  const inviterName = inviterData && (inviterData.first_name || inviterData.last_name) 
-    ? `${inviterData.first_name || ''} ${inviterData.last_name || ''}`.trim()
-    : inviterData?.email || "Un administrador";
+  const profile = inviterData as InviterProfile;
+  const inviterName = profile && (profile.first_name || profile.last_name) 
+    ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+    : profile?.email || "Un administrador";
   
   return inviterName;
 }
@@ -111,7 +124,7 @@ async function getInviterInfo(inviterId: string) {
 /**
  * Sends the invitation email
  */
-async function sendInvitationEmail(invitation: any, htmlContent: string, companyName: string) {
+async function sendInvitationEmail(invitation: Invitation, htmlContent: string, companyName: string): Promise<EmailResponse> {
   console.log("Enviando correo a:", invitation.email);
   
   try {
@@ -123,7 +136,7 @@ async function sendInvitationEmail(invitation: any, htmlContent: string, company
     });
 
     console.log("Correo enviado exitosamente:", emailResponse);
-    return emailResponse;
+    return emailResponse as EmailResponse;
   } catch (error: any) {
     console.error("Error enviando correo:", error);
     
@@ -137,14 +150,16 @@ async function sendInvitationEmail(invitation: any, htmlContent: string, company
 /**
  * Logs invitation events to the database
  */
-async function logInvitationEvent(invitationId: string, status: string, errorMessage: string | null, attemptedBy: string) {
+async function logInvitationEvent(invitationId: string, status: string, errorMessage: string | null, attemptedBy: string): Promise<void> {
   try {
-    await supabase.from("invitation_logs").insert({
+    const logEntry: InvitationLogEntry = {
       invitation_id: invitationId,
       status,
       error_message: errorMessage,
       attempted_by: attemptedBy
-    });
+    };
+    
+    await supabase.from("invitation_logs").insert(logEntry);
   } catch (error) {
     console.error("Error logging invitation event:", error);
   }
