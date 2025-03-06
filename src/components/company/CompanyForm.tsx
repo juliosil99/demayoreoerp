@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { useNavigate } from "react-router-dom";
@@ -55,7 +55,7 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
         const { error } = await supabase
           .from("companies")
           .update(data)
-          .eq("user_id", userId)
+          .eq("id", defaultValues?.id)
           .select();
 
         if (error) {
@@ -70,13 +70,14 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
         toast.success("¡Información actualizada exitosamente!");
       } else {
         console.log("📝 Creating new company...");
-        const { error } = await supabase
+        const { data: newCompany, error } = await supabase
           .from("companies")
           .insert([{
             ...data,
             user_id: userId,
           }])
-          .select();
+          .select()
+          .single();
 
         if (error) {
           console.error("❌ Error creating company:", error);
@@ -86,7 +87,7 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
           return;
         }
 
-        console.log("✅ Company created successfully");
+        console.log("✅ Company created successfully:", newCompany);
         toast.success("¡Empresa registrada exitosamente!");
       }
       
@@ -94,6 +95,7 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
       navigate("/dashboard");
     } catch (error) {
       console.error("❌ Unexpected error:", error);
+      toast.error("Ocurrió un error inesperado");
     } finally {
       setIsLoading(false);
     }

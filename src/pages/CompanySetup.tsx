@@ -11,123 +11,57 @@ import {
 import { CompanyForm } from "@/components/company/CompanyForm";
 import { useCompanyData } from "@/hooks/company/useCompanyData";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export default function CompanySetup() {
-  const { user } = useAuth();
+  const { user, userCompanies, currentCompany } = useAuth();
   const navigate = useNavigate();
   const isEditMode = window.location.search.includes('edit=true');
   const { companyData, isLoading, isEditing } = useCompanyData(user?.id, isEditMode);
-  const [checkingInvitation, setCheckingInvitation] = useState(true);
+  const [checkingAccess, setCheckingAccess] = useState(true);
 
   useEffect(() => {
-    // Check if user was invited and redirect if necessary
-    const checkInvitationStatus = async () => {
-      if (!user?.email) {
-        console.log("CompanySetup: No user email found, cannot check invitation status");
-        setCheckingInvitation(false);
+    // Check if user has permission to access this page
+    const checkAccess = async () => {
+      if (!user) {
+        console.log("CompanySetup: No user found, redirecting to login");
+        navigate("/login");
         return;
       }
       
-      console.log("CompanySetup: Checking invitation status for email:", user.email);
-      
-      try {
-        // First check if user has a company
-        const { data: userCompany, error: companyError } = await supabase
-          .from("companies")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle();
-          
-        console.log("CompanySetup: User company check result:", userCompany);
-        
-        if (companyError) {
-          console.error("CompanySetup: Error checking user company:", companyError);
-          throw companyError;
+      // In edit mode, we need to check if there's a company to edit
+      if (isEditMode) {
+        if (!currentCompany) {
+          if (userCompanies && userCompanies.length > 0) {
+            // If user has companies but none is selected, redirect to profile to select one
+            console.log("CompanySetup: No company selected, redirecting to profile");
+            toast.info("Por favor selecciona una empresa para editar");
+            navigate("/profile");
+            return;
+          } else {
+            console.log("CompanySetup: No companies found for editing");
+            toast.error("No tienes empresas para editar");
+            navigate("/dashboard");
+            return;
+          }
         }
-        
-        if (userCompany) {
-          console.log("CompanySetup: User has their own company, redirecting to dashboard");
+      } else {
+        // Not in edit mode - check if user should be here
+        if (userCompanies && userCompanies.length > 0) {
+          console.log("CompanySetup: User already has companies, redirecting to dashboard");
           navigate("/dashboard");
           return;
         }
-        
-        // Check for ALL invitations related to this email
-        const { data: invitations, error: invitationError } = await supabase
-          .from("user_invitations")
-          .select("*")
-          .eq("email", user.email);
-        
-        console.log("CompanySetup: All invitations for this user:", invitations);
-        
-        if (invitationError) {
-          console.error("CompanySetup: Error checking invitations:", invitationError);
-          throw invitationError;
-        }
-        
-        // Check for completed invitations
-        const completedInvitation = invitations?.find(inv => inv.status === 'completed');
-        
-        if (completedInvitation) {
-          console.log("CompanySetup: User has a completed invitation, redirecting to dashboard");
-          navigate("/dashboard");
-          return;
-        }
-        
-        // Check for pending invitations
-        const pendingInvitation = invitations?.find(inv => inv.status === 'pending');
-        
-        if (pendingInvitation) {
-          console.log("CompanySetup: User has a pending invitation, redirecting to registration");
-          navigate(`/register?token=${pendingInvitation.invitation_token}`);
-          return;
-        }
-        
-        // Check for expired invitations
-        const expiredInvitation = invitations?.find(inv => inv.status === 'expired');
-        
-        if (expiredInvitation) {
-          console.log("CompanySetup: User has an expired invitation");
-          toast.error("Tu invitación ha expirado. Contacta al administrador para que la reactive.");
-        }
-        
-        // Check if there's any company in the system
-        const { data: anyCompany, error: anyCompanyError } = await supabase
-          .from("companies")
-          .select("*")
-          .limit(1);
-            
-        console.log("CompanySetup: Any company check result:", anyCompany);
-        
-        if (anyCompanyError) {
-          console.error("CompanySetup: Error checking for any company:", anyCompanyError);
-          throw anyCompanyError;
-        }
-          
-        if (anyCompany && anyCompany.length > 0) {
-          console.log("CompanySetup: Companies exist but none belongs to this user");
-          // At this point companies exist but this user doesn't have one and wasn't invited
-          toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
-          navigate("/login");
-          return;
-        }
-        
-        console.log("CompanySetup: No companies found, user can setup a new company");
-        // No companies found - allow user to create the first company
-      } catch (err) {
-        console.error("CompanySetup: Unexpected error:", err);
-        toast.error("Error verificando estado de usuario");
-      } finally {
-        setCheckingInvitation(false);
       }
+      
+      setCheckingAccess(false);
     };
     
-    checkInvitationStatus();
-  }, [user, navigate]);
+    checkAccess();
+  }, [user, navigate, isEditMode, currentCompany, userCompanies]);
 
-  if (isLoading || checkingInvitation) {
+  if (isLoading || checkingAccess) {
     return <div className="container flex items-center justify-center min-h-screen">Cargando...</div>;
   }
 
@@ -150,7 +84,7 @@ export default function CompanySetup() {
         </CardHeader>
         <CardContent>
           <CompanyForm 
-            defaultValues={companyData || undefined}
+            defaultValues={currentCompany || companyData || undefined}
             isEditing={isEditing}
             userId={user?.id || ''}
           />

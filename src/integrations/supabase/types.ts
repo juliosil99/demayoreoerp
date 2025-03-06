@@ -400,6 +400,38 @@ export type Database = {
         }
         Relationships: []
       }
+      company_users: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_users_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           address: string | null
@@ -1416,6 +1448,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_company: {
+        Args: {
+          user_id: string
+          company_id: string
+        }
+        Returns: boolean
+      }
       find_invitation_by_token: {
         Args: {
           token_param: string
