@@ -148,25 +148,35 @@ const handler = async (req: Request): Promise<Response> => {
       // Special handling for already registered users
       if (createError.message.includes("already been registered")) {
         // Get the user data for the already registered user
-        const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+        // Fix: Use the correct method to get user by email
+        const { data: existingUserData, error: getUserError } = await supabaseAdmin.auth.admin.listUsers({
+          filter: {
+            email: email
+          }
+        });
+        
+        let existingUser = null;
+        if (existingUserData && existingUserData.users && existingUserData.users.length > 0) {
+          existingUser = existingUserData.users[0];
+        }
         
         if (getUserError) {
           console.error("Error fetching existing user:", getUserError);
-        } else if (existingUser && existingUser.user) {
+        } else if (existingUser) {
           // Check if user already has a role
           const { data: existingRole } = await supabaseAdmin
             .from('user_roles')
             .select('*')
-            .eq('user_id', existingUser.user.id)
+            .eq('user_id', existingUser.id)
             .maybeSingle();
             
           // If no role exists, create one
           if (!existingRole) {
-            console.log("Setting role for existing user:", existingUser.user.id);
+            console.log("Setting role for existing user:", existingUser.id);
             const { error: roleError } = await supabaseAdmin
               .from('user_roles')
               .insert({
-                user_id: existingUser.user.id,
+                user_id: existingUser.id,
                 role
               });
               
