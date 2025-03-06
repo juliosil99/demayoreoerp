@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,14 +15,41 @@ export default function Login() {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
-  const checkCompanySetup = async (userId: string) => {
+  const checkUserStatus = async (userId: string, userEmail: string) => {
+    // Check if user was invited
+    const { data: invitationData } = await supabase
+      .from("user_invitations")
+      .select("*")
+      .eq("email", userEmail)
+      .eq("status", "completed")
+      .maybeSingle();
+    
+    const wasInvited = !!invitationData;
+    
+    // If user was invited, they don't need to configure company
+    if (wasInvited) {
+      navigate("/dashboard");
+      return;
+    }
+    
+    // Check if company exists for this user
     const { data: company } = await supabase
       .from("companies")
       .select("*")
       .eq("user_id", userId)
       .single();
     
-    return !!company;
+    // Check if any company exists at all
+    const { data: anyCompany } = await supabase
+      .from("companies")
+      .select("*")
+      .limit(1);
+    
+    if (company || (anyCompany && anyCompany.length > 0)) {
+      navigate("/dashboard");
+    } else {
+      navigate("/company-setup");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent, isSignUp: boolean = false) => {
@@ -37,12 +65,7 @@ export default function Login() {
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user) {
-          const hasCompany = await checkCompanySetup(user.id);
-          if (hasCompany) {
-            navigate("/dashboard");
-          } else {
-            navigate("/company-setup");
-          }
+          await checkUserStatus(user.id, user.email || "");
         }
         toast.success("Inició sesión exitosamente!");
       }

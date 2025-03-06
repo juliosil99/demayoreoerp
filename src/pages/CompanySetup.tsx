@@ -10,11 +10,36 @@ import {
 } from "@/components/ui/card";
 import { CompanyForm } from "@/components/company/CompanyForm";
 import { useCompanyData } from "@/hooks/company/useCompanyData";
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
 
 export default function CompanySetup() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isEditMode = window.location.search.includes('edit=true');
   const { companyData, isLoading, isEditing } = useCompanyData(user?.id, isEditMode);
+
+  useEffect(() => {
+    // Check if user was invited and redirect if necessary
+    const checkInvitationStatus = async () => {
+      if (!user?.email) return;
+      
+      const { data: invitationData } = await supabase
+        .from("user_invitations")
+        .select("*")
+        .eq("email", user.email)
+        .eq("status", "completed")
+        .maybeSingle();
+      
+      if (invitationData) {
+        // User was invited, redirect to dashboard
+        navigate("/dashboard");
+      }
+    };
+    
+    checkInvitationStatus();
+  }, [user, navigate]);
 
   if (isLoading) {
     return <div>Cargando...</div>;

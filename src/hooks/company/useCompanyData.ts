@@ -83,6 +83,24 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           return;
         }
 
+        // Check if user was invited (via user_invitations)
+        console.log("🔍 Checking if user was invited...");
+        const { data: invitationData, error: invitationError } = await supabase
+          .from("user_invitations")
+          .select("*")
+          .eq("email", (await supabase.auth.getUser()).data.user?.email || "")
+          .eq("status", "completed")
+          .maybeSingle();
+        
+        console.log("Invitation check result:", invitationData);
+        
+        if (invitationError) {
+          console.error("❌ Error checking user invitation:", invitationError);
+        }
+        
+        const wasInvited = !!invitationData;
+        
+        // Check if company is already configured
         console.log("🔍 Checking if company exists...");
         const { data, error } = await supabase
           .from("companies")
@@ -101,6 +119,14 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
 
         if (data && data.length > 0) {
           console.log("✅ Company exists, redirecting to dashboard");
+          navigate("/dashboard");
+          return;
+        }
+        
+        // If user was invited but no company exists, they should still go to dashboard
+        // This handles the case where they were invited by someone who hasn't configured a company yet
+        if (wasInvited) {
+          console.log("✅ User was invited, redirecting to dashboard");
           navigate("/dashboard");
           return;
         }
