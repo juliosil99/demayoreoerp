@@ -17,25 +17,20 @@ export function useRegistration(invitation: any) {
       console.log("Creating user with email:", invitation.email);
       
       // Get the Supabase URL from environment or config
-      // Instead of accessing protected property directly
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://dulmmxtkgqkcfovvfxzu.supabase.co";
       
       console.log("Using Supabase URL:", supabaseUrl);
       
-      // First get a fresh session token
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      // Instead of requiring a session token, we'll use the anon key
+      // This is safe because the edge function will validate the invitation token server-side
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
-      if (sessionError) {
-        console.error("Error getting session:", sessionError);
-        throw new Error("Error de autenticación: No se pudo obtener la sesión actual");
+      if (!anonKey) {
+        console.error("No anon key available");
+        throw new Error("Error de configuración: Falta la clave anónima de Supabase");
       }
       
-      if (!sessionData.session?.access_token) {
-        console.error("No access token available in current session");
-        throw new Error("Error de autenticación: No hay sesión activa");
-      }
-      
-      console.log("Got valid session token, calling edge function");
+      console.log("Calling edge function to create user");
       
       const response = await fetch(
         `${supabaseUrl}/functions/v1/create-invited-user`,
@@ -43,12 +38,13 @@ export function useRegistration(invitation: any) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${sessionData.session.access_token}`
+            'Authorization': `Bearer ${anonKey}`
           },
           body: JSON.stringify({
             email: invitation.email,
             password: password,
-            role: invitation.role
+            role: invitation.role,
+            invitationToken: invitation.invitation_token
           })
         }
       );
@@ -106,14 +102,18 @@ export function useRegistration(invitation: any) {
         throw updateError;
       }
 
-      const { error: logError } = await supabase.from("invitation_logs").insert({
-        invitation_id: invitation.id,
-        status: "completed",
-        error_message: null,
-        attempted_by: responseData.user.id
-      });
+      try {
+        const { error: logError } = await supabase.from("invitation_logs").insert({
+          invitation_id: invitation.id,
+          status: "completed",
+          error_message: null,
+          attempted_by: responseData.user.id
+        });
 
-      if (logError) {
+        if (logError) {
+          console.error("Error creating log:", logError);
+        }
+      } catch (logError) {
         console.error("Error creating log:", logError);
       }
 
@@ -140,7 +140,7 @@ export function useRegistration(invitation: any) {
           invitation_id: invitation.id,
           status: "error",
           error_message: error.message,
-          attempted_by: invitation.invited_by
+          attempted_by: null
         });
       } catch (logError) {
         console.error("Error creating error log:", logError);

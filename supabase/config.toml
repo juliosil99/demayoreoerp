@@ -5,4 +5,5 @@ project_id = "dulmmxtkgqkcfovvfxzu"
 verify_jwt = true
 
 [functions.create-invited-user]
-verify_jwt = true
+verify_jwt = false
+

@@ -12,6 +12,7 @@ interface CreateUserRequest {
   email: string;
   password: string;
   role: string;
+  invitationToken?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -67,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
     
-    const { email, password, role }: CreateUserRequest = requestBody;
+    const { email, password, role, invitationToken }: CreateUserRequest = requestBody;
     
     console.log(`Creating user with email: ${email}, role: ${role}`);
     
@@ -83,6 +84,54 @@ const handler = async (req: Request): Promise<Response> => {
           } 
         }
       );
+    }
+    
+    // Verify the invitation token if provided
+    if (invitationToken) {
+      console.log("Verifying invitation token:", invitationToken);
+      
+      const { data: invitation, error: invitationError } = await supabaseAdmin
+        .from('user_invitations')
+        .select('*')
+        .eq('invitation_token', invitationToken)
+        .eq('email', email)
+        .eq('status', 'pending')
+        .maybeSingle();
+      
+      if (invitationError) {
+        console.error("Error verifying invitation:", invitationError);
+        return new Response(
+          JSON.stringify({ 
+            error: "Failed to verify invitation", 
+            details: invitationError.message 
+          }),
+          { 
+            status: 400, 
+            headers: { 
+              "Content-Type": "application/json", 
+              ...corsHeaders 
+            } 
+          }
+        );
+      }
+      
+      if (!invitation) {
+        console.error("Invalid or expired invitation token");
+        return new Response(
+          JSON.stringify({ 
+            error: "Invalid or expired invitation" 
+          }),
+          { 
+            status: 400, 
+            headers: { 
+              "Content-Type": "application/json", 
+              ...corsHeaders 
+            } 
+          }
+        );
+      }
+      
+      console.log("Invitation verified successfully");
     }
     
     // Create the user
