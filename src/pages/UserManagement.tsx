@@ -4,6 +4,7 @@ import { UsersTable } from "./users/components/UsersTable";
 import { InviteUserForm } from "./users/components/InviteUserForm";
 import { PendingInvitations } from "./users/components/PendingInvitations";
 import { useUserPermissions } from "./users/hooks/useUserPermissions";
+import { useUserCompanies } from "./users/hooks/useUserCompanies";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,19 +15,26 @@ import { AlertCircle } from "lucide-react";
 export default function UserManagement() {
   const {
     profiles,
-    isLoading,
+    isLoading: isLoadingPermissions,
     userPermissions,
     handlePermissionChange,
     handleRoleChange
   } = useUserPermissions();
   
+  const { 
+    data: userCompanies = {}, 
+    isLoading: isLoadingCompanies 
+  } = useUserCompanies();
+  
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [isCheckingPermission, setIsCheckingPermission] = useState(true);
+  
+  const isLoading = isLoadingPermissions || isLoadingCompanies;
 
   useEffect(() => {
     // Check if user is admin
-    if (!isLoading) {
+    if (!isLoadingPermissions) {
       if (!user) {
         toast.error("Necesitas iniciar sesión para acceder a esta página");
         navigate("/login");
@@ -41,13 +49,14 @@ export default function UserManagement() {
       
       setIsCheckingPermission(false);
     }
-  }, [user, isAdmin, isLoading, navigate]);
+  }, [user, isAdmin, isLoadingPermissions, navigate]);
 
   // Add debugging log to see what profiles we have
   useEffect(() => {
     console.log("UserManagement: Current profiles:", profiles);
     console.log("UserManagement: Current permissions:", userPermissions);
-  }, [profiles, userPermissions]);
+    console.log("UserManagement: Current user companies:", userCompanies);
+  }, [profiles, userPermissions, userCompanies]);
 
   if (isLoading || isCheckingPermission) {
     return (
@@ -88,6 +97,7 @@ export default function UserManagement() {
             <UsersTable
               profiles={profiles}
               userPermissions={userPermissions}
+              userCompanies={userCompanies}
               onPermissionChange={handlePermissionChange}
               onRoleChange={handleRoleChange}
             />
