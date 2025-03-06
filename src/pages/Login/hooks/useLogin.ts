@@ -2,13 +2,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
-export default function Login() {
+export const useLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -32,19 +29,14 @@ export default function Login() {
         throw roleError;
       }
       
-      // If user has a role, they should be allowed in the system
       if (userRole) {
         console.log("Login: User has role:", userRole.role);
         
-        // Check if user has their own company
-        console.log("Login: Checking if user has their own company...");
         const { data: userCompany, error: companyError } = await supabase
           .from("companies")
           .select("*")
           .eq("user_id", userId)
           .maybeSingle();
-        
-        console.log("Login: User company check result:", userCompany);
         
         if (companyError) {
           console.error("Login: Error checking user company:", companyError);
@@ -57,50 +49,37 @@ export default function Login() {
           return;
         }
         
-        // Check if any company exists at all
-        console.log("Login: User doesn't have a company, checking if any company exists...");
         const { data: anyCompany } = await supabase
           .from("companies")
           .select("*")
           .limit(1);
-        
-        console.log("Login: Any company check result:", anyCompany);
         
         if (anyCompany && anyCompany.length > 0) {
           console.log("Login: Companies exist, user has role but no company, redirecting to dashboard");
           navigate("/dashboard");
           return;
         } else {
-          // No companies exist, so this user should set up the first company
           console.log("Login: No company found, redirecting to company setup");
           navigate("/company-setup");
           return;
         }
       }
       
-      // If we get here, the user has no role, which means they weren't properly invited
-      // or the invitation process didn't complete correctly
-      
-      // Check for ALL invitations related to this email
       const { data: invitations, error: invitationError } = await supabase
         .from("user_invitations")
         .select("*")
         .eq("email", userEmail);
-      
-      console.log("Login: All invitations for this email:", invitations);
       
       if (invitationError) {
         console.error("Login: Error checking invitations:", invitationError);
         throw invitationError;
       }
       
-      // Check for completed invitations
       const completedInvitation = invitations?.find(inv => inv.status === 'completed');
       
       if (completedInvitation) {
         console.log("Login: Found completed invitation but no role, creating role now");
         
-        // Create the missing role
         const { error: createRoleError } = await supabase
           .from("user_roles")
           .insert({
@@ -118,7 +97,6 @@ export default function Login() {
         return;
       }
       
-      // Check for pending invitations
       const pendingInvitation = invitations?.find(inv => inv.status === 'pending');
       
       if (pendingInvitation) {
@@ -127,7 +105,6 @@ export default function Login() {
         return;
       }
       
-      // Check if there's an expired invitation
       const expiredInvitation = invitations?.find(inv => inv.status === 'expired');
       
       if (expiredInvitation) {
@@ -136,22 +113,16 @@ export default function Login() {
         return;
       }
       
-      // Check if any company exists at all
-      console.log("Login: No invitation found, checking if any company exists...");
       const { data: anyCompany } = await supabase
         .from("companies")
         .select("*")
         .limit(1);
       
-      console.log("Login: Any company check result:", anyCompany);
-      
       if (anyCompany && anyCompany.length > 0) {
-        // Companies exist but this user doesn't have one and wasn't invited
         console.log("Login: Companies exist but none for this user and not invited");
         toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
         return;
       } else {
-        // No companies exist, so this user should set up the first company
         console.log("Login: No company found, redirecting to company setup");
         navigate("/company-setup");
       }
@@ -196,54 +167,12 @@ export default function Login() {
     }
   };
 
-  return (
-    <div className="container flex items-center justify-center min-h-screen">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Bienvenido de nuevo</CardTitle>
-          <CardDescription>Inicia sesión en tu cuenta para continuar</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                type="email"
-                placeholder="Correo electrónico"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Input
-                type="password"
-                placeholder="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-4">
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? "Cargando..." : "Iniciar Sesión"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                disabled={isLoading}
-                onClick={(e) => handleSubmit(e, true)}
-              >
-                Crear Cuenta
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+  return {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    isLoading,
+    handleSubmit
+  };
+};
