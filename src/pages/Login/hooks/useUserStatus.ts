@@ -126,5 +126,42 @@ export const useUserStatus = () => {
     }
   };
 
-  return { checkUserStatus };
+  // New function to check if a user can access a specific page
+  const canAccessPage = async (userId: string, pagePath: string): Promise<boolean> => {
+    try {
+      // First check if the user is an admin (admins can access all pages)
+      const { data: isAdminResult, error: adminError } = await supabase
+        .rpc('is_admin', { user_id: userId });
+      
+      if (adminError) {
+        console.error("Error checking admin status:", adminError);
+        throw adminError;
+      }
+      
+      if (isAdminResult) {
+        return true;
+      }
+      
+      // Then check if the user has explicit permission for this page
+      const { data: permissions, error: permissionsError } = await supabase
+        .from("page_permissions")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("page_path", pagePath)
+        .eq("can_access", true)
+        .maybeSingle();
+      
+      if (permissionsError) {
+        console.error("Error checking page permissions:", permissionsError);
+        throw permissionsError;
+      }
+      
+      return !!permissions;
+    } catch (error) {
+      console.error("Error in canAccessPage:", error);
+      return false;
+    }
+  };
+
+  return { checkUserStatus, canAccessPage };
 };
