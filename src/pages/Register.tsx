@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -64,15 +65,15 @@ export default function Register() {
         if (textResult) {
           invitation = textResult;
         } else {
-          // Approach 3: Raw SQL query for exact match
-          const { data: rawResult, error: rawError } = await supabase.rpc(
-            'find_invitation_by_token',
-            { token_param: token }
-          );
+          // Approach 3: Use our custom SQL function for flexible matching
+          // Fix: Use the correct function call with proper type checking
+          const { data: rawResult, error: rawError } = await supabase
+            .rpc('find_invitation_by_token', { token_param: token });
           
-          console.log("Raw SQL token verification result:", { invitation: rawResult, error: rawError });
+          console.log("Custom function token verification result:", { invitation: rawResult, error: rawError });
           
-          if (rawResult && rawResult.length > 0) {
+          // Fix: Check if the result array has entries instead of using .length on a boolean
+          if (rawResult && Array.isArray(rawResult) && rawResult.length > 0) {
             invitation = rawResult[0];
           }
         }

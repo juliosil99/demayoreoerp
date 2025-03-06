@@ -1416,6 +1416,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      find_invitation_by_token: {
+        Args: {
+          token_param: string
+        }
+        Returns: {
+          created_at: string | null
+          email: string
+          id: string
+          invitation_token: string | null
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"] | null
+          status: string | null
+        }[]
+      }
       has_page_access: {
         Args: {
           user_id: string

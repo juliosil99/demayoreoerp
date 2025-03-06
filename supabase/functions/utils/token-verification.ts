@@ -35,16 +35,15 @@ export async function verifyInvitationToken(token: string, supabaseUrl: string, 
     return { invitation: textResult, error: null };
   }
   
-  console.log("Text comparison failed, trying raw SQL");
+  console.log("Text comparison failed, trying custom SQL function");
   
-  // Try a raw SQL query as a last resort
-  const { data: rawResult, error: rawError } = await supabase
-    .rpc('find_invitation_by_token', { token_param: token })
-    .maybeSingle();
+  // Try our custom SQL function for flexible matching
+  const { data: functionResult, error: functionError } = await supabase
+    .rpc('find_invitation_by_token', { token_param: token });
     
-  if (rawResult) {
-    console.log("Found invitation with raw SQL");
-    return { invitation: rawResult, error: null };
+  if (functionResult && Array.isArray(functionResult) && functionResult.length > 0) {
+    console.log("Found invitation with custom SQL function");
+    return { invitation: functionResult[0], error: null };
   }
   
   console.log("All token verification approaches failed");
