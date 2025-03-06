@@ -18,6 +18,8 @@ export interface UserInvitation {
   status: string;
   role: 'admin' | 'user';
   created_at: string;
+  invitation_token?: string; // Added this property as optional
+  invited_by?: string; // Added this property as optional
 }
 
 export const availablePages = [

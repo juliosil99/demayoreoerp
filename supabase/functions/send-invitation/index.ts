@@ -48,6 +48,9 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("Generando nuevo token de invitación");
       const token = crypto.randomUUID();
       
+      // Log the token before updating
+      console.log("Nuevo token generado:", token);
+      
       const { data: updatedInvitation, error: updateError } = await supabase
         .from("user_invitations")
         .update({ 
@@ -65,6 +68,19 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log("Token actualizado:", updatedInvitation.invitation_token);
       invitation.invitation_token = updatedInvitation.invitation_token;
+    }
+
+    // Verify the token exists in the database after updating
+    const { data: tokenCheck, error: tokenCheckError } = await supabase
+      .from("user_invitations")
+      .select("id")
+      .eq("invitation_token", invitation.invitation_token)
+      .maybeSingle();
+      
+    if (tokenCheckError) {
+      console.error("Error verificando token en la base de datos:", tokenCheckError);
+    } else {
+      console.log("Verificación de token en base de datos:", tokenCheck ? "Encontrado" : "No encontrado");
     }
 
     // Obtener información de la empresa para personalizar el correo

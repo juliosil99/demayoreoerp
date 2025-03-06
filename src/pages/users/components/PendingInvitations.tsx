@@ -21,6 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { supabase } from "@/lib/supabase";
 
 export function PendingInvitations() {
   const { invitations, resendInvitation, isResending, isLoading } = useUserInvitations();
@@ -84,8 +85,8 @@ export function PendingInvitations() {
             </TableHeader>
             <TableBody>
               {invitations.map((invitation) => (
-                <>
-                  <TableRow key={invitation.id}>
+                <React.Fragment key={invitation.id}>
+                  <TableRow>
                     <TableCell>{invitation.email}</TableCell>
                     <TableCell>{invitation.role === 'admin' ? 'Administrador' : 'Usuario'}</TableCell>
                     <TableCell>
@@ -162,14 +163,17 @@ export function PendingInvitations() {
                               <p><span className="font-medium">Creado:</span> {format(new Date(invitation.created_at), 'dd/MM/yyyy HH:mm:ss')}</p>
                               <p><span className="font-medium">URL de inscripción:</span></p>
                               <div className="flex items-center">
-                                <code className="text-xs bg-muted p-1 rounded">{`${window.location.origin}/register?token=${invitation.invitation_token}`}</code>
+                                <code className="text-xs bg-muted p-1 rounded">{`${window.location.origin}/register?token=${invitation.invitation_token || ''}`}</code>
                                 <Button 
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-6 w-6 ml-1"
                                   onClick={() => {
-                                    navigator.clipboard.writeText(`${window.location.origin}/register?token=${invitation.invitation_token}`);
+                                    if (invitation.invitation_token) {
+                                      navigator.clipboard.writeText(`${window.location.origin}/register?token=${invitation.invitation_token}`);
+                                    }
                                   }}
+                                  disabled={!invitation.invitation_token}
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                                 </Button>
@@ -206,7 +210,7 @@ export function PendingInvitations() {
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </TableBody>
           </Table>

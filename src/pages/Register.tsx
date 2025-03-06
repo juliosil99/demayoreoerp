@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -64,6 +63,48 @@ export default function Register() {
       }
       
       if (!invitation) {
+        // Let's try to find the invitation by email from the authenticated user
+        const { data: session } = await supabase.auth.getSession();
+        if (session.session?.user.email) {
+          const { data: invitationsByEmail, error: emailError } = await supabase
+            .from("user_invitations")
+            .select("*")
+            .eq("email", session.session.user.email)
+            .order('created_at', { ascending: false })
+            .limit(1);
+            
+          if (!emailError && invitationsByEmail && invitationsByEmail.length > 0) {
+            setTokenDebugInfo(prev => `${prev}\nFound invitation by email: ${invitationsByEmail[0].id}`);
+            
+            // Update the invitation with the new token
+            const newToken = token;
+            const { error: updateError } = await supabase
+              .from("user_invitations")
+              .update({ invitation_token: newToken, status: "pending" })
+              .eq("id", invitationsByEmail[0].id);
+              
+            if (!updateError) {
+              setTokenDebugInfo(prev => `${prev}\nUpdated invitation with new token: ${newToken}`);
+              
+              // Retry the verification with the updated token
+              const { data: updatedInvitation } = await supabase
+                .from("user_invitations")
+                .select("*")
+                .eq("invitation_token", newToken)
+                .maybeSingle();
+                
+              if (updatedInvitation) {
+                setInvitation(updatedInvitation);
+                setTokenDebugInfo(prev => `${prev}\nSuccessfully retrieved updated invitation`);
+                setVerifyingToken(false);
+                return;
+              }
+            } else {
+              setTokenDebugInfo(prev => `${prev}\nError updating invitation: ${updateError.message}`);
+            }
+          }
+        }
+        
         setTokenError("Token de invitación no encontrado");
         setTokenDebugInfo(prev => `${prev}\nResult: Token not found in database`);
         setVerifyingToken(false);
@@ -79,7 +120,7 @@ export default function Register() {
           setTokenError("Esta invitación ha expirado");
           setTokenDebugInfo(prev => `${prev}\nResult: Invitation expired`);
           
-          // Mark the invitation as expired in the database
+          // Mark the invitation as expired in the database if not already
           if (invitation.status !== "expired") {
             await supabase
               .from("user_invitations")
