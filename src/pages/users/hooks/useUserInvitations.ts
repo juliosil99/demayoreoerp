@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { UserInvitation } from "../types";
@@ -8,8 +8,9 @@ import { UserInvitation } from "../types";
 export function useUserInvitations() {
   const [isInviting, setIsInviting] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const queryClient = useQueryClient();
 
-  const { data: invitations, refetch } = useQuery({
+  const { data: invitations, isLoading } = useQuery({
     queryKey: ["user-invitations"],
     queryFn: async () => {
       const { data: session } = await supabase.auth.getSession();
@@ -32,22 +33,23 @@ export function useUserInvitations() {
   });
 
   const createInvitationLog = async (invitationId: string, status: string, errorMessage?: string) => {
-    const { data: session } = await supabase.auth.getSession();
-    if (!session.session) {
-      throw new Error("No hay sesión activa");
-    }
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      
+      const { error } = await supabase
+        .from('invitation_logs')
+        .insert({
+          invitation_id: invitationId,
+          status,
+          error_message: errorMessage,
+          attempted_by: session.session?.user.id || '00000000-0000-0000-0000-000000000000'
+        });
 
-    const { error } = await supabase
-      .from('invitation_logs')
-      .insert({
-        invitation_id: invitationId,
-        status,
-        error_message: errorMessage,
-        attempted_by: session.session.user.id
-      });
-
-    if (error) {
-      console.error("Error creating invitation log:", error);
+      if (error) {
+        console.error("Error creating invitation log:", error);
+      }
+    } catch (err) {
+      console.error("Error in createInvitationLog:", err);
     }
   };
 
@@ -62,19 +64,6 @@ export function useUserInvitations() {
         'Intento de reenvío de invitación'
       );
 
-      // Generar nuevo token
-      const newToken = crypto.randomUUID();
-      
-      // Actualizar el token de la invitación
-      const { error: updateError } = await supabase
-        .from('user_invitations')
-        .update({ invitation_token: newToken })
-        .eq('id', invitation.id);
-
-      if (updateError) {
-        throw new Error("Error al actualizar el token de invitación");
-      }
-
       // Llamar a la Edge Function para enviar el correo
       const { error } = await supabase.functions.invoke('send-invitation', {
         body: { invitationId: invitation.id }
@@ -87,7 +76,7 @@ export function useUserInvitations() {
 
       await createInvitationLog(invitation.id, 'email_sent', 'Correo reenviado exitosamente');
       toast.success("Invitación reenviada exitosamente");
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["user-invitations"] });
     } catch (error: any) {
       console.error("Error resending invitation:", error);
       toast.error(error.message);
@@ -126,25 +115,17 @@ export function useUserInvitations() {
       }
       
       // Crear la invitación con un nuevo token
-      const invitation_token = crypto.randomUUID();
       const { data: invitation, error: invitationError } = await supabase
         .from('user_invitations')
         .insert({
           email,
           role,
-          status: 'pending',
-          invited_by: session.session.user.id,
-          invitation_token
+          status: 'pending'
         })
         .select()
         .single();
 
       if (invitationError || !invitation) {
-        await createInvitationLog(
-          invitation?.id || '00000000-0000-0000-0000-000000000000',
-          'error',
-          invitationError?.message || 'Error desconocido'
-        );
         throw invitationError || new Error('Error desconocido');
       }
 
@@ -161,7 +142,7 @@ export function useUserInvitations() {
         toast.success("Invitación enviada exitosamente");
       }
       
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["user-invitations"] });
     } catch (error: any) {
       console.error("Error inviting user:", error);
       toast.error(error.message);
@@ -175,6 +156,7 @@ export function useUserInvitations() {
     inviteUser,
     isInviting,
     resendInvitation,
-    isResending
+    isResending,
+    isLoading
   };
 }

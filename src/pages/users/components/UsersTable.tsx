@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Profile, UserPermissions, availablePages } from "../types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface UsersTableProps {
   profiles: Profile[] | null;
@@ -39,17 +40,21 @@ export function UsersTable({
           <TableRow key={profile.id}>
             <TableCell>{profile.email}</TableCell>
             <TableCell>
-              <select
+              <Select
                 value={userPermissions[profile.id]?.role || 'user'}
-                onChange={(e) => onRoleChange(profile.id, e.target.value as 'admin' | 'user')}
-                className="border rounded p-1"
+                onValueChange={(value) => onRoleChange(profile.id, value as 'admin' | 'user')}
               >
-                <option value="user">Usuario</option>
-                <option value="admin">Administrador</option>
-              </select>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Usuario</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
             </TableCell>
             {availablePages.map((page) => (
-              <TableCell key={page.path}>
+              <TableCell key={page.path} className="text-center">
                 <Checkbox
                   checked={userPermissions[profile.id]?.pages[page.path] || false}
                   onCheckedChange={(checked) => 

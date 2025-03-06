@@ -19,40 +19,31 @@ serve(async (req) => {
     )
 
     const { email, password, role } = await req.json()
+    console.log(`Creando usuario invitado: ${email}, rol: ${role}`)
 
-    // Primero creamos el usuario con confirmed_at ya establecido
+    // Primero creamos el usuario con email_confirm: true
     const { data: { user }, error: createError } = await supabaseClient.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { role },
-      app_metadata: {
-        email_confirmed_at: new Date().toISOString(),
-        email_confirm_sent_at: new Date().toISOString(),
-        confirmed_at: new Date().toISOString()
-      }
+      user_metadata: { role }
     })
 
-    if (createError) throw createError
-    if (!user) throw new Error('No se pudo crear el usuario')
+    if (createError) {
+      console.error('Error creando usuario:', createError)
+      throw createError
+    }
+    
+    if (!user) {
+      console.error('No se pudo crear el usuario, no se devolvió user')
+      throw new Error('No se pudo crear el usuario')
+    }
 
-    // Forzar la confirmación usando updateUserById
-    const { error: updateError } = await supabaseClient.auth.admin.updateUserById(
-      user.id,
-      { 
-        email_confirm: true,
-        app_metadata: {
-          email_confirmed_at: new Date().toISOString(),
-          email_confirm_sent_at: new Date().toISOString(),
-          confirmed_at: new Date().toISOString()
-        }
-      }
-    )
+    console.log(`Usuario creado exitosamente: ${user.id}`)
 
-    if (updateError) throw updateError
-
+    // Si el rol es admin, insertamos en user_roles
     if (role === 'admin') {
-      // Si el rol es admin, insertamos en user_roles
+      console.log(`Asignando rol de admin a: ${user.id}`)
       const { error: roleError } = await supabaseClient
         .from('user_roles')
         .insert({
@@ -60,7 +51,10 @@ serve(async (req) => {
           role: 'admin'
         })
 
-      if (roleError) throw roleError
+      if (roleError) {
+        console.error('Error asignando rol de admin:', roleError)
+        throw roleError
+      }
     }
 
     return new Response(
@@ -71,7 +65,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error in create-invited-user:', error)
+    console.error('Error en create-invited-user:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
