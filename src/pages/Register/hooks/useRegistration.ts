@@ -22,13 +22,28 @@ export function useRegistration(invitation: any) {
       
       console.log("Using Supabase URL:", supabaseUrl);
       
+      // First get a fresh session token
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Error getting session:", sessionError);
+        throw new Error("Error de autenticación: No se pudo obtener la sesión actual");
+      }
+      
+      if (!sessionData.session?.access_token) {
+        console.error("No access token available in current session");
+        throw new Error("Error de autenticación: No hay sesión activa");
+      }
+      
+      console.log("Got valid session token, calling edge function");
+      
       const response = await fetch(
         `${supabaseUrl}/functions/v1/create-invited-user`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`
+            'Authorization': `Bearer ${sessionData.session.access_token}`
           },
           body: JSON.stringify({
             email: invitation.email,
