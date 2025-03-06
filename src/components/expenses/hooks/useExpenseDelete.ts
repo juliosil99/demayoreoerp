@@ -22,78 +22,10 @@ export function useExpenseDelete() {
     setDeleteLog(log);
     
     try {
-      // Check if the expense has accounting adjustments
-      const { data: adjustments, error: checkError } = await supabase
-        .from('accounting_adjustments')
-        .select('id')
-        .eq('expense_id', expense.id);
-      
-      log.push(`Verificando ajustes contables: ${adjustments ? adjustments.length : 0} encontrados`);
-      setDeleteLog([...log]);
-      
-      if (checkError) {
-        log.push(`Error al verificar ajustes: ${checkError.message}`);
-        setDeleteLog([...log]);
-        throw checkError;
-      }
-
-      // Step 1: Delete associated accounting adjustments
-      log.push("Intentando eliminar ajustes contables asociados...");
-      setDeleteLog([...log]);
-      
-      const { error: adjustmentsError } = await supabase
-        .from('accounting_adjustments')
-        .delete()
-        .eq('expense_id', expense.id);
-      
-      if (adjustmentsError) {
-        log.push(`Error al eliminar ajustes contables: ${adjustmentsError.message}`);
-        log.push(`Detalles: ${JSON.stringify(adjustmentsError)}`);
-        setDeleteLog([...log]);
-        setDeleteError(`Error al eliminar ajustes contables: ${adjustmentsError.message}`);
-        toast.error(`Error al eliminar ajustes: ${adjustmentsError.message}`);
-        throw adjustmentsError;
-      }
-      
-      log.push("Ajustes contables eliminados exitosamente");
-      setDeleteLog([...log]);
-      
-      // Step 2: Check and delete expense invoice relations if any
-      const { data: relations, error: checkRelationsError } = await supabase
-        .from('expense_invoice_relations')
-        .select('id')
-        .eq('expense_id', expense.id);
-      
-      log.push(`Verificando relaciones de facturas: ${relations ? relations.length : 0} encontradas`);
-      setDeleteLog([...log]);
-      
-      if (checkRelationsError) {
-        log.push(`Error al verificar relaciones: ${checkRelationsError.message}`);
-        setDeleteLog([...log]);
-      }
-      
-      if (relations && relations.length > 0) {
-        log.push("Intentando eliminar relaciones de facturas...");
-        setDeleteLog([...log]);
-        
-        const { error: relationsError } = await supabase
-          .from('expense_invoice_relations')
-          .delete()
-          .eq('expense_id', expense.id);
-        
-        if (relationsError) {
-          log.push(`Error al eliminar relaciones: ${relationsError.message}`);
-          log.push(`Detalles: ${JSON.stringify(relationsError)}`);
-          setDeleteLog([...log]);
-          // Continue anyway as this might not be critical
-        } else {
-          log.push("Relaciones de facturas eliminadas exitosamente");
-          setDeleteLog([...log]);
-        }
-      }
-      
-      // Step 3: Now try to delete the expense itself
-      log.push("Intentando eliminar el gasto...");
+      // We'll directly delete the expense and rely on the database trigger to handle dependencies
+      // This is more reliable as the cascade happens at the database level
+      log.push("Intentando eliminar el gasto directamente...");
+      log.push("El trigger de la base de datos se encargará de eliminar los ajustes contables asociados");
       setDeleteLog([...log]);
       
       const { error } = await supabase
@@ -109,7 +41,11 @@ export function useExpenseDelete() {
         
         setDeleteError(`Error al eliminar: ${error.message}`);
         toast.error("No se pudo eliminar el gasto: " + error.message);
-        throw error;
+        
+        return {
+          success: false,
+          log: log
+        };
       }
 
       log.push("Gasto eliminado exitosamente");
@@ -117,17 +53,23 @@ export function useExpenseDelete() {
       
       toast.success('Gasto eliminado exitosamente');
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      
+      return {
+        success: true,
+        log: log
+      };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log.push(`Error no controlado: ${errorMessage}`);
       log.push(`Error completo: ${JSON.stringify(error)}`);
       setDeleteLog([...log]);
       console.error('Log completo de eliminación:', log);
+      
+      return {
+        success: false,
+        log: log
+      };
     }
-    
-    // Return the log for debugging
-    return {
-      success: deleteError === null,
-      log: deleteLog
-    };
   };
 
   return {
