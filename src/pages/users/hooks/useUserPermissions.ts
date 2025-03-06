@@ -15,48 +15,47 @@ export function useUserPermissions() {
   const { handlePermissionChange, handleRoleChange } = usePermissionMutations();
 
   useEffect(() => {
-    if (profiles && (pagePermissions || rolePermissions)) {
+    // Only process if profiles data is available
+    if (profiles?.length > 0) {
       console.log("Building permissions map with profiles:", profiles);
-      console.log("Page permissions data:", pagePermissions);
-      console.log("Role permissions data:", rolePermissions);
+      console.log("Page permissions data:", pagePermissions || []);
+      console.log("Role permissions data:", rolePermissions || []);
       
       const permissionsMap: { [key: string]: UserPermissions } = {};
       
-      profiles?.forEach(profile => {
-        if (!permissionsMap[profile.id]) {
+      // First, create base entries for all profiles
+      profiles.forEach(profile => {
+        if (profile && profile.id) {
           permissionsMap[profile.id] = {
             userId: profile.id,
             pages: {},
-            role: 'user'
+            role: 'user' // Default role
           };
         }
       });
       
-      pagePermissions?.forEach((perm) => {
-        if (!permissionsMap[perm.user_id]) {
-          permissionsMap[perm.user_id] = {
-            userId: perm.user_id,
-            pages: {},
-            role: 'user'
-          };
-        }
-        permissionsMap[perm.user_id].pages[perm.page_path] = perm.can_access;
-      });
+      // Then apply page permissions if available
+      if (pagePermissions?.length > 0) {
+        pagePermissions.forEach((perm) => {
+          if (perm && perm.user_id && permissionsMap[perm.user_id]) {
+            permissionsMap[perm.user_id].pages[perm.page_path] = perm.can_access;
+          }
+        });
+      }
 
-      rolePermissions?.forEach((role) => {
-        if (!permissionsMap[role.user_id]) {
-          permissionsMap[role.user_id] = {
-            userId: role.user_id,
-            pages: {},
-            role: role.role
-          };
-        } else {
-          permissionsMap[role.user_id].role = role.role;
-        }
-      });
+      // Finally apply role permissions if available
+      if (rolePermissions?.length > 0) {
+        rolePermissions.forEach((role) => {
+          if (role && role.user_id && permissionsMap[role.user_id]) {
+            permissionsMap[role.user_id].role = role.role;
+          }
+        });
+      }
 
       console.log("Final permissions map:", permissionsMap);
       setUserPermissions(permissionsMap);
+    } else {
+      console.log("No profiles available to build permissions map.");
     }
   }, [pagePermissions, rolePermissions, profiles]);
 

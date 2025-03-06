@@ -76,7 +76,7 @@ export default function UserManagement() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            No se pudieron cargar los usuarios. Por favor, recarga la página.
+            No se pudieron cargar los usuarios. Por favor, recarga la página o verifica que existan usuarios en el sistema.
           </AlertDescription>
         </Alert>
       ) : (
