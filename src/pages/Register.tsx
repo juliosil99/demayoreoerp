@@ -175,8 +175,17 @@ export default function Register() {
       console.log("Creating user with email:", invitation.email);
       
       // Call the Edge Function to create the user
+      // Fix the URL construction to ensure it's properly formed
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      
+      if (!supabaseUrl) {
+        throw new Error("VITE_SUPABASE_URL is not defined in environment variables");
+      }
+      
+      console.log("Using Supabase URL:", supabaseUrl);
+      
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-invited-user`,
+        `${supabaseUrl}/functions/v1/create-invited-user`,
         {
           method: 'POST',
           headers: {
