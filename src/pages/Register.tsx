@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -34,14 +33,11 @@ export default function Register() {
     try {
       console.log("Verifying invitation token:", token);
       
-      // Log token format and length
       setTokenDebugInfo(`Token length: ${token.length}, Format: ${token.includes('-') ? 'UUID' : 'Other'}`);
       
-      // Try to find the invitation with multiple approaches
       let invitation = null;
       let error = null;
       
-      // Approach 1: Direct query with the token as UUID
       const { data: directResult, error: directError } = await supabase
         .from("user_invitations")
         .select("*")
@@ -53,7 +49,6 @@ export default function Register() {
       if (directResult) {
         invitation = directResult;
       } else {
-        // Approach 2: Text-based comparison
         const { data: textResult, error: textError } = await supabase
           .from("user_invitations")
           .select("*")
@@ -65,7 +60,6 @@ export default function Register() {
         if (textResult) {
           invitation = textResult;
         } else {
-          // Approach 3: Use our custom SQL function for flexible matching
           const { data: functionResult, error: functionError } = await supabase
             .rpc('find_invitation_by_token', { token_param: token });
           
@@ -77,11 +71,9 @@ export default function Register() {
         }
       }
       
-      // Update debug info with query results
       setTokenDebugInfo(prev => `${prev}\nQuery results: ${invitation ? 'Found' : 'Not found'}`);
       
       if (!invitation) {
-        // Fallback: Get recent invitations as a last resort
         const { data: recentInvitations, error: recentError } = await supabase
           .from("user_invitations")
           .select("*")
@@ -91,10 +83,8 @@ export default function Register() {
         setTokenDebugInfo(prev => `${prev}\nRecent invitations query: ${recentInvitations ? `Found ${recentInvitations.length}` : 'Error'}`);
         
         if (recentInvitations && recentInvitations.length > 0) {
-          // Log recent invitations for debugging
           console.log("Recent invitations:", recentInvitations);
           
-          // Check if any of the recent invitations has this token
           const matchingInvitation = recentInvitations.find(
             inv => inv.invitation_token && inv.invitation_token.toString() === token
           );
@@ -103,7 +93,6 @@ export default function Register() {
             invitation = matchingInvitation;
             setTokenDebugInfo(prev => `${prev}\nFound matching invitation in recent invitations`);
           } else {
-            // Last attempt - update the most recent invitation with this token
             const newestInvitation = recentInvitations[0];
             
             const { data: updatedInvitation, error: updateError } = await supabase
@@ -130,7 +119,6 @@ export default function Register() {
         return;
       }
       
-      // Now check if the invitation is still pending
       if (invitation.status !== "pending") {
         if (invitation.status === "completed") {
           setTokenError("Esta invitación ya ha sido utilizada");
@@ -139,7 +127,6 @@ export default function Register() {
           setTokenError("Esta invitación ha expirado");
           setTokenDebugInfo(prev => `${prev}\nResult: Invitation expired`);
           
-          // Mark the invitation as expired in the database if not already
           if (invitation.status !== "expired") {
             await supabase
               .from("user_invitations")
@@ -174,13 +161,7 @@ export default function Register() {
 
       console.log("Creating user with email:", invitation.email);
       
-      // Call the Edge Function to create the user
-      // Fix the URL construction to ensure it's properly formed
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      
-      if (!supabaseUrl) {
-        throw new Error("VITE_SUPABASE_URL is not defined in environment variables");
-      }
+      const supabaseUrl = supabase.supabaseUrl;
       
       console.log("Using Supabase URL:", supabaseUrl);
       
@@ -202,11 +183,9 @@ export default function Register() {
       
       console.log("Edge function response status:", response.status);
       
-      // Get the response text first to debug
       const responseText = await response.text();
       console.log("Edge function raw response:", responseText);
       
-      // Try to parse JSON only if there's content
       let responseData;
       try {
         responseData = responseText ? JSON.parse(responseText) : {};
@@ -215,21 +194,17 @@ export default function Register() {
         throw new Error("Error en la respuesta del servidor: Formato inválido");
       }
       
-      // Check if the response was successful
       if (!response.ok) {
         console.error("Error response from Edge Function:", responseData);
         
-        // Handle user already exists case
         if (responseData.code === "USER_EXISTS") {
           console.log("User already exists, attempting to sign in instead");
           
-          // Mark invitation as completed regardless
           await supabase
             .from("user_invitations")
             .update({ status: "completed" })
             .eq("id", invitation.id);
             
-          // Try to sign in directly
           const { error: signInError } = await supabase.auth.signInWithPassword({
             email: invitation.email,
             password: password,
@@ -249,7 +224,6 @@ export default function Register() {
       
       console.log("User created successfully:", responseData);
 
-      // Actualizar el estado de la invitación
       const { error: updateError } = await supabase
         .from("user_invitations")
         .update({ status: "completed" })
@@ -260,7 +234,6 @@ export default function Register() {
         throw updateError;
       }
 
-      // Registrar en los logs
       const { error: logError } = await supabase.from("invitation_logs").insert({
         invitation_id: invitation.id,
         status: "completed",
@@ -272,7 +245,6 @@ export default function Register() {
         console.error("Error creating log:", logError);
       }
 
-      // Iniciar sesión con el usuario recién creado
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: invitation.email,
         password: password,
@@ -291,7 +263,6 @@ export default function Register() {
       console.error("Error in registration:", error);
       toast.error(error.message || "Error al completar el registro");
       
-      // Registrar el error en los logs
       try {
         await supabase.from("invitation_logs").insert({
           invitation_id: invitation.id,
@@ -326,7 +297,6 @@ export default function Register() {
             <h1 className="text-2xl font-bold text-red-600">Invitación no válida</h1>
             <p className="text-gray-600">{tokenError}</p>
             
-            {/* Debug information section */}
             <div className="w-full mt-8 text-left">
               <h3 className="text-sm font-medium mb-2">Información de depuración:</h3>
               <div className="bg-gray-100 p-3 rounded text-xs font-mono whitespace-pre-wrap overflow-auto max-h-48">
