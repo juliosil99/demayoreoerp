@@ -47,7 +47,8 @@ export const useResendInvitation = () => {
       console.log("Invitation updated successfully:", updatedInvitation);
       console.log("New token stored in database:", updatedInvitation.invitation_token);
       
-      // Verify the token was correctly stored
+      // Verify token was correctly stored with both methods
+      console.log("Verifying token storage with direct query:");
       const { data: verifyToken, error: verifyError } = await supabase
         .from('user_invitations')
         .select('invitation_token')
@@ -55,9 +56,22 @@ export const useResendInvitation = () => {
         .single();
         
       if (verifyError) {
-        console.error("Error verifying token:", verifyError);
+        console.error("Error verifying token direct query:", verifyError);
       } else {
-        console.log("Verification of updated token:", verifyToken);
+        console.log("Direct query verification result:", verifyToken);
+      }
+      
+      console.log("Verifying token storage with text query:");
+      const { data: verifyTextToken, error: verifyTextError } = await supabase
+        .from('user_invitations')
+        .select('invitation_token')
+        .filter('invitation_token::text', 'eq', newToken)
+        .maybeSingle();
+        
+      if (verifyTextError) {
+        console.error("Error verifying token text query:", verifyTextError);
+      } else {
+        console.log("Text query verification result:", verifyTextToken);
       }
       
       // Registrar el intento de reenvío
