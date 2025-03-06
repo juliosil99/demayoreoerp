@@ -3,3 +3,6 @@ project_id = "dulmmxtkgqkcfovvfxzu"
 
 [functions.send-invitation]
 verify_jwt = true
+
+[functions.create-invited-user]
+verify_jwt = true

@@ -66,15 +66,13 @@ export default function Register() {
           invitation = textResult;
         } else {
           // Approach 3: Use our custom SQL function for flexible matching
-          // Fix: Use the correct function call with proper type checking
-          const { data: rawResult, error: rawError } = await supabase
+          const { data: functionResult, error: functionError } = await supabase
             .rpc('find_invitation_by_token', { token_param: token });
           
-          console.log("Custom function token verification result:", { invitation: rawResult, error: rawError });
+          console.log("Custom function token verification result:", { invitation: functionResult, error: functionError });
           
-          // Fix: Check if the result array has entries instead of using .length on a boolean
-          if (rawResult && Array.isArray(rawResult) && rawResult.length > 0) {
-            invitation = rawResult[0];
+          if (functionResult && Array.isArray(functionResult) && functionResult.length > 0) {
+            invitation = functionResult[0];
           }
         }
       }
@@ -176,20 +174,31 @@ export default function Register() {
 
       console.log("Creating user with email:", invitation.email);
       
-      // Primero, intentamos crear el usuario con admin_key
-      const { data: adminAuthData, error: adminAuthError } = await supabase.functions.invoke('create-invited-user', {
-        body: {
-          email: invitation.email,
-          password: password,
-          role: invitation.role
+      // Call the Edge Function to create the user
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-invited-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          },
+          body: JSON.stringify({
+            email: invitation.email,
+            password: password,
+            role: invitation.role
+          })
         }
-      });
-
-      if (adminAuthError || !adminAuthData) {
-        console.error("Error creating user:", adminAuthError || "No data returned");
-        throw adminAuthError || new Error("Error al crear el usuario");
+      );
+      
+      // Check if the response was successful
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error response from Edge Function:", errorData);
+        throw new Error(errorData.error || "Error al crear el usuario");
       }
-
+      
+      const adminAuthData = await response.json();
       console.log("User created successfully:", adminAuthData);
 
       // Actualizar el estado de la invitación
