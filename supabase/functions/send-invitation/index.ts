@@ -60,7 +60,7 @@ async function getInvitationData(invitationId: string): Promise<Invitation> {
 async function ensureInvitationToken(invitation: Invitation): Promise<Invitation> {
   // Generate new token if needed
   if (!invitation.invitation_token) {
-    console.log("Generando nuevo token de invitación");
+    console.log("Invitación sin token, generando nuevo token");
     const token = crypto.randomUUID();
     
     console.log("Nuevo token generado:", token);
@@ -75,19 +75,63 @@ async function ensureInvitationToken(invitation: Invitation): Promise<Invitation
       .select()
       .single();
 
-    if (updateError) {
+    if (updateError || !updatedInvitation) {
       console.error("Error actualizando token de invitación:", updateError);
       throw new Error("Error al actualizar el token de invitación");
     }
 
     console.log("Token actualizado:", updatedInvitation.invitation_token);
-    invitation.invitation_token = updatedInvitation.invitation_token;
+    
+    // Asegurarnos de que el token se guarde correctamente
+    await verifyTokenInDatabase(supabase as unknown as SupabaseClient, updatedInvitation.invitation_token);
+    
+    return updatedInvitation as Invitation;
   } else {
     console.log("Token existente:", invitation.invitation_token);
+    
+    // Double check: verify token exists in database and is correctly stored
+    await verifyTokenInDatabase(supabase as unknown as SupabaseClient, invitation.invitation_token);
+    
+    // For existing tokens, verify they exist in the database correctly
+    const { data: verifyInvitation, error: verifyError } = await supabase
+      .from("user_invitations")
+      .select("*")
+      .eq("invitation_token", invitation.invitation_token)
+      .maybeSingle();
+      
+    if (verifyError) {
+      console.error("Error verificando token en base de datos:", verifyError);
+    }
+    
+    if (!verifyInvitation) {
+      console.warn("Token no encontrado en la base de datos, actualizando...");
+      // Token doesn't exist or doesn't match, update it
+      const newToken = crypto.randomUUID();
+      console.log("Generando nuevo token de reemplazo:", newToken);
+      
+      const { data: reUpdatedInvitation, error: reUpdateError } = await supabase
+        .from("user_invitations")
+        .update({ 
+          invitation_token: newToken,
+          status: "pending" 
+        })
+        .eq("id", invitation.id)
+        .select()
+        .single();
+      
+      if (reUpdateError || !reUpdatedInvitation) {
+        console.error("Error al actualizar token de reemplazo:", reUpdateError);
+        throw new Error("Error al actualizar el token de invitación");
+      }
+      
+      console.log("Token de reemplazo actualizado:", reUpdatedInvitation.invitation_token);
+      
+      // Verify again that the replacement token is stored properly
+      await verifyTokenInDatabase(supabase as unknown as SupabaseClient, reUpdatedInvitation.invitation_token);
+      
+      return reUpdatedInvitation as Invitation;
+    }
   }
-
-  // Double check: verify token exists in database
-  await verifyTokenInDatabase(supabase as unknown as SupabaseClient, invitation.invitation_token);
   
   // Explicitly log the final token
   console.log("Token final que se utilizará:", invitation.invitation_token);
@@ -164,7 +208,13 @@ async function logInvitationEvent(invitationId: string, status: string, errorMes
       attempted_by: attemptedBy
     };
     
-    await supabase.from("invitation_logs").insert(logEntry);
+    const { error } = await supabase.from("invitation_logs").insert(logEntry);
+    
+    if (error) {
+      console.error("Error logging invitation event:", error);
+    } else {
+      console.log("Invitation event logged successfully:", { status, errorMessage });
+    }
   } catch (error) {
     console.error("Error logging invitation event:", error);
   }

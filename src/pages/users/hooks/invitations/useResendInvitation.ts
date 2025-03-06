@@ -24,30 +24,41 @@ export const useResendInvitation = () => {
       console.log(`Generated new token: ${newToken}`);
       
       // First update the invitation with a new token
-      const { error: updateError } = await supabase
+      const { data: updatedInvitation, error: updateError } = await supabase
         .from('user_invitations')
         .update({ 
           invitation_token: newToken,
           // Reset status to pending if it was expired
           status: invitation.status === 'expired' ? 'pending' : invitation.status
         })
-        .eq('id', invitation.id);
+        .eq('id', invitation.id)
+        .select()
+        .single();
         
       if (updateError) {
         console.error("Error updating invitation token:", updateError);
         throw new Error("Error al actualizar el token de invitación: " + updateError.message);
       }
       
-      console.log("Invitation token updated successfully to:", newToken);
+      if (!updatedInvitation) {
+        throw new Error("No se pudo actualizar la invitación");
+      }
+      
+      console.log("Invitation updated successfully:", updatedInvitation);
+      console.log("New token stored in database:", updatedInvitation.invitation_token);
       
       // Verify the token was correctly stored
-      const { data: verifyToken } = await supabase
+      const { data: verifyToken, error: verifyError } = await supabase
         .from('user_invitations')
         .select('invitation_token')
         .eq('id', invitation.id)
         .single();
         
-      console.log("Verification of updated token:", verifyToken);
+      if (verifyError) {
+        console.error("Error verifying token:", verifyError);
+      } else {
+        console.log("Verification of updated token:", verifyToken);
+      }
       
       // Registrar el intento de reenvío
       await createInvitationLog(
@@ -73,13 +84,13 @@ export const useResendInvitation = () => {
       toast.success("Invitación reenviada exitosamente");
       
       // Update the cache with the updated invitation
-      const updatedInvitation = { 
+      const updatedInvitationData = { 
         ...invitation, 
         invitation_token: newToken, 
         status: invitation.status === 'expired' ? 'pending' : invitation.status 
       };
       
-      updateInvitationCache(updatedInvitation);
+      updateInvitationCache(updatedInvitationData);
       
       // Also invalidate to ensure fresh data
       invalidateInvitations();

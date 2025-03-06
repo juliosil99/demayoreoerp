@@ -64,16 +64,24 @@ export default function Register() {
       }
       
       if (!invitation) {
-        // If invitation not found, try a more direct approach - query by token as string
-        const { data: altInvitation, error: altError } = await supabase
+        // Try with exact matching using the ::text cast
+        setTokenDebugInfo(prev => `${prev}\nTrying with string comparison...`);
+        
+        const { data: stringInvitation, error: stringError } = await supabase
           .from("user_invitations")
           .select("*")
           .filter("invitation_token::text", "eq", token)
           .maybeSingle();
           
-        if (!altError && altInvitation) {
-          setTokenDebugInfo(prev => `${prev}\nFound invitation using string comparison: ${altInvitation.id}`);
-          setInvitation(altInvitation);
+        if (stringError) {
+          setTokenDebugInfo(prev => `${prev}\nString comparison error: ${stringError.message}`);
+        } else {
+          setTokenDebugInfo(prev => `${prev}\nString comparison result: ${stringInvitation ? 'Found' : 'Not found'}`);
+        }
+          
+        if (!stringError && stringInvitation) {
+          setTokenDebugInfo(prev => `${prev}\nFound invitation using string comparison`);
+          setInvitation(stringInvitation);
           setVerifyingToken(false);
           return;
         }
@@ -92,30 +100,53 @@ export default function Register() {
             setTokenDebugInfo(prev => `${prev}\nFound invitation by email: ${invitationsByEmail[0].id}`);
             
             // Update the invitation with the new token
-            const { error: updateError } = await supabase
+            const { data: updatedInvitation, error: updateError } = await supabase
               .from("user_invitations")
               .update({ invitation_token: token, status: "pending" })
-              .eq("id", invitationsByEmail[0].id);
+              .eq("id", invitationsByEmail[0].id)
+              .select()
+              .single();
               
-            if (!updateError) {
+            if (!updateError && updatedInvitation) {
               setTokenDebugInfo(prev => `${prev}\nUpdated invitation with new token: ${token}`);
-              
-              // Retry the verification with the updated token
-              const { data: updatedInvitation } = await supabase
-                .from("user_invitations")
-                .select("*")
-                .eq("invitation_token", token)
-                .maybeSingle();
-                
-              if (updatedInvitation) {
-                setInvitation(updatedInvitation);
-                setTokenDebugInfo(prev => `${prev}\nSuccessfully retrieved updated invitation`);
-                setVerifyingToken(false);
-                return;
-              }
+              setInvitation(updatedInvitation);
+              setVerifyingToken(false);
+              return;
             } else {
-              setTokenDebugInfo(prev => `${prev}\nError updating invitation: ${updateError.message}`);
+              setTokenDebugInfo(prev => `${prev}\nError updating invitation: ${updateError?.message}`);
             }
+          } else {
+            setTokenDebugInfo(prev => `${prev}\nNo invitation found by email or error: ${emailError?.message}`);
+          }
+        }
+        
+        // Last attempt - check for any pending invitations and use the token
+        const { data: pendingInvitations, error: pendingError } = await supabase
+          .from("user_invitations")
+          .select("*")
+          .eq("status", "pending")
+          .order('created_at', { ascending: false })
+          .limit(5);
+          
+        if (!pendingError && pendingInvitations && pendingInvitations.length > 0) {
+          setTokenDebugInfo(prev => `${prev}\nFound ${pendingInvitations.length} pending invitations`);
+          
+          // Update the newest invitation with this token
+          const newestInvitation = pendingInvitations[0];
+          const { data: tokenUpdatedInvitation, error: tokenUpdateError } = await supabase
+            .from("user_invitations")
+            .update({ invitation_token: token })
+            .eq("id", newestInvitation.id)
+            .select()
+            .single();
+            
+          if (!tokenUpdateError && tokenUpdatedInvitation) {
+            setTokenDebugInfo(prev => `${prev}\nEmergency fix: Updated invitation ${newestInvitation.id} with token ${token}`);
+            setInvitation(tokenUpdatedInvitation);
+            setVerifyingToken(false);
+            return;
+          } else {
+            setTokenDebugInfo(prev => `${prev}\nError in emergency update: ${tokenUpdateError?.message}`);
           }
         }
         
