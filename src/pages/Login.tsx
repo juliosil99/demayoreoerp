@@ -19,29 +19,67 @@ export default function Login() {
     console.log("Login: Checking user status for:", { userId, userEmail });
     
     try {
-      // First, check if user has their own company
-      console.log("Login: Checking if user has their own company...");
-      const { data: userCompany, error: companyError } = await supabase
-        .from("companies")
+      // First, check if the user has a role
+      console.log("Login: Checking if user has a role...");
+      const { data: userRole, error: roleError } = await supabase
+        .from("user_roles")
         .select("*")
         .eq("user_id", userId)
         .maybeSingle();
-      
-      console.log("Login: User company check result:", userCompany);
-      
-      if (companyError) {
-        console.error("Login: Error checking user company:", companyError);
-        throw companyError;
+        
+      if (roleError) {
+        console.error("Login: Error checking user role:", roleError);
+        throw roleError;
       }
       
-      if (userCompany) {
-        console.log("Login: User has their own company, redirecting to dashboard");
-        navigate("/dashboard");
-        return;
+      // If user has a role, they should be allowed in the system
+      if (userRole) {
+        console.log("Login: User has role:", userRole.role);
+        
+        // Check if user has their own company
+        console.log("Login: Checking if user has their own company...");
+        const { data: userCompany, error: companyError } = await supabase
+          .from("companies")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+        
+        console.log("Login: User company check result:", userCompany);
+        
+        if (companyError) {
+          console.error("Login: Error checking user company:", companyError);
+          throw companyError;
+        }
+        
+        if (userCompany) {
+          console.log("Login: User has their own company, redirecting to dashboard");
+          navigate("/dashboard");
+          return;
+        }
+        
+        // Check if any company exists at all
+        console.log("Login: User doesn't have a company, checking if any company exists...");
+        const { data: anyCompany } = await supabase
+          .from("companies")
+          .select("*")
+          .limit(1);
+        
+        console.log("Login: Any company check result:", anyCompany);
+        
+        if (anyCompany && anyCompany.length > 0) {
+          console.log("Login: Companies exist, user has role but no company, redirecting to dashboard");
+          navigate("/dashboard");
+          return;
+        } else {
+          // No companies exist, so this user should set up the first company
+          console.log("Login: No company found, redirecting to company setup");
+          navigate("/company-setup");
+          return;
+        }
       }
       
-      // If user doesn't have their own company, check if they were invited
-      console.log("Login: User doesn't have a company, checking if invited...");
+      // If we get here, the user has no role, which means they weren't properly invited
+      // or the invitation process didn't complete correctly
       
       // Check for ALL invitations related to this email
       const { data: invitations, error: invitationError } = await supabase
@@ -60,7 +98,22 @@ export default function Login() {
       const completedInvitation = invitations?.find(inv => inv.status === 'completed');
       
       if (completedInvitation) {
-        console.log("Login: User has a completed invitation, redirecting to dashboard");
+        console.log("Login: Found completed invitation but no role, creating role now");
+        
+        // Create the missing role
+        const { error: createRoleError } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: userId,
+            role: completedInvitation.role || 'user'
+          });
+          
+        if (createRoleError) {
+          console.error("Login: Error creating role:", createRoleError);
+          throw createRoleError;
+        }
+        
+        console.log("Login: Role created, redirecting to dashboard");
         navigate("/dashboard");
         return;
       }

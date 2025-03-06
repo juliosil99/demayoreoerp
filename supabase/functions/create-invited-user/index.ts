@@ -147,6 +147,35 @@ const handler = async (req: Request): Promise<Response> => {
       
       // Special handling for already registered users
       if (createError.message.includes("already been registered")) {
+        // Get the user data for the already registered user
+        const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+        
+        if (getUserError) {
+          console.error("Error fetching existing user:", getUserError);
+        } else if (existingUser && existingUser.user) {
+          // Check if user already has a role
+          const { data: existingRole } = await supabaseAdmin
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', existingUser.user.id)
+            .maybeSingle();
+            
+          // If no role exists, create one
+          if (!existingRole) {
+            console.log("Setting role for existing user:", existingUser.user.id);
+            const { error: roleError } = await supabaseAdmin
+              .from('user_roles')
+              .insert({
+                user_id: existingUser.user.id,
+                role
+              });
+              
+            if (roleError) {
+              console.error("Error setting role for existing user:", roleError);
+            }
+          }
+        }
+        
         return new Response(
           JSON.stringify({ 
             error: "User already exists", 
@@ -196,7 +225,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log("User created successfully, adding role");
     
-    // Add user to the appropriate role
+    // Add user to the appropriate role - ENSURE this always runs
     if (role) {
       const { error: roleError } = await supabaseAdmin
         .from('user_roles')
@@ -207,7 +236,10 @@ const handler = async (req: Request): Promise<Response> => {
         
       if (roleError) {
         console.error("Error setting user role:", roleError);
-        // Log error but don't fail the process
+        // Log error but continue the process
+        console.log("Will attempt to continue despite role error");
+      } else {
+        console.log("User role set successfully to:", role);
       }
     }
     
