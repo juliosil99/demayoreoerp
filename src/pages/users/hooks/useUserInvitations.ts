@@ -114,13 +114,15 @@ export function useUserInvitations() {
         throw new Error("Ya existe una invitación para este email");
       }
       
+      // FIX: Adding invited_by to the insert object - it's required by the schema
       // Crear la invitación con un nuevo token
       const { data: invitation, error: invitationError } = await supabase
         .from('user_invitations')
         .insert({
           email,
           role,
-          status: 'pending'
+          status: 'pending',
+          invited_by: session.session.user.id // Adding the required invited_by field
         })
         .select()
         .single();
