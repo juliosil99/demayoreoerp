@@ -20,8 +20,31 @@ export function useExpenseDelete() {
     try {
       console.log("Intentando eliminar gasto con ID:", expense.id);
       
-      // Now we can directly delete the expense
-      // The database trigger will handle deleting the related records
+      // Step 1: First delete associated accounting adjustments
+      const { error: adjustmentsError } = await supabase
+        .from('accounting_adjustments')
+        .delete()
+        .eq('expense_id', expense.id);
+      
+      if (adjustmentsError) {
+        console.error("Error al eliminar ajustes contables:", adjustmentsError);
+        setDeleteError(`Error al eliminar ajustes contables: ${adjustmentsError.message}`);
+        toast.error(`Error al eliminar ajustes: ${adjustmentsError.message}`);
+        throw adjustmentsError;
+      }
+      
+      // Step 2: Delete expense invoice relations if any
+      const { error: relationsError } = await supabase
+        .from('expense_invoice_relations')
+        .delete()
+        .eq('expense_id', expense.id);
+      
+      if (relationsError) {
+        console.error("Error al eliminar relaciones:", relationsError);
+        // Continue anyway as there might not be any relations
+      }
+      
+      // Step 3: Now we can delete the expense itself
       const { error } = await supabase
         .from('expenses')
         .delete()
@@ -29,7 +52,6 @@ export function useExpenseDelete() {
 
       if (error) {
         console.error("Error detallado al eliminar gasto:", error);
-        
         setDeleteError(`Error al eliminar: ${error.message}`);
         toast.error("No se pudo eliminar el gasto: " + error.message);
         throw error;
