@@ -287,22 +287,28 @@ export type Database = {
       bank_accounts: {
         Row: {
           balance: number | null
+          balance_date: string | null
           created_at: string | null
           id: number
+          initial_balance: number | null
           name: string
           type: string
         }
         Insert: {
           balance?: number | null
+          balance_date?: string | null
           created_at?: string | null
           id?: number
+          initial_balance?: number | null
           name: string
           type: string
         }
         Update: {
           balance?: number | null
+          balance_date?: string | null
           created_at?: string | null
           id?: number
+          initial_balance?: number | null
           name?: string
           type?: string
         }

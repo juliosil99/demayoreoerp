@@ -6,6 +6,8 @@ export interface BankAccountsTable {
     name: string
     type: "Bank" | "Cash" | "Credit Card" | "Credit Simple"
     balance: number | null
+    initial_balance: number | null
+    balance_date: string | null
   }
   Insert: {
     id?: number
@@ -13,6 +15,8 @@ export interface BankAccountsTable {
     name: string
     type: "Bank" | "Cash" | "Credit Card" | "Credit Simple"
     balance?: number | null
+    initial_balance?: number | null
+    balance_date?: string | null
   }
   Update: {
     id?: number
@@ -20,5 +24,7 @@ export interface BankAccountsTable {
     name?: string
     type?: "Bank" | "Cash" | "Credit Card" | "Credit Simple"
     balance?: number | null
+    initial_balance?: number | null
+    balance_date?: string | null
   }
 }

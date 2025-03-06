@@ -8,8 +8,10 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const emptyAccount: NewBankAccount = {
   name: "",
-  type: "Bank", // Asignamos un valor válido por defecto
+  type: "Bank",
   balance: 0,
+  initial_balance: 0,
+  balance_date: new Date().toISOString().split('T')[0],
 };
 
 export function useBankAccounts() {
@@ -39,7 +41,13 @@ export function useBankAccounts() {
     try {
       const { error } = await supabase
         .from("bank_accounts")
-        .insert([newAccount]);
+        .insert([{
+          name: newAccount.name,
+          type: newAccount.type,
+          balance: newAccount.balance,
+          initial_balance: newAccount.initial_balance,
+          balance_date: newAccount.balance_date,
+        }]);
 
       if (error) throw error;
 
@@ -63,6 +71,8 @@ export function useBankAccounts() {
           name: newAccount.name,
           type: newAccount.type,
           balance: newAccount.balance,
+          initial_balance: newAccount.initial_balance,
+          balance_date: newAccount.balance_date,
         })
         .eq("id", selectedAccount.id);
 
@@ -102,6 +112,8 @@ export function useBankAccounts() {
       name: account.name,
       type: account.type,
       balance: account.balance,
+      initial_balance: account.initial_balance || 0,
+      balance_date: account.balance_date || new Date().toISOString().split('T')[0],
     });
     setIsEditingAccount(true);
   };

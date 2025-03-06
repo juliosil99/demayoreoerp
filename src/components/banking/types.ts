@@ -6,6 +6,8 @@ export interface BankAccount {
   name: string;
   type: AccountType;
   balance: number;
+  initial_balance: number;
+  balance_date: string;
   created_at: string;
 }
 
@@ -13,4 +15,6 @@ export interface NewBankAccount {
   name: string;
   type: AccountType;
   balance: number;
+  initial_balance: number;
+  balance_date: string;
 }

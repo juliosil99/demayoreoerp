@@ -14,7 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Form, FormField, FormItem, FormControl, FormLabel } from "@/components/ui/form";
 import type { NewBankAccount } from "./types";
+import { useForm } from "react-hook-form";
 
 interface BankAccountDialogProps {
   isOpen: boolean;
@@ -38,14 +41,15 @@ export function BankAccountDialog({
 }: BankAccountDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <label>Nombre de la Cuenta</label>
+            <Label htmlFor="name">Nombre de la Cuenta</Label>
             <Input
+              id="name"
               value={account.name}
               onChange={(e) =>
                 setAccount({ ...account, name: e.target.value })
@@ -54,14 +58,14 @@ export function BankAccountDialog({
             />
           </div>
           <div className="grid gap-2">
-            <label>Tipo de Cuenta</label>
+            <Label htmlFor="type">Tipo de Cuenta</Label>
             <Select
               value={account.type}
               onValueChange={(value) =>
                 setAccount({ ...account, type: value as NewBankAccount["type"] })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger id="type">
                 <SelectValue placeholder="Seleccione el tipo de cuenta" />
               </SelectTrigger>
               <SelectContent>
@@ -72,15 +76,47 @@ export function BankAccountDialog({
               </SelectContent>
             </Select>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="initial_balance">Saldo Inicial</Label>
+              <Input
+                id="initial_balance"
+                type="number"
+                value={account.initial_balance}
+                onChange={(e) =>
+                  setAccount({
+                    ...account,
+                    initial_balance: parseFloat(e.target.value) || 0,
+                  })
+                }
+                placeholder="0.00"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="balance_date">Fecha del Saldo</Label>
+              <Input
+                id="balance_date"
+                type="date"
+                value={account.balance_date ? account.balance_date.split('T')[0] : ''}
+                onChange={(e) =>
+                  setAccount({
+                    ...account,
+                    balance_date: e.target.value,
+                  })
+                }
+              />
+            </div>
+          </div>
           <div className="grid gap-2">
-            <label>Saldo</label>
+            <Label htmlFor="balance">Saldo Actual</Label>
             <Input
+              id="balance"
               type="number"
               value={account.balance}
               onChange={(e) =>
                 setAccount({
                   ...account,
-                  balance: parseFloat(e.target.value),
+                  balance: parseFloat(e.target.value) || 0,
                 })
               }
               placeholder="0.00"

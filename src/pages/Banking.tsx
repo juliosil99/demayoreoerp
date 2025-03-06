@@ -4,6 +4,8 @@ import { BankAccountsTable } from "@/components/banking/BankAccountsTable";
 import { BankingHeader } from "@/components/banking/BankingHeader";
 import { useBankAccounts } from "@/components/banking/hooks/useBankAccounts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 export default function Banking() {
   const {
@@ -33,6 +35,15 @@ export default function Banking() {
   return (
     <div className="space-y-6">
       <BankingHeader onAddAccount={() => setIsAddingAccount(true)} />
+
+      <Alert>
+        <InfoIcon className="h-4 w-4" />
+        <AlertTitle>Saldos iniciales</AlertTitle>
+        <AlertDescription>
+          Ahora puedes registrar el saldo inicial y la fecha para cada cuenta bancaria. 
+          Esto ayudará a rastrear correctamente todos los movimientos a partir de esa fecha.
+        </AlertDescription>
+      </Alert>
 
       {isLoadingAccounts ? (
         <div className="space-y-4">

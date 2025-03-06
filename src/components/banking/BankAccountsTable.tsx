@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/utils/formatters";
+import { formatDate } from "@/utils/formatters";
 import type { BankAccount } from "./types";
 
 interface BankAccountsTableProps {
@@ -26,6 +27,8 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
           <TableRow>
             <TableHead>Nombre de la Cuenta</TableHead>
             <TableHead>Tipo</TableHead>
+            <TableHead className="text-right">Saldo Inicial</TableHead>
+            <TableHead className="text-right">Fecha Inicial</TableHead>
             <TableHead className="text-right">Saldo Actual</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
@@ -46,6 +49,12 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                    account.type === "Credit Card" ? "Tarjeta de Crédito" :
                    "Crédito Simple"}
                 </div>
+              </TableCell>
+              <TableCell className="text-right">
+                {formatCurrency(account.initial_balance)}
+              </TableCell>
+              <TableCell className="text-right">
+                {formatDate(account.balance_date)}
               </TableCell>
               <TableCell className="text-right">
                 {formatCurrency(account.balance)}
