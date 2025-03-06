@@ -2,18 +2,19 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
+import { 
+  generateEmailContent, 
+  corsHeaders, 
+  createErrorResponse, 
+  createSuccessResponse,
+  verifyTokenInDatabase
+} from "./utils.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
 
 interface InvitationRequest {
   invitationId: string;
@@ -72,26 +73,9 @@ async function ensureInvitationToken(invitation: any) {
   }
 
   // Verify token exists in database
-  await verifyTokenInDatabase(invitation.invitation_token);
+  await verifyTokenInDatabase(supabase, invitation.invitation_token);
   
   return invitation;
-}
-
-/**
- * Verifies that the token exists in the database
- */
-async function verifyTokenInDatabase(token: string) {
-  const { data: tokenCheck, error: tokenCheckError } = await supabase
-    .from("user_invitations")
-    .select("id")
-    .eq("invitation_token", token)
-    .maybeSingle();
-    
-  if (tokenCheckError) {
-    console.error("Error verificando token en la base de datos:", tokenCheckError);
-  } else {
-    console.log("Verificación de token en base de datos:", tokenCheck ? "Encontrado" : "No encontrado");
-  }
 }
 
 /**
@@ -122,37 +106,6 @@ async function getInviterInfo(inviterId: string) {
     : inviterData?.email || "Un administrador";
   
   return inviterName;
-}
-
-/**
- * Generates the HTML email content
- */
-function generateEmailContent(invitation: any, invitationLink: string, companyName: string, inviterName: string) {
-  return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="color: #4F46E5;">Invitación a ${companyName}</h2>
-      </div>
-
-      <p>Hola,</p>
-      <p>${inviterName} te ha invitado a unirte a <strong>${companyName}</strong> en el sistema ERP. Para completar tu registro, haz clic en el siguiente botón:</p>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <a href="${invitationLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">
-          Completar registro
-        </a>
-      </div>
-      
-      <p>Si el botón no funciona, puedes copiar y pegar el siguiente enlace en tu navegador:</p>
-      <p style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; word-break: break-all;">${invitationLink}</p>
-      
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #666; font-size: 12px;">
-        <p>Este enlace expirará en 7 días. Si no reconoces esta invitación, puedes ignorar este correo.</p>
-        <p>ID de Invitación: ${invitation.id}</p>
-        <p>Token: ${invitation.invitation_token}</p>
-      </div>
-    </div>
-  `;
 }
 
 /**
@@ -237,22 +190,17 @@ const handler = async (req: Request): Promise<Response> => {
     await logInvitationEvent(invitationId, "email_sent", null, invitation.invited_by);
 
     // Return detailed success response
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Invitación enviada correctamente",
-        invitation: {
-          id: invitation.id,
-          email: invitation.email,
-          token: invitation.invitation_token,
-          link: invitationLink
-        }
-      }), 
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+    return createSuccessResponse({ 
+      success: true, 
+      message: "Invitación enviada correctamente",
+      invitation: {
+        id: invitation.id,
+        email: invitation.email,
+        token: invitation.invitation_token,
+        link: invitationLink
       }
-    );
+    });
+    
   } catch (error: any) {
     console.error("Error en función send-invitation:", error);
     
@@ -266,17 +214,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString()
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    return createErrorResponse(error);
   }
 };
 
