@@ -51,16 +51,17 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
         if (isEditMode) {
           console.log("📝 Edit mode detected, fetching company for user:", userId);
           
+          // Changed from .single() to .select().eq().maybeSingle() to avoid 406 error
           const { data, error } = await supabase
             .from("companies")
             .select("*")
             .eq("user_id", userId)
-            .single();
+            .maybeSingle();
 
           console.log("Query response - data:", data);
           console.log("Query response - error:", error);
 
-          if (error && error.code === 'PGRST116') {
+          if (!data) {
             console.log("ℹ️ No company found for user");
             navigate("/company-setup");
             return;
@@ -129,10 +130,12 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
         
         // Check if company is already configured
         console.log("🔍 Checking if company exists...");
+        // Changed from using limit(1) to specifically checking for user's company
         const { data, error } = await supabase
           .from("companies")
           .select("*")
-          .limit(1);
+          .eq("user_id", userId)
+          .maybeSingle();
 
         console.log("Query response for company check - data:", data);
         console.log("Query response for company check - error:", error);
@@ -144,13 +147,43 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           return;
         }
 
-        if (data && data.length > 0) {
-          console.log("✅ Company exists, redirecting to dashboard");
+        if (data) {
+          console.log("✅ Company exists for current user, redirecting to dashboard");
           navigate("/dashboard");
           return;
         }
         
-        // If we get here, user was not invited and no company exists
+        // If we didn't find a company for this user, check if ANY company exists
+        const { data: anyCompany, error: anyCompanyError } = await supabase
+          .from("companies")
+          .select("*")
+          .limit(1);
+        
+        console.log("Query for any company - data:", anyCompany);
+        
+        if (anyCompanyError) {
+          console.error("❌ Error checking for any company:", anyCompanyError);
+        }
+        
+        if (anyCompany && anyCompany.length > 0) {
+          console.log("✅ Company exists in the system, checking if user was invited");
+          
+          // Double-check invitation status to be sure
+          const { data: doubleCheckInvitation } = await supabase
+            .from("user_invitations")
+            .select("*")
+            .eq("email", userEmail)
+            .maybeSingle();
+            
+          if (doubleCheckInvitation) {
+            console.log("✅ User was invited, redirecting to dashboard");
+            navigate("/dashboard");
+            return;
+          }
+          
+          console.log("❌ No invitation found but company exists, staying on setup");
+        }
+        
         console.log("ℹ️ No company found, staying on setup page");
         setIsLoading(false);
       } catch (error) {
