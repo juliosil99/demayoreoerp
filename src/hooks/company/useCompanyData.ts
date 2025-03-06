@@ -51,7 +51,6 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
         if (isEditMode) {
           console.log("📝 Edit mode detected, fetching company for user:", userId);
           
-          // Changed from .single() to .select().eq().maybeSingle() to avoid 406 error
           const { data, error } = await supabase
             .from("companies")
             .select("*")
@@ -84,7 +83,7 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           return;
         }
 
-        // Check if user was invited (via user_invitations)
+        // Check if user is an invited user
         console.log("🔍 Checking if user was invited...");
         const userResponse = await supabase.auth.getUser();
         const userEmail = userResponse.data.user?.email;
@@ -96,18 +95,14 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           return;
         }
         
-        const { data: invitationData, error: invitationError } = await supabase
+        // Check for ANY invitation (pending or completed)
+        const { data: anyInvitation, error: invitationError } = await supabase
           .from("user_invitations")
           .select("*")
           .eq("email", userEmail)
-          .eq("status", "completed")
           .maybeSingle();
         
-        console.log("Invitation check query:", {
-          email: userEmail,
-          status: "completed"
-        });
-        console.log("Invitation check result:", invitationData);
+        console.log("Any invitation found:", anyInvitation);
         
         if (invitationError) {
           console.error("❌ Error checking user invitation:", invitationError);
@@ -118,37 +113,40 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           });
         }
         
-        const wasInvited = !!invitationData;
-        console.log("Was user invited?", wasInvited);
-        
-        // If user was invited, redirect to dashboard immediately
-        if (wasInvited) {
-          console.log("✅ User was invited, redirecting to dashboard");
-          navigate("/dashboard");
-          return;
+        // User was invited (completed or pending)
+        if (anyInvitation) {
+          // If invitation is completed
+          if (anyInvitation.status === 'completed') {
+            console.log("✅ User was invited and completed setup, redirecting to dashboard");
+            navigate("/dashboard");
+            return;
+          } else {
+            // If invitation is pending
+            console.log("🔍 User was invited but setup is pending");
+            navigate(`/register?token=${anyInvitation.invitation_token}`);
+            return;
+          }
         }
         
-        // Check if company is already configured
-        console.log("🔍 Checking if company exists...");
-        // Changed from using limit(1) to specifically checking for user's company
-        const { data, error } = await supabase
+        // Check if user has their own company
+        console.log("🔍 Checking if user has a company...");
+        const { data: userCompany, error: companyError } = await supabase
           .from("companies")
           .select("*")
           .eq("user_id", userId)
           .maybeSingle();
 
-        console.log("Query response for company check - data:", data);
-        console.log("Query response for company check - error:", error);
+        console.log("User company check result:", userCompany);
 
-        if (error) {
-          console.error("❌ Error checking for company:", error);
+        if (companyError) {
+          console.error("❌ Error checking for user company:", companyError);
           toast.error("Error al verificar la empresa");
           setIsLoading(false);
           return;
         }
 
-        if (data) {
-          console.log("✅ Company exists for current user, redirecting to dashboard");
+        if (userCompany) {
+          console.log("✅ User has a company, redirecting to dashboard");
           navigate("/dashboard");
           return;
         }
@@ -159,29 +157,17 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           .select("*")
           .limit(1);
         
-        console.log("Query for any company - data:", anyCompany);
+        console.log("Any company check result:", anyCompany);
         
         if (anyCompanyError) {
           console.error("❌ Error checking for any company:", anyCompanyError);
         }
         
         if (anyCompany && anyCompany.length > 0) {
-          console.log("✅ Company exists in the system, checking if user was invited");
-          
-          // Double-check invitation status to be sure
-          const { data: doubleCheckInvitation } = await supabase
-            .from("user_invitations")
-            .select("*")
-            .eq("email", userEmail)
-            .maybeSingle();
-            
-          if (doubleCheckInvitation) {
-            console.log("✅ User was invited, redirecting to dashboard");
-            navigate("/dashboard");
-            return;
-          }
-          
-          console.log("❌ No invitation found but company exists, staying on setup");
+          console.log("✅ Company exists in the system, but user has no access");
+          toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
+          navigate("/login");
+          return;
         }
         
         console.log("ℹ️ No company found, staying on setup page");

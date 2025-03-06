@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,91 +17,82 @@ export default function Login() {
   const checkUserStatus = async (userId: string, userEmail: string) => {
     console.log("Login: Checking user status for:", { userId, userEmail });
     
-    // Check if user was invited
-    console.log("Login: Checking if user was invited...");
     try {
-      const { data: invitationData, error: invitationError } = await supabase
-        .from("user_invitations")
-        .select("*")
-        .eq("email", userEmail)
-        .eq("status", "completed")
-        .maybeSingle();
-      
-      console.log("Login: Invitation query result:", invitationData);
-      
-      if (invitationError) {
-        console.error("Login: Error checking invitation:", invitationError);
-      }
-      
-      const wasInvited = !!invitationData;
-      console.log("Login: Was user invited?", wasInvited);
-      
-      // If user was invited, they don't need to configure company
-      if (wasInvited) {
-        console.log("Login: User was invited, redirecting to dashboard");
-        navigate("/dashboard");
-        return;
-      }
-      
-      // Check if company exists for this user
-      console.log("Login: Checking if company exists for this user...");
-      const { data: company, error: companyError } = await supabase
+      // First, check if user has their own company
+      console.log("Login: Checking if user has their own company...");
+      const { data: userCompany, error: companyError } = await supabase
         .from("companies")
         .select("*")
         .eq("user_id", userId)
         .maybeSingle();
       
-      console.log("Login: Company check result:", company);
+      console.log("Login: User company check result:", userCompany);
       
       if (companyError && companyError.code !== "PGRST116") {
-        console.error("Login: Error checking company:", companyError);
+        console.error("Login: Error checking user company:", companyError);
       }
       
-      if (company) {
-        console.log("Login: Company exists for this user, redirecting to dashboard");
+      if (userCompany) {
+        console.log("Login: User has their own company, redirecting to dashboard");
         navigate("/dashboard");
         return;
       }
       
+      // If user doesn't have their own company, check if they were invited
+      console.log("Login: User doesn't have a company, checking if invited...");
+      
+      // Check for ANY invitation status (pending OR completed)
+      const { data: anyInvitation, error: invitationError } = await supabase
+        .from("user_invitations")
+        .select("*")
+        .eq("email", userEmail)
+        .maybeSingle();
+      
+      console.log("Login: Invitation check (any status):", anyInvitation);
+      
+      if (invitationError) {
+        console.error("Login: Error checking invitation:", invitationError);
+      }
+      
+      // User was invited (either pending or completed)
+      if (anyInvitation) {
+        // If invitation is completed, they're part of a company
+        if (anyInvitation.status === 'completed') {
+          console.log("Login: User was invited and completed setup, redirecting to dashboard");
+          navigate("/dashboard");
+          return;
+        } else {
+          // If invitation is pending, they should finish registration
+          console.log("Login: User was invited but registration not completed");
+          navigate(`/register?token=${anyInvitation.invitation_token}`);
+          return;
+        }
+      }
+      
       // Check if any company exists at all
-      console.log("Login: Checking if any company exists...");
-      const { data: anyCompany, error: anyCompanyError } = await supabase
+      console.log("Login: No invitation found, checking if any company exists...");
+      const { data: anyCompany } = await supabase
         .from("companies")
         .select("*")
         .limit(1);
       
       console.log("Login: Any company check result:", anyCompany);
       
-      if (anyCompanyError) {
-        console.error("Login: Error checking any company:", anyCompanyError);
-      }
-      
-      // Double-check invitation status to be extra sure
-      const { data: doubleCheckInvitation } = await supabase
-        .from("user_invitations")
-        .select("*")
-        .eq("email", userEmail)
-        .maybeSingle();
-        
-      if (doubleCheckInvitation) {
-        console.log("Login: Double-check found invitation, redirecting to dashboard");
-        navigate("/dashboard");
-        return;
-      }
-      
       if (anyCompany && anyCompany.length > 0) {
-        // This is a bit tricky - companies exist but this user doesn't have one
-        // and wasn't invited. We'll need to decide what to do here based on business rules.
+        // Companies exist but this user doesn't have one and wasn't invited
         console.log("Login: Companies exist but none for this user and not invited");
-        navigate("/company-setup");
+        // In this case, user should contact an admin to get invited
+        toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
+        return;
       } else {
+        // No companies exist, so this user should set up the first company
         console.log("Login: No company found, redirecting to company setup");
         navigate("/company-setup");
       }
     } catch (err) {
       console.error("Login: Error in checkUserStatus:", err);
       // Default to company setup on error
-      navigate("/company-setup");
+      toast.error("Error verificando el estado del usuario");
     }
   };
 

@@ -34,57 +34,74 @@ export default function CompanySetup() {
       console.log("CompanySetup: Checking invitation status for email:", user.email);
       
       try {
-        const { data: invitationData, error } = await supabase
+        // First check if user has a company
+        const { data: userCompany, error: companyError } = await supabase
+          .from("companies")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+          
+        console.log("CompanySetup: User company check result:", userCompany);
+        
+        if (companyError && companyError.code !== "PGRST116") {
+          console.error("CompanySetup: Error checking user company:", companyError);
+        }
+        
+        if (userCompany) {
+          console.log("CompanySetup: User has their own company, redirecting to dashboard");
+          navigate("/dashboard");
+          return;
+        }
+        
+        // Check for ANY invitation (either pending or completed)
+        const { data: anyInvitation, error: invitationError } = await supabase
           .from("user_invitations")
           .select("*")
           .eq("email", user.email)
-          .eq("status", "completed")
           .maybeSingle();
         
-        console.log("CompanySetup: Invitation check result:", invitationData);
+        console.log("CompanySetup: Any invitation check result:", anyInvitation);
         
-        if (error) {
-          console.error("CompanySetup: Error checking invitation status:", error);
+        if (invitationError) {
+          console.error("CompanySetup: Error checking invitations:", invitationError);
           toast.error("Error al verificar estado de invitación");
         }
         
-        if (invitationData) {
-          console.log("CompanySetup: User was invited, redirecting to dashboard");
-          // User was invited, redirect to dashboard
-          navigate("/dashboard");
-        } else {
-          console.log("CompanySetup: User was not invited or invitation not completed");
-          
-          // Check if there's any company in the system
-          const { data: anyCompany } = await supabase
-            .from("companies")
-            .select("*")
-            .limit(1);
-            
-          console.log("CompanySetup: Any company check result:", anyCompany);
-          
-          if (anyCompany && anyCompany.length > 0) {
-            // Check again for user's company (double check)
-            const { data: userCompany } = await supabase
-              .from("companies")
-              .select("*")
-              .eq("user_id", user.id)
-              .maybeSingle();
-              
-            if (userCompany) {
-              console.log("CompanySetup: User has a company, redirecting to dashboard");
-              navigate("/dashboard");
-              return;
-            }
-            
-            console.log("CompanySetup: Companies exist but none belongs to this user");
-            // At this point companies exist but this user doesn't have one and wasn't invited
-            // If this is a new user that shouldn't be setting up a company, we'd need
-            // to handle this case differently
+        if (anyInvitation) {
+          // If invitation is completed, user is part of a company
+          if (anyInvitation.status === 'completed') {
+            console.log("CompanySetup: User was invited and completed setup, redirecting to dashboard");
+            navigate("/dashboard");
+            return;
+          } else {
+            // If invitation is pending, they should finish registration
+            console.log("CompanySetup: User was invited but registration not completed");
+            navigate(`/register?token=${anyInvitation.invitation_token}`);
+            return;
           }
         }
+        
+        // Check if there's any company in the system
+        const { data: anyCompany } = await supabase
+          .from("companies")
+          .select("*")
+          .limit(1);
+            
+        console.log("CompanySetup: Any company check result:", anyCompany);
+          
+        if (anyCompany && anyCompany.length > 0) {
+          console.log("CompanySetup: Companies exist but none belongs to this user");
+          // At this point companies exist but this user doesn't have one and wasn't invited
+          toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
+          navigate("/login");
+          return;
+        }
+        
+        console.log("CompanySetup: No companies found, user can setup a new company");
+        // No companies found - allow user to create the first company
       } catch (err) {
         console.error("CompanySetup: Unexpected error:", err);
+        toast.error("Error verificando estado de usuario");
       } finally {
         setCheckingInvitation(false);
       }
