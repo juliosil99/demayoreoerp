@@ -21,9 +21,8 @@ export function useRegistration(invitation: any) {
       
       console.log("Using Supabase URL:", supabaseUrl);
       
-      // Instead of requiring a session token, we'll use the anon key
-      // This is safe because the edge function will validate the invitation token server-side
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      // Get the anon key directly from the imported client configuration
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1bG1teHRrZ3FrY2ZvdnZmeHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcwMzgzMzQsImV4cCI6MjA1MjYxNDMzNH0.n_8ZA-Z0dUpNXBfZUR4kUQEIP_Kh0rf1x32E8QIAU-8";
       
       if (!anonKey) {
         console.error("No anon key available");
