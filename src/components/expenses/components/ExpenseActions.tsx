@@ -52,9 +52,9 @@ export function ExpenseActions({
     setIsDeleting(true);
     try {
       await onDelete();
-      setConfirmOpen(false);
     } finally {
       setIsDeleting(false);
+      setConfirmOpen(false);
     }
   };
 

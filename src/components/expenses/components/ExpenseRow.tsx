@@ -47,11 +47,19 @@ export function ExpenseRow({
   const [isLogOpen, setIsLogOpen] = useState(false);
 
   const handleDeleteClick = async () => {
-    const result = await onDelete(expense);
-    if (result && !result.success) {
-      setDeletionLog(result.log);
-      setIsLogOpen(true);
+    try {
+      const result = await onDelete(expense);
+      if (result && !result.success) {
+        setDeletionLog(result.log);
+        setIsLogOpen(true);
+      }
+    } catch (error) {
+      console.error("Error during deletion:", error);
     }
+  };
+
+  const closeLogDialog = () => {
+    setIsLogOpen(false);
   };
 
   return (
@@ -111,7 +119,7 @@ export function ExpenseRow({
           </div>
           <div className="flex justify-end mt-4">
             <DialogClose asChild>
-              <Button>Cerrar</Button>
+              <Button onClick={closeLogDialog}>Cerrar</Button>
             </DialogClose>
           </div>
         </DialogContent>

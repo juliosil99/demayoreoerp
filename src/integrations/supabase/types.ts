@@ -498,6 +498,30 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_deletion_logs: {
+        Row: {
+          account_id: number | null
+          amount: number | null
+          deleted_at: string | null
+          expense_id: string | null
+          id: string
+        }
+        Insert: {
+          account_id?: number | null
+          amount?: number | null
+          deleted_at?: string | null
+          expense_id?: string | null
+          id?: string
+        }
+        Update: {
+          account_id?: number | null
+          amount?: number | null
+          deleted_at?: string | null
+          expense_id?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       expense_imports: {
         Row: {
           created_at: string | null

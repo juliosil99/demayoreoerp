@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PlusIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -78,6 +78,11 @@ export default function Expenses() {
     enabled: !!user,
   });
 
+  const handleSuccess = useCallback(() => {
+    refetch();
+    setOpen(false);
+  }, [refetch]);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -96,7 +101,7 @@ export default function Expenses() {
                 <DialogTitle>Agregar Nuevo Gasto</DialogTitle>
               </DialogHeader>
               <ExpenseForm 
-                onSuccess={refetch} 
+                onSuccess={handleSuccess} 
                 onClose={() => setOpen(false)} 
               />
             </DialogContent>
