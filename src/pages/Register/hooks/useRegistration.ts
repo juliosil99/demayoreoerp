@@ -16,8 +16,9 @@ export function useRegistration(invitation: any) {
 
       console.log("Creating user with email:", invitation.email);
       
-      // Get the Supabase URL from the client
-      const supabaseUrl = supabase.supabaseUrl;
+      // Get the Supabase URL from environment or config
+      // Instead of accessing protected property directly
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://dulmmxtkgqkcfovvfxzu.supabase.co";
       
       console.log("Using Supabase URL:", supabaseUrl);
       
