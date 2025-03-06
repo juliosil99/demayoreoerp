@@ -20,6 +20,31 @@ export function useExpenseDelete() {
     try {
       console.log("Intentando eliminar gasto con ID:", expense.id);
       
+      // Primero eliminamos los ajustes contables asociados
+      const { error: adjustmentsError } = await supabase
+        .from('accounting_adjustments')
+        .delete()
+        .eq('expense_id', expense.id);
+      
+      if (adjustmentsError) {
+        console.error("Error al eliminar ajustes contables:", adjustmentsError);
+        setDeleteError(`Error al eliminar ajustes contables: ${adjustmentsError.message}`);
+        toast.error(`Error al eliminar ajustes contables: ${adjustmentsError.message}`);
+        throw adjustmentsError;
+      }
+      
+      // Luego eliminamos las relaciones con facturas si existen
+      const { error: relationsError } = await supabase
+        .from('expense_invoice_relations')
+        .delete()
+        .eq('expense_id', expense.id);
+      
+      if (relationsError) {
+        console.error("Error al eliminar relaciones con facturas:", relationsError);
+        // Continuamos a pesar de este error, ya que podría no haber relaciones
+      }
+
+      // Finalmente eliminamos el gasto
       const { error } = await supabase
         .from('expenses')
         .delete()
@@ -29,9 +54,9 @@ export function useExpenseDelete() {
         console.error("Error detallado al eliminar gasto:", error);
         
         // Determinar el tipo de error para mostrar un mensaje más específico
-        if (error.code === '23503' && error.details?.includes('accounting_adjustments')) {
-          setDeleteError("No se puede eliminar este gasto porque está vinculado a ajustes contables. Debes eliminar primero los ajustes asociados.");
-          toast.error("Este gasto está vinculado a ajustes contables y no puede ser eliminado directamente");
+        if (error.code === '23503') {
+          setDeleteError("Error al eliminar: Este gasto podría estar vinculado a otros registros en el sistema.");
+          toast.error("No se pudo eliminar el gasto, podría estar vinculado a otros registros");
         } else {
           setDeleteError(`Error al eliminar: ${error.message}`);
           toast.error(`Error al eliminar el gasto: ${error.message}`);
