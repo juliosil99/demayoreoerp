@@ -67,10 +67,15 @@ export function useRegistration(invitation: any) {
         if (responseData.code === "USER_EXISTS") {
           console.log("User already exists, attempting to sign in instead");
           
-          await supabase
+          // Update invitation status to completed even if user already exists
+          const { error: updateError } = await supabase
             .from("user_invitations")
             .update({ status: "completed" })
             .eq("id", invitation.id);
+            
+          if (updateError) {
+            console.error("Error updating invitation status:", updateError);
+          }
             
           const { error: signInError } = await supabase.auth.signInWithPassword({
             email: invitation.email,
@@ -91,6 +96,7 @@ export function useRegistration(invitation: any) {
       
       console.log("User created successfully:", responseData);
 
+      // Update invitation status to completed
       const { error: updateError } = await supabase
         .from("user_invitations")
         .update({ status: "completed" })
@@ -116,6 +122,7 @@ export function useRegistration(invitation: any) {
         console.error("Error creating log:", logError);
       }
 
+      // Sign in the newly created user
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: invitation.email,
         password: password,
