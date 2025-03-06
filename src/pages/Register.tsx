@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
+import { AlertTriangle } from "lucide-react";
 
 export default function Register() {
   const [searchParams] = useSearchParams();
@@ -13,6 +14,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [verifyingToken, setVerifyingToken] = useState(true);
   const [invitation, setInvitation] = useState<any>(null);
+  const [tokenError, setTokenError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const token = searchParams.get("token");
 
@@ -22,31 +24,60 @@ export default function Register() {
 
   const verifyToken = async () => {
     if (!token) {
-      toast.error("Token de invitación no válido");
-      navigate("/");
+      setTokenError("No se proporcionó un token de invitación");
+      setVerifyingToken(false);
       return;
     }
 
     try {
+      console.log("Verifying invitation token:", token);
+      
+      // First check if the token exists at all
       const { data: invitation, error } = await supabase
         .from("user_invitations")
         .select("*")
         .eq("invitation_token", token)
-        .eq("status", "pending")
-        .single();
+        .maybeSingle();
 
-      if (error || !invitation) {
-        toast.error("Token de invitación no válido o expirado");
-        navigate("/");
+      console.log("Token verification result:", { invitation, error });
+
+      if (error) {
+        console.error("Error verifying token:", error);
+        setTokenError("Error al verificar el token de invitación");
+        setVerifyingToken(false);
+        return;
+      }
+      
+      if (!invitation) {
+        setTokenError("Token de invitación no encontrado");
+        setVerifyingToken(false);
+        return;
+      }
+      
+      // Now check if the invitation is still pending
+      if (invitation.status !== "pending") {
+        if (invitation.status === "completed") {
+          setTokenError("Esta invitación ya ha sido utilizada");
+        } else {
+          setTokenError("Esta invitación ha expirado");
+          
+          // Mark the invitation as expired in the database
+          if (invitation.status !== "expired") {
+            await supabase
+              .from("user_invitations")
+              .update({ status: "expired" })
+              .eq("id", invitation.id);
+          }
+        }
+        setVerifyingToken(false);
         return;
       }
 
       setInvitation(invitation);
+      setVerifyingToken(false);
     } catch (error) {
       console.error("Error verifying token:", error);
-      toast.error("Error al verificar el token de invitación");
-      navigate("/");
-    } finally {
+      setTokenError("Error al verificar el token de invitación");
       setVerifyingToken(false);
     }
   };
@@ -59,6 +90,8 @@ export default function Register() {
     try {
       setLoading(true);
 
+      console.log("Creating user with email:", invitation.email);
+      
       // Primero, intentamos crear el usuario con admin_key
       const { data: adminAuthData, error: adminAuthError } = await supabase.functions.invoke('create-invited-user', {
         body: {
@@ -68,7 +101,12 @@ export default function Register() {
         }
       });
 
-      if (adminAuthError || !adminAuthData) throw adminAuthError || new Error("Error al crear el usuario");
+      if (adminAuthError || !adminAuthData) {
+        console.error("Error creating user:", adminAuthError || "No data returned");
+        throw adminAuthError || new Error("Error al crear el usuario");
+      }
+
+      console.log("User created successfully:", adminAuthData);
 
       // Actualizar el estado de la invitación
       const { error: updateError } = await supabase
@@ -76,14 +114,17 @@ export default function Register() {
         .update({ status: "completed" })
         .eq("id", invitation.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Error updating invitation status:", updateError);
+        throw updateError;
+      }
 
       // Registrar en los logs
       const { error: logError } = await supabase.from("invitation_logs").insert({
+        invitation_id: invitation.id,
         status: "completed",
         error_message: null,
-        attempted_by: adminAuthData.user.id,
-        id: invitation.id
+        attempted_by: adminAuthData.user.id
       });
 
       if (logError) {
@@ -104,20 +145,20 @@ export default function Register() {
       }
 
       toast.success("Registro completado exitosamente");
-      navigate("/");
+      navigate("/dashboard");
     } catch (error: any) {
       console.error("Error in registration:", error);
       toast.error(error.message || "Error al completar el registro");
       
       // Registrar el error en los logs
-      const { error: logError } = await supabase.from("invitation_logs").insert({
-        status: "error",
-        error_message: error.message,
-        attempted_by: invitation.invited_by,
-        id: invitation.id
-      });
-
-      if (logError) {
+      try {
+        await supabase.from("invitation_logs").insert({
+          invitation_id: invitation.id,
+          status: "error",
+          error_message: error.message,
+          attempted_by: invitation.invited_by
+        });
+      } catch (logError) {
         console.error("Error creating error log:", logError);
       }
     } finally {
@@ -130,6 +171,26 @@ export default function Register() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p>Verificando invitación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (tokenError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+          <div className="flex flex-col items-center justify-center text-center space-y-4">
+            <AlertTriangle className="h-12 w-12 text-amber-500" />
+            <h1 className="text-2xl font-bold text-red-600">Invitación no válida</h1>
+            <p className="text-gray-600">{tokenError}</p>
+            <Button 
+              onClick={() => navigate("/login")} 
+              className="mt-4"
+            >
+              Volver al inicio de sesión
+            </Button>
+          </div>
         </div>
       </div>
     );

@@ -28,7 +28,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { invitationId }: InvitationRequest = await req.json();
     console.log("Procesando invitación:", invitationId);
 
-    // Obtener la invitación y la plantilla de correo
+    // Obtener la invitación
     const { data: invitation, error: invitationError } = await supabase
       .from("user_invitations")
       .select("*")
@@ -42,14 +42,17 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Invitación encontrada:", invitation);
 
-    // Generar nuevo token si no existe
+    // Generar nuevo token si no existe o si es necesario regenerarlo
     if (!invitation.invitation_token) {
       console.log("Generando nuevo token de invitación");
       const token = crypto.randomUUID();
       
       const { data: updatedInvitation, error: updateError } = await supabase
         .from("user_invitations")
-        .update({ invitation_token: token })
+        .update({ 
+          invitation_token: token,
+          status: "pending" // Ensure status is pending
+        })
         .eq("id", invitationId)
         .select()
         .single();
@@ -62,32 +65,62 @@ const handler = async (req: Request): Promise<Response> => {
       invitation.invitation_token = updatedInvitation.invitation_token;
     }
 
+    // Obtener información de la empresa para personalizar el correo
+    const { data: companyData, error: companyError } = await supabase
+      .from("companies")
+      .select("nombre")
+      .eq("user_id", invitation.invited_by)
+      .maybeSingle();
+
+    const companyName = companyData?.nombre || "Sistema ERP";
+    console.log("Nombre de empresa para correo:", companyName);
+
     // Generar el enlace de invitación con el token
     const origin = req.headers.get("origin") || "https://demayoreoerp.lovable.app";
     const invitationLink = `${origin}/register?token=${invitation.invitation_token}`;
     console.log("Enlace de invitación generado:", invitationLink);
     
-    // Plantilla de correo simple (podemos mejorarla después)
+    // Obtener información del usuario que invita
+    const { data: inviterData, error: inviterError } = await supabase
+      .from("profiles")
+      .select("first_name, last_name, email")
+      .eq("id", invitation.invited_by)
+      .maybeSingle();
+
+    const inviterName = inviterData && (inviterData.first_name || inviterData.last_name) 
+      ? `${inviterData.first_name || ''} ${inviterData.last_name || ''}`.trim()
+      : inviterData?.email || "Un administrador";
+    
+    // Plantilla de correo mejorada
     const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Invitación al Sistema ERP</h2>
-        <p>Has sido invitado a unirte al sistema ERP. Para completar tu registro, haz clic en el siguiente enlace:</p>
-        <p style="margin: 20px 0;">
-          <a href="${invitationLink}" style="background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h2 style="color: #4F46E5;">Invitación a ${companyName}</h2>
+        </div>
+
+        <p>Hola,</p>
+        <p>${inviterName} te ha invitado a unirte a <strong>${companyName}</strong> en el sistema ERP. Para completar tu registro, haz clic en el siguiente botón:</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${invitationLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">
             Completar registro
           </a>
-        </p>
+        </div>
+        
         <p>Si el botón no funciona, puedes copiar y pegar el siguiente enlace en tu navegador:</p>
-        <p>${invitationLink}</p>
-        <p>Este enlace expirará en 7 días.</p>
+        <p style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; word-break: break-all;">${invitationLink}</p>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #666; font-size: 12px;">
+          <p>Este enlace expirará en 7 días. Si no reconoces esta invitación, puedes ignorar este correo.</p>
+        </div>
       </div>
     `;
 
     // Enviar el correo
     const emailResponse = await resend.emails.send({
-      from: "ERP System <onboarding@resend.dev>",
+      from: `${companyName} <onboarding@resend.dev>`,
       to: [invitation.email],
-      subject: "Invitación al Sistema ERP",
+      subject: `Invitación a ${companyName}`,
       html: htmlContent,
     });
 

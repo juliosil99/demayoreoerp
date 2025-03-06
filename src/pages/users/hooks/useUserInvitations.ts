@@ -28,6 +28,7 @@ export function useUserInvitations() {
         throw error;
       }
 
+      console.log("Fetched invitations:", data);
       return data as UserInvitation[];
     },
   });
@@ -57,6 +58,23 @@ export function useUserInvitations() {
     try {
       setIsResending(true);
       
+      // First, regenerate the invitation token
+      const newToken = crypto.randomUUID();
+      
+      // Update the invitation with a new token
+      const { error: updateError } = await supabase
+        .from('user_invitations')
+        .update({ 
+          invitation_token: newToken,
+          // Reset status to pending if it was expired
+          status: invitation.status === 'expired' ? 'pending' : invitation.status
+        })
+        .eq('id', invitation.id);
+        
+      if (updateError) {
+        throw new Error("Error al actualizar el token de invitación: " + updateError.message);
+      }
+      
       // Registrar el intento de reenvío
       await createInvitationLog(
         invitation.id,
@@ -71,7 +89,7 @@ export function useUserInvitations() {
 
       if (error) {
         await createInvitationLog(invitation.id, 'email_failed', error.message);
-        throw new Error("Error al reenviar la invitación");
+        throw new Error("Error al reenviar la invitación: " + error.message);
       }
 
       await createInvitationLog(invitation.id, 'email_sent', 'Correo reenviado exitosamente');
@@ -106,6 +124,17 @@ export function useUserInvitations() {
       }
 
       if (existingInvitation) {
+        // If invitation exists but is expired, update it and resend
+        if (existingInvitation.status === 'expired') {
+          const invitation = {
+            id: existingInvitation.id,
+            status: 'expired'
+          } as UserInvitation;
+          
+          await resendInvitation(invitation);
+          return;
+        }
+        
         await createInvitationLog(
           existingInvitation.id,
           'duplicate',
@@ -114,15 +143,17 @@ export function useUserInvitations() {
         throw new Error("Ya existe una invitación para este email");
       }
       
-      // FIX: Adding invited_by to the insert object - it's required by the schema
       // Crear la invitación con un nuevo token
+      const invitationToken = crypto.randomUUID();
+      
       const { data: invitation, error: invitationError } = await supabase
         .from('user_invitations')
         .insert({
           email,
           role,
           status: 'pending',
-          invited_by: session.session.user.id // Adding the required invited_by field
+          invited_by: session.session.user.id,
+          invitation_token: invitationToken
         })
         .select()
         .single();

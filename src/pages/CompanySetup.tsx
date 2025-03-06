@@ -85,6 +85,14 @@ export default function CompanySetup() {
           return;
         }
         
+        // Check for expired invitations
+        const expiredInvitation = invitations?.find(inv => inv.status === 'expired');
+        
+        if (expiredInvitation) {
+          console.log("CompanySetup: User has an expired invitation");
+          toast.error("Tu invitación ha expirado. Contacta al administrador para que la reactive.");
+        }
+        
         // Check if there's any company in the system
         const { data: anyCompany, error: anyCompanyError } = await supabase
           .from("companies")

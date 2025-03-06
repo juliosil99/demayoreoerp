@@ -43,7 +43,7 @@ export default function Login() {
       // If user doesn't have their own company, check if they were invited
       console.log("Login: User doesn't have a company, checking if invited...");
       
-      // Explicitly check for ANY invitation
+      // Check for ALL invitations related to this email
       const { data: invitations, error: invitationError } = await supabase
         .from("user_invitations")
         .select("*")
@@ -56,7 +56,7 @@ export default function Login() {
         throw invitationError;
       }
       
-      // Check if there's any completed invitation
+      // Check for completed invitations
       const completedInvitation = invitations?.find(inv => inv.status === 'completed');
       
       if (completedInvitation) {
@@ -65,12 +65,21 @@ export default function Login() {
         return;
       }
       
-      // Check if there's any pending invitation
+      // Check for pending invitations
       const pendingInvitation = invitations?.find(inv => inv.status === 'pending');
       
       if (pendingInvitation) {
         console.log("Login: User has a pending invitation, redirecting to registration");
         navigate(`/register?token=${pendingInvitation.invitation_token}`);
+        return;
+      }
+      
+      // Check if there's an expired invitation
+      const expiredInvitation = invitations?.find(inv => inv.status === 'expired');
+      
+      if (expiredInvitation) {
+        console.log("Login: User has an expired invitation");
+        toast.error("Tu invitación ha expirado. Contacta al administrador para que la reactive.");
         return;
       }
       
@@ -123,8 +132,12 @@ export default function Login() {
         toast.success("Inició sesión exitosamente!");
       }
     } catch (error) {
-      console.error("Error de autenticación:", error);
-      toast.error(error instanceof Error ? error.message : "Error de autenticación");
+      console.error("Login Error:", error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Error de autenticación");
+      }
     } finally {
       setIsLoading(false);
     }

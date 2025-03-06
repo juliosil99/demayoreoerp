@@ -133,6 +133,14 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           return;
         }
         
+        // Check for expired invitations
+        const expiredInvitation = invitations?.find(inv => inv.status === 'expired');
+        
+        if (expiredInvitation) {
+          console.log("⚠️ User has an expired invitation");
+          toast.error("Tu invitación ha expirado. Contacta al administrador para que la reactive.");
+        }
+        
         // Check if user has their own company
         console.log("🔍 Checking if user has a company...");
         const { data: userCompany, error: companyError } = await supabase
