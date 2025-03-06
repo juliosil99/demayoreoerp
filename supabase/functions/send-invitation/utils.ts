@@ -156,6 +156,8 @@ export interface SupabaseClient {
  * Verifies that a token exists in the database
  */
 export async function verifyTokenInDatabase(supabase: SupabaseClient, token: string): Promise<void> {
+  console.log("Verifying token in database:", token);
+  
   const { data: tokenCheck, error: tokenCheckError } = await supabase
     .from("user_invitations")
     .select("id")

@@ -82,10 +82,15 @@ async function ensureInvitationToken(invitation: Invitation): Promise<Invitation
 
     console.log("Token actualizado:", updatedInvitation.invitation_token);
     invitation.invitation_token = updatedInvitation.invitation_token;
+  } else {
+    console.log("Token existente:", invitation.invitation_token);
   }
 
-  // Verify token exists in database
+  // Double check: verify token exists in database
   await verifyTokenInDatabase(supabase as unknown as SupabaseClient, invitation.invitation_token);
+  
+  // Explicitly log the final token
+  console.log("Token final que se utilizará:", invitation.invitation_token);
   
   return invitation;
 }
@@ -211,7 +216,7 @@ const handler = async (req: Request): Promise<Response> => {
       invitation: {
         id: invitation.id,
         email: invitation.email,
-        token: invitation.invitation_token,
+        token: validatedInvitation.invitation_token,
         link: invitationLink
       }
     });

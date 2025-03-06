@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ export default function Register() {
       // Log token format and length
       setTokenDebugInfo(`Token length: ${token.length}, Format: ${token.includes('-') ? 'UUID' : 'Other'}`);
       
-      // First check if the token exists at all
+      // First check if the token exists at all with direct query using eq()
       const { data: invitation, error } = await supabase
         .from("user_invitations")
         .select("*")
@@ -63,7 +64,21 @@ export default function Register() {
       }
       
       if (!invitation) {
-        // Let's try to find the invitation by email from the authenticated user
+        // If invitation not found, try a more direct approach - query by token as string
+        const { data: altInvitation, error: altError } = await supabase
+          .from("user_invitations")
+          .select("*")
+          .filter("invitation_token::text", "eq", token)
+          .maybeSingle();
+          
+        if (!altError && altInvitation) {
+          setTokenDebugInfo(prev => `${prev}\nFound invitation using string comparison: ${altInvitation.id}`);
+          setInvitation(altInvitation);
+          setVerifyingToken(false);
+          return;
+        }
+          
+        // As a fallback, try to find the invitation by email from the authenticated user
         const { data: session } = await supabase.auth.getSession();
         if (session.session?.user.email) {
           const { data: invitationsByEmail, error: emailError } = await supabase
@@ -77,20 +92,19 @@ export default function Register() {
             setTokenDebugInfo(prev => `${prev}\nFound invitation by email: ${invitationsByEmail[0].id}`);
             
             // Update the invitation with the new token
-            const newToken = token;
             const { error: updateError } = await supabase
               .from("user_invitations")
-              .update({ invitation_token: newToken, status: "pending" })
+              .update({ invitation_token: token, status: "pending" })
               .eq("id", invitationsByEmail[0].id);
               
             if (!updateError) {
-              setTokenDebugInfo(prev => `${prev}\nUpdated invitation with new token: ${newToken}`);
+              setTokenDebugInfo(prev => `${prev}\nUpdated invitation with new token: ${token}`);
               
               // Retry the verification with the updated token
               const { data: updatedInvitation } = await supabase
                 .from("user_invitations")
                 .select("*")
-                .eq("invitation_token", newToken)
+                .eq("invitation_token", token)
                 .maybeSingle();
                 
               if (updatedInvitation) {

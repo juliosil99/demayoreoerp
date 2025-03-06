@@ -19,11 +19,11 @@ export const useResendInvitation = () => {
       setIsResending(true);
       console.log(`Resending invitation to ${invitation.email}, current status: ${invitation.status}`);
       
-      // First, regenerate the invitation token
+      // Generate the new token
       const newToken = crypto.randomUUID();
       console.log(`Generated new token: ${newToken}`);
       
-      // Update the invitation with a new token
+      // First update the invitation with a new token
       const { error: updateError } = await supabase
         .from('user_invitations')
         .update({ 
@@ -38,7 +38,16 @@ export const useResendInvitation = () => {
         throw new Error("Error al actualizar el token de invitación: " + updateError.message);
       }
       
-      console.log("Invitation token updated successfully");
+      console.log("Invitation token updated successfully to:", newToken);
+      
+      // Verify the token was correctly stored
+      const { data: verifyToken } = await supabase
+        .from('user_invitations')
+        .select('invitation_token')
+        .eq('id', invitation.id)
+        .single();
+        
+      console.log("Verification of updated token:", verifyToken);
       
       // Registrar el intento de reenvío
       await createInvitationLog(
