@@ -2,12 +2,9 @@
 import {
   Table,
   TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
 } from "@/components/ui/table";
 import { ExpenseRow } from "./ExpenseRow";
+import { ExpenseTableHeader } from "./ExpenseTableHeader";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -42,20 +39,7 @@ export function ExpenseTable({
   return (
     <div className="rounded-md border">
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Descripción</TableHead>
-            <TableHead>Monto</TableHead>
-            <TableHead>Cuenta Bancaria</TableHead>
-            <TableHead>Cuenta de Gasto</TableHead>
-            <TableHead>Proveedor</TableHead>
-            <TableHead>Método de Pago</TableHead>
-            <TableHead>Referencia</TableHead>
-            <TableHead>Factura</TableHead>
-            <TableHead>Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
+        <ExpenseTableHeader />
         <TableBody>
           {expenses.map((expense) => (
             <ExpenseRow
