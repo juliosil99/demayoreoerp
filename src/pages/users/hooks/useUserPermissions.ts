@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,24 +42,31 @@ export function useUserPermissions() {
       
       console.log("Fetched profiles:", data);
       
+      // Fix the type error: properly type the authUsers.users array
       if (authUsers?.users && authUsers.users.length > data.length) {
         console.log("Some users don't have profiles, creating missing profiles...");
         
         const profileIds = data.map(profile => profile.id);
-        const missingUsers = authUsers.users.filter(user => !profileIds.includes(user.id));
+        // Type the user object properly to ensure id exists
+        const missingUsers = authUsers.users.filter(user => 
+          user && typeof user === 'object' && 'id' in user && !profileIds.includes(user.id)
+        );
         
         for (const user of missingUsers) {
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: user.id,
-              email: user.email,
-              first_name: user.user_metadata?.first_name || null,
-              last_name: user.user_metadata?.last_name || null,
-            });
-            
-          if (insertError) {
-            console.error("Error creating profile for user:", insertError);
+          // Add type check to ensure user has required properties
+          if (user && typeof user === 'object' && 'id' in user) {
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                email: user.email || null,
+                first_name: user.user_metadata?.first_name || null,
+                last_name: user.user_metadata?.last_name || null,
+              });
+              
+            if (insertError) {
+              console.error("Error creating profile for user:", insertError);
+            }
           }
         }
         
