@@ -13,60 +13,126 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
 
 export function useExpenseDelete() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteLog, setDeleteLog] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
   const handleDelete = async (expense: Expense) => {
     setDeleteError(null);
+    const log: string[] = [`Iniciando eliminación del gasto ID: ${expense.id}`];
+    setDeleteLog(log);
+    
     try {
-      console.log("Intentando eliminar gasto con ID:", expense.id);
+      // Check if the expense has accounting adjustments
+      const { data: adjustments, error: checkError } = await supabase
+        .from('accounting_adjustments')
+        .select('id')
+        .eq('expense_id', expense.id);
       
-      // Step 1: First delete associated accounting adjustments
+      log.push(`Verificando ajustes contables: ${adjustments ? adjustments.length : 0} encontrados`);
+      setDeleteLog([...log]);
+      
+      if (checkError) {
+        log.push(`Error al verificar ajustes: ${checkError.message}`);
+        setDeleteLog([...log]);
+        throw checkError;
+      }
+
+      // Step 1: Delete associated accounting adjustments
+      log.push("Intentando eliminar ajustes contables asociados...");
+      setDeleteLog([...log]);
+      
       const { error: adjustmentsError } = await supabase
         .from('accounting_adjustments')
         .delete()
         .eq('expense_id', expense.id);
       
       if (adjustmentsError) {
-        console.error("Error al eliminar ajustes contables:", adjustmentsError);
+        log.push(`Error al eliminar ajustes contables: ${adjustmentsError.message}`);
+        log.push(`Detalles: ${JSON.stringify(adjustmentsError)}`);
+        setDeleteLog([...log]);
         setDeleteError(`Error al eliminar ajustes contables: ${adjustmentsError.message}`);
         toast.error(`Error al eliminar ajustes: ${adjustmentsError.message}`);
         throw adjustmentsError;
       }
       
-      // Step 2: Delete expense invoice relations if any
-      const { error: relationsError } = await supabase
+      log.push("Ajustes contables eliminados exitosamente");
+      setDeleteLog([...log]);
+      
+      // Step 2: Check and delete expense invoice relations if any
+      const { data: relations, error: checkRelationsError } = await supabase
         .from('expense_invoice_relations')
-        .delete()
+        .select('id')
         .eq('expense_id', expense.id);
       
-      if (relationsError) {
-        console.error("Error al eliminar relaciones:", relationsError);
-        // Continue anyway as there might not be any relations
+      log.push(`Verificando relaciones de facturas: ${relations ? relations.length : 0} encontradas`);
+      setDeleteLog([...log]);
+      
+      if (checkRelationsError) {
+        log.push(`Error al verificar relaciones: ${checkRelationsError.message}`);
+        setDeleteLog([...log]);
       }
       
-      // Step 3: Now we can delete the expense itself
+      if (relations && relations.length > 0) {
+        log.push("Intentando eliminar relaciones de facturas...");
+        setDeleteLog([...log]);
+        
+        const { error: relationsError } = await supabase
+          .from('expense_invoice_relations')
+          .delete()
+          .eq('expense_id', expense.id);
+        
+        if (relationsError) {
+          log.push(`Error al eliminar relaciones: ${relationsError.message}`);
+          log.push(`Detalles: ${JSON.stringify(relationsError)}`);
+          setDeleteLog([...log]);
+          // Continue anyway as this might not be critical
+        } else {
+          log.push("Relaciones de facturas eliminadas exitosamente");
+          setDeleteLog([...log]);
+        }
+      }
+      
+      // Step 3: Now try to delete the expense itself
+      log.push("Intentando eliminar el gasto...");
+      setDeleteLog([...log]);
+      
       const { error } = await supabase
         .from('expenses')
         .delete()
         .eq('id', expense.id);
 
       if (error) {
-        console.error("Error detallado al eliminar gasto:", error);
+        log.push(`Error al eliminar gasto: ${error.message}`);
+        log.push(`Código: ${error.code}`);
+        log.push(`Detalles: ${JSON.stringify(error)}`);
+        setDeleteLog([...log]);
+        
         setDeleteError(`Error al eliminar: ${error.message}`);
         toast.error("No se pudo eliminar el gasto: " + error.message);
         throw error;
       }
 
-      console.log("Gasto eliminado exitosamente:", expense.id);
+      log.push("Gasto eliminado exitosamente");
+      setDeleteLog([...log]);
+      
       toast.success('Gasto eliminado exitosamente');
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
     } catch (error) {
-      console.error('Error completo al eliminar gasto:', error);
+      log.push(`Error completo: ${JSON.stringify(error)}`);
+      setDeleteLog([...log]);
+      console.error('Log completo de eliminación:', log);
     }
+    
+    // Return the log for debugging
+    return {
+      success: deleteError === null,
+      log: deleteLog
+    };
   };
 
   return {
     deleteError,
-    handleDelete
+    handleDelete,
+    deleteLog
   };
 }

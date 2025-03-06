@@ -1,7 +1,12 @@
 
-import { useState } from "react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,96 +18,103 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogTrigger 
-} from "@/components/ui/dialog";
-import { ExpenseForm } from "../ExpenseForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ExpenseForm } from "@/components/expenses/ExpenseForm";
+import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
   bank_accounts: { name: string };
   chart_of_accounts: { name: string; code: string };
   contacts: { name: string } | null;
-  expense_invoice_relations?: {
-    invoice: {
-      uuid: string;
-      invoice_number: string;
-    }
-  }[];
 };
 
 interface ExpenseActionsProps {
   expense: Expense;
-  onDelete: (expense: Expense) => Promise<void>;
+  onDelete: () => Promise<void>;
   onEdit: (expense: Expense) => void;
   isDialogOpen: boolean;
   selectedExpense: Expense | null;
   handleCloseDialog: () => void;
 }
 
-export function ExpenseActions({ 
-  expense, 
-  onDelete, 
-  onEdit, 
-  isDialogOpen, 
+export function ExpenseActions({
+  expense,
+  onDelete,
+  onEdit,
+  isDialogOpen,
   selectedExpense,
-  handleCloseDialog 
+  handleCloseDialog
 }: ExpenseActionsProps) {
-  return (
-    <div className="flex gap-2">
-      <Dialog open={isDialogOpen && selectedExpense?.id === expense.id} onOpenChange={(open) => {
-        if (!open) handleCloseDialog();
-      }}>
-        <DialogTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => onEdit(expense)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Editar Gasto</DialogTitle>
-          </DialogHeader>
-          {selectedExpense && (
-            <ExpenseForm 
-              initialData={selectedExpense} 
-              onSuccess={handleCloseDialog}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" size="icon">
-            <Trash2 className="h-4 w-4 text-destructive" />
+  const handleDeleteClick = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete();
+      setConfirmOpen(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-end">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Abrir menú</span>
+            <MoreHorizontal className="h-4 w-4" />
           </Button>
-        </AlertDialogTrigger>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onEdit(expense)}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Editar
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setConfirmOpen(true)}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Eliminar
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente el gasto.
+              Esta acción no se puede deshacer. Se eliminará permanentemente este gasto.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => onDelete(expense)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteClick}
+              disabled={isDeleting}
+              className={isDeleting ? "opacity-70 cursor-not-allowed" : ""}
             >
-              Eliminar
+              {isDeleting ? "Eliminando..." : "Eliminar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {isDialogOpen && selectedExpense?.id === expense.id && (
+        <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Editar Gasto</DialogTitle>
+            </DialogHeader>
+            <ExpenseForm 
+              expenseData={selectedExpense} 
+              onSuccess={handleCloseDialog} 
+              onClose={handleCloseDialog} 
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

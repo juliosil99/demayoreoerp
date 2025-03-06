@@ -28,7 +28,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const { deleteError, handleDelete } = useExpenseDelete();
+  const { deleteError, handleDelete, deleteLog } = useExpenseDelete();
 
   const handleOpenDialog = useCallback((expense: Expense) => {
     setSelectedExpense(expense);
