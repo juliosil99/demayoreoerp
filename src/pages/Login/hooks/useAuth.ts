@@ -8,7 +8,7 @@ export const useAuthActions = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
 
   const handleSignIn = async () => {
     console.log("useAuthActions: Starting sign in process...");
@@ -44,7 +44,13 @@ export const useAuthActions = () => {
     setIsLoading(true);
     
     try {
-      await signUp(email, password);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
       toast.success("Cuenta creada exitosamente! Por favor, inicia sesión.");
     } catch (error) {
       console.error("useAuthActions Error:", error);

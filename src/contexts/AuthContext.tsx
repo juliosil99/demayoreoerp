@@ -13,6 +13,7 @@ interface AuthContextProps {
   isLoading: boolean;
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<AuthResponse>;
+  signUp: (email: string, password: string) => Promise<AuthResponse>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
   userCompanies: any[];
@@ -26,6 +27,7 @@ export const AuthContext = createContext<AuthContextProps>({
   isLoading: true,
   isAdmin: false,
   signIn: async () => ({ data: { session: null, user: null }, error: null }),
+  signUp: async () => ({ data: { session: null, user: null }, error: null }),
   signOut: async () => {},
   refreshSession: async () => {},
   userCompanies: [],
@@ -77,24 +79,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const checkAdminStatus = async (userId: string) => {
+    try {
+      // Use the PostgreSQL function to check admin status
+      const { data, error } = await supabase.rpc('is_admin', {
+        user_id: userId
+      });
+
+      if (error) throw error;
+      setIsAdmin(!!data);
+      return !!data;
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      setIsAdmin(false);
+      return false;
+    }
+  };
+
   useEffect(() => {
-    const checkAdminStatus = async (userId: string) => {
-      try {
-        // Use the PostgreSQL function to check admin status
-        const { data, error } = await supabase.rpc('is_admin', {
-          user_id: userId
-        });
-
-        if (error) throw error;
-        setIsAdmin(!!data);
-        return !!data;
-      } catch (error) {
-        console.error("Error checking admin status:", error);
-        setIsAdmin(false);
-        return false;
-      }
-    };
-
     const setupUser = async (currentUser: User) => {
       await checkAdminStatus(currentUser.id);
       await fetchUserCompanies(currentUser.id);
@@ -138,6 +140,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const signUp = async (email: string, password: string) => {
+    return await supabase.auth.signUp({
+      email,
+      password,
+    });
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -166,6 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAdmin,
         signIn,
+        signUp,
         signOut,
         refreshSession,
         userCompanies,
