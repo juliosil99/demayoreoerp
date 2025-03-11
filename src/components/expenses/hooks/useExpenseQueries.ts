@@ -32,9 +32,9 @@ export interface Supplier {
 export function useExpenseQueries() {
   const { currentCompany } = useAuth();
   
-  const { data: bankAccounts = [], isLoading: isLoadingBankAccounts } = useQuery<BankAccount[]>({
+  const { data: bankAccounts = [], isLoading: isLoadingBankAccounts } = useQuery({
     queryKey: ["bankAccounts", currentCompany?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<BankAccount[]> => {
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*")
@@ -46,9 +46,9 @@ export function useExpenseQueries() {
     enabled: !!currentCompany?.id,
   });
 
-  const { data: chartAccounts = [], isLoading: isLoadingChartAccounts } = useQuery<ChartAccount[]>({
+  const { data: chartAccounts = [], isLoading: isLoadingChartAccounts } = useQuery({
     queryKey: ["chartAccounts", currentCompany?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<ChartAccount[]> => {
       const { data, error } = await supabase
         .from("chart_of_accounts")
         .select("*")
@@ -62,9 +62,9 @@ export function useExpenseQueries() {
     enabled: !!currentCompany?.id,
   });
 
-  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery<Supplier[]>({
+  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
     queryKey: ["suppliers", currentCompany?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<Supplier[]> => {
       const { data, error } = await supabase
         .from("contacts")
         .select("*")

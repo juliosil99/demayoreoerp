@@ -53,9 +53,9 @@ export default function Expenses() {
   const [filters, setFilters] = useState<Filters>({});
   const [open, setOpen] = useState(false);
 
-  const { data: expenses = [], isLoading, refetch } = useQuery<Expense[]>({
+  const { data: expenses = [], isLoading, refetch } = useQuery({
     queryKey: ["expenses", currentCompany?.id, filters],
-    queryFn: async () => {
+    queryFn: async (): Promise<Expense[]> => {
       if (!currentCompany?.id) return [];
       
       let query = supabase
@@ -124,7 +124,7 @@ export default function Expenses() {
       </div>
 
       <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
-      <ExpenseList expenses={expenses || []} isLoading={isLoading} />
+      <ExpenseList expenses={expenses} isLoading={isLoading} />
     </div>
   );
 }

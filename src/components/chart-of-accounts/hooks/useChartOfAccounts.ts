@@ -20,9 +20,9 @@ export interface Account {
 export function useChartOfAccounts(userId: string | undefined) {
   const { currentCompany } = useAuth();
   
-  return useQuery<Account[]>({
+  return useQuery({
     queryKey: ['chart-of-accounts', currentCompany?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<Account[]> => {
       if (!currentCompany?.id) {
         throw new Error("No company selected");
       }

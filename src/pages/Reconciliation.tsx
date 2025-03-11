@@ -36,9 +36,9 @@ export interface ReconciliationInvoice {
 const Reconciliation = () => {
   const { user, currentCompany } = useAuth();
 
-  const { data: expenses = [] } = useQuery<ReconciliationExpense[]>({
+  const { data: expenses = [] } = useQuery({
     queryKey: ["unreconciled-expenses", currentCompany?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<ReconciliationExpense[]> => {
       if (!currentCompany?.id) return [];
       
       const { data: relations, error: relationsError } = await supabase
@@ -67,9 +67,9 @@ const Reconciliation = () => {
     enabled: !!currentCompany?.id,
   });
 
-  const { data: invoices = [] } = useQuery<ReconciliationInvoice[]>({
+  const { data: invoices = [] } = useQuery({
     queryKey: ["unreconciled-invoices", currentCompany?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<ReconciliationInvoice[]> => {
       if (!currentCompany?.id) return [];
       
       const { data, error } = await supabase
