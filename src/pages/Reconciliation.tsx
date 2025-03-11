@@ -80,6 +80,7 @@ const Reconciliation = () => {
         .order("invoice_date", { ascending: false });
 
       if (error) throw error;
+      
       // Convert each invoice's id from number to string to match ReconciliationInvoice
       return (data || []).map(invoice => ({
         ...invoice,

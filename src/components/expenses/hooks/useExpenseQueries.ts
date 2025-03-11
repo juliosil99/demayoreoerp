@@ -32,7 +32,7 @@ export interface Supplier {
 export function useExpenseQueries() {
   const { currentCompany } = useAuth();
   
-  const { data: bankAccounts = [], isLoading: isLoadingBankAccounts } = useQuery<BankAccount[], Error>({
+  const { data: bankAccounts = [], isLoading: isLoadingBankAccounts } = useQuery<BankAccount[]>({
     queryKey: ["bankAccounts", currentCompany?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -46,7 +46,7 @@ export function useExpenseQueries() {
     enabled: !!currentCompany?.id,
   });
 
-  const { data: chartAccounts = [], isLoading: isLoadingChartAccounts } = useQuery<ChartAccount[], Error>({
+  const { data: chartAccounts = [], isLoading: isLoadingChartAccounts } = useQuery<ChartAccount[]>({
     queryKey: ["chartAccounts", currentCompany?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -62,7 +62,7 @@ export function useExpenseQueries() {
     enabled: !!currentCompany?.id,
   });
 
-  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery<Supplier[], Error>({
+  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery<Supplier[]>({
     queryKey: ["suppliers", currentCompany?.id],
     queryFn: async () => {
       const { data, error } = await supabase

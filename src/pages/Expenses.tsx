@@ -53,7 +53,7 @@ export default function Expenses() {
   const [filters, setFilters] = useState<Filters>({});
   const [open, setOpen] = useState(false);
 
-  const { data: expenses, isLoading, refetch } = useQuery<Expense[]>({
+  const { data: expenses = [], isLoading, refetch } = useQuery<Expense[]>({
     queryKey: ["expenses", currentCompany?.id, filters],
     queryFn: async () => {
       if (!currentCompany?.id) return [];
