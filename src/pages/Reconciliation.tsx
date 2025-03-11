@@ -5,10 +5,38 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReconciliationTable } from "@/components/reconciliation/ReconciliationTable";
 
+interface Expense {
+  id: number;
+  amount: number;
+  date: string;
+  description: string;
+  bank_accounts: {
+    name: string;
+  };
+  chart_of_accounts: {
+    name: string;
+    code: string;
+  };
+  contacts?: {
+    name: string;
+  } | null;
+  [key: string]: any;
+}
+
+interface Invoice {
+  id: string;
+  uuid: string;
+  invoice_number: string;
+  total: number;
+  paid_amount?: number;
+  invoice_date: string;
+  [key: string]: any;
+}
+
 const Reconciliation = () => {
   const { user, currentCompany } = useAuth();
 
-  const { data: expenses } = useQuery({
+  const { data: expenses } = useQuery<Expense[]>({
     queryKey: ["unreconciled-expenses", currentCompany?.id],
     queryFn: async () => {
       if (!currentCompany?.id) return [];
@@ -42,7 +70,7 @@ const Reconciliation = () => {
     enabled: !!currentCompany?.id,
   });
 
-  const { data: invoices } = useQuery({
+  const { data: invoices } = useQuery<Invoice[]>({
     queryKey: ["unreconciled-invoices", currentCompany?.id],
     queryFn: async () => {
       if (!currentCompany?.id) return [];

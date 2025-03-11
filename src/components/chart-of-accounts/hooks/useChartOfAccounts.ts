@@ -20,7 +20,7 @@ interface Account {
 export function useChartOfAccounts(userId: string | undefined) {
   const { currentCompany } = useAuth();
   
-  return useQuery({
+  return useQuery<Account[], Error>({
     queryKey: ['chart-of-accounts', currentCompany?.id],
     queryFn: async () => {
       if (!currentCompany?.id) {
