@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,17 +18,30 @@ import { PlusIcon } from "lucide-react";
 import { useState, useCallback } from "react";
 import type { Database } from "@/integrations/supabase/types/base";
 
-type Expense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string };
-  chart_of_accounts: { name: string; code: string };
-  contacts: { name: string } | null;
+export interface Expense {
+  id: string;
+  created_at: string | null;
+  user_id: string;
+  date: string;
+  description: string;
+  amount: number;
+  account_id: number;
+  chart_account_id: string;
+  payment_method: string;
+  reference_number: string | null;
+  notes: string | null;
+  supplier_id: string | null;
+  category: string | null;
+  bank_accounts?: { name: string };
+  chart_of_accounts?: { name: string; code: string };
+  contacts?: { name: string } | null;
   expense_invoice_relations?: {
     invoice: {
       uuid: string;
       invoice_number: string;
     }
   }[];
-};
+}
 
 type Filters = {
   supplier_id?: string;

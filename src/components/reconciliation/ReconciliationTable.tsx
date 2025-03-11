@@ -3,10 +3,11 @@ import { useReconciliation } from "./hooks/useReconciliation";
 import { ExpenseCard } from "./components/ExpenseCard";
 import { InvoiceSearchDialog } from "./components/InvoiceSearchDialog";
 import { AccountAdjustmentDialog } from "./components/AccountAdjustmentDialog";
+import type { ReconciliationExpense, ReconciliationInvoice } from "../../pages/Reconciliation";
 
 interface ReconciliationTableProps {
-  expenses: any[];
-  invoices: any[];
+  expenses: ReconciliationExpense[];
+  invoices: ReconciliationInvoice[];
 }
 
 export function ReconciliationTable({ expenses, invoices }: ReconciliationTableProps) {
@@ -33,7 +34,7 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
     return matchesIssuer || matchesAmount;
   });
 
-  const handleExpenseSelect = (expense: any) => {
+  const handleExpenseSelect = (expense: ReconciliationExpense) => {
     setSelectedExpense(expense);
     setShowInvoiceSearch(true);
   };

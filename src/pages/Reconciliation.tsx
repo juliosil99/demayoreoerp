@@ -5,8 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReconciliationTable } from "@/components/reconciliation/ReconciliationTable";
 
-interface Expense {
-  id: number;
+export interface ReconciliationExpense {
+  id: string;
   amount: number;
   date: string;
   description: string;
@@ -23,11 +23,11 @@ interface Expense {
   [key: string]: any;
 }
 
-interface Invoice {
+export interface ReconciliationInvoice {
   id: string;
   uuid: string;
   invoice_number: string;
-  total: number;
+  total_amount: number;
   paid_amount?: number;
   invoice_date: string;
   [key: string]: any;
@@ -36,7 +36,7 @@ interface Invoice {
 const Reconciliation = () => {
   const { user, currentCompany } = useAuth();
 
-  const { data: expenses } = useQuery<Expense[]>({
+  const { data: expenses = [] } = useQuery<ReconciliationExpense[]>({
     queryKey: ["unreconciled-expenses", currentCompany?.id],
     queryFn: async () => {
       if (!currentCompany?.id) return [];
@@ -48,10 +48,7 @@ const Reconciliation = () => {
       if (relationsError) throw relationsError;
 
       const reconciledExpenseIds = relations?.map(r => r.expense_id) || [];
-      const whereClause = reconciledExpenseIds.length > 0 
-        ? `and not id in (${reconciledExpenseIds.join(",")})` 
-        : '';
-
+      
       const { data, error } = await supabase
         .from("expenses")
         .select(`
@@ -61,29 +58,29 @@ const Reconciliation = () => {
           contacts (name)
         `)
         .eq("company_id", currentCompany.id)
-        .filter('id', 'not.in', `(${reconciledExpenseIds.join(',')})`)
+        .filter('id', 'not.in', `(${reconciledExpenseIds.join(',') || '00000000-0000-0000-0000-000000000000'})`)
         .order("date", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as ReconciliationExpense[];
     },
     enabled: !!currentCompany?.id,
   });
 
-  const { data: invoices } = useQuery<Invoice[]>({
+  const { data: invoices = [] } = useQuery<ReconciliationInvoice[]>({
     queryKey: ["unreconciled-invoices", currentCompany?.id],
     queryFn: async () => {
       if (!currentCompany?.id) return [];
       
       const { data, error } = await supabase
         .from("invoices")
-        .select("*, paid_amount")
+        .select("*")
         .eq("company_id", currentCompany.id)
         .is("processed", false)
         .order("invoice_date", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as ReconciliationInvoice[];
     },
     enabled: !!currentCompany?.id,
   });
@@ -99,7 +96,7 @@ const Reconciliation = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ReconciliationTable expenses={expenses || []} invoices={invoices || []} />
+          <ReconciliationTable expenses={expenses} invoices={invoices} />
         </CardContent>
       </Card>
     </div>

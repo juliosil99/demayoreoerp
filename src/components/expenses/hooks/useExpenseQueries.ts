@@ -2,24 +2,32 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import type { BankAccountsTable } from "@/integrations/supabase/types/bank-accounts";
 
-interface BankAccount {
-  id: string;
+export interface BankAccount {
+  id: number;
   name: string;
-  [key: string]: any;
+  type: string;
+  balance?: number | null;
+  balance_date?: string | null;
+  initial_balance?: number | null;
+  created_at?: string | null;
 }
 
-interface ChartAccount {
+export interface ChartAccount {
   id: string;
   name: string;
   code: string;
-  [key: string]: any;
+  account_type?: string;
+  level?: number;
+  is_group?: boolean;
 }
 
-interface Supplier {
+export interface Supplier {
   id: string;
   name: string;
-  [key: string]: any;
+  rfc?: string;
+  type?: string;
 }
 
 export function useExpenseQueries() {
@@ -34,9 +42,8 @@ export function useExpenseQueries() {
         .eq("company_id", currentCompany?.id);
         
       if (error) throw error;
-      return data;
+      return data as BankAccount[];
     },
-    initialData: [],
     enabled: !!currentCompany?.id,
   });
 
@@ -51,9 +58,8 @@ export function useExpenseQueries() {
         .order('code');
         
       if (error) throw error;
-      return data;
+      return data as ChartAccount[];
     },
-    initialData: [],
     enabled: !!currentCompany?.id,
   });
 
@@ -67,9 +73,8 @@ export function useExpenseQueries() {
         .eq("company_id", currentCompany?.id);
         
       if (error) throw error;
-      return data;
+      return data as Supplier[];
     },
-    initialData: [],
     enabled: !!currentCompany?.id,
   });
 

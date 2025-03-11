@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface Account {
+export interface Account {
   id: string;
   code: string;
   name: string;
@@ -20,7 +20,7 @@ interface Account {
 export function useChartOfAccounts(userId: string | undefined) {
   const { currentCompany } = useAuth();
   
-  return useQuery<Account[], Error>({
+  return useQuery<Account[]>({
     queryKey: ['chart-of-accounts', currentCompany?.id],
     queryFn: async () => {
       if (!currentCompany?.id) {
