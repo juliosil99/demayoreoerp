@@ -5,13 +5,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import type { Database } from "@/integrations/supabase/types/base";
-
-type Expense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string };
-  chart_of_accounts: { name: string; code: string };
-  contacts: { name: string } | null;
-};
+import { FormExpense } from "../ExpenseForm";
 
 export type ExpenseFormData = {
   date: string;
@@ -39,8 +33,8 @@ const initialFormData: ExpenseFormData = {
   category: "",
 };
 
-export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void) {
-  const { user } = useAuth();
+export function useExpenseForm(initialExpense?: FormExpense, onSuccess?: () => void) {
+  const { user, currentCompany } = useAuth();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<ExpenseFormData>(initialFormData);
@@ -65,11 +59,13 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
   const createOrUpdateExpense = useMutation({
     mutationFn: async (values: ExpenseFormData) => {
       if (!user?.id) throw new Error("User not authenticated");
+      if (!currentCompany?.id) throw new Error("No company selected");
 
       console.log("Fecha antes de crear el expense:", values.date);
 
       const expenseData = {
         user_id: user.id,
+        company_id: currentCompany.id,
         date: values.date,
         description: values.description,
         amount: parseFloat(values.amount),

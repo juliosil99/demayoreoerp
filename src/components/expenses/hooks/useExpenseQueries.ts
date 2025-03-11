@@ -2,7 +2,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import type { BankAccountsTable } from "@/integrations/supabase/types/bank-accounts";
 
 export interface BankAccount {
   id: number;
@@ -33,7 +32,7 @@ export interface Supplier {
 export function useExpenseQueries() {
   const { currentCompany } = useAuth();
   
-  const { data: bankAccounts = [], isLoading: isLoadingBankAccounts } = useQuery<BankAccount[]>({
+  const { data: bankAccounts = [], isLoading: isLoadingBankAccounts } = useQuery<BankAccount[], Error>({
     queryKey: ["bankAccounts", currentCompany?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -47,7 +46,7 @@ export function useExpenseQueries() {
     enabled: !!currentCompany?.id,
   });
 
-  const { data: chartAccounts = [], isLoading: isLoadingChartAccounts } = useQuery<ChartAccount[]>({
+  const { data: chartAccounts = [], isLoading: isLoadingChartAccounts } = useQuery<ChartAccount[], Error>({
     queryKey: ["chartAccounts", currentCompany?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -63,7 +62,7 @@ export function useExpenseQueries() {
     enabled: !!currentCompany?.id,
   });
 
-  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery<Supplier[]>({
+  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery<Supplier[], Error>({
     queryKey: ["suppliers", currentCompany?.id],
     queryFn: async () => {
       const { data, error } = await supabase

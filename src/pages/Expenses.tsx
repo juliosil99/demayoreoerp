@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ExpenseForm } from "@/components/expenses/ExpenseForm";
+import { ExpenseForm, FormExpense } from "@/components/expenses/ExpenseForm";
 import { ExpenseList } from "@/components/expenses/ExpenseList";
 import { ExpenseFilters } from "@/components/expenses/ExpenseFilters";
 import { ExpenseImporter } from "@/components/expenses/ExpenseImporter";
@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dialog";
 import { PlusIcon } from "lucide-react";
 import { useState, useCallback } from "react";
-import type { Database } from "@/integrations/supabase/types/base";
 
 export interface Expense {
   id: string;
@@ -32,9 +31,9 @@ export interface Expense {
   notes: string | null;
   supplier_id: string | null;
   category: string | null;
-  bank_accounts?: { name: string };
-  chart_of_accounts?: { name: string; code: string };
-  contacts?: { name: string } | null;
+  bank_accounts: { name: string };
+  chart_of_accounts: { name: string; code: string };
+  contacts: { name: string } | null;
   expense_invoice_relations?: {
     invoice: {
       uuid: string;
@@ -88,7 +87,7 @@ export default function Expenses() {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Expense[];
+      return data as unknown as Expense[];
     },
     enabled: !!currentCompany?.id,
   });

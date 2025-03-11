@@ -20,13 +20,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { useState } from "react";
-import type { Database } from "@/integrations/supabase/types/base";
-
-type Expense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string };
-  chart_of_accounts: { name: string; code: string };
-  contacts: { name: string } | null;
-};
+import { Expense } from "@/pages/Expenses";
 
 interface ExpenseActionsProps {
   expense: Expense;

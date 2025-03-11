@@ -24,7 +24,7 @@ export interface ReconciliationExpense {
 }
 
 export interface ReconciliationInvoice {
-  id: string;
+  id: string; // Using string to match what ReconciliationTable expects
   uuid: string;
   invoice_number: string;
   total_amount: number;
@@ -62,7 +62,7 @@ const Reconciliation = () => {
         .order("date", { ascending: false });
 
       if (error) throw error;
-      return data as ReconciliationExpense[];
+      return data as unknown as ReconciliationExpense[];
     },
     enabled: !!currentCompany?.id,
   });
@@ -80,7 +80,11 @@ const Reconciliation = () => {
         .order("invoice_date", { ascending: false });
 
       if (error) throw error;
-      return data as ReconciliationInvoice[];
+      // Convert each invoice's id from number to string to match ReconciliationInvoice
+      return (data || []).map(invoice => ({
+        ...invoice,
+        id: String(invoice.id)
+      })) as ReconciliationInvoice[];
     },
     enabled: !!currentCompany?.id,
   });

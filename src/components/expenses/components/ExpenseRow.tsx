@@ -12,19 +12,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import type { Database } from "@/integrations/supabase/types/base";
-
-type Expense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string };
-  chart_of_accounts: { name: string; code: string };
-  contacts: { name: string } | null;
-  expense_invoice_relations?: {
-    invoice: {
-      uuid: string;
-      invoice_number: string;
-    }
-  }[];
-};
+import { Expense } from "@/pages/Expenses";
 
 interface ExpenseRowProps {
   expense: Expense;
