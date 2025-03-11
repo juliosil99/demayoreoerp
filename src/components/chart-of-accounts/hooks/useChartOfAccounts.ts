@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Account {
   id: string;
@@ -17,16 +18,19 @@ interface Account {
 }
 
 export function useChartOfAccounts(userId: string | undefined) {
+  const { currentCompany } = useAuth();
+  
   return useQuery({
-    queryKey: ['chart-of-accounts'],
+    queryKey: ['chart-of-accounts', currentCompany?.id],
     queryFn: async () => {
-      if (!userId) {
-        throw new Error("User not authenticated");
+      if (!currentCompany?.id) {
+        throw new Error("No company selected");
       }
+      
       const { data, error } = await supabase
         .from('chart_of_accounts')
         .select('*')
-        .eq('user_id', userId)
+        .eq('company_id', currentCompany.id)
         .order('path');
       
       if (error) {
@@ -35,6 +39,6 @@ export function useChartOfAccounts(userId: string | undefined) {
       }
       return data as Account[];
     },
-    enabled: !!userId,
+    enabled: !!currentCompany?.id,
   });
 }

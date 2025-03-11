@@ -37,13 +37,15 @@ type Filters = {
 };
 
 export default function Expenses() {
-  const { user } = useAuth();
+  const { user, currentCompany } = useAuth();
   const [filters, setFilters] = useState<Filters>({});
   const [open, setOpen] = useState(false);
 
   const { data: expenses, isLoading, refetch } = useQuery({
-    queryKey: ["expenses", user?.id, filters],
+    queryKey: ["expenses", currentCompany?.id, filters],
     queryFn: async () => {
+      if (!currentCompany?.id) return [];
+      
       let query = supabase
         .from('expenses')
         .select(`
@@ -55,8 +57,9 @@ export default function Expenses() {
             invoice:invoices (uuid, invoice_number)
           )
         `)
-        .eq('user_id', user!.id);
+        .eq('company_id', currentCompany.id);
 
+      // Apply filters
       if (filters.supplier_id) {
         query = query.eq('supplier_id', filters.supplier_id);
       }
@@ -64,7 +67,6 @@ export default function Expenses() {
         query = query.eq('account_id', filters.account_id);
       }
       if (filters.unreconciled) {
-        // Cambiamos la condición para mostrar gastos sin conciliar
         query = query.is('expense_invoice_relations', null);
       }
 
@@ -75,7 +77,7 @@ export default function Expenses() {
       if (error) throw error;
       return data as Expense[];
     },
-    enabled: !!user,
+    enabled: !!currentCompany?.id,
   });
 
   const handleSuccess = useCallback(() => {

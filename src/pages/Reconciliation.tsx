@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReconciliationTable } from "@/components/reconciliation/ReconciliationTable";
 
 const Reconciliation = () => {
-  const { user } = useAuth();
+  const { user, currentCompany } = useAuth();
 
   const { data: expenses } = useQuery({
-    queryKey: ["unreconciled-expenses", user?.id],
+    queryKey: ["unreconciled-expenses", currentCompany?.id],
     queryFn: async () => {
+      if (!currentCompany?.id) return [];
+      
       const { data: relations, error: relationsError } = await supabase
         .from("expense_invoice_relations")
         .select("expense_id");
@@ -18,6 +20,9 @@ const Reconciliation = () => {
       if (relationsError) throw relationsError;
 
       const reconciledExpenseIds = relations?.map(r => r.expense_id) || [];
+      const whereClause = reconciledExpenseIds.length > 0 
+        ? `and not id in (${reconciledExpenseIds.join(",")})` 
+        : '';
 
       const { data, error } = await supabase
         .from("expenses")
@@ -27,28 +32,32 @@ const Reconciliation = () => {
           chart_of_accounts (name, code),
           contacts (name)
         `)
-        .eq("user_id", user!.id)
-        .not("id", "in", `(${reconciledExpenseIds.join(",")})`)
+        .eq("company_id", currentCompany.id)
+        .filter('id', 'not.in', `(${reconciledExpenseIds.join(',')})`)
         .order("date", { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!currentCompany?.id,
   });
 
   const { data: invoices } = useQuery({
-    queryKey: ["unreconciled-invoices"],
+    queryKey: ["unreconciled-invoices", currentCompany?.id],
     queryFn: async () => {
+      if (!currentCompany?.id) return [];
+      
       const { data, error } = await supabase
         .from("invoices")
         .select("*, paid_amount")
+        .eq("company_id", currentCompany.id)
         .is("processed", false)
         .order("invoice_date", { ascending: false });
 
       if (error) throw error;
       return data;
     },
+    enabled: !!currentCompany?.id,
   });
 
   return (
