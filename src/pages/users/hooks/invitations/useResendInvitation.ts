@@ -24,55 +24,30 @@ export const useResendInvitation = () => {
       console.log(`Generated new token: ${newToken}`);
       
       // First update the invitation with a new token
-      const { data: updatedInvitation, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('user_invitations')
         .update({ 
           invitation_token: newToken,
           // Reset status to pending if it was expired
           status: invitation.status === 'expired' ? 'pending' : invitation.status
         })
-        .eq('id', invitation.id)
-        .select()
-        .single();
+        .eq('id', invitation.id);
         
       if (updateError) {
         console.error("Error updating invitation token:", updateError);
         throw new Error("Error al actualizar el token de invitación: " + updateError.message);
       }
       
-      if (!updatedInvitation) {
-        throw new Error("No se pudo actualizar la invitación");
-      }
+      console.log("Invitation token updated successfully to:", newToken);
       
-      console.log("Invitation updated successfully:", updatedInvitation);
-      console.log("New token stored in database:", updatedInvitation.invitation_token);
-      
-      // Verify token was correctly stored with both methods
-      console.log("Verifying token storage with direct query:");
-      const { data: verifyToken, error: verifyError } = await supabase
+      // Verify the token was correctly stored
+      const { data: verifyToken } = await supabase
         .from('user_invitations')
         .select('invitation_token')
         .eq('id', invitation.id)
         .single();
         
-      if (verifyError) {
-        console.error("Error verifying token direct query:", verifyError);
-      } else {
-        console.log("Direct query verification result:", verifyToken);
-      }
-      
-      console.log("Verifying token storage with text query:");
-      const { data: verifyTextToken, error: verifyTextError } = await supabase
-        .from('user_invitations')
-        .select('invitation_token')
-        .filter('invitation_token::text', 'eq', newToken)
-        .maybeSingle();
-        
-      if (verifyTextError) {
-        console.error("Error verifying token text query:", verifyTextError);
-      } else {
-        console.log("Text query verification result:", verifyTextToken);
-      }
+      console.log("Verification of updated token:", verifyToken);
       
       // Registrar el intento de reenvío
       await createInvitationLog(
@@ -98,13 +73,13 @@ export const useResendInvitation = () => {
       toast.success("Invitación reenviada exitosamente");
       
       // Update the cache with the updated invitation
-      const updatedInvitationData = { 
+      const updatedInvitation = { 
         ...invitation, 
         invitation_token: newToken, 
         status: invitation.status === 'expired' ? 'pending' : invitation.status 
       };
       
-      updateInvitationCache(updatedInvitationData);
+      updateInvitationCache(updatedInvitation);
       
       // Also invalidate to ensure fresh data
       invalidateInvitations();

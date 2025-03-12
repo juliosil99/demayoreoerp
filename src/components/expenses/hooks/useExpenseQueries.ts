@@ -1,55 +1,45 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { BankAccount, ChartAccount, Supplier } from "../types/expense";
 
 export function useExpenseQueries() {
-  const { currentCompany } = useAuth();
-  
   const { data: bankAccounts = [], isLoading: isLoadingBankAccounts } = useQuery({
-    queryKey: ["bankAccounts", currentCompany?.id],
+    queryKey: ["bankAccounts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bank_accounts")
-        .select("*")
-        .eq("company_id", currentCompany?.id);
-        
+        .select("*");
       if (error) throw error;
-      return data as BankAccount[];
+      return data;
     },
-    enabled: !!currentCompany?.id,
+    initialData: [],
   });
 
   const { data: chartAccounts = [], isLoading: isLoadingChartAccounts } = useQuery({
-    queryKey: ["chartAccounts", currentCompany?.id],
+    queryKey: ["chartAccounts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("chart_of_accounts")
         .select("*")
         .in("account_type", ["expense", "asset", "liability"])
-        .eq("company_id", currentCompany?.id)
         .order('code');
-        
       if (error) throw error;
-      return data as ChartAccount[];
+      return data;
     },
-    enabled: !!currentCompany?.id,
+    initialData: [],
   });
 
   const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
-    queryKey: ["suppliers", currentCompany?.id],
+    queryKey: ["suppliers"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contacts")
         .select("*")
-        .eq("type", "supplier")
-        .eq("company_id", currentCompany?.id);
-        
+        .eq("type", "supplier");
       if (error) throw error;
-      return data as Supplier[];
+      return data;
     },
-    enabled: !!currentCompany?.id,
+    initialData: [],
   });
 
   const isLoading = isLoadingBankAccounts || isLoadingChartAccounts || isLoadingSuppliers;

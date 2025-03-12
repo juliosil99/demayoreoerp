@@ -7,7 +7,6 @@ import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { ExpenseList } from "@/components/expenses/ExpenseList";
 import { ExpenseFilters } from "@/components/expenses/ExpenseFilters";
 import { ExpenseImporter } from "@/components/expenses/ExpenseImporter";
-import { Expense } from "@/components/expenses/types/expense";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +16,19 @@ import {
 } from "@/components/ui/dialog";
 import { PlusIcon } from "lucide-react";
 import { useState, useCallback } from "react";
+import type { Database } from "@/integrations/supabase/types/base";
+
+type Expense = Database['public']['Tables']['expenses']['Row'] & {
+  bank_accounts: { name: string };
+  chart_of_accounts: { name: string; code: string };
+  contacts: { name: string } | null;
+  expense_invoice_relations?: {
+    invoice: {
+      uuid: string;
+      invoice_number: string;
+    }
+  }[];
+};
 
 type Filters = {
   supplier_id?: string;
@@ -25,15 +37,13 @@ type Filters = {
 };
 
 export default function Expenses() {
-  const { user, currentCompany } = useAuth();
+  const { user } = useAuth();
   const [filters, setFilters] = useState<Filters>({});
   const [open, setOpen] = useState(false);
 
-  const { data: expenses = [], isLoading, refetch } = useQuery({
-    queryKey: ["expenses", currentCompany?.id, filters],
+  const { data: expenses, isLoading, refetch } = useQuery({
+    queryKey: ["expenses", user?.id, filters],
     queryFn: async () => {
-      if (!currentCompany?.id) return [];
-      
       let query = supabase
         .from('expenses')
         .select(`
@@ -45,9 +55,8 @@ export default function Expenses() {
             invoice:invoices (uuid, invoice_number)
           )
         `)
-        .eq('company_id', currentCompany.id);
+        .eq('user_id', user!.id);
 
-      // Apply filters
       if (filters.supplier_id) {
         query = query.eq('supplier_id', filters.supplier_id);
       }
@@ -55,6 +64,7 @@ export default function Expenses() {
         query = query.eq('account_id', filters.account_id);
       }
       if (filters.unreconciled) {
+        // Cambiamos la condición para mostrar gastos sin conciliar
         query = query.is('expense_invoice_relations', null);
       }
 
@@ -65,7 +75,7 @@ export default function Expenses() {
       if (error) throw error;
       return data as Expense[];
     },
-    enabled: !!currentCompany?.id,
+    enabled: !!user,
   });
 
   const handleSuccess = useCallback(() => {
@@ -100,7 +110,7 @@ export default function Expenses() {
       </div>
 
       <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
-      <ExpenseList expenses={expenses} isLoading={isLoading} />
+      <ExpenseList expenses={expenses || []} isLoading={isLoading} />
     </div>
   );
 }

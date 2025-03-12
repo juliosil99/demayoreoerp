@@ -4,19 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReconciliationTable } from "@/components/reconciliation/ReconciliationTable";
-import { 
-  ReconciliationExpense, 
-  ReconciliationInvoice 
-} from "@/components/reconciliation/types/reconciliation";
 
 const Reconciliation = () => {
-  const { user, currentCompany } = useAuth();
+  const { user } = useAuth();
 
-  const { data: expenses = [] } = useQuery({
-    queryKey: ["unreconciled-expenses", currentCompany?.id],
+  const { data: expenses } = useQuery({
+    queryKey: ["unreconciled-expenses", user?.id],
     queryFn: async () => {
-      if (!currentCompany?.id) return [];
-      
       const { data: relations, error: relationsError } = await supabase
         .from("expense_invoice_relations")
         .select("expense_id");
@@ -24,7 +18,7 @@ const Reconciliation = () => {
       if (relationsError) throw relationsError;
 
       const reconciledExpenseIds = relations?.map(r => r.expense_id) || [];
-      
+
       const { data, error } = await supabase
         .from("expenses")
         .select(`
@@ -33,37 +27,28 @@ const Reconciliation = () => {
           chart_of_accounts (name, code),
           contacts (name)
         `)
-        .eq("company_id", currentCompany.id)
-        .filter('id', 'not.in', `(${reconciledExpenseIds.join(',') || '00000000-0000-0000-0000-000000000000'})`)
+        .eq("user_id", user!.id)
+        .not("id", "in", `(${reconciledExpenseIds.join(",")})`)
         .order("date", { ascending: false });
 
       if (error) throw error;
-      return data as ReconciliationExpense[];
+      return data;
     },
-    enabled: !!currentCompany?.id,
+    enabled: !!user,
   });
 
-  const { data: invoices = [] } = useQuery({
-    queryKey: ["unreconciled-invoices", currentCompany?.id],
+  const { data: invoices } = useQuery({
+    queryKey: ["unreconciled-invoices"],
     queryFn: async () => {
-      if (!currentCompany?.id) return [];
-      
       const { data, error } = await supabase
         .from("invoices")
-        .select("*")
-        .eq("company_id", currentCompany.id)
+        .select("*, paid_amount")
         .is("processed", false)
         .order("invoice_date", { ascending: false });
 
       if (error) throw error;
-      
-      // Convert each invoice's id from number to string to match ReconciliationInvoice
-      return (data || []).map(invoice => ({
-        ...invoice,
-        id: String(invoice.id)
-      })) as ReconciliationInvoice[];
+      return data;
     },
-    enabled: !!currentCompany?.id,
   });
 
   return (
@@ -77,7 +62,7 @@ const Reconciliation = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ReconciliationTable expenses={expenses} invoices={invoices} />
+          <ReconciliationTable expenses={expenses || []} invoices={invoices || []} />
         </CardContent>
       </Card>
     </div>

@@ -14,7 +14,7 @@ import {
 import { useExpenseQueries } from "./hooks/useExpenseQueries";
 import { createExcelTemplate, processExpenseFile } from "./utils/excelUtils";
 import { importExpenses } from "./services/expenseImportService";
-import { BankAccount, ChartAccount, Supplier } from "./types/expense";
+import type { BankAccountsTable } from "@/integrations/supabase/types/bank-accounts";
 
 interface ExpenseImporterProps {
   onSuccess: () => void;
@@ -27,9 +27,9 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
 
   const downloadTemplate = async () => {
     createExcelTemplate(
-      bankAccounts as BankAccount[], 
-      chartAccounts as ChartAccount[], 
-      suppliers as Supplier[]
+      bankAccounts as BankAccountsTable["Row"][], 
+      chartAccounts, 
+      suppliers
     );
   };
 

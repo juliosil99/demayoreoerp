@@ -1,193 +1,165 @@
-import React, {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-} from "react";
-import { Session, User, AuthResponse } from "@supabase/supabase-js";
+
+import * as React from "react";
+import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-interface AuthContextProps {
-  user: User | null;
+type AuthContextType = {
   session: Session | null;
-  isLoading: boolean;
+  user: User | null;
   isAdmin: boolean;
-  signIn: (email: string, password: string) => Promise<AuthResponse>;
-  signUp: (email: string, password: string) => Promise<AuthResponse>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  refreshSession: () => Promise<void>;
-  userCompanies: any[];
-  currentCompany: any | null;
-  setCurrentCompany: (company: any) => void;
-}
+  updateEmail: (newEmail: string) => Promise<void>;
+};
 
-export const AuthContext = createContext<AuthContextProps>({
-  user: null,
-  session: null,
-  isLoading: true,
-  isAdmin: false,
-  signIn: async () => ({ data: { session: null, user: null }, error: null }),
-  signUp: async () => ({ data: { session: null, user: null }, error: null }),
-  signOut: async () => {},
-  refreshSession: async () => {},
-  userCompanies: [],
-  currentCompany: null,
-  setCurrentCompany: () => {},
-});
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [userCompanies, setUserCompanies] = useState<any[]>([]);
-  const [currentCompany, setCurrentCompany] = useState<any | null>(null);
-
-  const fetchUserCompanies = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("company_users")
-        .select(`
-          role,
-          company:company_id (
-            id,
-            nombre,
-            rfc,
-            codigo_postal,
-            regimen_fiscal
-          )
-        `)
-        .eq("user_id", userId);
-
-      if (error) throw error;
-      
-      const companies = data
-        ?.map(item => ({ ...item.company, userRole: item.role }))
-        .filter(Boolean) || [];
-      
-      setUserCompanies(companies);
-      
-      // Set current company to the first one if not already set
-      if (companies.length > 0 && !currentCompany) {
-        setCurrentCompany(companies[0]);
-      }
-      
-      return companies;
-    } catch (error) {
-      console.error("Error fetching user companies:", error);
-      return [];
-    }
-  };
+  const [session, setSession] = React.useState<Session | null>(null);
+  const [user, setUser] = React.useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = React.useState(false);
 
   const checkAdminStatus = async (userId: string) => {
     try {
-      // Use the PostgreSQL function to check admin status
-      const { data, error } = await supabase.rpc('is_admin', {
-        user_id: userId
-      });
-
+      const { data, error } = await supabase
+        .rpc('is_admin', { user_id: userId });
+      
       if (error) throw error;
       setIsAdmin(!!data);
-      return !!data;
     } catch (error) {
-      console.error("Error checking admin status:", error);
+      console.error('Error checking admin status:', error);
       setIsAdmin(false);
-      return false;
     }
   };
 
-  useEffect(() => {
-    const setupUser = async (currentUser: User) => {
-      await checkAdminStatus(currentUser.id);
-      await fetchUserCompanies(currentUser.id);
-    };
-
+  React.useEffect(() => {
+    // Get initial session
+    console.log("AuthProvider: Getting initial session...");
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("AuthProvider: Initial session:", session ? "Found" : "Not found");
       setSession(session);
       setUser(session?.user ?? null);
-      
       if (session?.user) {
-        setupUser(session.user);
+        console.log("AuthProvider: Initial user ID:", session.user.id);
+        console.log("AuthProvider: Initial user email:", session.user.email);
+        checkAdminStatus(session.user.id);
       }
-      
-      setIsLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          setupUser(session.user);
-        } else {
-          setIsAdmin(false);
-          setUserCompanies([]);
-          setCurrentCompany(null);
-        }
-        
-        setIsLoading(false);
+    // Listen for auth changes
+    console.log("AuthProvider: Setting up auth state change listener");
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log("AuthProvider: Auth state changed, event:", _event);
+      console.log("AuthProvider: New session:", session ? "Found" : "Not found");
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        console.log("AuthProvider: User ID after auth change:", session.user.id);
+        console.log("AuthProvider: User email after auth change:", session.user.email);
+        checkAdminStatus(session.user.id);
+      } else {
+        setIsAdmin(false);
       }
-    );
+
+      // Si la sesión existe pero no hay token de actualización, cerrar sesión
+      if (session && !session.refresh_token) {
+        console.log("AuthProvider: Session has no refresh token, signing out");
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setIsAdmin(false);
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    return await supabase.auth.signInWithPassword({
+    console.log("AuthProvider: Signing in user:", email);
+    const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
+    if (error) {
+      console.error("AuthProvider: Sign in error:", error);
+      throw error;
+    }
+    
+    console.log("AuthProvider: Sign in successful, session:", data.session ? "Found" : "Not found");
+    
+    // Verificar que tenemos un token de actualización válido
+    if (!data.session?.refresh_token) {
+      console.error("AuthProvider: No refresh token in session");
+      throw new Error("No se pudo obtener un token de actualización válido");
+    }
   };
 
   const signUp = async (email: string, password: string) => {
-    return await supabase.auth.signUp({
+    console.log("AuthProvider: Signing up user:", email);
+    const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
     });
+    if (error) {
+      console.error("AuthProvider: Sign up error:", error);
+      throw error;
+    }
+    console.log("AuthProvider: Sign up successful");
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    console.log("AuthProvider: Signing out user");
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("AuthProvider: Sign out error:", error);
+      throw error;
+    }
+    console.log("AuthProvider: Sign out successful");
     setSession(null);
+    setUser(null);
     setIsAdmin(false);
-    setUserCompanies([]);
-    setCurrentCompany(null);
   };
 
-  const refreshSession = async () => {
-    const { data } = await supabase.auth.refreshSession();
-    setSession(data.session);
-    setUser(data.session?.user ?? null);
-    
-    if (data.session?.user) {
-      await checkAdminStatus(data.session.user.id);
-      await fetchUserCompanies(data.session.user.id);
+  const updateEmail = async (newEmail: string) => {
+    try {
+      console.log("AuthProvider: Updating email to:", newEmail);
+      const { error } = await supabase.auth.updateUser({ 
+        email: newEmail,
+      });
+      
+      if (error) {
+        console.error("AuthProvider: Update email error:", error);
+        throw error;
+      }
+
+      console.log("AuthProvider: Email update successful");
+      toast.success("Se ha enviado un enlace de confirmación a tu nuevo correo electrónico");
+    } catch (error: any) {
+      toast.error(error.message);
+      throw error;
     }
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        isLoading,
-        isAdmin,
-        signIn,
-        signUp,
-        signOut,
-        refreshSession,
-        userCompanies,
-        currentCompany,
-        setCurrentCompany
-      }}
-    >
+    <AuthContext.Provider value={{ session, user, isAdmin, signIn, signUp, signOut, updateEmail }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = React.useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };

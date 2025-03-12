@@ -158,39 +158,15 @@ export interface SupabaseClient {
 export async function verifyTokenInDatabase(supabase: SupabaseClient, token: string): Promise<void> {
   console.log("Verifying token in database:", token);
   
-  // Try both UUID and string formats for better compatibility
-  try {
-    // First check with standard column comparison
-    const { data: tokenCheck, error: tokenCheckError } = await supabase
-      .from("user_invitations")
-      .select("id, invitation_token")
-      .eq("invitation_token", token)
-      .maybeSingle();
-      
-    if (tokenCheckError) {
-      console.error("Error verificando token en la base de datos:", tokenCheckError);
-    } else {
-      console.log("Verificación de token en base de datos:", tokenCheck ? "Encontrado" : "No encontrado");
-      console.log("Detalles del token encontrado:", tokenCheck);
-    }
+  const { data: tokenCheck, error: tokenCheckError } = await supabase
+    .from("user_invitations")
+    .select("id")
+    .eq("invitation_token", token)
+    .maybeSingle();
     
-    // If not found, try as string (workaround for some Postgres implementations)
-    if (!tokenCheck) {
-      console.log("Intentando verificar token como texto...");
-      const { data: textTokenCheck, error: textTokenError } = await supabase
-        .from("user_invitations")
-        .select("id, invitation_token")
-        .eq("invitation_token::text", token)
-        .maybeSingle();
-        
-      if (textTokenError) {
-        console.error("Error verificando token como texto:", textTokenError);
-      } else {
-        console.log("Verificación de token como texto:", textTokenCheck ? "Encontrado" : "No encontrado");
-        console.log("Detalles del token encontrado (como texto):", textTokenCheck);
-      }
-    }
-  } catch (error) {
-    console.error("Error inesperado verificando token:", error);
+  if (tokenCheckError) {
+    console.error("Error verificando token en la base de datos:", tokenCheckError);
+  } else {
+    console.log("Verificación de token en base de datos:", tokenCheck ? "Encontrado" : "No encontrado");
   }
 }

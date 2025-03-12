@@ -1,11 +1,10 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 interface CompanyData {
-  id?: string;
   nombre: string;
   rfc: string;
   codigo_postal: string;
@@ -35,8 +34,6 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [userCompanies, setUserCompanies] = useState<any[]>([]);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadCompanyData = async () => {
@@ -51,77 +48,43 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
       }
       
       try {
-        // First, check for companies this user has access to
-        console.log("🔍 Checking for companies user has access to...");
-        const { data: accessibleCompanies, error: accessError } = await supabase
-          .from("company_users")
-          .select(`
-            company:company_id (
-              id,
-              nombre,
-              rfc,
-              codigo_postal,
-              regimen_fiscal
-            )
-          `)
-          .eq("user_id", userId);
-        
-        if (accessError) {
-          console.error("❌ Error checking company access:", accessError);
-          toast.error("Error al verificar acceso a empresas");
-          return;
-        }
-        
-        console.log("Companies user has access to:", accessibleCompanies);
-        
-        const companies = accessibleCompanies
-          ?.map(item => item.company)
-          .filter(Boolean) || [];
-        
-        setUserCompanies(companies);
-        
-        if (companies.length > 0) {
-          // User has access to at least one company
-          if (isEditMode) {
-            // If in edit mode, load the specific company data
-            console.log("📝 Edit mode detected, fetching company for user:", userId);
-            
-            const { data, error } = await supabase
-              .from("companies")
-              .select("*")
-              .eq("id", companies[0].id)  // Default to first company
-              .maybeSingle();
+        if (isEditMode) {
+          console.log("📝 Edit mode detected, fetching company for user:", userId);
+          
+          const { data, error } = await supabase
+            .from("companies")
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle();
 
-            console.log("Query response - data:", data);
-            console.log("Query response - error:", error);
+          console.log("Query response - data:", data);
+          console.log("Query response - error:", error);
 
-            if (error) {
-              console.error("❌ Error checking user company:", error);
-              toast.error("Error al verificar la empresa");
-              setIsLoading(false);
-              return;
-            }
-            
-            if (!data) {
-              console.log("ℹ️ No company found for editing");
-              navigate("/company-setup");
-              return;
-            }
-            
-            console.log("✅ Company found for editing:", data);
-            setIsEditing(true);
-            setCompanyData(data);
-            setSelectedCompanyId(data.id);
+          if (error) {
+            console.error("❌ Error checking user company:", error);
+            console.error("Error details:", {
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            });
+            toast.error("Error al verificar la empresa");
             setIsLoading(false);
             return;
-          } else {
-            // If not in edit mode, redirect to dashboard since user already has company access
-            console.log("✅ User has company access, redirecting to dashboard");
-            navigate("/dashboard");
+          }
+          
+          if (!data) {
+            console.log("ℹ️ No company found for user");
+            navigate("/company-setup");
             return;
           }
+          
+          console.log("✅ Company found for user:", data);
+          setIsEditing(true);
+          setCompanyData(data);
+          setIsLoading(false);
+          return;
         }
-        
+
         // Check if user is an invited user
         console.log("🔍 Checking if user was invited...");
         const userResponse = await supabase.auth.getUser();
@@ -144,6 +107,11 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
         
         if (invitationError) {
           console.error("❌ Error checking user invitations:", invitationError);
+          console.error("Error details:", {
+            message: invitationError.message,
+            details: invitationError.details,
+            hint: invitationError.hint
+          });
           toast.error("Error al verificar estado de invitación");
         }
         
@@ -173,7 +141,30 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
           toast.error("Tu invitación ha expirado. Contacta al administrador para que la reactive.");
         }
         
-        // Check if ANY company exists in the system
+        // Check if user has their own company
+        console.log("🔍 Checking if user has a company...");
+        const { data: userCompany, error: companyError } = await supabase
+          .from("companies")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        console.log("User company check result:", userCompany);
+
+        if (companyError) {
+          console.error("❌ Error checking for user company:", companyError);
+          toast.error("Error al verificar la empresa");
+          setIsLoading(false);
+          return;
+        }
+
+        if (userCompany) {
+          console.log("✅ User has a company, redirecting to dashboard");
+          navigate("/dashboard");
+          return;
+        }
+        
+        // If we didn't find a company for this user, check if ANY company exists
         const { data: anyCompany, error: anyCompanyError } = await supabase
           .from("companies")
           .select("*")
@@ -211,12 +202,5 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
     loadCompanyData();
   }, [userId, navigate, isEditMode]);
 
-  return { 
-    companyData, 
-    isLoading, 
-    isEditing,
-    userCompanies,
-    selectedCompanyId,
-    setSelectedCompanyId
-  };
+  return { companyData, isLoading, isEditing };
 }

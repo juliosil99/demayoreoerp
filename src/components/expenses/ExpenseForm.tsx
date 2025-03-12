@@ -4,11 +4,17 @@ import { useExpenseForm } from "./hooks/useExpenseForm";
 import { useExpenseQueries } from "./hooks/useExpenseQueries";
 import { ExpenseFormFields } from "./components/ExpenseFormFields";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FormExpense } from "./types/expense";
+import type { Database } from "@/integrations/supabase/types/base";
+
+type Expense = Database['public']['Tables']['expenses']['Row'] & {
+  bank_accounts: { name: string };
+  chart_of_accounts: { name: string; code: string };
+  contacts: { name: string } | null;
+};
 
 interface ExpenseFormProps {
-  initialData?: FormExpense;
-  expenseData?: FormExpense; // Add this for backward compatibility
+  initialData?: Expense;
+  expenseData?: Expense; // Add this for backward compatibility
   onSuccess?: () => void;
   onClose?: () => void;
 }
@@ -35,7 +41,7 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
   }
 
   // Ensure we have all required data before rendering the form
-  if (!bankAccounts || bankAccounts.length === 0 || !chartAccounts || chartAccounts.length === 0) {
+  if (!bankAccounts?.length || !chartAccounts?.length) {
     return <div className="text-center p-4">No se encontraron las cuentas necesarias.</div>;
   }
 

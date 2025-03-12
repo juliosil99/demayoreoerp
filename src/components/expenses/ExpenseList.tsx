@@ -4,7 +4,19 @@ import { ExpenseTable } from "./components/ExpenseTable";
 import { useState, useCallback, useMemo } from "react";
 import { useExpenseDelete } from "./hooks/useExpenseDelete";
 import { ExpensePagination } from "./components/ExpensePagination";
-import { Expense } from "./types/expense";
+import type { Database } from "@/integrations/supabase/types/base";
+
+type Expense = Database['public']['Tables']['expenses']['Row'] & {
+  bank_accounts: { name: string };
+  chart_of_accounts: { name: string; code: string };
+  contacts: { name: string } | null;
+  expense_invoice_relations?: {
+    invoice: {
+      uuid: string;
+      invoice_number: string;
+    }
+  }[];
+};
 
 interface ExpenseListProps {
   expenses: Expense[];
