@@ -52,6 +52,7 @@ export function useAccountTransactions(accountId: number | null) {
       }
 
       // Fetch transfers where this account is source of the transfer (outflows)
+      // Using the account_transfers_to_account_id_fkey relationship explicitly
       const { data: transfersFrom, error: transfersFromError } = await supabase
         .from('account_transfers')
         .select(`
@@ -61,7 +62,7 @@ export function useAccountTransactions(accountId: number | null) {
           reference_number, 
           notes, 
           to_account_id,
-          bank_accounts!to_account_id(name)
+          bank_accounts!account_transfers_to_account_id_fkey(name)
         `)
         .eq('from_account_id', accountId)
         .eq('user_id', user.id)
@@ -73,6 +74,7 @@ export function useAccountTransactions(accountId: number | null) {
       }
 
       // Fetch transfers where this account is destination of the transfer (inflows)
+      // Using the fk_from_account relationship explicitly
       const { data: transfersTo, error: transfersToError } = await supabase
         .from('account_transfers')
         .select(`
@@ -82,7 +84,7 @@ export function useAccountTransactions(accountId: number | null) {
           reference_number, 
           notes, 
           from_account_id,
-          bank_accounts!from_account_id(name)
+          bank_accounts!fk_from_account(name)
         `)
         .eq('to_account_id', accountId)
         .eq('user_id', user.id)
@@ -116,9 +118,9 @@ export function useAccountTransactions(accountId: number | null) {
         source_id: payment.id
       }));
 
-      // Transform transfers with properly hinted column names
+      // Transform transfers with the correct relationship path
       const transfersFromFormatted: AccountTransaction[] = (transfersFrom || []).map(transfer => {
-        // Get the to_account name using the properly aliased path
+        // Get the to_account name using the properly specified foreign key relationship
         const toAccountName = transfer.bank_accounts?.name || 'otra cuenta';
         
         return {
@@ -134,7 +136,7 @@ export function useAccountTransactions(accountId: number | null) {
       });
 
       const transfersToFormatted: AccountTransaction[] = (transfersTo || []).map(transfer => {
-        // Get the from_account name using the properly aliased path
+        // Get the from_account name using the properly specified foreign key relationship
         const fromAccountName = transfer.bank_accounts?.name || 'otra cuenta';
         
         return {
