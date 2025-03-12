@@ -41,7 +41,8 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
   }
 
   // Ensure we have all required data before rendering the form
-  if (!bankAccounts?.length || !chartAccounts?.length) {
+  if (!Array.isArray(bankAccounts) || bankAccounts.length === 0 || 
+      !Array.isArray(chartAccounts) || chartAccounts.length === 0) {
     return <div className="text-center p-4">No se encontraron las cuentas necesarias.</div>;
   }
 
@@ -52,7 +53,7 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
         setFormData={setFormData}
         bankAccounts={bankAccounts}
         chartAccounts={chartAccounts}
-        suppliers={suppliers || []}
+        suppliers={Array.isArray(suppliers) ? suppliers : []}
       />
 
       <div className="flex justify-end">

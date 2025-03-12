@@ -54,7 +54,7 @@ export function useAccountTransactions(accountId: number | null) {
       // Fetch transfers where this account is source or destination
       const { data: transfersFrom, error: transfersFromError } = await supabase
         .from('account_transfers')
-        .select('id, date, amount, reference_number, notes, to_accounts:to_account_id(name)')
+        .select('id, date, amount, reference_number, notes, to_account:to_account_id(name)')
         .eq('from_account_id', accountId)
         .eq('user_id', user.id)
         .order('date', { ascending: false });
@@ -66,7 +66,7 @@ export function useAccountTransactions(accountId: number | null) {
 
       const { data: transfersTo, error: transfersToError } = await supabase
         .from('account_transfers')
-        .select('id, date, amount, reference_number, notes, from_accounts:from_account_id(name)')
+        .select('id, date, amount, reference_number, notes, from_account:from_account_id(name)')
         .eq('to_account_id', accountId)
         .eq('user_id', user.id)
         .order('date', { ascending: false });
@@ -102,7 +102,7 @@ export function useAccountTransactions(accountId: number | null) {
       const transfersFromFormatted: AccountTransaction[] = (transfersFrom || []).map(transfer => ({
         id: transfer.id,
         date: transfer.date,
-        description: `Transferencia a ${transfer.to_accounts?.name || 'otra cuenta'}`,
+        description: `Transferencia a ${transfer.to_account?.name || 'otra cuenta'}`,
         amount: transfer.amount,
         type: 'out',
         reference: transfer.reference_number || '-',
@@ -113,7 +113,7 @@ export function useAccountTransactions(accountId: number | null) {
       const transfersToFormatted: AccountTransaction[] = (transfersTo || []).map(transfer => ({
         id: transfer.id,
         date: transfer.date,
-        description: `Transferencia de ${transfer.from_accounts?.name || 'otra cuenta'}`,
+        description: `Transferencia de ${transfer.from_account?.name || 'otra cuenta'}`,
         amount: transfer.amount,
         type: 'in',
         reference: transfer.reference_number || '-',

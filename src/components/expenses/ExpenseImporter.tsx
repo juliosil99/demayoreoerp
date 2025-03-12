@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useExpenseQueries } from "./hooks/useExpenseQueries";
+import { useExpenseQueries, BankAccount, ChartAccount, Supplier } from "./hooks/useExpenseQueries";
 import { createExcelTemplate, processExpenseFile } from "./utils/excelUtils";
 import { importExpenses } from "./services/expenseImportService";
 import type { BankAccountsTable } from "@/integrations/supabase/types/bank-accounts";

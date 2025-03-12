@@ -1,16 +1,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { BankAccount as BankAccountType } from "@/components/banking/types";
 
-export interface BankAccount {
-  id: number;
-  name: string;
-  type: "Bank" | "Cash" | "Credit Card" | "Credit Simple";
-  balance: number | null;
-  initial_balance: number | null;
-  balance_date: string | null;
-  created_at?: string | null;
-}
+export interface BankAccount extends BankAccountType {}
 
 export interface ChartAccount {
   id: string;
@@ -33,7 +26,7 @@ export function useExpenseQueries() {
         .from("bank_accounts")
         .select("*");
       if (error) throw error;
-      return data;
+      return data as BankAccount[];
     },
     initialData: [],
   });
@@ -47,7 +40,7 @@ export function useExpenseQueries() {
         .in("account_type", ["expense", "asset", "liability"])
         .order('code');
       if (error) throw error;
-      return data;
+      return data as ChartAccount[];
     },
     initialData: [],
   });
@@ -60,7 +53,7 @@ export function useExpenseQueries() {
         .select("*")
         .eq("type", "supplier");
       if (error) throw error;
-      return data;
+      return data as Supplier[];
     },
     initialData: [],
   });
