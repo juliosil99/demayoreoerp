@@ -12,10 +12,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger({
-      enableChildrenProp: true, // This enables better component selection
-    }),
+    mode === 'development' && componentTagger,
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -23,3 +20,4 @@ export default defineConfig(({ mode }) => ({
     },
   },
 }));
+
