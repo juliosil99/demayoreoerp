@@ -1,5 +1,5 @@
 
-import { BanknoteIcon, CreditCard, Pencil, Trash2 } from "lucide-react";
+import { BanknoteIcon, CreditCard, Pencil, Trash2, FileBarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -12,6 +12,7 @@ import {
 import { formatCurrency } from "@/utils/formatters";
 import { formatDate } from "@/utils/formatters";
 import type { BankAccount } from "./types";
+import { useNavigate } from "react-router-dom";
 
 interface BankAccountsTableProps {
   accounts: BankAccount[];
@@ -20,6 +21,12 @@ interface BankAccountsTableProps {
 }
 
 export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTableProps) {
+  const navigate = useNavigate();
+
+  const handleViewMovements = (accountId: number) => {
+    navigate(`/accounting/banking/account/${accountId}`);
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -64,7 +71,16 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                   <Button
                     variant="ghost"
                     size="icon"
+                    onClick={() => handleViewMovements(account.id)}
+                    title="Ver movimientos"
+                  >
+                    <FileBarChart className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => onEdit(account)}
+                    title="Editar cuenta"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -72,6 +88,7 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                     variant="ghost"
                     size="icon"
                     onClick={() => onDelete(account)}
+                    title="Eliminar cuenta"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

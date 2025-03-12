@@ -12,6 +12,7 @@ import Sales from "@/pages/Sales";
 import Payments from "@/pages/sales/Payments";
 import Invoices from "@/pages/Invoices";
 import Banking from "@/pages/Banking";
+import BankAccountMovements from "@/pages/BankAccountMovements";
 import Contacts from "@/pages/Contacts";
 import ChartOfAccounts from "@/pages/ChartOfAccounts";
 import Expenses from "@/pages/Expenses";
@@ -67,6 +68,7 @@ function App() {
             <Route path="accounting" element={<Accounting />} />
             <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
             <Route path="accounting/banking" element={<Banking />} />
+            <Route path="accounting/banking/account/:accountId" element={<BankAccountMovements />} />
             <Route path="accounting/reports" element={<Reports />} />
             <Route path="accounting/transfers" element={<AccountTransfers />} />
             <Route path="sales-channels" element={<SalesChannels />} />

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface Account {
+export interface Account {
   id: string;
   code: string;
   name: string;
@@ -17,7 +17,7 @@ interface Account {
 }
 
 export function useChartOfAccounts(userId: string | undefined) {
-  return useQuery({
+  return useQuery<Account[], Error>({
     queryKey: ['chart-of-accounts'],
     queryFn: async () => {
       if (!userId) {
