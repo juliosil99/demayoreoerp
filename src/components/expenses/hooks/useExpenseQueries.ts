@@ -16,6 +16,7 @@ export interface Supplier {
   id: string;
   name: string;
   type: string;
+  rfc: string | null;
 }
 
 export function useExpenseQueries() {

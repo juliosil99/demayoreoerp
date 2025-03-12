@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -28,8 +27,8 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
   const downloadTemplate = async () => {
     createExcelTemplate(
       bankAccounts as BankAccountsTable["Row"][], 
-      chartAccounts, 
-      suppliers
+      chartAccounts as any, 
+      suppliers as any
     );
   };
 

@@ -15,6 +15,25 @@ export type AccountTransaction = {
   source_id: string;
 };
 
+// Define interfaces to match the return type from Supabase queries
+interface TransferFrom {
+  id: string;
+  date: string;
+  amount: number;
+  reference_number: string | null;
+  notes: string | null;
+  to_account: { name: string } | null;
+}
+
+interface TransferTo {
+  id: string;
+  date: string;
+  amount: number;
+  reference_number: string | null;
+  notes: string | null;
+  from_account: { name: string } | null;
+}
+
 export function useAccountTransactions(accountId: number | null) {
   const { user } = useAuth();
 
@@ -52,6 +71,7 @@ export function useAccountTransactions(accountId: number | null) {
       }
 
       // Fetch transfers where this account is source or destination
+      // We need to be specific with column names to avoid relationship conflicts
       const { data: transfersFrom, error: transfersFromError } = await supabase
         .from('account_transfers')
         .select('id, date, amount, reference_number, notes, to_account:to_account_id(name)')
@@ -99,7 +119,8 @@ export function useAccountTransactions(accountId: number | null) {
         source_id: payment.id
       }));
 
-      const transfersFromFormatted: AccountTransaction[] = (transfersFrom || []).map(transfer => ({
+      // Use the correctly typed transfer data
+      const transfersFromFormatted: AccountTransaction[] = (transfersFrom as TransferFrom[] || []).map(transfer => ({
         id: transfer.id,
         date: transfer.date,
         description: `Transferencia a ${transfer.to_account?.name || 'otra cuenta'}`,
@@ -110,7 +131,7 @@ export function useAccountTransactions(accountId: number | null) {
         source_id: transfer.id
       }));
 
-      const transfersToFormatted: AccountTransaction[] = (transfersTo || []).map(transfer => ({
+      const transfersToFormatted: AccountTransaction[] = (transfersTo as TransferTo[] || []).map(transfer => ({
         id: transfer.id,
         date: transfer.date,
         description: `Transferencia de ${transfer.from_account?.name || 'otra cuenta'}`,
