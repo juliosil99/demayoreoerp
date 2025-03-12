@@ -15,25 +15,6 @@ export type AccountTransaction = {
   source_id: string;
 };
 
-// Define interfaces to match the return type from Supabase queries
-interface TransferFrom {
-  id: string;
-  date: string;
-  amount: number;
-  reference_number: string | null;
-  notes: string | null;
-  to_account: { name: string } | null;
-}
-
-interface TransferTo {
-  id: string;
-  date: string;
-  amount: number;
-  reference_number: string | null;
-  notes: string | null;
-  from_account: { name: string } | null;
-}
-
 export function useAccountTransactions(accountId: number | null) {
   const { user } = useAuth();
 
@@ -70,29 +51,45 @@ export function useAccountTransactions(accountId: number | null) {
         throw paymentsError;
       }
 
-      // Fetch transfers where this account is source or destination
-      // We need to be specific with column names to avoid relationship conflicts
+      // Fetch transfers where this account is source of the transfer (outflows)
       const { data: transfersFrom, error: transfersFromError } = await supabase
         .from('account_transfers')
-        .select('id, date, amount, reference_number, notes, to_account:to_account_id(name)')
+        .select(`
+          id, 
+          date, 
+          amount, 
+          reference_number, 
+          notes, 
+          to_account_id,
+          bank_accounts!to_account_id(name)
+        `)
         .eq('from_account_id', accountId)
         .eq('user_id', user.id)
         .order('date', { ascending: false });
 
       if (transfersFromError) {
-        toast.error('Error al cargar las transferencias');
+        toast.error('Error al cargar las transferencias salientes');
         throw transfersFromError;
       }
 
+      // Fetch transfers where this account is destination of the transfer (inflows)
       const { data: transfersTo, error: transfersToError } = await supabase
         .from('account_transfers')
-        .select('id, date, amount, reference_number, notes, from_account:from_account_id(name)')
+        .select(`
+          id, 
+          date, 
+          amount, 
+          reference_number, 
+          notes, 
+          from_account_id,
+          bank_accounts!from_account_id(name)
+        `)
         .eq('to_account_id', accountId)
         .eq('user_id', user.id)
         .order('date', { ascending: false });
 
       if (transfersToError) {
-        toast.error('Error al cargar las transferencias');
+        toast.error('Error al cargar las transferencias entrantes');
         throw transfersToError;
       }
 
@@ -119,28 +116,38 @@ export function useAccountTransactions(accountId: number | null) {
         source_id: payment.id
       }));
 
-      // Use the correctly typed transfer data
-      const transfersFromFormatted: AccountTransaction[] = (transfersFrom as TransferFrom[] || []).map(transfer => ({
-        id: transfer.id,
-        date: transfer.date,
-        description: `Transferencia a ${transfer.to_account?.name || 'otra cuenta'}`,
-        amount: transfer.amount,
-        type: 'out',
-        reference: transfer.reference_number || '-',
-        source: 'transfer',
-        source_id: transfer.id
-      }));
+      // Transform transfers with properly hinted column names
+      const transfersFromFormatted: AccountTransaction[] = (transfersFrom || []).map(transfer => {
+        // Get the to_account name using the properly aliased path
+        const toAccountName = transfer.bank_accounts?.name || 'otra cuenta';
+        
+        return {
+          id: transfer.id,
+          date: transfer.date,
+          description: `Transferencia a ${toAccountName}`,
+          amount: transfer.amount,
+          type: 'out',
+          reference: transfer.reference_number || '-',
+          source: 'transfer',
+          source_id: transfer.id
+        };
+      });
 
-      const transfersToFormatted: AccountTransaction[] = (transfersTo as TransferTo[] || []).map(transfer => ({
-        id: transfer.id,
-        date: transfer.date,
-        description: `Transferencia de ${transfer.from_account?.name || 'otra cuenta'}`,
-        amount: transfer.amount,
-        type: 'in',
-        reference: transfer.reference_number || '-',
-        source: 'transfer',
-        source_id: transfer.id
-      }));
+      const transfersToFormatted: AccountTransaction[] = (transfersTo || []).map(transfer => {
+        // Get the from_account name using the properly aliased path
+        const fromAccountName = transfer.bank_accounts?.name || 'otra cuenta';
+        
+        return {
+          id: transfer.id,
+          date: transfer.date,
+          description: `Transferencia de ${fromAccountName}`,
+          amount: transfer.amount,
+          type: 'in',
+          reference: transfer.reference_number || '-',
+          source: 'transfer',
+          source_id: transfer.id
+        };
+      });
 
       // Combine all transactions and sort by date (newest first)
       const allTransactions = [
