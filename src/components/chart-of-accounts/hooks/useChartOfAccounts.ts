@@ -3,19 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-
-export interface Account {
-  id: string;
-  code: string;
-  name: string;
-  account_type: string;
-  sat_code: string | null;
-  account_use: string | null;
-  parent_id: string | null;
-  is_group: boolean;
-  level: number;
-  path: string;
-}
+import { Account } from "../types/account";
 
 export function useChartOfAccounts(userId: string | undefined) {
   const { currentCompany } = useAuth();

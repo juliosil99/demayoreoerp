@@ -2,32 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-
-export interface BankAccount {
-  id: number;
-  name: string;
-  type: string;
-  balance?: number | null;
-  balance_date?: string | null;
-  initial_balance?: number | null;
-  created_at?: string | null;
-}
-
-export interface ChartAccount {
-  id: string;
-  name: string;
-  code: string;
-  account_type?: string;
-  level?: number;
-  is_group?: boolean;
-}
-
-export interface Supplier {
-  id: string;
-  name: string;
-  rfc?: string;
-  type?: string;
-}
+import { BankAccount, ChartAccount, Supplier } from "../types/expense";
 
 export function useExpenseQueries() {
   const { currentCompany } = useAuth();

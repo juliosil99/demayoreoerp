@@ -1,37 +1,12 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReconciliationTable } from "@/components/reconciliation/ReconciliationTable";
-
-export interface ReconciliationExpense {
-  id: string;
-  amount: number;
-  date: string;
-  description: string;
-  bank_accounts: {
-    name: string;
-  };
-  chart_of_accounts: {
-    name: string;
-    code: string;
-  };
-  contacts?: {
-    name: string;
-  } | null;
-  [key: string]: any;
-}
-
-export interface ReconciliationInvoice {
-  id: string; // Using string to match what ReconciliationTable expects
-  uuid: string;
-  invoice_number: string;
-  total_amount: number;
-  paid_amount?: number;
-  invoice_date: string;
-  [key: string]: any;
-}
+import { 
+  ReconciliationExpense, 
+  ReconciliationInvoice 
+} from "@/components/reconciliation/types/reconciliation";
 
 const Reconciliation = () => {
   const { user, currentCompany } = useAuth();

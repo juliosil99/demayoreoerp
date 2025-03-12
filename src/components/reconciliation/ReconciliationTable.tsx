@@ -3,7 +3,10 @@ import { useReconciliation } from "./hooks/useReconciliation";
 import { ExpenseCard } from "./components/ExpenseCard";
 import { InvoiceSearchDialog } from "./components/InvoiceSearchDialog";
 import { AccountAdjustmentDialog } from "./components/AccountAdjustmentDialog";
-import type { ReconciliationExpense, ReconciliationInvoice } from "../../pages/Reconciliation";
+import { 
+  ReconciliationExpense, 
+  ReconciliationInvoice 
+} from "./types/reconciliation";
 
 interface ReconciliationTableProps {
   expenses: ReconciliationExpense[];

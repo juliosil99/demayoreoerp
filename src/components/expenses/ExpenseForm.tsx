@@ -4,31 +4,7 @@ import { useExpenseForm } from "./hooks/useExpenseForm";
 import { useExpenseQueries } from "./hooks/useExpenseQueries";
 import { ExpenseFormFields } from "./components/ExpenseFormFields";
 import { Skeleton } from "@/components/ui/skeleton";
-
-export interface FormExpense {
-  id: string;
-  created_at: string | null;
-  user_id: string;
-  date: string;
-  description: string;
-  amount: number;
-  account_id: number;
-  chart_account_id: string;
-  payment_method: string;
-  reference_number: string | null;
-  notes: string | null;
-  supplier_id: string | null;
-  category: string | null;
-  bank_accounts?: { name: string };
-  chart_of_accounts?: { name: string; code: string };
-  contacts?: { name: string } | null;
-  expense_invoice_relations?: {
-    invoice: {
-      uuid: string;
-      invoice_number: string;
-    }
-  }[];
-}
+import { FormExpense } from "./types/expense";
 
 interface ExpenseFormProps {
   initialData?: FormExpense;
