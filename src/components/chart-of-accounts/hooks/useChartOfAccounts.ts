@@ -10,7 +10,7 @@ export function useChartOfAccounts(userId: string | undefined) {
   
   return useQuery({
     queryKey: ['chart-of-accounts', currentCompany?.id],
-    queryFn: async (): Promise<Account[]> => {
+    queryFn: async () => {
       if (!currentCompany?.id) {
         throw new Error("No company selected");
       }

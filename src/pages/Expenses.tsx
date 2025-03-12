@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,7 +31,7 @@ export default function Expenses() {
 
   const { data: expenses = [], isLoading, refetch } = useQuery({
     queryKey: ["expenses", currentCompany?.id, filters],
-    queryFn: async (): Promise<Expense[]> => {
+    queryFn: async () => {
       if (!currentCompany?.id) return [];
       
       let query = supabase
@@ -62,7 +63,7 @@ export default function Expenses() {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as unknown as Expense[];
+      return data as Expense[];
     },
     enabled: !!currentCompany?.id,
   });

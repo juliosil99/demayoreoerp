@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { FormExpense } from "../ExpenseForm";
+import { FormExpense } from "../types/expense";
 
 export type ExpenseFormData = {
   date: string;

@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,7 +14,7 @@ const Reconciliation = () => {
 
   const { data: expenses = [] } = useQuery({
     queryKey: ["unreconciled-expenses", currentCompany?.id],
-    queryFn: async (): Promise<ReconciliationExpense[]> => {
+    queryFn: async () => {
       if (!currentCompany?.id) return [];
       
       const { data: relations, error: relationsError } = await supabase
@@ -37,14 +38,14 @@ const Reconciliation = () => {
         .order("date", { ascending: false });
 
       if (error) throw error;
-      return data as unknown as ReconciliationExpense[];
+      return data as ReconciliationExpense[];
     },
     enabled: !!currentCompany?.id,
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ["unreconciled-invoices", currentCompany?.id],
-    queryFn: async (): Promise<ReconciliationInvoice[]> => {
+    queryFn: async () => {
       if (!currentCompany?.id) return [];
       
       const { data, error } = await supabase

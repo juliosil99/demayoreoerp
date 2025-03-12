@@ -12,7 +12,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Expense } from "@/pages/Expenses";
+import { Expense } from "../types/expense";
 
 interface ExpenseRowProps {
   expense: Expense;

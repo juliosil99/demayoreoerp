@@ -14,7 +14,7 @@ import {
 import { useExpenseQueries } from "./hooks/useExpenseQueries";
 import { createExcelTemplate, processExpenseFile } from "./utils/excelUtils";
 import { importExpenses } from "./services/expenseImportService";
-import type { BankAccount, ChartAccount, Supplier } from "./hooks/useExpenseQueries";
+import { BankAccount, ChartAccount, Supplier } from "./types/expense";
 
 interface ExpenseImporterProps {
   onSuccess: () => void;
@@ -27,9 +27,9 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
 
   const downloadTemplate = async () => {
     createExcelTemplate(
-      bankAccounts as any[], 
-      chartAccounts as any[], 
-      suppliers as any[]
+      bankAccounts as BankAccount[], 
+      chartAccounts as ChartAccount[], 
+      suppliers as Supplier[]
     );
   };
 

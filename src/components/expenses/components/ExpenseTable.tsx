@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/table";
 import { ExpenseRow } from "./ExpenseRow";
 import { ExpenseTableHeader } from "./ExpenseTableHeader";
-import { Expense } from "@/pages/Expenses";
+import { Expense } from "../types/expense";
 
 interface ExpenseTableProps {
   expenses: Expense[];

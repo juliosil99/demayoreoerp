@@ -9,7 +9,7 @@ export function useExpenseQueries() {
   
   const { data: bankAccounts = [], isLoading: isLoadingBankAccounts } = useQuery({
     queryKey: ["bankAccounts", currentCompany?.id],
-    queryFn: async (): Promise<BankAccount[]> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*")
@@ -23,7 +23,7 @@ export function useExpenseQueries() {
 
   const { data: chartAccounts = [], isLoading: isLoadingChartAccounts } = useQuery({
     queryKey: ["chartAccounts", currentCompany?.id],
-    queryFn: async (): Promise<ChartAccount[]> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("chart_of_accounts")
         .select("*")
@@ -39,7 +39,7 @@ export function useExpenseQueries() {
 
   const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery({
     queryKey: ["suppliers", currentCompany?.id],
-    queryFn: async (): Promise<Supplier[]> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("contacts")
         .select("*")

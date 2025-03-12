@@ -4,7 +4,7 @@ import { ExpenseTable } from "./components/ExpenseTable";
 import { useState, useCallback, useMemo } from "react";
 import { useExpenseDelete } from "./hooks/useExpenseDelete";
 import { ExpensePagination } from "./components/ExpensePagination";
-import { Expense } from "@/pages/Expenses";
+import { Expense } from "./types/expense";
 
 interface ExpenseListProps {
   expenses: Expense[];

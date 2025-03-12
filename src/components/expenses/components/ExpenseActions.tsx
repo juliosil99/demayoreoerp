@@ -20,7 +20,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { useState } from "react";
-import { Expense } from "@/pages/Expenses";
+import { Expense } from "../types/expense";
 
 interface ExpenseActionsProps {
   expense: Expense;
