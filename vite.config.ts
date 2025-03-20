@@ -14,7 +14,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
     },
     plugins: [
       react(),
-      mode === 'development' ? componentTagger : null,
+      mode === 'development' ? componentTagger() : null,
     ].filter(Boolean) as PluginOption[],
     resolve: {
       alias: {
