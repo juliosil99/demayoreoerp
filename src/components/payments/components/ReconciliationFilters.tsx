@@ -1,16 +1,21 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Textarea } from "@/components/ui/textarea";
 
 interface ReconciliationFiltersProps {
   selectedChannel: string;
-  onChannelChange: (value: string) => void;
+  onChannelChange: (channel: string) => void;
   orderNumbers: string;
-  onOrderNumbersChange: (value: string) => void;
+  onOrderNumbersChange: (orderNumbers: string) => void;
 }
 
 export function ReconciliationFilters({
@@ -19,51 +24,48 @@ export function ReconciliationFilters({
   orderNumbers,
   onOrderNumbersChange,
 }: ReconciliationFiltersProps) {
-  const { data: channels } = useQuery({
-    queryKey: ["sales-channels"],
+  const { data: salesChannels } = useQuery({
+    queryKey: ["salesChannels"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sales_channels")
         .select("*")
-        .eq("is_active", true)
-        .order("name");
-      
+        .eq("is_active", true);
       if (error) throw error;
       return data;
     },
   });
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Canal</Label>
-          <Select
-            value={selectedChannel}
-            onValueChange={onChannelChange}
-          >
+    <div className="space-y-4 border p-4 rounded-md">
+      <h3 className="text-lg font-semibold">Filtros</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Canal de Venta</Label>
+          <Select value={selectedChannel} onValueChange={onChannelChange}>
             <SelectTrigger>
-              <SelectValue placeholder="Seleccionar canal" />
+              <SelectValue placeholder="Todos los canales" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              {channels?.map((channel) => (
-                <SelectItem key={channel.id} value={channel.code}>
+              <SelectItem value="">Todos los canales</SelectItem>
+              {salesChannels?.map((channel) => (
+                <SelectItem key={channel.id} value={channel.id}>
                   {channel.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-      </div>
-      <div>
-        <Label>Números de Orden (uno por línea)</Label>
-        <Textarea
-          value={orderNumbers}
-          onChange={(e) => onOrderNumbersChange(e.target.value)}
-          placeholder="Ingresa los números de orden a conciliar&#10;Ejemplo:&#10;ABC123&#10;XYZ789"
-          className="h-[200px] font-mono"
-        />
+
+        <div className="space-y-2">
+          <Label>Números de Orden (separados por coma)</Label>
+          <Input
+            value={orderNumbers}
+            onChange={(e) => onOrderNumbersChange(e.target.value)}
+            placeholder="Ej: 1001, 1002, 1003"
+          />
+        </div>
       </div>
     </div>
   );

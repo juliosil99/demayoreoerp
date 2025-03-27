@@ -1,29 +1,44 @@
 
-interface Totals {
+interface TotalsProps {
   subtotal: number;
-  commission: number;
+  commissions: number;
+  retentions: number;
   shipping: number;
-  retention: number;
   total: number;
 }
 
 interface TotalsSummaryProps {
-  totals: Totals;
+  totals: TotalsProps;
 }
 
 export function TotalsSummary({ totals }: TotalsSummaryProps) {
   return (
-    <div className="mt-4 p-4 bg-muted rounded-lg">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-sm font-medium">Subtotal: ${totals.subtotal.toFixed(2)}</p>
-          <p className="text-sm font-medium">Comisiones: ${totals.commission.toFixed(2)}</p>
-          <p className="text-sm font-medium">Envíos: ${totals.shipping.toFixed(2)}</p>
-          <p className="text-sm font-medium">Retenciones: ${totals.retention.toFixed(2)}</p>
+    <div className="space-y-1 border rounded-md p-4 bg-muted/20">
+      <div className="flex justify-between items-center">
+        <span className="font-medium">Subtotal:</span>
+        <span>${totals.subtotal.toFixed(2)}</span>
+      </div>
+      {totals.commissions > 0 && (
+        <div className="flex justify-between items-center">
+          <span>Comisiones:</span>
+          <span>${totals.commissions.toFixed(2)}</span>
         </div>
-        <div className="text-right">
-          <p className="text-lg font-bold">Total a Recibir: ${totals.total.toFixed(2)}</p>
+      )}
+      {totals.retentions > 0 && (
+        <div className="flex justify-between items-center">
+          <span>Retenciones:</span>
+          <span>${totals.retentions.toFixed(2)}</span>
         </div>
+      )}
+      {totals.shipping > 0 && (
+        <div className="flex justify-between items-center">
+          <span>Envío:</span>
+          <span>${totals.shipping.toFixed(2)}</span>
+        </div>
+      )}
+      <div className="flex justify-between items-center pt-2 border-t font-bold">
+        <span>Total:</span>
+        <span>${totals.total.toFixed(2)}</span>
       </div>
     </div>
   );

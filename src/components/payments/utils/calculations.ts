@@ -1,31 +1,36 @@
 
 interface Sale {
-  price?: number;
-  comission?: number;
-  shipping?: number;
-  retention?: number;
+  price: number;
+  comission?: number | null;
+  retention?: number | null;
+  shipping?: number | null;
 }
 
-interface Totals {
-  subtotal: number;
-  commission: number;
-  shipping: number;
-  retention: number;
-  total: number;
-}
+export const calculateTotals = (sales: Sale[]) => {
+  const subtotal = sales.reduce((sum, sale) => sum + (sale.price || 0), 0);
+  
+  const commissions = sales.reduce(
+    (sum, sale) => sum + (sale.comission || 0), 
+    0
+  );
+  
+  const retentions = sales.reduce(
+    (sum, sale) => sum + (sale.retention || 0), 
+    0
+  );
+  
+  const shipping = sales.reduce(
+    (sum, sale) => sum + (sale.shipping || 0), 
+    0
+  );
 
-export const calculateTotals = (sales: Sale[]): Totals => {
-  return sales?.reduce((acc, sale) => ({
-    subtotal: acc.subtotal + (sale.price || 0),
-    commission: acc.commission + (sale.comission || 0),
-    shipping: acc.shipping + (sale.shipping || 0),
-    retention: acc.retention + (sale.retention || 0),
-    total: acc.total + ((sale.price || 0) - (sale.comission || 0) - (sale.shipping || 0) - (sale.retention || 0))
-  }), {
-    subtotal: 0,
-    commission: 0,
-    shipping: 0,
-    retention: 0,
-    total: 0
-  } as Totals);
+  const total = subtotal;
+  
+  return {
+    subtotal,
+    commissions,
+    retentions,
+    shipping,
+    total
+  };
 };

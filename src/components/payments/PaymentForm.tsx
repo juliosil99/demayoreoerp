@@ -10,7 +10,7 @@ export type Payment = {
   amount: number;
   payment_method: string;
   reference_number: string | null;
-  sales_channel_id?: string;
+  sales_channel_id: string | null;
   account_id: number;
   notes?: string;
 };

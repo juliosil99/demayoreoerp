@@ -1074,6 +1074,7 @@ export type Database = {
           notes: string | null
           payment_method: string
           reference_number: string | null
+          sales_channel_id: string | null
           status: string | null
           user_id: string
         }
@@ -1087,6 +1088,7 @@ export type Database = {
           notes?: string | null
           payment_method: string
           reference_number?: string | null
+          sales_channel_id?: string | null
           status?: string | null
           user_id: string
         }
@@ -1100,6 +1102,7 @@ export type Database = {
           notes?: string | null
           payment_method?: string
           reference_number?: string | null
+          sales_channel_id?: string | null
           status?: string | null
           user_id?: string
         }
@@ -1116,6 +1119,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_sales_channel_id_fkey"
+            columns: ["sales_channel_id"]
+            isOneToOne: false
+            referencedRelation: "sales_channels"
             referencedColumns: ["id"]
           },
         ]

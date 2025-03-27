@@ -1,5 +1,4 @@
 
-import { format } from "date-fns";
 import {
   Table,
   TableBody,
@@ -8,53 +7,57 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { format } from "date-fns";
 
 interface Sale {
   id: number;
   date: string;
+  Channel: string;
   orderNumber: string;
-  price?: number;
-  comission?: number;
-  shipping?: number;
-  retention?: number;
+  price: number;
+  productName: string;
 }
 
 interface ReconciliationTableProps {
-  sales: Sale[] | null;
+  sales?: Sale[];
   isLoading: boolean;
 }
 
 export function ReconciliationTable({ sales, isLoading }: ReconciliationTableProps) {
+  if (isLoading) {
+    return <div className="text-center py-4">Cargando ventas...</div>;
+  }
+
+  if (!sales?.length) {
+    return (
+      <div className="text-center py-4 border rounded-md">
+        No hay ventas sin reconciliar que coincidan con los filtros.
+      </div>
+    );
+  }
+
   return (
-    <div className="max-h-[400px] overflow-y-auto">
+    <div className="border rounded-md overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Fecha</TableHead>
-            <TableHead>No. Orden</TableHead>
-            <TableHead>Monto</TableHead>
-            <TableHead>Comisión</TableHead>
-            <TableHead>Envío</TableHead>
-            <TableHead>Retención</TableHead>
-            <TableHead>Total</TableHead>
+            <TableHead>Orden</TableHead>
+            <TableHead>Canal</TableHead>
+            <TableHead>Producto</TableHead>
+            <TableHead className="text-right">Monto</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={7} className="text-center">Cargando...</TableCell>
-            </TableRow>
-          ) : sales?.map((sale) => (
+          {sales.map((sale) => (
             <TableRow key={sale.id}>
-              <TableCell>{format(new Date(sale.date), 'dd/MM/yyyy')}</TableCell>
-              <TableCell>{sale.orderNumber}</TableCell>
-              <TableCell>${sale.price?.toFixed(2)}</TableCell>
-              <TableCell>${sale.comission?.toFixed(2)}</TableCell>
-              <TableCell>${sale.shipping?.toFixed(2)}</TableCell>
-              <TableCell>${sale.retention?.toFixed(2)}</TableCell>
               <TableCell>
-                ${((sale.price || 0) - (sale.comission || 0) - (sale.shipping || 0) - (sale.retention || 0)).toFixed(2)}
+                {sale.date ? format(new Date(sale.date), "dd/MM/yyyy") : "-"}
               </TableCell>
+              <TableCell>{sale.orderNumber || "-"}</TableCell>
+              <TableCell>{sale.Channel || "-"}</TableCell>
+              <TableCell>{sale.productName || "-"}</TableCell>
+              <TableCell className="text-right">${sale.price?.toFixed(2) || "0.00"}</TableCell>
             </TableRow>
           ))}
         </TableBody>

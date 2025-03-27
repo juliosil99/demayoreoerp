@@ -12,6 +12,7 @@ export interface BulkReconcileParams {
     account_id: number;
     payment_method: string;
     reference_number?: string;
+    sales_channel_id?: string;
   };
 }
 
