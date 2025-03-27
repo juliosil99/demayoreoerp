@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Upload, Download } from "lucide-react";
+import { Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,12 +11,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useExpenseQueries, BankAccount, ChartAccount, Supplier } from "./hooks/useExpenseQueries";
-import { createExcelTemplate, processExpenseFile } from "./utils/excelUtils";
+import { useExpenseQueries } from "./hooks/useExpenseQueries";
+import { processExpenseFile } from "./utils/excelUtils";
 import { importExpenses } from "./services/expenseImportService";
-import type { BankAccountsTable } from "@/integrations/supabase/types/bank-accounts";
-import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ImportProgressBar } from "./components/importer/ImportProgressBar";
+import { ImportErrorDisplay } from "./components/importer/ImportErrorDisplay";
+import { TemplateDownloader } from "./components/importer/TemplateDownloader";
+import { FileUploadForm } from "./components/importer/FileUploadForm";
 
 interface ExpenseImporterProps {
   onSuccess: () => void;
@@ -30,25 +31,6 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
   const [showErrors, setShowErrors] = useState(false);
   const { user } = useAuth();
   const { bankAccounts, chartAccounts, suppliers } = useExpenseQueries();
-
-  const downloadTemplate = async () => {
-    try {
-      console.log("Downloading template with data:", {
-        bankAccounts: bankAccounts?.length,
-        chartAccounts: chartAccounts?.length,
-        suppliers: suppliers?.length
-      });
-      
-      createExcelTemplate(
-        bankAccounts as BankAccountsTable["Row"][], 
-        chartAccounts as any, 
-        suppliers as any
-      );
-    } catch (error) {
-      console.error("Error downloading template:", error);
-      toast.error("Error al descargar la plantilla");
-    }
-  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -133,10 +115,11 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
             <p className="text-sm text-muted-foreground">
               Sube un archivo CSV o XLSX con los siguientes encabezados:
             </p>
-            <Button variant="outline" onClick={downloadTemplate} size="sm">
-              <Download className="mr-2 h-4 w-4" />
-              Descargar Plantilla
-            </Button>
+            <TemplateDownloader 
+              bankAccounts={bankAccounts} 
+              chartAccounts={chartAccounts} 
+              suppliers={suppliers}
+            />
           </div>
           <ul className="list-disc list-inside text-sm text-muted-foreground">
             <li>Fecha (Formato: YYYY-MM-DD)</li>
@@ -151,50 +134,21 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
             <li>Categoría</li>
           </ul>
           
-          {isUploading && totalExpenses > 0 && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Importando gastos...</span>
-                <span>{Math.round(progress)}%</span>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
-          )}
+          <ImportProgressBar 
+            progress={progress} 
+            totalExpenses={totalExpenses} 
+            isUploading={isUploading}
+          />
           
-          {showErrors && errors.length > 0 && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertDescription>
-                <div className="max-h-40 overflow-y-auto text-xs">
-                  <p className="font-semibold mb-2">Errores encontrados:</p>
-                  <ul className="list-disc list-inside">
-                    {errors.map((error, index) => (
-                      <li key={index}>{error}</li>
-                    ))}
-                  </ul>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
+          <ImportErrorDisplay 
+            errors={errors} 
+            showErrors={showErrors} 
+          />
           
-          <div className="flex items-center gap-4">
-            <input
-              type="file"
-              accept=".csv,.xlsx"
-              onChange={handleFileUpload}
-              disabled={isUploading}
-              className="max-w-xs"
-            />
-            <Button disabled={isUploading}>
-              {isUploading ? (
-                "Importando..."
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Importar
-                </>
-              )}
-            </Button>
-          </div>
+          <FileUploadForm 
+            isUploading={isUploading} 
+            onFileSelect={handleFileUpload} 
+          />
         </div>
       </DialogContent>
     </Dialog>
