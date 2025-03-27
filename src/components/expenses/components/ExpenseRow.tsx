@@ -1,9 +1,10 @@
 
 import { TableCell, TableRow } from "@/components/ui/table";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { es } from 'date-fns/locale';
 import { ExpenseActions } from "./ExpenseActions";
 import { useState } from "react";
+import { formatDate } from "@/utils/formatters";
 import { 
   Dialog,
   DialogContent,
@@ -62,11 +63,26 @@ export function ExpenseRow({
     setIsLogOpen(false);
   };
 
+  // Explicitly parse the date and ensure it's displayed correctly
+  // This avoids timezone issues that can shift the displayed date
+  const displayDate = () => {
+    try {
+      if (!expense.date) return '-';
+      
+      // Parse the ISO date string directly to avoid any timezone shifts
+      const dateObj = parseISO(expense.date);
+      return format(dateObj, 'MMM dd, yyyy', { locale: es });
+    } catch (error) {
+      console.error("Error formatting date:", error, expense.date);
+      return expense.date || '-';
+    }
+  };
+
   return (
     <>
       <TableRow key={expense.id}>
         <TableCell>
-          {format(new Date(expense.date + 'T00:00:00'), 'MMM dd, yyyy', { locale: es })}
+          {displayDate()}
         </TableCell>
         <TableCell>{expense.description}</TableCell>
         <TableCell>${expense.amount.toFixed(2)}</TableCell>
