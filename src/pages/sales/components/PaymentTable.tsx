@@ -37,12 +37,23 @@ export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentT
   // Helper function to safely format dates with the correct locale
   const formatDate = (dateString: string) => {
     try {
+      console.log('DEBUG DATE - Original date string:', dateString);
+      
       // Create a date object from the string
       const date = new Date(dateString);
+      console.log('DEBUG DATE - JS Date object:', date.toString());
+      console.log('DEBUG DATE - Date components:', {
+        year: date.getFullYear(),
+        month: date.getMonth() + 1, // +1 because months are 0-indexed
+        day: date.getDate(),
+        fullISO: date.toISOString()
+      });
       
       // Format it as day/month/year (Mexican format)
-      // Use dd/MM/yyyy to ensure day and month both display with 2 digits
-      return format(date, 'dd/MM/yyyy');
+      const formattedDate = format(date, 'dd/MM/yyyy');
+      console.log('DEBUG DATE - Formatted result:', formattedDate);
+      
+      return formattedDate;
     } catch (error) {
       console.error("Error formatting date:", error, dateString);
       return dateString || '-';
