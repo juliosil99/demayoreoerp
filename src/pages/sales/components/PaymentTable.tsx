@@ -1,5 +1,5 @@
 
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Pencil, Trash2 } from "lucide-react";
 import { Payment } from "@/components/payments/PaymentForm";
 import { Button } from "@/components/ui/button";
@@ -39,18 +39,12 @@ export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentT
     try {
       console.log('DEBUG DATE - Original date string:', dateString);
       
-      // Create a date object from the string
-      const date = new Date(dateString);
-      console.log('DEBUG DATE - JS Date object:', date.toString());
-      console.log('DEBUG DATE - Date components:', {
-        year: date.getFullYear(),
-        month: date.getMonth() + 1, // +1 because months are 0-indexed
-        day: date.getDate(),
-        fullISO: date.toISOString()
-      });
+      // Use parseISO to correctly handle ISO format dates without timezone issues
+      const parsedDate = parseISO(dateString);
+      console.log('DEBUG DATE - Parsed ISO date:', parsedDate.toString());
       
       // Format it as day/month/year (Mexican format)
-      const formattedDate = format(date, 'dd/MM/yyyy');
+      const formattedDate = format(parsedDate, 'dd/MM/yyyy');
       console.log('DEBUG DATE - Formatted result:', formattedDate);
       
       return formattedDate;
