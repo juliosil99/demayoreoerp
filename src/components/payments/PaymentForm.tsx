@@ -10,8 +10,8 @@ export type Payment = {
   amount: number;
   payment_method: string;
   reference_number: string | null;
-  client_id?: string;
-  account_id: number;  // Cambiado de string a number
+  sales_channel_id?: string;
+  account_id: number;
   notes?: string;
 };
 
@@ -25,7 +25,7 @@ export function PaymentForm({ onSuccess, paymentToEdit }: PaymentFormProps) {
     onSuccess,
     paymentToEdit,
   });
-  const { bankAccounts, clients } = usePaymentQueries();
+  const { bankAccounts, salesChannels } = usePaymentQueries();
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -33,7 +33,7 @@ export function PaymentForm({ onSuccess, paymentToEdit }: PaymentFormProps) {
         formData={formData}
         setFormData={setFormData}
         bankAccounts={bankAccounts || []}
-        clients={clients || []}
+        salesChannels={salesChannels || []}
       />
 
       <div className="flex justify-end">

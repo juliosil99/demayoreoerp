@@ -10,7 +10,7 @@ import { Payment } from "../PaymentForm";
 export type PaymentFormData = {
   date: string;
   amount: string;
-  client_id: string;
+  sales_channel_id: string;
   account_id: string;
   payment_method: string;
   reference_number: string;
@@ -20,7 +20,7 @@ export type PaymentFormData = {
 const initialFormData: PaymentFormData = {
   date: format(new Date(), 'yyyy-MM-dd'),
   amount: "",
-  client_id: "",
+  sales_channel_id: "",
   account_id: "",
   payment_method: "cash",
   reference_number: "",
@@ -43,7 +43,7 @@ export function usePaymentForm({ onSuccess, paymentToEdit }: UsePaymentFormProps
       setFormData({
         date: paymentToEdit.date,
         amount: paymentToEdit.amount.toString(),
-        client_id: paymentToEdit.client_id || "",
+        sales_channel_id: paymentToEdit.sales_channel_id || "",
         account_id: paymentToEdit.account_id.toString(),
         payment_method: paymentToEdit.payment_method,
         reference_number: paymentToEdit.reference_number || "",
@@ -61,7 +61,7 @@ export function usePaymentForm({ onSuccess, paymentToEdit }: UsePaymentFormProps
         .update({
           date: values.date,
           amount: parseFloat(values.amount),
-          client_id: values.client_id || null,
+          sales_channel_id: values.sales_channel_id || null,
           account_id: parseInt(values.account_id),
           payment_method: values.payment_method,
           reference_number: values.reference_number || null,
@@ -94,7 +94,7 @@ export function usePaymentForm({ onSuccess, paymentToEdit }: UsePaymentFormProps
         user_id: user.id,
         date: values.date,
         amount: parseFloat(values.amount),
-        client_id: values.client_id || null,
+        sales_channel_id: values.sales_channel_id || null,
         account_id: parseInt(values.account_id),
         payment_method: values.payment_method,
         reference_number: values.reference_number || null,

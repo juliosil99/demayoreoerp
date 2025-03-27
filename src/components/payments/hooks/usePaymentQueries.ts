@@ -14,13 +14,13 @@ export function usePaymentQueries() {
     },
   });
 
-  const { data: clients } = useQuery({
-    queryKey: ["clients"],
+  const { data: salesChannels } = useQuery({
+    queryKey: ["salesChannels"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("contacts")
+        .from("sales_channels")
         .select("*")
-        .eq("type", "client");
+        .eq("is_active", true);
       if (error) throw error;
       return data;
     },
@@ -28,6 +28,6 @@ export function usePaymentQueries() {
 
   return {
     bankAccounts,
-    clients,
+    salesChannels,
   };
 }

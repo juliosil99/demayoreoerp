@@ -14,14 +14,14 @@ interface PaymentFormFieldsProps {
   formData: PaymentFormData;
   setFormData: (data: PaymentFormData) => void;
   bankAccounts: any[];
-  clients: any[];
+  salesChannels: any[];
 }
 
 export function PaymentFormFields({
   formData,
   setFormData,
   bankAccounts,
-  clients,
+  salesChannels,
 }: PaymentFormFieldsProps) {
   return (
     <>
@@ -48,18 +48,18 @@ export function PaymentFormFields({
         </div>
 
         <div className="space-y-2">
-          <Label>Cliente</Label>
+          <Label>Canal de Venta</Label>
           <Select
-            value={formData.client_id}
-            onValueChange={(value) => setFormData({ ...formData, client_id: value })}
+            value={formData.sales_channel_id}
+            onValueChange={(value) => setFormData({ ...formData, sales_channel_id: value })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Seleccionar cliente" />
+              <SelectValue placeholder="Seleccionar canal" />
             </SelectTrigger>
             <SelectContent>
-              {clients?.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.name}
+              {salesChannels?.map((channel) => (
+                <SelectItem key={channel.id} value={channel.id}>
+                  {channel.name}
                 </SelectItem>
               ))}
             </SelectContent>

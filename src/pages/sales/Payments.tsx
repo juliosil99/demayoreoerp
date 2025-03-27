@@ -26,7 +26,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 type PaymentWithRelations = Payment & {
-  contacts: { name: string } | null;
+  sales_channels: { name: string } | null;
   bank_accounts: { name: string };
 };
 
@@ -44,7 +44,7 @@ export default function Payments() {
         .from('payments')
         .select(`
           *,
-          contacts (name),
+          sales_channels (name),
           bank_accounts (name)
         `)
         .eq('user_id', user!.id)
@@ -140,7 +140,7 @@ export default function Payments() {
       amount: payment.amount,
       payment_method: payment.payment_method,
       reference_number: payment.reference_number,
-      client_id: payment.client_id,
+      sales_channel_id: payment.sales_channel_id,
       account_id: Number(payment.account_id),
       notes: payment.notes,
     };
@@ -192,7 +192,7 @@ export default function Payments() {
           <TableHeader>
             <TableRow>
               <TableHead>Fecha</TableHead>
-              <TableHead>Cliente</TableHead>
+              <TableHead>Canal de Venta</TableHead>
               <TableHead>Cuenta</TableHead>
               <TableHead>Método de Pago</TableHead>
               <TableHead>Referencia</TableHead>
@@ -204,7 +204,7 @@ export default function Payments() {
             {payments?.map((payment) => (
               <TableRow key={payment.id}>
                 <TableCell>{format(new Date(payment.date), 'dd/MM/yyyy')}</TableCell>
-                <TableCell>{payment.contacts?.name}</TableCell>
+                <TableCell>{payment.sales_channels?.name || '-'}</TableCell>
                 <TableCell>{payment.bank_accounts.name}</TableCell>
                 <TableCell>
                   {payment.payment_method === 'cash' ? 'Efectivo' :
