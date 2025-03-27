@@ -8,6 +8,7 @@ import { useBulkReconcile } from "./hooks/useBulkReconcile";
 import { PaymentTable } from "./components/PaymentTable";
 import { PaymentHeader } from "./components/PaymentHeader";
 import { PaymentFormDialog } from "./components/PaymentFormDialog";
+import { PaymentPagination } from "./components/PaymentPagination";
 
 type PaymentWithRelations = Payment & {
   sales_channels: { name: string } | null;
@@ -18,8 +19,14 @@ export default function Payments() {
   const [isAddingPayment, setIsAddingPayment] = useState(false);
   const [showBulkReconciliation, setShowBulkReconciliation] = useState(false);
   const [paymentToEdit, setPaymentToEdit] = useState<Payment | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
-  const { data: payments, isLoading } = usePaymentsQuery();
+  const { data: payments, isLoading, totalCount } = usePaymentsQuery({
+    page: currentPage,
+    pageSize: ITEMS_PER_PAGE
+  });
+  
   const deletePaymentMutation = usePaymentDelete();
   const bulkReconcileMutation = useBulkReconcile();
 
@@ -49,6 +56,12 @@ export default function Payments() {
     setPaymentToEdit(null);
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <PaymentHeader 
@@ -74,6 +87,13 @@ export default function Payments() {
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
+      />
+      
+      <PaymentPagination
+        totalItems={totalCount}
+        itemsPerPage={ITEMS_PER_PAGE}
+        currentPage={currentPage}
+        onPageChange={handlePageChange}
       />
     </div>
   );

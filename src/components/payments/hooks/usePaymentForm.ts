@@ -81,6 +81,7 @@ export function usePaymentForm({ onSuccess, paymentToEdit }: UsePaymentFormProps
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["payments-count"] });
       toast.success("Pago actualizado exitosamente");
       setFormData(initialFormData);
       onSuccess?.();
@@ -117,6 +118,7 @@ export function usePaymentForm({ onSuccess, paymentToEdit }: UsePaymentFormProps
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["payments-count"] });
       toast.success("Pago registrado exitosamente");
       setFormData(initialFormData);
       onSuccess?.();
