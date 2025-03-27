@@ -1,5 +1,5 @@
 
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Pencil, Trash2 } from "lucide-react";
 import { Payment } from "@/components/payments/PaymentForm";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatCurrency } from "@/utils/formatters";
 
 type PaymentWithRelations = Payment & {
   sales_channels: { name: string } | null;
@@ -33,6 +34,18 @@ export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentT
     return <div className="text-center py-4">No hay pagos registrados.</div>;
   }
 
+  // Helper function to safely format dates
+  const formatDate = (dateString: string) => {
+    try {
+      // Ensure we're working with a valid date by parsing it first
+      const date = new Date(dateString);
+      return format(date, 'dd/MM/yyyy');
+    } catch (error) {
+      console.error("Error formatting date:", error, dateString);
+      return dateString || '-';
+    }
+  };
+
   return (
     <div className="rounded-md border overflow-x-auto">
       <Table>
@@ -50,7 +63,7 @@ export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentT
         <TableBody>
           {payments.map((payment) => (
             <TableRow key={payment.id}>
-              <TableCell>{format(new Date(payment.date), 'dd/MM/yyyy')}</TableCell>
+              <TableCell>{formatDate(payment.date)}</TableCell>
               <TableCell>{payment.sales_channels?.name || '-'}</TableCell>
               <TableCell>{payment.bank_accounts.name}</TableCell>
               <TableCell>
@@ -59,7 +72,7 @@ export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentT
                  payment.payment_method === 'check' ? 'Cheque' : 'Tarjeta de Crédito'}
               </TableCell>
               <TableCell>{payment.reference_number || '-'}</TableCell>
-              <TableCell className="text-right">${payment.amount.toFixed(2)}</TableCell>
+              <TableCell className="text-right">{formatCurrency(payment.amount)}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button

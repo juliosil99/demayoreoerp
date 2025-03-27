@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -40,8 +39,12 @@ export function usePaymentForm({ onSuccess, paymentToEdit }: UsePaymentFormProps
 
   useEffect(() => {
     if (paymentToEdit) {
+      const formattedDate = paymentToEdit.date 
+        ? format(new Date(paymentToEdit.date), 'yyyy-MM-dd') 
+        : format(new Date(), 'yyyy-MM-dd');
+      
       setFormData({
-        date: paymentToEdit.date,
+        date: formattedDate,
         amount: paymentToEdit.amount.toString(),
         sales_channel_id: paymentToEdit.sales_channel_id || "",
         account_id: paymentToEdit.account_id.toString(),
