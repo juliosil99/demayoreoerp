@@ -1,6 +1,6 @@
 
 import { utils, writeFile, read } from "xlsx";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { BankAccountsTable } from "@/integrations/supabase/types/bank-accounts";
 import { toast } from "sonner";
 
@@ -14,6 +14,16 @@ interface Supplier {
   id: string;
   name: string;
   rfc: string | null;
+}
+
+// Excel dates are stored as days since 1900-01-01 (with a couple of quirks)
+// This function converts Excel's numeric date to a proper JS Date
+function excelDateToJSDate(excelDate: number): Date {
+  // Excel has a leap year bug where it thinks 1900 is a leap year
+  // So we need to adjust for dates after February 28, 1900
+  const date = new Date(Date.UTC(1899, 11, 30));
+  const adjustedExcelDate = excelDate > 60 ? excelDate - 1 : excelDate;
+  return addDays(date, adjustedExcelDate);
 }
 
 export const createExcelTemplate = (
@@ -140,8 +150,28 @@ export const processExpenseFile = async (file: File) => {
     }
 
     return jsonData.map((row: any, index: number) => {
+      let formattedDate;
+      
+      // Handle date conversion
+      if (row.Fecha || row.date) {
+        const dateValue = row.Fecha || row.date;
+        
+        // Check if it's a numeric Excel date
+        if (typeof dateValue === 'number') {
+          console.log(`Converting Excel numeric date ${dateValue} for row ${index + 1}`);
+          const jsDate = excelDateToJSDate(dateValue);
+          formattedDate = format(jsDate, 'yyyy-MM-dd');
+          console.log(`Converted date: ${formattedDate}`);
+        } else {
+          // Handle string date formats
+          formattedDate = dateValue;
+        }
+      } else {
+        formattedDate = format(new Date(), 'yyyy-MM-dd');
+      }
+      
       const mappedRow = {
-        date: row.Fecha || row.date || format(new Date(), 'yyyy-MM-dd'),
+        date: formattedDate,
         description: row.Descripción || row.description || "",
         amount: row.Monto || row.amount || 0,
         account_id: row["ID Cuenta"] || row.account_id || "",
@@ -153,7 +183,7 @@ export const processExpenseFile = async (file: File) => {
         category: row.Categoría || row.category || "",
       };
       
-      if (index === 0 || index === jsonData.length - 1) {
+      if (index === 0 || index === jsonData.length - 1 || index % 50 === 0) {
         console.log(`Mapped row ${index + 1}:`, mappedRow);
       }
       

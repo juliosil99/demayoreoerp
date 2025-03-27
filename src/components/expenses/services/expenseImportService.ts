@@ -62,12 +62,22 @@ export const importExpenses = async (
           continue;
         }
 
+        // Validate date format to prevent DB errors
+        const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+        if (typeof expenseData.date === 'string' && !datePattern.test(expenseData.date)) {
+          const errorMsg = `Fila ${i+1}: Formato de fecha inválido. Debe ser YYYY-MM-DD, recibido: ${expenseData.date}`;
+          console.error(errorMsg);
+          errors.push(errorMsg);
+          errorCount++;
+          continue;
+        }
+
         // Format data for insert
         const formattedExpense = {
           ...expenseData,
           user_id: userId,
           amount: parseFloat(expenseData.amount.toString()),
-          account_id: parseInt(expenseData.account_id.toString())
+          account_id: parseInt(expenseData.account_id.toString()),
         };
 
         console.log("Formatted expense data:", formattedExpense);
