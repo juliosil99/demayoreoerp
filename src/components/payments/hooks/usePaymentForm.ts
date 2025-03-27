@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -39,6 +40,7 @@ export function usePaymentForm({ onSuccess, paymentToEdit }: UsePaymentFormProps
 
   useEffect(() => {
     if (paymentToEdit) {
+      // Ensure date is properly formatted for input (yyyy-MM-dd)
       const formattedDate = paymentToEdit.date 
         ? format(new Date(paymentToEdit.date), 'yyyy-MM-dd') 
         : format(new Date(), 'yyyy-MM-dd');

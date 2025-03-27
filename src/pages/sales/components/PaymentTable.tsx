@@ -1,5 +1,5 @@
 
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { Pencil, Trash2 } from "lucide-react";
 import { Payment } from "@/components/payments/PaymentForm";
 import { Button } from "@/components/ui/button";
@@ -34,11 +34,14 @@ export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentT
     return <div className="text-center py-4">No hay pagos registrados.</div>;
   }
 
-  // Helper function to safely format dates
+  // Helper function to safely format dates with the correct locale
   const formatDate = (dateString: string) => {
     try {
-      // Ensure we're working with a valid date by parsing it first
+      // Create a date object from the string
       const date = new Date(dateString);
+      
+      // Format it as day/month/year (Mexican format)
+      // Use dd/MM/yyyy to ensure day and month both display with 2 digits
       return format(date, 'dd/MM/yyyy');
     } catch (error) {
       console.error("Error formatting date:", error, dateString);
