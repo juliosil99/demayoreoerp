@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 
-// Use the same interface structure as in useAccountTransfersList.ts
+// Define the TransferRow interface directly
 interface TransferRow {
   id: string;
   date: string;

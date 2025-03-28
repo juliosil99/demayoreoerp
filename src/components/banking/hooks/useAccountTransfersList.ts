@@ -2,10 +2,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { AccountTransfersTable } from "@/integrations/supabase/types/account-transfers";
 
 // Define the TransferRow type properly without using bracket notation
-interface TransferRow extends Omit<AccountTransfersTable["Row"], ""> {
+interface TransferRow {
   id: string;
   date: string;
   from_account_id: number;
@@ -17,6 +16,7 @@ interface TransferRow extends Omit<AccountTransfersTable["Row"], ""> {
   status: string;
   from_account?: { name: string };
   to_account?: { name: string };
+  created_at?: string;
 }
 
 export function useAccountTransfersList() {
@@ -36,6 +36,7 @@ export function useAccountTransfersList() {
           reference_number, 
           notes, 
           status,
+          user_id,
           from_account:bank_accounts!fk_from_account(name),
           to_account:bank_accounts!account_transfers_to_account_id_fkey(name)
         `)
