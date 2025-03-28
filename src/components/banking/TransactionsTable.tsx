@@ -72,10 +72,12 @@ export function TransactionsTable({ account, transactions }: TransactionsTablePr
       };
     });
     
-    // Re-sort all processed transactions to display newest first
-    return [...processedTransactionsAfter, ...processedTransactionsBefore].sort((a, b) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    // Get processed transactions after but reverse them to display newest first
+    // while preserving the correctly calculated running balance
+    const reversedProcessedTransactionsAfter = [...processedTransactionsAfter].reverse();
+    
+    // Combine all transactions with newest first
+    return [...reversedProcessedTransactionsAfter, ...processedTransactionsBefore];
   }, [transactions, account]);
 
   if (!transactionsWithBalance || transactionsWithBalance.length === 0) {
