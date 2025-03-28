@@ -10,12 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowLeftIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function AccountTransfers() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     date: format(new Date(), 'yyyy-MM-dd'),
     from_account_id: "",
@@ -76,8 +78,21 @@ export default function AccountTransfers() {
     createTransfer.mutate(formData);
   };
 
+  const handleBack = () => {
+    navigate("/accounting/banking");
+  };
+
   return (
     <div className="container mx-auto p-6">
+      <Button 
+        variant="outline" 
+        onClick={handleBack}
+        className="mb-4"
+      >
+        <ArrowLeftIcon className="mr-2 h-4 w-4" />
+        Volver a Cuentas Bancarias
+      </Button>
+      
       <Card>
         <CardHeader>
           <CardTitle>Nueva Transferencia</CardTitle>
