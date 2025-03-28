@@ -7,8 +7,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 import { BankAccount, NewBankAccount } from "@/components/banking/types";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Banking() {
+  const queryClient = useQueryClient();
   const {
     accounts,
     isLoadingAccounts,
@@ -24,6 +27,17 @@ export default function Banking() {
     handleDeleteAccount,
     openEditDialog,
   } = useBankAccounts();
+
+  // Force refresh bank accounts data when component mounts
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
+    
+    // This will force the system to recalculate balances for all accounts
+    accounts.forEach(account => {
+      queryClient.invalidateQueries({ queryKey: ["account-transactions", account.id] });
+      queryClient.invalidateQueries({ queryKey: ["bank-account", account.id] });
+    });
+  }, [queryClient, accounts]);
 
   if (accountsError) {
     return (

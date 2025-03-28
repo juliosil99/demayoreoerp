@@ -37,6 +37,9 @@ export function useBankAccounts() {
         type: account.type as AccountType
       }));
     },
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0 // Consider data stale immediately
   });
 
   // Add new bank account

@@ -9,6 +9,7 @@ import { TransactionsTable } from "@/components/banking/TransactionsTable";
 import { AccountSkeleton } from "@/components/banking/AccountSkeleton";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSyncAccountBalance } from "@/components/banking/hooks/useSyncAccountBalance";
 
 export default function BankAccountMovements() {
   const { accountId } = useParams();
@@ -33,6 +34,9 @@ export default function BankAccountMovements() {
 
   // Fetch transactions for this account
   const { data: transactions, isLoading: isLoadingTransactions } = useAccountTransactions(id);
+
+  // Use the synchronization hook to ensure balance is correct
+  useSyncAccountBalance(account, transactions);
 
   const handleBack = () => {
     navigate("/accounting/banking");
