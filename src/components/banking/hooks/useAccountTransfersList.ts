@@ -4,7 +4,17 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { AccountTransfersTable } from "@/integrations/supabase/types/account-transfers";
 
-interface TransferRow extends AccountTransfersTable["Row"] {
+// Define the TransferRow type properly without using bracket notation
+interface TransferRow extends Omit<AccountTransfersTable["Row"], ""> {
+  id: string;
+  date: string;
+  from_account_id: number;
+  to_account_id: number;
+  amount: number;
+  reference_number: string | null;
+  notes: string | null;
+  user_id: string;
+  status: string;
   from_account?: { name: string };
   to_account?: { name: string };
 }

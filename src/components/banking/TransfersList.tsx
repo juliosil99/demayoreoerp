@@ -11,9 +11,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { formatCurrency, formatDate } from "@/utils/formatters";
-import { AccountTransfersTable } from "@/integrations/supabase/types/account-transfers";
 
-interface TransferRow extends AccountTransfersTable["Row"] {
+// Use the same interface structure as in useAccountTransfersList.ts
+interface TransferRow {
+  id: string;
+  date: string;
+  from_account_id: number;
+  to_account_id: number;
+  amount: number;
+  reference_number: string | null;
+  notes: string | null;
+  user_id: string;
+  status: string;
   from_account?: { name: string };
   to_account?: { name: string };
 }
