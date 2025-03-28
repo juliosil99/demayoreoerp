@@ -10,9 +10,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, ArrowLeftIcon } from "lucide-react";
+import { ArrowRight, ArrowLeftIcon, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { formatCurrency, formatDate } from "@/utils/formatters";
+import { TransferEditDialog } from "@/components/banking/TransferEditDialog";
 
 export default function AccountTransfers() {
   const { user } = useAuth();
@@ -26,6 +36,8 @@ export default function AccountTransfers() {
     reference_number: "",
     notes: "",
   });
+  const [selectedTransfer, setSelectedTransfer] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const { data: accounts } = useQuery({
     queryKey: ["bank-accounts"],
@@ -37,6 +49,32 @@ export default function AccountTransfers() {
       if (error) throw error;
       return data;
     },
+  });
+
+  const { data: transfers, isLoading: isLoadingTransfers } = useQuery({
+    queryKey: ["account-transfers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("account_transfers")
+        .select(`
+          id, 
+          date, 
+          from_account_id, 
+          to_account_id, 
+          amount, 
+          reference_number, 
+          notes, 
+          status,
+          from_account:bank_accounts!fk_from_account(name),
+          to_account:bank_accounts!account_transfers_to_account_id_fkey(name)
+        `)
+        .eq("user_id", user?.id)
+        .order("date", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
   });
 
   const createTransfer = useMutation({
@@ -54,6 +92,7 @@ export default function AccountTransfers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["account-transfers"] });
       toast.success("Transferencia realizada con éxito");
       setFormData({
         date: format(new Date(), 'yyyy-MM-dd'),
@@ -82,6 +121,11 @@ export default function AccountTransfers() {
     navigate("/accounting/banking");
   };
 
+  const handleEditTransfer = (transfer) => {
+    setSelectedTransfer(transfer);
+    setEditDialogOpen(true);
+  };
+
   return (
     <div className="container mx-auto p-6">
       <Button 
@@ -93,107 +137,165 @@ export default function AccountTransfers() {
         Volver a Cuentas Bancarias
       </Button>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Nueva Transferencia</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Nueva Transferencia</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label>Fecha</Label>
+                  <Input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Monto</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                <div className="md:col-span-2">
+                  <Label>Cuenta Origen</Label>
+                  <Select
+                    value={formData.from_account_id}
+                    onValueChange={(value) => setFormData({ ...formData, from_account_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar cuenta" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts?.map((account) => (
+                        <SelectItem key={account.id} value={account.id.toString()}>
+                          {account.name} - ${account.balance?.toFixed(2)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-center md:col-span-1">
+                  <ArrowRight className="h-6 w-6" />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label>Cuenta Destino</Label>
+                  <Select
+                    value={formData.to_account_id}
+                    onValueChange={(value) => setFormData({ ...formData, to_account_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar cuenta" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts?.map((account) => (
+                        <SelectItem key={account.id} value={account.id.toString()}>
+                          {account.name} - ${account.balance?.toFixed(2)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div>
-                <Label>Fecha</Label>
+                <Label>Número de Referencia</Label>
                 <Input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
+                  value={formData.reference_number}
+                  onChange={(e) => setFormData({ ...formData, reference_number: e.target.value })}
+                  placeholder="Número de referencia (opcional)"
                 />
               </div>
+
               <div>
-                <Label>Monto</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  required
+                <Label>Notas</Label>
+                <Textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Notas adicionales (opcional)"
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-              <div className="md:col-span-2">
-                <Label>Cuenta Origen</Label>
-                <Select
-                  value={formData.from_account_id}
-                  onValueChange={(value) => setFormData({ ...formData, from_account_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar cuenta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts?.map((account) => (
-                      <SelectItem key={account.id} value={account.id.toString()}>
-                        {account.name} - ${account.balance?.toFixed(2)}
-                      </SelectItem>
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={createTransfer.isPending}
+              >
+                {createTransfer.isPending ? "Procesando..." : "Realizar Transferencia"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Transferencias Recientes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingTransfers ? (
+              <div className="text-center py-4">Cargando transferencias...</div>
+            ) : transfers && transfers.length > 0 ? (
+              <div className="max-h-[400px] overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>De</TableHead>
+                      <TableHead>A</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transfers.map((transfer) => (
+                      <TableRow key={transfer.id}>
+                        <TableCell>{formatDate(transfer.date)}</TableCell>
+                        <TableCell>{transfer.from_account?.name}</TableCell>
+                        <TableCell>{transfer.to_account?.name}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(transfer.amount)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleEditTransfer(transfer)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </TableBody>
+                </Table>
               </div>
+            ) : (
+              <div className="text-center py-4">No hay transferencias recientes</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-              <div className="flex justify-center md:col-span-1">
-                <ArrowRight className="h-6 w-6" />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label>Cuenta Destino</Label>
-                <Select
-                  value={formData.to_account_id}
-                  onValueChange={(value) => setFormData({ ...formData, to_account_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar cuenta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts?.map((account) => (
-                      <SelectItem key={account.id} value={account.id.toString()}>
-                        {account.name} - ${account.balance?.toFixed(2)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label>Número de Referencia</Label>
-              <Input
-                value={formData.reference_number}
-                onChange={(e) => setFormData({ ...formData, reference_number: e.target.value })}
-                placeholder="Número de referencia (opcional)"
-              />
-            </div>
-
-            <div>
-              <Label>Notas</Label>
-              <Textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Notas adicionales (opcional)"
-              />
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={createTransfer.isPending}
-            >
-              {createTransfer.isPending ? "Procesando..." : "Realizar Transferencia"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {/* Edit Transfer Dialog */}
+      {selectedTransfer && (
+        <TransferEditDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          transfer={selectedTransfer}
+          accounts={accounts || []}
+        />
+      )}
     </div>
   );
 }
