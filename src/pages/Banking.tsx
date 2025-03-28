@@ -39,6 +39,19 @@ export default function Banking() {
     });
   }, [queryClient, accounts]);
 
+  // Add logging to see account balances in the banking page
+  useEffect(() => {
+    if (accounts && accounts.length > 0) {
+      console.log("Banking page - account balances:", accounts.map(acc => ({
+        id: acc.id,
+        name: acc.name,
+        balance: acc.balance,
+        initialBalance: acc.initial_balance,
+        balanceDate: acc.balance_date
+      })));
+    }
+  }, [accounts]);
+
   if (accountsError) {
     return (
       <div className="p-4 text-red-500">

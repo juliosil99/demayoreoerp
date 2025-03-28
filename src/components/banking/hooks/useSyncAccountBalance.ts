@@ -44,9 +44,22 @@ export function useSyncAccountBalance(
       }
     }
     
+    // Add logging to see the balance calculation
+    console.log(`Account balance calculation for ${account.name} (${account.id}):`, {
+      initialBalance: account.initial_balance,
+      calculatedBalance: calculatedBalance,
+      currentStoredBalance: account.balance,
+      difference: calculatedBalance - account.balance,
+      balanceDate: accountBalanceDate,
+      transactionCount: chronologicalTransactions.length
+    });
+    
     // If the balance in the database is different from calculated balance by more than a penny,
     // update the database
     if (Math.abs(calculatedBalance - account.balance) > 0.01) {
+      // Log sync operation
+      console.log(`Account balance synchronized: ${account.balance} → ${calculatedBalance}`);
+      
       // Update the account balance in the database
       const updateBalance = async () => {
         try {
@@ -64,7 +77,8 @@ export function useSyncAccountBalance(
           queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
           queryClient.invalidateQueries({ queryKey: ["bank-account", account.id] });
           
-          console.log(`Account balance synchronized: ${account.balance} → ${calculatedBalance}`);
+          // Log successful update
+          console.log(`Account balance updated in database: ${account.name} (ID: ${account.id}): ${calculatedBalance}`);
         } catch (error) {
           console.error("Error in balance synchronization:", error);
         }

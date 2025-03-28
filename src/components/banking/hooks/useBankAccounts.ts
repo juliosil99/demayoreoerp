@@ -25,11 +25,15 @@ export function useBankAccounts() {
   } = useQuery({
     queryKey: ["bank-accounts"],
     queryFn: async () => {
+      console.log("Fetching bank accounts data...");
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*")
         .order("name");
       if (error) throw error;
+      
+      // Log the fetched accounts for debugging
+      console.log("Fetched bank accounts:", data);
       
       // Convert the type string to AccountType
       return data.map(account => ({
