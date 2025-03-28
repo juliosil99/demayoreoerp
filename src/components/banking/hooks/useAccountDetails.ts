@@ -33,5 +33,9 @@ export function useAccountDetails(accountId: number | null) {
       return null;
     },
     enabled: !!accountId,
+    // Add refetching options to ensure we always have the latest data
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0 // Consider data stale immediately
   });
 }

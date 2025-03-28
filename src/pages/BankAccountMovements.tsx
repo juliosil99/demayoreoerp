@@ -7,11 +7,26 @@ import { useAccountTransactions } from "@/components/banking/hooks/useAccountTra
 import { AccountHeader } from "@/components/banking/AccountHeader";
 import { TransactionsTable } from "@/components/banking/TransactionsTable";
 import { AccountSkeleton } from "@/components/banking/AccountSkeleton";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function BankAccountMovements() {
   const { accountId } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const id = accountId ? parseInt(accountId) : null;
+
+  // Force refresh data when the component mounts
+  useEffect(() => {
+    if (id) {
+      queryClient.invalidateQueries({
+        queryKey: ["bank-account", id]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["account-transactions", id]
+      });
+    }
+  }, [id, queryClient]);
 
   // Fetch account details
   const { data: account, isLoading: isLoadingAccount } = useAccountDetails(id);

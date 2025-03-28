@@ -1,8 +1,9 @@
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { BankAccount } from "@/components/banking/types";
 import { Transaction, TransactionRow } from "./TransactionRow";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -18,6 +19,8 @@ interface TransactionsTableProps {
 }
 
 export function TransactionsTable({ account, transactions }: TransactionsTableProps) {
+  const queryClient = useQueryClient();
+  
   // Calculate running balance for each transaction, respecting the initial balance date
   const transactionsWithBalance = useMemo(() => {
     if (!transactions || !account) return [];
@@ -79,6 +82,29 @@ export function TransactionsTable({ account, transactions }: TransactionsTablePr
     // Combine all transactions with newest first
     return [...reversedProcessedTransactionsAfter, ...processedTransactionsBefore];
   }, [transactions, account]);
+
+  // Update the account balance if it doesn't match the calculated final balance
+  useEffect(() => {
+    if (transactionsWithBalance.length > 0 && account) {
+      const mostRecentTransaction = transactionsWithBalance[0];
+      
+      if (
+        !mostRecentTransaction.beforeInitialDate && 
+        mostRecentTransaction.runningBalance !== null && 
+        Math.abs(mostRecentTransaction.runningBalance - account.balance) > 0.01
+      ) {
+        // Invalidate the bank account query to force a refetch
+        queryClient.invalidateQueries({
+          queryKey: ["bank-account", account.id]
+        });
+        
+        // Invalidate account transactions query as well
+        queryClient.invalidateQueries({
+          queryKey: ["account-transactions", account.id]
+        });
+      }
+    }
+  }, [transactionsWithBalance, account, queryClient]);
 
   if (!transactionsWithBalance || transactionsWithBalance.length === 0) {
     return (

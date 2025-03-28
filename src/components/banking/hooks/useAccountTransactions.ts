@@ -164,5 +164,8 @@ export function useAccountTransactions(accountId: number | null) {
       return allTransactions;
     },
     enabled: !!accountId && !!user?.id,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0 // Consider data stale immediately
   });
 }
