@@ -37,7 +37,8 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
 
   const handleCloseDialog = useCallback(() => {
     setIsDialogOpen(false);
-    setTimeout(() => setSelectedExpense(null), 300);
+    // Use setTimeout to ensure the dialog is fully closed before clearing the selected expense
+    setTimeout(() => setSelectedExpense(null), 100);
   }, []);
 
   // Get paginated expenses

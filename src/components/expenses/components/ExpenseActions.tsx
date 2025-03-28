@@ -58,6 +58,10 @@ export function ExpenseActions({
     }
   };
 
+  const handleEditSuccess = () => {
+    handleCloseDialog();
+  };
+
   return (
     <div className="flex items-center justify-end">
       <DropdownMenu>
@@ -108,7 +112,7 @@ export function ExpenseActions({
             </DialogHeader>
             <ExpenseForm 
               initialData={selectedExpense} 
-              onSuccess={handleCloseDialog} 
+              onSuccess={handleEditSuccess} 
               onClose={handleCloseDialog} 
             />
           </DialogContent>

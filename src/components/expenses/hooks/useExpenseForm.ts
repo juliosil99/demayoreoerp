@@ -116,11 +116,18 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       if (!initialExpense) {
         setFormData(initialFormData);
       }
-      onSuccess?.();
+      // Always call onSuccess if provided, even for updates
+      if (onSuccess) {
+        // Use setTimeout to give React a chance to finish any pending updates
+        setTimeout(() => {
+          onSuccess();
+        }, 0);
+      }
     },
     onError: (error: Error) => {
       console.error("Error with expense:", error);
       toast.error("Error al procesar el gasto. Por favor, intenta de nuevo.");
+      setIsSubmitting(false);
     },
   });
 
@@ -140,8 +147,9 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     setIsSubmitting(true);
     try {
       await createOrUpdateExpense.mutateAsync(formData);
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      // Error is handled in the mutation's onError
+      console.error("Error en handleSubmit:", error);
     }
   };
 
