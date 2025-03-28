@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { createExcelTemplate } from "../../utils/excelUtils";
+import { createExcelTemplate } from "../../utils/templateUtils";
 import { toast } from "sonner";
 import type { BankAccountsTable } from "@/integrations/supabase/types/bank-accounts";
 
