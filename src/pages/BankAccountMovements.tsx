@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,16 +50,11 @@ export default function BankAccountMovements() {
     const balanceDate = account.balance_date ? new Date(account.balance_date) : new Date();
     const initialBalance = account.initial_balance || 0;
     
-    // Sort all transactions by date (oldest first)
-    const sortedTransactions = [...transactions].sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-    
     // Split transactions into two groups: before and after the initial balance date
     const transactionsBeforeBalanceDate = [];
     const transactionsAfterBalanceDate = [];
     
-    for (const transaction of sortedTransactions) {
+    for (const transaction of transactions) {
       const transactionDate = new Date(transaction.date);
       if (transactionDate < balanceDate) {
         transactionsBeforeBalanceDate.push(transaction);
@@ -67,16 +63,26 @@ export default function BankAccountMovements() {
       }
     }
     
+    // Sort transactions before balance date by date (newest first)
+    const sortedTransactionsBefore = [...transactionsBeforeBalanceDate].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    
     // Process transactions before balance date (they won't affect running balance)
-    const processedTransactionsBefore = transactionsBeforeBalanceDate.map(transaction => ({
+    const processedTransactionsBefore = sortedTransactionsBefore.map(transaction => ({
       ...transaction,
       runningBalance: null, // No running balance for these
       beforeInitialDate: true
     }));
     
+    // Sort transactions after balance date by date (oldest first) for running balance calculation
+    const sortedTransactionsAfter = [...transactionsAfterBalanceDate].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
     // Process transactions after balance date (they will affect running balance)
     let runningBalance = initialBalance;
-    const processedTransactionsAfter = transactionsAfterBalanceDate.map(transaction => {
+    const processedTransactionsAfter = sortedTransactionsAfter.map(transaction => {
       // Update running balance based on transaction type
       if (transaction.type === 'in') {
         runningBalance += transaction.amount;
@@ -91,8 +97,10 @@ export default function BankAccountMovements() {
       };
     });
     
-    // Combine both groups, keeping chronological order
-    return [...processedTransactionsBefore, ...processedTransactionsAfter];
+    // Re-sort all processed transactions to display newest first
+    return [...processedTransactionsAfter, ...processedTransactionsBefore].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
   }, [transactions, account]);
 
   const handleBack = () => {
