@@ -2,6 +2,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { AccountTransfersTable } from "@/integrations/supabase/types/account-transfers";
+
+interface TransferRow extends AccountTransfersTable["Row"] {
+  from_account?: { name: string };
+  to_account?: { name: string };
+}
 
 export function useAccountTransfersList() {
   const { user } = useAuth();
@@ -27,7 +33,7 @@ export function useAccountTransfersList() {
         .order("date", { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as TransferRow[];
     },
     enabled: !!user?.id,
   });

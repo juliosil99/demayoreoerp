@@ -13,10 +13,15 @@ import { Pencil } from "lucide-react";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { AccountTransfersTable } from "@/integrations/supabase/types/account-transfers";
 
+interface TransferRow extends AccountTransfersTable["Row"] {
+  from_account?: { name: string };
+  to_account?: { name: string };
+}
+
 interface TransfersListProps {
-  transfers: any[] | null;
+  transfers: TransferRow[] | null;
   isLoading: boolean;
-  onEditTransfer: (transfer: any) => void;
+  onEditTransfer: (transfer: TransferRow) => void;
 }
 
 export function TransfersList({ transfers, isLoading, onEditTransfer }: TransfersListProps) {
