@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { ArrowLeftIcon, TrendingDownIcon, TrendingUpIcon } from "lucide-react";
+import { useMemo } from "react";
 
 export default function BankAccountMovements() {
   const { accountId } = useParams();
@@ -41,6 +42,35 @@ export default function BankAccountMovements() {
 
   // Fetch transactions for this account
   const { data: transactions, isLoading: isLoadingTransactions } = useAccountTransactions(id);
+
+  // Calculate running balance for each transaction
+  const transactionsWithBalance = useMemo(() => {
+    if (!transactions || !account) return [];
+    
+    // Sort transactions by date (oldest first) to calculate running balance
+    const sortedTransactions = [...transactions].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    // Start with the initial balance from the account
+    const initialBalance = account.initial_balance || 0;
+    let runningBalance = initialBalance;
+    
+    // Add running balance to each transaction
+    return sortedTransactions.map((transaction) => {
+      // Update running balance based on transaction type
+      if (transaction.type === 'in') {
+        runningBalance += transaction.amount;
+      } else {
+        runningBalance -= transaction.amount;
+      }
+      
+      return {
+        ...transaction,
+        runningBalance
+      };
+    });
+  }, [transactions, account]);
 
   const handleBack = () => {
     navigate("/accounting/banking");
@@ -87,12 +117,15 @@ export default function BankAccountMovements() {
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold">Movimientos de Cuenta</h1>
         <h2 className="text-xl">{account.name}</h2>
-        <p className="text-muted-foreground">
-          Saldo actual: {formatCurrency(account.balance)}
-        </p>
-        <p className="text-muted-foreground">
-          Saldo inicial: {formatCurrency(account.initial_balance)} (desde {formatDate(account.balance_date)})
-        </p>
+        <div className="flex flex-col md:flex-row md:gap-4">
+          <p className="text-muted-foreground">
+            <span className="font-medium">Saldo actual:</span> {formatCurrency(account.balance)}
+          </p>
+          <p className="text-muted-foreground">
+            <span className="font-medium">Saldo inicial:</span> {formatCurrency(account.initial_balance)} 
+            <span className="ml-1">(desde {formatDate(account.balance_date)})</span>
+          </p>
+        </div>
       </div>
 
       {isLoadingTransactions ? (
@@ -101,21 +134,33 @@ export default function BankAccountMovements() {
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
         </div>
-      ) : transactions && transactions.length > 0 ? (
+      ) : transactionsWithBalance && transactionsWithBalance.length > 0 ? (
         <div className="rounded-md border">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-muted/50">
                 <TableHead>Fecha</TableHead>
                 <TableHead>Descripción</TableHead>
                 <TableHead>Referencia</TableHead>
                 <TableHead className="text-right">Tipo</TableHead>
                 <TableHead className="text-right">Monto</TableHead>
+                <TableHead className="text-right font-medium">Saldo</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((transaction) => (
-                <TableRow key={`${transaction.source}-${transaction.id}`}>
+              {/* Initial Balance Row */}
+              <TableRow className="bg-muted/20">
+                <TableCell>{formatDate(account.balance_date)}</TableCell>
+                <TableCell className="font-medium">Saldo Inicial</TableCell>
+                <TableCell>-</TableCell>
+                <TableCell className="text-right">-</TableCell>
+                <TableCell className="text-right font-medium">{formatCurrency(account.initial_balance || 0)}</TableCell>
+                <TableCell className="text-right font-medium">{formatCurrency(account.initial_balance || 0)}</TableCell>
+              </TableRow>
+              
+              {/* Transaction Rows */}
+              {transactionsWithBalance.map((transaction) => (
+                <TableRow key={`${transaction.source}-${transaction.id}`} className="group hover:bg-muted/40 transition-colors">
                   <TableCell>{formatDate(transaction.date)}</TableCell>
                   <TableCell>{transaction.description}</TableCell>
                   <TableCell>{transaction.reference}</TableCell>
@@ -134,6 +179,9 @@ export default function BankAccountMovements() {
                   </TableCell>
                   <TableCell className={`text-right ${transaction.type === "in" ? "text-green-500" : "text-red-500"}`}>
                     {transaction.type === "in" ? "+" : "-"}{formatCurrency(transaction.amount)}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {formatCurrency(transaction.runningBalance)}
                   </TableCell>
                 </TableRow>
               ))}
