@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,21 +42,41 @@ export default function BankAccountMovements() {
   // Fetch transactions for this account
   const { data: transactions, isLoading: isLoadingTransactions } = useAccountTransactions(id);
 
-  // Calculate running balance for each transaction
+  // Calculate running balance for each transaction, respecting the initial balance date
   const transactionsWithBalance = useMemo(() => {
     if (!transactions || !account) return [];
     
-    // Sort transactions by date (oldest first) to calculate running balance
+    const balanceDate = account.balance_date ? new Date(account.balance_date) : new Date();
+    const initialBalance = account.initial_balance || 0;
+    
+    // Sort all transactions by date (oldest first)
     const sortedTransactions = [...transactions].sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
     
-    // Start with the initial balance from the account
-    const initialBalance = account.initial_balance || 0;
-    let runningBalance = initialBalance;
+    // Split transactions into two groups: before and after the initial balance date
+    const transactionsBeforeBalanceDate = [];
+    const transactionsAfterBalanceDate = [];
     
-    // Add running balance to each transaction
-    return sortedTransactions.map((transaction) => {
+    for (const transaction of sortedTransactions) {
+      const transactionDate = new Date(transaction.date);
+      if (transactionDate < balanceDate) {
+        transactionsBeforeBalanceDate.push(transaction);
+      } else {
+        transactionsAfterBalanceDate.push(transaction);
+      }
+    }
+    
+    // Process transactions before balance date (they won't affect running balance)
+    const processedTransactionsBefore = transactionsBeforeBalanceDate.map(transaction => ({
+      ...transaction,
+      runningBalance: null, // No running balance for these
+      beforeInitialDate: true
+    }));
+    
+    // Process transactions after balance date (they will affect running balance)
+    let runningBalance = initialBalance;
+    const processedTransactionsAfter = transactionsAfterBalanceDate.map(transaction => {
       // Update running balance based on transaction type
       if (transaction.type === 'in') {
         runningBalance += transaction.amount;
@@ -67,9 +86,13 @@ export default function BankAccountMovements() {
       
       return {
         ...transaction,
-        runningBalance
+        runningBalance,
+        beforeInitialDate: false
       };
     });
+    
+    // Combine both groups, keeping chronological order
+    return [...processedTransactionsBefore, ...processedTransactionsAfter];
   }, [transactions, account]);
 
   const handleBack = () => {
@@ -149,20 +172,30 @@ export default function BankAccountMovements() {
             </TableHeader>
             <TableBody>
               {/* Initial Balance Row */}
-              <TableRow className="bg-muted/20">
+              <TableRow className="bg-muted/20 font-medium">
                 <TableCell>{formatDate(account.balance_date)}</TableCell>
-                <TableCell className="font-medium">Saldo Inicial</TableCell>
+                <TableCell>Saldo Inicial</TableCell>
                 <TableCell>-</TableCell>
                 <TableCell className="text-right">-</TableCell>
-                <TableCell className="text-right font-medium">{formatCurrency(account.initial_balance || 0)}</TableCell>
-                <TableCell className="text-right font-medium">{formatCurrency(account.initial_balance || 0)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
               </TableRow>
               
               {/* Transaction Rows */}
               {transactionsWithBalance.map((transaction) => (
-                <TableRow key={`${transaction.source}-${transaction.id}`} className="group hover:bg-muted/40 transition-colors">
+                <TableRow 
+                  key={`${transaction.source}-${transaction.id}`} 
+                  className={`group hover:bg-muted/40 transition-colors ${transaction.beforeInitialDate ? 'opacity-60' : ''}`}
+                >
                   <TableCell>{formatDate(transaction.date)}</TableCell>
-                  <TableCell>{transaction.description}</TableCell>
+                  <TableCell>
+                    {transaction.description}
+                    {transaction.beforeInitialDate && (
+                      <span className="ml-2 text-xs text-amber-600 font-medium">
+                        (Previo al saldo inicial)
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell>{transaction.reference}</TableCell>
                   <TableCell className="text-right">
                     {transaction.type === "in" ? (
@@ -181,7 +214,11 @@ export default function BankAccountMovements() {
                     {transaction.type === "in" ? "+" : "-"}{formatCurrency(transaction.amount)}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(transaction.runningBalance)}
+                    {transaction.beforeInitialDate ? (
+                      <span className="text-muted-foreground">-</span>
+                    ) : (
+                      formatCurrency(transaction.runningBalance)
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
