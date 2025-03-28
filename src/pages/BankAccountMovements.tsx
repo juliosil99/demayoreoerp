@@ -1,21 +1,12 @@
 
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAccountTransactions } from "@/components/banking/hooks/useAccountTransactions";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formatCurrency, formatDate } from "@/utils/formatters";
-import { ArrowLeftIcon, TrendingDownIcon, TrendingUpIcon } from "lucide-react";
-import { useMemo } from "react";
+import { ArrowLeftIcon } from "lucide-react";
+import { useAccountDetails } from "@/components/banking/hooks/useAccountDetails";
+import { useAccountTransactions } from "@/components/banking/hooks/useAccountTransactions";
+import { AccountHeader } from "@/components/banking/AccountHeader";
+import { TransactionsTable } from "@/components/banking/TransactionsTable";
+import { AccountSkeleton } from "@/components/banking/AccountSkeleton";
 
 export default function BankAccountMovements() {
   const { accountId } = useParams();
@@ -23,85 +14,10 @@ export default function BankAccountMovements() {
   const id = accountId ? parseInt(accountId) : null;
 
   // Fetch account details
-  const { data: account, isLoading: isLoadingAccount } = useQuery({
-    queryKey: ["bank-account", id],
-    queryFn: async () => {
-      if (!id) return null;
-      
-      const { data, error } = await supabase
-        .from("bank_accounts")
-        .select("*")
-        .eq("id", id)
-        .single();
-        
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id,
-  });
+  const { data: account, isLoading: isLoadingAccount } = useAccountDetails(id);
 
   // Fetch transactions for this account
   const { data: transactions, isLoading: isLoadingTransactions } = useAccountTransactions(id);
-
-  // Calculate running balance for each transaction, respecting the initial balance date
-  const transactionsWithBalance = useMemo(() => {
-    if (!transactions || !account) return [];
-    
-    const balanceDate = account.balance_date ? new Date(account.balance_date) : new Date();
-    const initialBalance = account.initial_balance || 0;
-    
-    // Split transactions into two groups: before and after the initial balance date
-    const transactionsBeforeBalanceDate = [];
-    const transactionsAfterBalanceDate = [];
-    
-    for (const transaction of transactions) {
-      const transactionDate = new Date(transaction.date);
-      if (transactionDate < balanceDate) {
-        transactionsBeforeBalanceDate.push(transaction);
-      } else {
-        transactionsAfterBalanceDate.push(transaction);
-      }
-    }
-    
-    // Sort transactions before balance date by date (newest first)
-    const sortedTransactionsBefore = [...transactionsBeforeBalanceDate].sort((a, b) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-    
-    // Process transactions before balance date (they won't affect running balance)
-    const processedTransactionsBefore = sortedTransactionsBefore.map(transaction => ({
-      ...transaction,
-      runningBalance: null, // No running balance for these
-      beforeInitialDate: true
-    }));
-    
-    // Sort transactions after balance date by date (oldest first) for running balance calculation
-    const sortedTransactionsAfter = [...transactionsAfterBalanceDate].sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-    
-    // Process transactions after balance date (they will affect running balance)
-    let runningBalance = initialBalance;
-    const processedTransactionsAfter = sortedTransactionsAfter.map(transaction => {
-      // Update running balance based on transaction type
-      if (transaction.type === 'in') {
-        runningBalance += transaction.amount;
-      } else {
-        runningBalance -= transaction.amount;
-      }
-      
-      return {
-        ...transaction,
-        runningBalance,
-        beforeInitialDate: false
-      };
-    });
-    
-    // Re-sort all processed transactions to display newest first
-    return [...processedTransactionsAfter, ...processedTransactionsBefore].sort((a, b) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-  }, [transactions, account]);
 
   const handleBack = () => {
     navigate("/accounting/banking");
@@ -110,13 +26,7 @@ export default function BankAccountMovements() {
   if (isLoadingAccount) {
     return (
       <div className="container mx-auto py-6 space-y-6">
-        <Skeleton className="h-12 w-60" />
-        <Skeleton className="h-8 w-96" />
-        <div className="space-y-4">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
+        <AccountSkeleton />
       </div>
     );
   }
@@ -145,101 +55,17 @@ export default function BankAccountMovements() {
         Volver a Cuentas Bancarias
       </Button>
 
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold">Movimientos de Cuenta</h1>
-        <h2 className="text-xl">{account.name}</h2>
-        <div className="flex flex-col md:flex-row md:gap-4">
-          <p className="text-muted-foreground">
-            <span className="font-medium">Saldo actual:</span> {formatCurrency(account.balance)}
-          </p>
-          <p className="text-muted-foreground">
-            <span className="font-medium">Saldo inicial:</span> {formatCurrency(account.initial_balance)} 
-            <span className="ml-1">(desde {formatDate(account.balance_date)})</span>
-          </p>
-        </div>
-      </div>
+      <AccountHeader account={account} />
 
       {isLoadingTransactions ? (
         <div className="space-y-4">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : transactionsWithBalance && transactionsWithBalance.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead>Fecha</TableHead>
-                <TableHead>Descripción</TableHead>
-                <TableHead>Referencia</TableHead>
-                <TableHead className="text-right">Tipo</TableHead>
-                <TableHead className="text-right">Monto</TableHead>
-                <TableHead className="text-right font-medium">Saldo</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {/* Initial Balance Row */}
-              <TableRow className="bg-muted/20 font-medium">
-                <TableCell>{formatDate(account.balance_date)}</TableCell>
-                <TableCell>Saldo Inicial</TableCell>
-                <TableCell>-</TableCell>
-                <TableCell className="text-right">-</TableCell>
-                <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
-              </TableRow>
-              
-              {/* Transaction Rows */}
-              {transactionsWithBalance.map((transaction) => (
-                <TableRow 
-                  key={`${transaction.source}-${transaction.id}`} 
-                  className={`group hover:bg-muted/40 transition-colors ${transaction.beforeInitialDate ? 'opacity-60' : ''}`}
-                >
-                  <TableCell>{formatDate(transaction.date)}</TableCell>
-                  <TableCell>
-                    {transaction.description}
-                    {transaction.beforeInitialDate && (
-                      <span className="ml-2 text-xs text-amber-600 font-medium">
-                        (Previo al saldo inicial)
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>{transaction.reference}</TableCell>
-                  <TableCell className="text-right">
-                    {transaction.type === "in" ? (
-                      <div className="flex items-center justify-end">
-                        <TrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
-                        <span className="text-green-500">Entrada</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-end">
-                        <TrendingDownIcon className="h-4 w-4 text-red-500 mr-1" />
-                        <span className="text-red-500">Salida</span>
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className={`text-right ${transaction.type === "in" ? "text-green-500" : "text-red-500"}`}>
-                    {transaction.type === "in" ? "+" : "-"}{formatCurrency(transaction.amount)}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {transaction.beforeInitialDate ? (
-                      <span className="text-muted-foreground">-</span>
-                    ) : (
-                      formatCurrency(transaction.runningBalance)
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <AccountSkeleton />
         </div>
       ) : (
-        <div className="text-center p-8 border rounded-md">
-          <h3 className="text-lg font-medium">No hay movimientos</h3>
-          <p className="text-muted-foreground">
-            Esta cuenta no tiene movimientos registrados.
-          </p>
-        </div>
+        <TransactionsTable 
+          account={account} 
+          transactions={transactions || []} 
+        />
       )}
     </div>
   );
