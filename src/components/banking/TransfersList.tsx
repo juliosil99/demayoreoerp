@@ -25,6 +25,7 @@ interface TransferRow {
   status: string;
   from_account?: { name: string };
   to_account?: { name: string };
+  created_at?: string;
 }
 
 interface TransfersListProps {

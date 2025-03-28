@@ -11,7 +11,17 @@ import { useAccountTransfersList } from "@/components/banking/hooks/useAccountTr
 import { AccountTransfersTable } from "@/integrations/supabase/types/account-transfers";
 
 // Define a type for the transfer with joined account information
-interface TransferWithAccounts extends AccountTransfersTable["Row"] {
+interface TransferWithAccounts {
+  id: string;
+  date: string;
+  from_account_id: number;
+  to_account_id: number;
+  amount: number;
+  reference_number: string | null;
+  notes: string | null;
+  user_id: string;
+  status: string;
+  created_at?: string;
   from_account?: { name: string };
   to_account?: { name: string };
 }
