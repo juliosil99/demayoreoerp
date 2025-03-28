@@ -6,6 +6,7 @@ import { useBankAccounts } from "@/components/banking/hooks/useBankAccounts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
+import { BankAccount, NewBankAccount } from "@/components/banking/types";
 
 export default function Banking() {
   const {
@@ -62,7 +63,7 @@ export default function Banking() {
       <BankAccountDialog
         isOpen={isAddingAccount}
         onOpenChange={setIsAddingAccount}
-        onSave={handleAddAccount}
+        onSave={(account) => handleAddAccount(account as NewBankAccount)}
         account={newAccount}
         setAccount={setNewAccount}
         title="Agregar Nueva Cuenta"
@@ -73,7 +74,7 @@ export default function Banking() {
       <BankAccountDialog
         isOpen={isEditingAccount}
         onOpenChange={setIsEditingAccount}
-        onSave={handleEditAccount}
+        onSave={(account) => handleEditAccount(account as BankAccount)}
         account={newAccount}
         setAccount={setNewAccount}
         title="Editar Cuenta"

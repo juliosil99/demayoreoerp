@@ -16,13 +16,13 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Form, FormField, FormItem, FormControl, FormLabel } from "@/components/ui/form";
-import type { NewBankAccount } from "./types";
+import type { NewBankAccount, BankAccount } from "./types";
 import { useForm } from "react-hook-form";
 
 interface BankAccountDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: () => void;
+  onSave: (account: NewBankAccount | BankAccount) => void; // Updated to accept account parameter
   account: NewBankAccount;
   setAccount: (account: NewBankAccount) => void;
   title: string;
@@ -132,7 +132,7 @@ export function BankAccountDialog({
             Cancelar
           </Button>
           <Button 
-            onClick={onSave}
+            onClick={() => onSave(account)} // Updated to pass the account parameter
             className="w-full sm:w-auto"
           >
             {submitText}
