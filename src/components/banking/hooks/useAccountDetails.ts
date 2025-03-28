@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BankAccount } from "@/components/banking/types";
+import { BankAccount, AccountType } from "@/components/banking/types";
 
 export function useAccountDetails(accountId: number | null) {
   return useQuery({
