@@ -27,7 +27,7 @@ const Reconciliation = () => {
         console.log("No reconciled expenses found for debugging");
       }
       
-      // Get expenses that aren't reconciled yet - improved query with better debugging
+      // Query for unreconciled expenses with simplified and more direct approach
       console.log("Querying for unreconciled expenses...");
       const { data, error } = await supabase
         .from("expenses")
@@ -35,13 +35,9 @@ const Reconciliation = () => {
           *,
           bank_accounts (name),
           chart_of_accounts (name, code),
-          contacts (name),
-          expense_invoice_relations!left (id),
-          manual_reconciliations!left (id)
+          contacts (name)
         `)
         .eq("user_id", user!.id)
-        .is("expense_invoice_relations.id", null)
-        .is("manual_reconciliations.id", null)
         .eq("reconciled", false);
 
       if (error) {
