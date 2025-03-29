@@ -1,9 +1,10 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export const useReconciliation = () => {
   const { user } = useAuth();
@@ -13,6 +14,23 @@ export const useReconciliation = () => {
   const [remainingAmount, setRemainingAmount] = useState<number>(0);
   const [showAdjustmentDialog, setShowAdjustmentDialog] = useState(false);
   const [adjustmentType, setAdjustmentType] = useState<"expense_excess" | "invoice_excess">("expense_excess");
+  const [showManualReconciliation, setShowManualReconciliation] = useState(false);
+
+  // Fetch chart of accounts for manual reconciliation
+  const { data: chartAccounts } = useQuery({
+    queryKey: ["chart-accounts-basic"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('chart_of_accounts')
+        .select('id, name, code')
+        .eq('user_id', user!.id)
+        .order('code');
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
 
   const handleInvoiceSelect = (invoice: any) => {
     const updatedInvoices = [...selectedInvoices, invoice];
@@ -54,6 +72,58 @@ export const useReconciliation = () => {
     }
   };
 
+  const handleManualReconciliation = () => {
+    setShowInvoiceSearch(false);
+    setShowManualReconciliation(true);
+    setRemainingAmount(selectedExpense?.amount || 0);
+  };
+
+  const handleManualReconciliationConfirm = async (data: {
+    reconciliationType: string;
+    referenceNumber?: string;
+    notes: string;
+    fileId?: string;
+    chartAccountId?: string;
+  }) => {
+    try {
+      // Create a manual reconciliation record
+      const { error: manualError } = await supabase
+        .from("manual_reconciliations")
+        .insert([{
+          expense_id: selectedExpense.id,
+          user_id: user!.id,
+          reconciliation_type: data.reconciliationType,
+          reference_number: data.referenceNumber || null,
+          notes: data.notes,
+          file_id: data.fileId || null,
+          chart_account_id: data.chartAccountId || selectedExpense.chart_account_id
+        }]);
+
+      if (manualError) throw manualError;
+      
+      // Update the expense to mark it as reconciled
+      const { error: updateError } = await supabase
+        .from("expenses")
+        .update({ 
+          reconciled: true,
+          reconciliation_date: new Date().toISOString(),
+          reconciliation_type: 'manual'
+        })
+        .eq("id", selectedExpense.id);
+
+      if (updateError) throw updateError;
+
+      toast.success("Gasto conciliado manualmente");
+      queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"] });
+      resetState();
+    } catch (error) {
+      console.error("Error al reconciliar manualmente:", error);
+      toast.error("Error al reconciliar el gasto");
+    } finally {
+      setShowManualReconciliation(false);
+    }
+  };
+
   const handleReconcile = async (invoicesToReconcile: any[]) => {
     try {
       let remainingExpenseAmount = selectedExpense.amount;
@@ -86,6 +156,18 @@ export const useReconciliation = () => {
 
         remainingExpenseAmount -= reconciliationAmount;
       }
+      
+      // Update the expense to mark it as reconciled
+      const { error: updateError } = await supabase
+        .from("expenses")
+        .update({ 
+          reconciled: true,
+          reconciliation_date: new Date().toISOString(),
+          reconciliation_type: 'automatic'
+        })
+        .eq("id", selectedExpense.id);
+
+      if (updateError) throw updateError;
 
       toast.success("Gasto conciliado exitosamente");
       queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"] });
@@ -99,6 +181,7 @@ export const useReconciliation = () => {
 
   const resetState = () => {
     setShowInvoiceSearch(false);
+    setShowManualReconciliation(false);
     setSelectedExpense(null);
     setSelectedInvoices([]);
     setRemainingAmount(0);
@@ -125,6 +208,11 @@ export const useReconciliation = () => {
     showAdjustmentDialog,
     setShowAdjustmentDialog,
     adjustmentType,
-    handleAdjustmentConfirm
+    handleAdjustmentConfirm,
+    handleManualReconciliation,
+    showManualReconciliation,
+    setShowManualReconciliation,
+    handleManualReconciliationConfirm,
+    chartAccounts
   };
 };

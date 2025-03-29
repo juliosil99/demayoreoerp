@@ -1,6 +1,7 @@
 
 import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandDialog,
@@ -21,6 +22,7 @@ interface InvoiceSearchDialogProps {
   onSearchChange: (value: string) => void;
   filteredInvoices: any[];
   onInvoiceSelect: (invoice: any) => void;
+  onManualReconciliation: () => void;
 }
 
 export function InvoiceSearchDialog({
@@ -32,7 +34,8 @@ export function InvoiceSearchDialog({
   searchTerm,
   onSearchChange,
   filteredInvoices,
-  onInvoiceSelect
+  onInvoiceSelect,
+  onManualReconciliation
 }: InvoiceSearchDialogProps) {
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
@@ -57,6 +60,16 @@ export function InvoiceSearchDialog({
               </ul>
             </div>
           )}
+          
+          <div className="mt-3 flex justify-end">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onManualReconciliation}
+            >
+              Reconciliación Manual
+            </Button>
+          </div>
         </div>
       </div>
       <CommandInput 

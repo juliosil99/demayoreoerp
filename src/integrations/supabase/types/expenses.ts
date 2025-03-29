@@ -14,6 +14,9 @@ export interface ExpensesTable {
     notes: string | null
     supplier_id: string | null
     category: string | null
+    reconciled: boolean | null
+    reconciliation_date: string | null
+    reconciliation_type: string | null
   }
   Insert: {
     id?: string
@@ -29,6 +32,9 @@ export interface ExpensesTable {
     notes?: string | null
     supplier_id?: string | null
     category?: string | null
+    reconciled?: boolean | null
+    reconciliation_date?: string | null
+    reconciliation_type?: string | null
   }
   Update: {
     id?: string
@@ -44,5 +50,8 @@ export interface ExpensesTable {
     notes?: string | null
     supplier_id?: string | null
     category?: string | null
+    reconciled?: boolean | null
+    reconciliation_date?: string | null
+    reconciliation_type?: string | null
   }
 }

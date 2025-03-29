@@ -3,6 +3,7 @@ import { useReconciliation } from "./hooks/useReconciliation";
 import { ExpenseCard } from "./components/ExpenseCard";
 import { InvoiceSearchDialog } from "./components/InvoiceSearchDialog";
 import { AccountAdjustmentDialog } from "./components/AccountAdjustmentDialog";
+import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
 
 interface ReconciliationTableProps {
   expenses: any[];
@@ -23,7 +24,12 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
     showAdjustmentDialog,
     setShowAdjustmentDialog,
     adjustmentType,
-    handleAdjustmentConfirm
+    handleAdjustmentConfirm,
+    handleManualReconciliation,
+    showManualReconciliation,
+    setShowManualReconciliation,
+    handleManualReconciliationConfirm,
+    chartAccounts
   } = useReconciliation();
 
   const filteredInvoices = invoices.filter((invoice) => {
@@ -63,6 +69,7 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
         onSearchChange={setSearchTerm}
         filteredInvoices={filteredInvoices}
         onInvoiceSelect={handleInvoiceSelect}
+        onManualReconciliation={handleManualReconciliation}
       />
 
       <AccountAdjustmentDialog
@@ -71,6 +78,14 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
         amount={Math.abs(remainingAmount)}
         type={adjustmentType}
         onConfirm={handleAdjustmentConfirm}
+      />
+
+      <ManualReconciliationDialog
+        open={showManualReconciliation}
+        onOpenChange={setShowManualReconciliation}
+        expense={selectedExpense}
+        onConfirm={handleManualReconciliationConfirm}
+        chartAccounts={chartAccounts || []}
       />
     </div>
   );

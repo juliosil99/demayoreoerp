@@ -11,14 +11,7 @@ const Reconciliation = () => {
   const { data: expenses } = useQuery({
     queryKey: ["unreconciled-expenses", user?.id],
     queryFn: async () => {
-      const { data: relations, error: relationsError } = await supabase
-        .from("expense_invoice_relations")
-        .select("expense_id");
-
-      if (relationsError) throw relationsError;
-
-      const reconciledExpenseIds = relations?.map(r => r.expense_id) || [];
-
+      // Get expenses that aren't reconciled yet
       const { data, error } = await supabase
         .from("expenses")
         .select(`
@@ -28,7 +21,7 @@ const Reconciliation = () => {
           contacts (name)
         `)
         .eq("user_id", user!.id)
-        .not("id", "in", `(${reconciledExpenseIds.join(",")})`)
+        .is("reconciled", null)
         .order("date", { ascending: false });
 
       if (error) throw error;
