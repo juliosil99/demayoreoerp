@@ -25,3 +25,21 @@ export const formatDate = (date: string | null) => {
     return '-';
   }
 };
+
+// Helper function to format dates specifically for cards and lists
+export const formatCardDate = (dateString: string) => {
+  try {
+    if (!dateString) return "-";
+    
+    // Parse the ISO date string directly to avoid timezone shifts
+    const dateObj = new Date(dateString);
+    return dateObj.toLocaleDateString('es-MX', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  } catch (error) {
+    console.error("Error formatting date:", error, dateString);
+    return dateString || '-';
+  }
+};

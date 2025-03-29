@@ -11,17 +11,20 @@ const Reconciliation = () => {
   const { data: expenses } = useQuery({
     queryKey: ["unreconciled-expenses", user?.id],
     queryFn: async () => {
-      // Get expenses that aren't reconciled yet
+      // Get expenses that aren't reconciled yet - check both the reconciled flag 
+      // and make sure they don't have any expense_invoice_relations
       const { data, error } = await supabase
         .from("expenses")
         .select(`
           *,
           bank_accounts (name),
           chart_of_accounts (name, code),
-          contacts (name)
+          contacts (name),
+          expense_invoice_relations!left (id)
         `)
         .eq("user_id", user!.id)
         .is("reconciled", null)
+        .is("expense_invoice_relations.id", null)
         .order("date", { ascending: false });
 
       if (error) throw error;

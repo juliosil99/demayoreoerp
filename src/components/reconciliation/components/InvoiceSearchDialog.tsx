@@ -8,8 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/utils/formatters";
-import { parseISO, format } from "date-fns";
+import { formatCurrency, formatCardDate } from "@/utils/formatters";
 import { Search, FileText, RefreshCw } from "lucide-react";
 
 interface InvoiceSearchDialogProps {
@@ -37,20 +36,6 @@ export function InvoiceSearchDialog({
   onInvoiceSelect,
   onManualReconciliation,
 }: InvoiceSearchDialogProps) {
-  // Correctly parse and format the date to avoid timezone issues
-  const formatInvoiceDate = (dateString: string) => {
-    try {
-      if (!dateString) return "-";
-      
-      // Parse the ISO date string directly to avoid timezone shifts
-      const dateObj = parseISO(dateString);
-      return format(dateObj, 'dd/MM/yyyy');
-    } catch (error) {
-      console.error("Error formatting date:", error, dateString);
-      return dateString || '-';
-    }
-  };
-
   if (!selectedExpense) return null;
 
   return (
@@ -71,7 +56,7 @@ export function InvoiceSearchDialog({
                 {selectedInvoices.map(invoice => (
                   <li key={invoice.id} className="text-sm flex justify-between">
                     <span>
-                      {invoice.issuer_name} - {formatInvoiceDate(invoice.invoice_date)}
+                      {invoice.issuer_name} - {formatCardDate(invoice.invoice_date)}
                     </span>
                     <span className="font-semibold">{formatCurrency(invoice.total_amount)}</span>
                   </li>
@@ -114,7 +99,7 @@ export function InvoiceSearchDialog({
                   <div>
                     <div className="font-medium">{invoice.issuer_name}</div>
                     <div className="text-sm text-muted-foreground">
-                      {formatInvoiceDate(invoice.invoice_date)} - {invoice.invoice_number || invoice.uuid}
+                      {formatCardDate(invoice.invoice_date)} - {invoice.invoice_number || invoice.uuid}
                     </div>
                   </div>
                   <div className="font-semibold">{formatCurrency(invoice.total_amount)}</div>
