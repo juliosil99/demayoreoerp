@@ -19,7 +19,7 @@ export function TransactionsList({ account, currentTransactions, currentPage }: 
       {/* Transaction Rows for current page only */}
       {currentTransactions.map((transaction) => (
         <TransactionRow 
-          key={`${transaction.source}-${transaction.id}`} 
+          key={transaction.id} 
           transaction={transaction}
         />
       ))}
