@@ -41,6 +41,20 @@ export const useManualReconciliation = (userId: string | undefined) => {
       
       console.log("Starting manual reconciliation process for expense:", expenseId);
       
+      // First, verify the expense exists and its current reconciliation status
+      const { data: expenseCheck, error: checkError } = await supabase
+        .from("expenses")
+        .select("id, reconciled, reconciliation_date, reconciliation_type")
+        .eq("id", expenseId)
+        .single();
+
+      if (checkError) {
+        console.error("Error checking expense:", checkError);
+        throw checkError;
+      }
+
+      console.log("Current expense status:", expenseCheck);
+      
       // Create a manual reconciliation record
       const { error: manualError } = await supabase
         .from("manual_reconciliations")
@@ -59,21 +73,17 @@ export const useManualReconciliation = (userId: string | undefined) => {
         throw manualError;
       }
       
-      // Update the expense to mark it as reconciled - ADDING EXPLICIT DATA TYPES
+      // Update the expense to mark it as reconciled
       const now = new Date().toISOString();
       console.log(`Setting expense ${expenseId} as reconciled at ${now}`);
       
-      const updateData = { 
-        reconciled: true,
-        reconciliation_date: now,
-        reconciliation_type: 'manual'
-      };
-      
-      console.log("Update data:", updateData);
-      
       const { data: updatedExpense, error: updateError } = await supabase
         .from("expenses")
-        .update(updateData)
+        .update({ 
+          reconciled: true,
+          reconciliation_date: now,
+          reconciliation_type: 'manual'
+        })
         .eq("id", expenseId)
         .select();
 
@@ -82,8 +92,21 @@ export const useManualReconciliation = (userId: string | undefined) => {
         throw updateError;
       }
       
+      // Double-check if the update worked
+      const { data: verifyUpdate, error: verifyError } = await supabase
+        .from("expenses")
+        .select("reconciled, reconciliation_date, reconciliation_type")
+        .eq("id", expenseId)
+        .single();
+        
+      if (verifyError) {
+        console.error("Error verifying update:", verifyError);
+      } else {
+        console.log("Verification of updated expense:", verifyUpdate);
+      }
+      
       console.log("Expense successfully updated:", updatedExpense);
-      console.log("Expense successfully reconciled manually:", expenseId);
+      console.log("Manual reconciliation complete for expense:", expenseId);
       
       // Invalidate relevant queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"] });

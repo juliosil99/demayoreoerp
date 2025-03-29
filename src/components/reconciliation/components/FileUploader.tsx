@@ -80,6 +80,7 @@ export function FileUploader({
       }
 
       setUploadSuccess(true);
+      console.log("File upload successful, calling onUploadComplete with ID:", fileRecord.id);
       onUploadComplete(fileRecord.id);
       toast.success("Archivo subido exitosamente");
       

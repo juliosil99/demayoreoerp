@@ -23,9 +23,12 @@ const Reconciliation = () => {
         
       if (reconciled?.length) {
         console.log("Sample reconciled expenses:", reconciled);
+      } else {
+        console.log("No reconciled expenses found for debugging");
       }
       
-      // Get expenses that aren't reconciled yet 
+      // Get expenses that aren't reconciled yet - improved query with better debugging
+      console.log("Querying for unreconciled expenses...");
       const { data, error } = await supabase
         .from("expenses")
         .select(`
@@ -39,8 +42,7 @@ const Reconciliation = () => {
         .eq("user_id", user!.id)
         .is("expense_invoice_relations.id", null)
         .is("manual_reconciliations.id", null)
-        .or('reconciled.is.null,reconciled.eq.false')
-        .order("date", { ascending: false });
+        .eq("reconciled", false);
 
       if (error) {
         console.error("Error fetching unreconciled expenses:", error);

@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,7 @@ import { FileUploader } from "./FileUploader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { formatCurrency, formatCardDate } from "@/utils/formatters";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ManualReconciliationDialogProps {
   open: boolean;
@@ -43,18 +44,50 @@ export function ManualReconciliationDialog({
   const [fileId, setFileId] = useState<string | undefined>(undefined);
   const [chartAccountId, setChartAccountId] = useState<string | undefined>(undefined);
   const [isUploading, setIsUploading] = useState(false);
+  const [confirmDisabled, setConfirmDisabled] = useState(false);
+
+  // Reset form state when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      // Initialize with defaults when opening
+      setReconciliationType("no_invoice");
+      setReferenceNumber("");
+      setNotes("");
+      setFileId(undefined);
+      setIsUploading(false);
+      setConfirmDisabled(false);
+      // Set chart account to the expense's chart account if available
+      if (expense?.chart_account_id) {
+        setChartAccountId(expense.chart_account_id);
+      } else {
+        setChartAccountId(undefined);
+      }
+    }
+  }, [open, expense]);
 
   const handleFileUploaded = (fileId: string) => {
+    console.log("File uploaded, received ID:", fileId);
     setFileId(fileId);
     setIsUploading(false);
   };
 
   const handleSubmit = () => {
+    if (confirmDisabled) return;
+    
+    setConfirmDisabled(true);
+    console.log("Submitting reconciliation with data:", {
+      reconciliationType, 
+      referenceNumber, 
+      notes, 
+      fileId, 
+      chartAccountId: chartAccountId || expense?.chart_account_id
+    });
+    
     onConfirm({
       reconciliationType,
       referenceNumber: referenceNumber || undefined,
       notes,
-      fileId: fileId,
+      fileId,
       chartAccountId: chartAccountId || expense?.chart_account_id,
     });
   };
@@ -153,7 +186,7 @@ export function ManualReconciliationDialog({
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={!notes || isUploading || (reconciliationType === "pdf_only" && !fileId)}
+            disabled={!notes || isUploading || (reconciliationType === "pdf_only" && !fileId) || confirmDisabled}
           >
             Confirmar
           </Button>
