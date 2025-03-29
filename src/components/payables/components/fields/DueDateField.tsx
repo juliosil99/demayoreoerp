@@ -51,7 +51,15 @@ export function DueDateField({ form }: DueDateFieldProps) {
                   )}
                 >
                   {field.value ? (
-                    format(field.value, "dd/MM/yyyy")
+                    format(
+                      // Ensure we use the date as-is without timezone conversions
+                      new Date(
+                        field.value.getFullYear(),
+                        field.value.getMonth(),
+                        field.value.getDate()
+                      ),
+                      "dd/MM/yyyy"
+                    )
                   ) : (
                     <span>Seleccionar fecha</span>
                   )}

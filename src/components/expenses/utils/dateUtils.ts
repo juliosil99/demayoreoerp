@@ -37,5 +37,20 @@ export function formatDateValue(dateValue: any): string {
   } 
   
   // Handle string date formats or return today's date if undefined
+  if (typeof dateValue === 'string') {
+    // Ensure we're using UTC date parsing to avoid timezone issues
+    try {
+      const parts = dateValue.split('T')[0].split('-');
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      
+      const utcDate = new Date(Date.UTC(year, month, day));
+      return format(utcDate, 'yyyy-MM-dd');
+    } catch (e) {
+      console.error("Error parsing date:", e, dateValue);
+    }
+  }
+  
   return dateValue || format(new Date(), 'yyyy-MM-dd');
 }

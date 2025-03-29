@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { format } from "date-fns";
+import { formatCardDate } from "@/utils/formatters";
 
 interface Sale {
   id: number;
@@ -52,7 +52,7 @@ export function ReconciliationTable({ sales, isLoading }: ReconciliationTablePro
           {sales.map((sale) => (
             <TableRow key={sale.id}>
               <TableCell>
-                {sale.date ? format(new Date(sale.date), "dd/MM/yyyy") : "-"}
+                {sale.date ? formatCardDate(sale.date) : "-"}
               </TableCell>
               <TableCell>{sale.orderNumber || "-"}</TableCell>
               <TableCell>{sale.Channel || "-"}</TableCell>

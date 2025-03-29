@@ -28,6 +28,8 @@ const Reconciliation = () => {
         .order("date", { ascending: false });
 
       if (error) throw error;
+      
+      // Ensure date is properly formatted
       return data;
     },
     enabled: !!user,

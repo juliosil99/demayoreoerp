@@ -1,5 +1,5 @@
 
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
 import { Pencil, Trash2 } from "lucide-react";
 import { Payment } from "@/components/payments/PaymentForm";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatCardDate } from "@/utils/formatters";
 
 type PaymentWithRelations = Payment & {
   sales_channels: { name: string } | null;
@@ -34,26 +34,6 @@ export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentT
     return <div className="text-center py-4">No hay pagos registrados.</div>;
   }
 
-  // Helper function to safely format dates with the correct locale
-  const formatDate = (dateString: string) => {
-    try {
-      console.log('DEBUG DATE - Original date string:', dateString);
-      
-      // Use parseISO to correctly handle ISO format dates without timezone issues
-      const parsedDate = parseISO(dateString);
-      console.log('DEBUG DATE - Parsed ISO date:', parsedDate.toString());
-      
-      // Format it as day/month/year (Mexican format)
-      const formattedDate = format(parsedDate, 'dd/MM/yyyy');
-      console.log('DEBUG DATE - Formatted result:', formattedDate);
-      
-      return formattedDate;
-    } catch (error) {
-      console.error("Error formatting date:", error, dateString);
-      return dateString || '-';
-    }
-  };
-
   return (
     <div className="rounded-md border overflow-x-auto">
       <Table>
@@ -71,7 +51,7 @@ export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentT
         <TableBody>
           {payments.map((payment) => (
             <TableRow key={payment.id}>
-              <TableCell>{formatDate(payment.date)}</TableCell>
+              <TableCell>{formatCardDate(payment.date)}</TableCell>
               <TableCell>{payment.sales_channels?.name || '-'}</TableCell>
               <TableCell>{payment.bank_accounts.name}</TableCell>
               <TableCell>

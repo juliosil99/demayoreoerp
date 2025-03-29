@@ -11,20 +11,16 @@ export const formatDate = (date: string | null) => {
   if (!date) return '-';
   
   try {
-    // Create date in UTC to avoid timezone issues
-    const parts = date.split('T')[0].split('-');
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JS Date
-    const day = parseInt(parts[2], 10);
+    // Parse the date in UTC to avoid timezone shifts
+    // This ensures the date shown is the same as the date stored
+    const parsedDate = parseUTCDate(date);
     
-    // Create date explicitly with component parts to avoid timezone shifts
-    const parsedDate = new Date(Date.UTC(year, month, day));
-    
+    // Format with the browser's locale settings but preserve the UTC date
     return parsedDate.toLocaleDateString('es-MX', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-      timeZone: 'UTC' // Important to prevent timezone shifts
+      timeZone: 'UTC' // Crucial to prevent timezone shifts
     });
   } catch (error) {
     console.error("Error formatting date:", error, date);
@@ -37,23 +33,35 @@ export const formatCardDate = (dateString: string) => {
   try {
     if (!dateString) return "-";
     
-    // Create date in UTC to avoid timezone issues
-    const parts = dateString.split('T')[0].split('-');
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JS Date
-    const day = parseInt(parts[2], 10);
-    
-    // Create date explicitly with component parts to avoid timezone shifts
-    const parsedDate = new Date(Date.UTC(year, month, day));
+    // Use the same UTC parsing approach for consistency
+    const parsedDate = parseUTCDate(dateString);
     
     return parsedDate.toLocaleDateString('es-MX', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-      timeZone: 'UTC' // Important to prevent timezone shifts
+      timeZone: 'UTC' // Crucial to prevent timezone shifts
     });
   } catch (error) {
-    console.error("Error formatting date:", error, dateString);
+    console.error("Error formatting card date:", error, dateString);
     return dateString || '-';
   }
 };
+
+// Utility function to safely parse dates in UTC
+function parseUTCDate(dateString: string): Date {
+  // Handle ISO format dates (YYYY-MM-DDTHH:mm:ss.sssZ)
+  if (dateString.includes('T')) {
+    // Extract just the date part from ISO string
+    dateString = dateString.split('T')[0];
+  }
+  
+  // Split the date into parts and create a UTC date
+  const parts = dateString.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JS Date
+  const day = parseInt(parts[2], 10);
+  
+  // Create date explicitly with component parts in UTC
+  return new Date(Date.UTC(year, month, day));
+}
