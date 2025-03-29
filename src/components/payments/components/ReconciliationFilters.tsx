@@ -48,7 +48,7 @@ export function ReconciliationFilters({
               <SelectValue placeholder="Todos los canales" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos los canales</SelectItem>
+              <SelectItem value="all">Todos los canales</SelectItem>
               {salesChannels?.map((channel) => (
                 <SelectItem key={channel.id} value={channel.id}>
                   {channel.name}
