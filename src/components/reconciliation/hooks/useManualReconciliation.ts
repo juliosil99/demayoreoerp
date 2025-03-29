@@ -37,10 +37,14 @@ export const useManualReconciliation = (userId: string | undefined) => {
     }
   ) => {
     try {
-      if (!userId) throw new Error("User ID is required");
+      if (!userId) {
+        console.error("Error: Missing user ID for reconciliation");
+        toast.error("Error de autenticación");
+        return false;
+      }
       
-      console.log("=== MANUAL RECONCILIATION DEBUG LOG ===");
-      console.log(`Starting manual reconciliation process for expense: ${expenseId}`);
+      console.log("=== MANUAL RECONCILIATION PROCESS STARTED ===");
+      console.log(`Processing reconciliation for expense: ${expenseId}`);
       console.log("Reconciliation data:", JSON.stringify(data, null, 2));
       
       // First, verify the expense exists and its current reconciliation status
@@ -52,13 +56,16 @@ export const useManualReconciliation = (userId: string | undefined) => {
 
       if (checkError) {
         console.error("Error checking expense:", checkError);
-        throw checkError;
+        toast.error("Error verificando gasto");
+        return false;
       }
 
       console.log("Current expense status:", JSON.stringify(expenseCheck, null, 2));
       
       // Step 1: Create a manual reconciliation record
-      console.log("Step 1: Creating manual reconciliation record with data:", {
+      console.log("Step 1: Creating manual reconciliation record...");
+      
+      const manualRecData = {
         expense_id: expenseId,
         user_id: userId,
         reconciliation_type: data.reconciliationType,
@@ -66,50 +73,51 @@ export const useManualReconciliation = (userId: string | undefined) => {
         notes: data.notes,
         file_id: data.fileId || null,
         chart_account_id: data.chartAccountId || null
-      });
+      };
+      
+      console.log("Inserting record with data:", JSON.stringify(manualRecData, null, 2));
 
       const { data: newReconciliation, error: manualError } = await supabase
         .from("manual_reconciliations")
-        .insert([{
-          expense_id: expenseId,
-          user_id: userId,
-          reconciliation_type: data.reconciliationType,
-          reference_number: data.referenceNumber || null,
-          notes: data.notes,
-          file_id: data.fileId || null,
-          chart_account_id: data.chartAccountId || null
-        }])
+        .insert([manualRecData])
         .select();
 
       if (manualError) {
         console.error("Error creating manual reconciliation record:", manualError);
-        throw manualError;
+        toast.error("Error creando registro de reconciliación");
+        return false;
       }
       
-      console.log("Manual reconciliation record created:", JSON.stringify(newReconciliation, null, 2));
+      console.log("Manual reconciliation record created:", newReconciliation);
       
       // Step 2: Manually update the expense to mark it as reconciled
-      // We'll do this even though there's a trigger, to ensure it works
       const now = new Date().toISOString();
-      console.log(`Step 2: Manually setting expense ${expenseId} as reconciled at ${now}`);
+      console.log(`Step 2: Updating expense ${expenseId} as reconciled at ${now}`);
+      
+      const updateData = { 
+        reconciled: true,
+        reconciliation_date: now,
+        reconciliation_type: 'manual'
+      };
+      
+      console.log("Updating expense with:", JSON.stringify(updateData, null, 2));
       
       const { data: updatedExpense, error: updateError } = await supabase
         .from("expenses")
-        .update({ 
-          reconciled: true,
-          reconciliation_date: now,
-          reconciliation_type: 'manual'
-        })
+        .update(updateData)
         .eq("id", expenseId)
         .select();
 
       if (updateError) {
         console.error("Error updating expense reconciliation status:", updateError);
-        throw updateError;
+        toast.error("Error actualizando estado de reconciliación");
+        return false;
       }
       
-      // Step 3: Double-check if the update worked by refetching the expense
-      console.log("Step 3: Verifying the expense update...");
+      console.log("Expense updated successfully:", updatedExpense);
+      
+      // Step 3: Verify the update worked
+      console.log("Step 3: Verifying the update...");
       const { data: verifyUpdate, error: verifyError } = await supabase
         .from("expenses")
         .select("reconciled, reconciliation_date, reconciliation_type")
@@ -119,23 +127,24 @@ export const useManualReconciliation = (userId: string | undefined) => {
       if (verifyError) {
         console.error("Error verifying update:", verifyError);
       } else {
-        console.log("Verification of updated expense:", JSON.stringify(verifyUpdate, null, 2));
+        console.log("Verification result:", verifyUpdate);
+        
+        if (!verifyUpdate.reconciled) {
+          console.error("WARNING: Expense still not marked as reconciled even after update!");
+        }
       }
-      
-      console.log("Expense successfully updated:", JSON.stringify(updatedExpense, null, 2));
-      console.log("Manual reconciliation complete for expense:", expenseId);
       
       // Step 4: Invalidate queries to refresh the UI
       console.log("Step 4: Invalidating queries to refresh UI...");
       queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"] });
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       
-      console.log("=== END DEBUG LOG ===");
+      console.log("=== MANUAL RECONCILIATION COMPLETED SUCCESSFULLY ===");
       
       toast.success("Gasto conciliado manualmente");
       return true;
     } catch (error) {
-      console.error("Error al reconciliar manualmente:", error);
+      console.error("Error en reconciliación manual:", error);
       toast.error("Error al reconciliar el gasto");
       return false;
     }

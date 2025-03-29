@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { formatCurrency, formatCardDate } from "@/utils/formatters";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 interface ManualReconciliationDialogProps {
   open: boolean;
@@ -91,12 +92,22 @@ export function ManualReconciliationDialog({
     
     // Call the onConfirm callback with the form data
     onConfirm(reconciliationData);
+    
+    // Close the dialog after submission
+    toast.success("Procesando reconciliación...");
+    setTimeout(() => onOpenChange(false), 500);
   };
 
   if (!expense) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      if (confirmDisabled && !newOpen) {
+        // If we're closing while disabled, that's likely a successful submission
+        console.log("Dialog closing after confirmation");
+      }
+      onOpenChange(newOpen);
+    }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Reconciliación Manual</DialogTitle>
@@ -198,7 +209,7 @@ export function ManualReconciliationDialog({
             onClick={handleSubmit} 
             disabled={!notes || isUploading || (reconciliationType === "pdf_only" && !fileId) || confirmDisabled}
           >
-            Confirmar
+            {confirmDisabled ? "Procesando..." : "Confirmar"}
           </Button>
         </DialogFooter>
       </DialogContent>

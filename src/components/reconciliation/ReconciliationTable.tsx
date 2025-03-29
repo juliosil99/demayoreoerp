@@ -4,6 +4,7 @@ import { ExpenseCard } from "./components/ExpenseCard";
 import { InvoiceSearchDialog } from "./components/InvoiceSearchDialog";
 import { AccountAdjustmentDialog } from "./components/AccountAdjustmentDialog";
 import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
+import { toast } from "sonner";
 
 interface ReconciliationTableProps {
   expenses: any[];
@@ -46,23 +47,42 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
   const filteredInvoices = filterInvoices(invoices, searchTerm);
 
   const handleExpenseSelect = (expense: any) => {
+    console.log("Expense selected:", expense.id);
     setSelectedExpense(expense);
     setShowInvoiceSearch(true);
+  };
+
+  // Monitor when manual reconciliation is confirmed
+  const onManualReconciliationConfirm = (data: any) => {
+    console.log("Manual reconciliation confirmed with data:", data);
+    if (selectedExpense) {
+      toast.info("Procesando reconciliación...");
+      handleManualReconciliationConfirm(data);
+    } else {
+      console.error("No expense selected for manual reconciliation");
+      toast.error("Error: No hay gasto seleccionado");
+    }
   };
 
   return (
     <div className="space-y-4 max-w-full">
       <div className="space-y-4">
         <h3 className="text-lg font-semibold px-2 sm:px-0">Gastos sin Conciliar</h3>
-        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {expenses.map((expense) => (
-            <ExpenseCard
-              key={expense.id}
-              expense={expense}
-              onSelectExpense={handleExpenseSelect}
-            />
-          ))}
-        </div>
+        {expenses.length === 0 ? (
+          <div className="text-center p-8 bg-gray-50 rounded-lg">
+            <p className="text-gray-500">No hay gastos pendientes de conciliar</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {expenses.map((expense) => (
+              <ExpenseCard
+                key={expense.id}
+                expense={expense}
+                onSelectExpense={handleExpenseSelect}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <InvoiceSearchDialog
@@ -90,7 +110,7 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
         open={showManualReconciliation}
         onOpenChange={setShowManualReconciliation}
         expense={selectedExpense}
-        onConfirm={handleManualReconciliationConfirm}
+        onConfirm={onManualReconciliationConfirm}
         chartAccounts={chartAccounts || []}
       />
     </div>
