@@ -16,13 +16,13 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Form, FormField, FormItem, FormControl, FormLabel } from "@/components/ui/form";
-import type { NewBankAccount, BankAccount } from "./types";
+import type { NewBankAccount, BankAccount, AccountCurrency } from "./types";
 import { useForm } from "react-hook-form";
 
 interface BankAccountDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (account: NewBankAccount | BankAccount) => void; // Updated to accept account parameter
+  onSave: (account: NewBankAccount | BankAccount) => void;
   account: NewBankAccount;
   setAccount: (account: NewBankAccount) => void;
   title: string;
@@ -73,6 +73,23 @@ export function BankAccountDialog({
                 <SelectItem value="Cash">Efectivo</SelectItem>
                 <SelectItem value="Credit Card">Tarjeta de Crédito</SelectItem>
                 <SelectItem value="Credit Simple">Crédito Simple</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="currency">Moneda</Label>
+            <Select
+              value={account.currency}
+              onValueChange={(value) =>
+                setAccount({ ...account, currency: value as AccountCurrency })
+              }
+            >
+              <SelectTrigger id="currency">
+                <SelectValue placeholder="Seleccione la moneda" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MXN">Peso Mexicano (MXN)</SelectItem>
+                <SelectItem value="USD">Dólar Estadounidense (USD)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -132,7 +149,7 @@ export function BankAccountDialog({
             Cancelar
           </Button>
           <Button 
-            onClick={() => onSave(account)} // Updated to pass the account parameter
+            onClick={() => onSave(account)}
             className="w-full sm:w-auto"
           >
             {submitText}
