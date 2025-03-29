@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PlusIcon } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -64,8 +64,12 @@ export default function Expenses() {
         query = query.eq('account_id', filters.account_id);
       }
       if (filters.unreconciled) {
-        // Cambiamos la condición para mostrar gastos sin conciliar
+        // Modified filter logic: 
+        // We want expenses that BOTH:
+        // 1. Have no expense_invoice_relations
+        // 2. AND are either not reconciled or have reconciled set to false
         query = query.is('expense_invoice_relations', null);
+        query = query.or('reconciled.is.null,reconciled.eq.false');
       }
 
       query = query.order('date', { ascending: false });
@@ -73,6 +77,7 @@ export default function Expenses() {
       const { data, error } = await query;
 
       if (error) throw error;
+      console.log("Fetched expenses:", data?.length);
       return data as unknown as Expense[];
     },
     enabled: !!user,
@@ -82,6 +87,11 @@ export default function Expenses() {
     refetch();
     setOpen(false);
   }, [refetch]);
+
+  // Log the filter state for debugging
+  useEffect(() => {
+    console.log("Current filters:", filters);
+  }, [filters]);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
