@@ -74,9 +74,30 @@ export function ManualReconciliationDialog({
     setIsUploading(false);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    // Prevent default browser form submission
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    console.log("[ManualReconciliationDialog] Submit handler called, confirmDisabled:", confirmDisabled);
+    
     if (confirmDisabled) {
       console.log("[ManualReconciliationDialog] Submit button is disabled, ignoring click");
+      return;
+    }
+    
+    // Basic validation before submitting
+    if (reconciliationType === "pdf_only" && !fileId) {
+      console.log("[ManualReconciliationDialog] Cannot submit: 'pdf_only' selected but no file uploaded");
+      toast.error("Por favor suba un archivo PDF");
+      return;
+    }
+    
+    if (!notes || notes.trim() === "") {
+      console.log("[ManualReconciliationDialog] Cannot submit: Notes field is empty");
+      toast.error("Por favor agregue notas");
       return;
     }
     
@@ -97,17 +118,17 @@ export function ManualReconciliationDialog({
       // Call the onConfirm callback with the form data
       onConfirm(reconciliationData);
       console.log("[ManualReconciliationDialog] onConfirm handler called successfully");
+      
+      // Force close the dialog after submission
+      setTimeout(() => {
+        console.log("[ManualReconciliationDialog] Forcing dialog close...");
+        onOpenChange(false);
+      }, 300);
     } catch (error) {
       console.error("[ManualReconciliationDialog] Error in onConfirm handler:", error);
       setConfirmDisabled(false);
+      toast.error("Error al procesar la reconciliación");
     }
-    
-    // Force close the dialog after submission
-    console.log("[ManualReconciliationDialog] Forcing dialog close...");
-    setTimeout(() => {
-      console.log("[ManualReconciliationDialog] Calling onOpenChange(false) to close dialog");
-      onOpenChange(false);
-    }, 100);
   };
 
   if (!expense) return null;
@@ -138,7 +159,7 @@ export function ManualReconciliationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <ReconciliationTypeSelector 
             value={reconciliationType}
             onChange={(value) => {
@@ -184,28 +205,31 @@ export function ManualReconciliationDialog({
               onUploadComplete={handleFileUploaded}
             />
           )}
-        </div>
 
-        <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              console.log("[ManualReconciliationDialog] Cancel button clicked");
-              onOpenChange(false);
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button 
-            onClick={() => {
-              console.log("[ManualReconciliationDialog] Confirm button clicked, disabled:", isSubmitDisabled);
-              handleSubmit();
-            }} 
-            disabled={isSubmitDisabled}
-          >
-            {confirmDisabled ? "Procesando..." : "Confirmar"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button 
+              type="button"
+              variant="outline" 
+              onClick={() => {
+                console.log("[ManualReconciliationDialog] Cancel button clicked");
+                onOpenChange(false);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit"
+              onClick={(e) => {
+                e.preventDefault();
+                console.log("[ManualReconciliationDialog] Confirm button clicked manually, disabled:", isSubmitDisabled);
+                handleSubmit(e);
+              }} 
+              disabled={isSubmitDisabled}
+            >
+              {confirmDisabled ? "Procesando..." : "Confirmar"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

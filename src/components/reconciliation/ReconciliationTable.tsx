@@ -56,19 +56,35 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
 
   // Monitor when manual reconciliation is confirmed
   const onManualReconciliationConfirm = (data: any) => {
-    console.log("Manual reconciliation confirmed with data:", data);
-    if (selectedExpense) {
-      toast.info("Procesando reconciliación...");
+    console.log("Manual reconciliation confirmed with data:", JSON.stringify(data, null, 2));
+    
+    if (!selectedExpense) {
+      console.error("No expense selected for manual reconciliation");
+      toast.error("Error: No hay gasto seleccionado");
+      return;
+    }
+    
+    toast.info("Procesando reconciliación...");
+    console.log("Calling handleManualReconciliationConfirm with expense ID:", selectedExpense.id);
+    
+    // Add try-catch to catch any errors during reconciliation
+    try {
       const result = handleManualReconciliationConfirm(data);
       console.log("Manual reconciliation result:", result);
       
-      // Ensure dialog closes
+      // Close the dialog and reset state regardless of result to avoid UI being stuck
+      setTimeout(() => {
+        console.log("Closing manual reconciliation dialog...");
+        setShowManualReconciliation(false);
+      }, 500);
+    } catch (error) {
+      console.error("Error during manual reconciliation:", error);
+      toast.error("Error durante la reconciliación manual");
+      
+      // Make sure dialog closes even if there's an error
       setTimeout(() => {
         setShowManualReconciliation(false);
-      }, 200);
-    } else {
-      console.error("No expense selected for manual reconciliation");
-      toast.error("Error: No hay gasto seleccionado");
+      }, 500);
     }
   };
   

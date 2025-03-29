@@ -21,16 +21,27 @@ export function FileUploadSection({
   const handleUploadComplete = (fileId: string) => {
     console.log("[FileUploadSection] Upload complete event received with fileId:", fileId);
     console.log("[FileUploadSection] Calling onUploadComplete");
-    onUploadComplete(fileId);
+    
+    // Call onUploadComplete with a slight delay to prevent race conditions
+    setTimeout(() => {
+      onUploadComplete(fileId);
+    }, 100);
   };
   
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
       <Label>Subir Documento</Label>
-      <FileUploader
-        onUploadStart={handleUploadStart}
-        onUploadComplete={handleUploadComplete}
-      />
+      <div 
+        onClick={(e) => {
+          // Prevent event bubbling to avoid triggering form submission
+          e.stopPropagation();
+        }}
+      >
+        <FileUploader
+          onUploadStart={handleUploadStart}
+          onUploadComplete={handleUploadComplete}
+        />
+      </div>
     </div>
   );
 }

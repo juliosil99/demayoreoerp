@@ -33,7 +33,11 @@ export function FileUploader({
     }
   };
 
-  const handleUpload = async () => {
+  const handleUpload = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    // Prevent default to avoid any potential form submission
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!file || !user) {
       console.log("[FileUploader] Upload canceled - no file or user");
       return;
@@ -91,8 +95,13 @@ export function FileUploader({
 
       console.log("[FileUploader] File upload successful!");
       setUploadSuccess(true);
-      console.log("[FileUploader] Calling onUploadComplete with file ID:", fileRecord.id);
-      onUploadComplete(fileRecord.id);
+      
+      // Add a small delay before calling onUploadComplete to prevent any race conditions
+      setTimeout(() => {
+        console.log("[FileUploader] Calling onUploadComplete with file ID:", fileRecord.id);
+        onUploadComplete(fileRecord.id);
+      }, 100);
+      
       toast.success("Archivo subido exitosamente");
       
     } catch (error) {
@@ -157,6 +166,7 @@ export function FileUploader({
           onClick={handleUpload} 
           disabled={uploading}
           className="w-full"
+          type="button" // Explicitly set type to button to prevent form submission
         >
           {uploading ? "Subiendo..." : "Subir Archivo"}
         </Button>
