@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -39,7 +38,9 @@ export const useManualReconciliation = (userId: string | undefined) => {
     try {
       if (!userId) throw new Error("User ID is required");
       
-      console.log("Starting manual reconciliation process for expense:", expenseId);
+      console.log("=== MANUAL RECONCILIATION DEBUG LOG ===");
+      console.log(`Starting manual reconciliation process for expense: ${expenseId}`);
+      console.log("Reconciliation data:", JSON.stringify(data, null, 2));
       
       // First, verify the expense exists and its current reconciliation status
       const { data: expenseCheck, error: checkError } = await supabase
@@ -53,10 +54,10 @@ export const useManualReconciliation = (userId: string | undefined) => {
         throw checkError;
       }
 
-      console.log("Current expense status:", expenseCheck);
+      console.log("Current expense status:", JSON.stringify(expenseCheck, null, 2));
       
       // Create a manual reconciliation record
-      const { error: manualError } = await supabase
+      const { data: newReconciliation, error: manualError } = await supabase
         .from("manual_reconciliations")
         .insert([{
           expense_id: expenseId,
@@ -66,16 +67,21 @@ export const useManualReconciliation = (userId: string | undefined) => {
           notes: data.notes,
           file_id: data.fileId || null,
           chart_account_id: data.chartAccountId || null
-        }]);
+        }])
+        .select();
 
       if (manualError) {
         console.error("Error creating manual reconciliation record:", manualError);
         throw manualError;
       }
       
+      console.log("Manual reconciliation record created:", JSON.stringify(newReconciliation, null, 2));
+      
       // Update the expense to mark it as reconciled
+      // Note: This should be done by the database trigger now, but we'll keep the code
+      // for backwards compatibility and to verify the trigger is working
       const now = new Date().toISOString();
-      console.log(`Setting expense ${expenseId} as reconciled at ${now}`);
+      console.log(`Attempting to set expense ${expenseId} as reconciled at ${now}`);
       
       const { data: updatedExpense, error: updateError } = await supabase
         .from("expenses")
@@ -102,11 +108,12 @@ export const useManualReconciliation = (userId: string | undefined) => {
       if (verifyError) {
         console.error("Error verifying update:", verifyError);
       } else {
-        console.log("Verification of updated expense:", verifyUpdate);
+        console.log("Verification of updated expense:", JSON.stringify(verifyUpdate, null, 2));
       }
       
-      console.log("Expense successfully updated:", updatedExpense);
+      console.log("Expense successfully updated:", JSON.stringify(updatedExpense, null, 2));
       console.log("Manual reconciliation complete for expense:", expenseId);
+      console.log("=== END DEBUG LOG ===");
       
       // Invalidate relevant queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"] });

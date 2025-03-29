@@ -49,6 +49,7 @@ export function ManualReconciliationDialog({
   // Reset form state when dialog opens/closes
   useEffect(() => {
     if (open) {
+      console.log("ManualReconciliationDialog opened for expense:", expense?.id);
       // Initialize with defaults when opening
       setReconciliationType("no_invoice");
       setReferenceNumber("");
@@ -58,6 +59,7 @@ export function ManualReconciliationDialog({
       setConfirmDisabled(false);
       // Set chart account to the expense's chart account if available
       if (expense?.chart_account_id) {
+        console.log("Setting initial chart account ID to:", expense.chart_account_id);
         setChartAccountId(expense.chart_account_id);
       } else {
         setChartAccountId(undefined);
@@ -75,7 +77,7 @@ export function ManualReconciliationDialog({
     if (confirmDisabled) return;
     
     setConfirmDisabled(true);
-    console.log("Submitting reconciliation with data:", {
+    console.log("Submitting manual reconciliation with data:", {
       reconciliationType, 
       referenceNumber, 
       notes, 
@@ -109,7 +111,10 @@ export function ManualReconciliationDialog({
             <Label>Tipo de Reconciliación</Label>
             <RadioGroup
               value={reconciliationType}
-              onValueChange={setReconciliationType}
+              onValueChange={(value) => {
+                console.log("Reconciliation type changed to:", value);
+                setReconciliationType(value);
+              }}
               className="flex flex-col space-y-1"
             >
               <div className="flex items-center space-x-2">
@@ -143,7 +148,10 @@ export function ManualReconciliationDialog({
             <Label htmlFor="account">Cuenta Contable</Label>
             <Select
               value={chartAccountId || expense.chart_account_id}
-              onValueChange={setChartAccountId}
+              onValueChange={(value) => {
+                console.log("Chart account changed to:", value);
+                setChartAccountId(value);
+              }}
             >
               <SelectTrigger id="account">
                 <SelectValue placeholder="Seleccionar cuenta contable" />
@@ -173,7 +181,10 @@ export function ManualReconciliationDialog({
             <div className="space-y-2">
               <Label>Subir Documento</Label>
               <FileUploader
-                onUploadStart={() => setIsUploading(true)}
+                onUploadStart={() => {
+                  console.log("File upload started");
+                  setIsUploading(true);
+                }}
                 onUploadComplete={handleFileUploaded}
               />
             </div>
