@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TransferFormFields } from "@/components/banking/TransferFormFields";
+import { TransferFormFields } from "@/components/banking/transfer-form";
 import { useAccountTransferCreate } from "@/components/banking/hooks/useAccountTransferCreate";
 import { Button } from "@/components/ui/button";
 import { AccountCurrency } from "./types";

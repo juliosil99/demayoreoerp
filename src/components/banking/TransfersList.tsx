@@ -18,7 +18,8 @@ interface TransferRow {
   date: string;
   from_account_id: number;
   to_account_id: number;
-  amount: number;
+  amount_from: number;
+  amount_to: number;
   reference_number: string | null;
   notes: string | null;
   user_id: string;
@@ -26,6 +27,8 @@ interface TransferRow {
   from_account?: { name: string };
   to_account?: { name: string };
   created_at?: string;
+  // For backward compatibility
+  amount?: number;
 }
 
 interface TransfersListProps {
@@ -61,7 +64,9 @@ export function TransfersList({ transfers, isLoading, onEditTransfer }: Transfer
                     <TableCell>{formatDate(transfer.date)}</TableCell>
                     <TableCell>{transfer.from_account?.name}</TableCell>
                     <TableCell>{transfer.to_account?.name}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(transfer.amount)}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(transfer.amount_from || transfer.amount || 0)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button 
                         variant="ghost" 

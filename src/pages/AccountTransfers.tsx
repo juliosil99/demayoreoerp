@@ -9,6 +9,7 @@ import { TransfersList } from "@/components/banking/TransfersList";
 import { useBankAccounts } from "@/components/banking/hooks/useBankAccounts";
 import { useAccountTransfersList } from "@/components/banking/hooks/useAccountTransfersList";
 import { AccountTransfersTable } from "@/integrations/supabase/types/account-transfers";
+import { Account } from "@/components/banking/transfer-form/types";
 
 // Define a type for the transfer with joined account information
 interface TransferWithAccounts {
@@ -53,12 +54,22 @@ export default function AccountTransfers() {
       notes: transfer.notes,
       user_id: transfer.user_id,
       status: transfer.status,
-      created_at: transfer.created_at
+      created_at: transfer.created_at,
+      // For backward compatibility
+      amount: transfer.amount_from
     };
     
     setSelectedTransfer(baseTransfer);
     setEditDialogOpen(true);
   };
+
+  // Convert bank accounts to the Account type needed by the transfer components
+  const formattedAccounts: Account[] = accounts?.map(account => ({
+    id: account.id,
+    name: account.name,
+    balance: account.balance || 0,
+    currency: account.currency as "MXN" | "USD"
+  })) || [];
 
   return (
     <div className="container mx-auto p-6">
@@ -72,7 +83,7 @@ export default function AccountTransfers() {
       </Button>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <TransferForm accounts={accounts || []} />
+        <TransferForm accounts={formattedAccounts} />
         <TransfersList 
           transfers={transfers} 
           isLoading={isLoadingTransfers}
@@ -86,7 +97,7 @@ export default function AccountTransfers() {
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           transfer={selectedTransfer}
-          accounts={accounts || []}
+          accounts={formattedAccounts}
         />
       )}
     </div>

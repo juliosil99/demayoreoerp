@@ -5,17 +5,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-
-export interface TransferFormData {
-  date: string;
-  from_account_id: string;
-  to_account_id: string;
-  amount_from: string;
-  amount_to: string;
-  exchange_rate: string;
-  reference_number: string;
-  notes: string;
-}
+import { TransferFormData } from "../transfer-form/types";
 
 export function useAccountTransferCreate() {
   const { user } = useAuth();
@@ -45,6 +35,8 @@ export function useAccountTransferCreate() {
           reference_number: data.reference_number || null,
           notes: data.notes || null,
           user_id: user?.id,
+          // For backward compatibility, also set the amount field
+          amount: parseFloat(data.amount_from)
         });
       if (error) throw error;
     },

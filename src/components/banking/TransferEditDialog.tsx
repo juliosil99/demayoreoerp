@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { TransferFormFields } from "./TransferFormFields";
+import { TransferFormFields } from "@/components/banking/transfer-form";
 import { useTransferEdit } from "./hooks/useTransferEdit";
 import { AccountTransfersTable } from "@/integrations/supabase/types/account-transfers";
 import { AccountCurrency } from "./types";

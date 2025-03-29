@@ -4,17 +4,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-
-interface TransferFormData {
-  date: string;
-  from_account_id: string;
-  to_account_id: string;
-  amount_from: string;
-  amount_to: string;
-  exchange_rate: string;
-  reference_number: string;
-  notes: string;
-}
+import { TransferFormData } from "../transfer-form/types";
 
 interface Transfer {
   id: string;
@@ -80,6 +70,8 @@ export function useTransferEdit(
           exchange_rate: parseFloat(formData.exchange_rate || "1"),
           reference_number: formData.reference_number || null,
           notes: formData.notes || null,
+          // For backward compatibility, also update the amount field
+          amount: parseFloat(formData.amount_from)
         })
         .eq("id", transfer.id);
 

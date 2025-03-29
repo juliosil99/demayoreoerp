@@ -9,7 +9,9 @@ interface TransferRow {
   date: string;
   from_account_id: number;
   to_account_id: number;
-  amount: number;
+  amount_from: number;
+  amount_to: number;
+  amount?: number; // For backward compatibility
   reference_number: string | null;
   notes: string | null;
   user_id: string;
@@ -32,7 +34,9 @@ export function useAccountTransfersList() {
           date, 
           from_account_id, 
           to_account_id, 
-          amount, 
+          amount,
+          amount_from,
+          amount_to, 
           reference_number, 
           notes, 
           status,
