@@ -1,6 +1,6 @@
 
 import { Label } from "@/components/ui/label";
-import { FileUploader } from "../FileUploader";
+import { FileUploader } from "../uploader/FileUploader";
 
 interface FileUploadSectionProps {
   onUploadStart: () => void;
