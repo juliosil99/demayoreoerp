@@ -26,6 +26,30 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
     return null;
   };
 
+  // Function to format amount based on invoice type
+  const formatAmount = (invoice: Invoice) => {
+    if (!invoice.total_amount) return "-";
+    
+    // If it's a credit note (type E), show as negative amount
+    const amount = invoice.invoice_type === 'E' 
+      ? -1 * invoice.total_amount 
+      : invoice.total_amount;
+      
+    return `${invoice.currency || "MXN"} ${amount.toFixed(2)}`;
+  };
+
+  // Function to format tax amount based on invoice type
+  const formatTaxAmount = (invoice: Invoice) => {
+    if (!invoice.tax_amount) return "-";
+    
+    // If it's a credit note (type E), show as negative amount
+    const amount = invoice.invoice_type === 'E' 
+      ? -1 * invoice.tax_amount 
+      : invoice.tax_amount;
+      
+    return `${invoice.currency || "MXN"} ${amount.toFixed(2)}`;
+  };
+
   // Calculate pagination
   const totalPages = invoices ? Math.ceil(invoices.length / ITEMS_PER_PAGE) : 0;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -87,7 +111,13 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
                     ? `${invoice.serie}-${invoice.invoice_number}` 
                     : invoice.invoice_number || "-"}
                 </TableCell>
-                <TableCell>{invoice.invoice_type || "-"}</TableCell>
+                <TableCell>
+                  {invoice.invoice_type === 'E' 
+                    ? 'Egreso (Nota de Crédito)'
+                    : invoice.invoice_type === 'I'
+                      ? 'Ingreso'
+                      : invoice.invoice_type || "-"}
+                </TableCell>
                 <TableCell>
                   <div className="flex flex-col">
                     <span>{invoice.issuer_name || "-"}</span>
@@ -100,15 +130,11 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
                     <span className="text-xs text-muted-foreground">{invoice.receiver_rfc}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-right">
-                  {invoice.total_amount
-                    ? `${invoice.currency || "MXN"} ${invoice.total_amount.toFixed(2)}`
-                    : "-"}
+                <TableCell className={`text-right ${invoice.invoice_type === 'E' ? 'text-red-600 font-medium' : ''}`}>
+                  {formatAmount(invoice)}
                 </TableCell>
-                <TableCell className="text-right">
-                  {invoice.tax_amount
-                    ? `${invoice.currency || "MXN"} ${invoice.tax_amount.toFixed(2)}`
-                    : "-"}
+                <TableCell className={`text-right ${invoice.invoice_type === 'E' ? 'text-red-600 font-medium' : ''}`}>
+                  {formatTaxAmount(invoice)}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
