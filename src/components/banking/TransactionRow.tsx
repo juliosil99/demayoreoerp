@@ -1,5 +1,6 @@
+
 import { TableCell, TableRow } from "@/components/ui/table";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ArrowUpRight, ArrowDownRight, Banknote, FileText, ArrowRightLeft } from "lucide-react";
 import { AccountTransaction } from "./hooks/transaction-types";
 
@@ -46,8 +47,19 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
   // Row opacity for transactions before initial date
   const rowOpacity = transaction.beforeInitialDate ? 'opacity-50' : 'opacity-100';
 
-  // Format date string
-  const formattedDate = format(new Date(transaction.date), 'dd/MM/yyyy');
+  // Format date string - improved to handle timezone issues
+  const formatTransactionDate = (dateString: string) => {
+    try {
+      // Use parseISO instead of new Date() to avoid timezone issues
+      const dateObj = parseISO(dateString);
+      return format(dateObj, 'dd/MM/yyyy');
+    } catch (error) {
+      console.error("Error formatting transaction date:", error, dateString);
+      return dateString || '-';
+    }
+  };
+
+  const formattedDate = formatTransactionDate(transaction.date);
 
   return (
     <TableRow className={rowOpacity}>
