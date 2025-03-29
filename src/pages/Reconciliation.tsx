@@ -13,8 +13,19 @@ const Reconciliation = () => {
     queryFn: async () => {
       console.log("Fetching unreconciled expenses...");
       
-      // Get expenses that aren't reconciled yet - check both the reconciled flag 
-      // and make sure they don't have any expense_invoice_relations
+      // Check if we can retrieve some reconciled expenses to debug
+      const { data: reconciled, error: reconciledError } = await supabase
+        .from("expenses")
+        .select("id, reconciled, reconciliation_date, reconciliation_type")
+        .eq("user_id", user!.id)
+        .is("reconciled", true)
+        .limit(3);
+        
+      if (reconciled?.length) {
+        console.log("Sample reconciled expenses:", reconciled);
+      }
+      
+      // Get expenses that aren't reconciled yet 
       const { data, error } = await supabase
         .from("expenses")
         .select(`

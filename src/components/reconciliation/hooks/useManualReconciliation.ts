@@ -59,21 +59,30 @@ export const useManualReconciliation = (userId: string | undefined) => {
         throw manualError;
       }
       
-      // Update the expense to mark it as reconciled
-      const { error: updateError } = await supabase
+      // Update the expense to mark it as reconciled - ADDING EXPLICIT DATA TYPES
+      const now = new Date().toISOString();
+      console.log(`Setting expense ${expenseId} as reconciled at ${now}`);
+      
+      const updateData = { 
+        reconciled: true,
+        reconciliation_date: now,
+        reconciliation_type: 'manual'
+      };
+      
+      console.log("Update data:", updateData);
+      
+      const { data: updatedExpense, error: updateError } = await supabase
         .from("expenses")
-        .update({ 
-          reconciled: true,
-          reconciliation_date: new Date().toISOString(),
-          reconciliation_type: 'manual'
-        })
-        .eq("id", expenseId);
+        .update(updateData)
+        .eq("id", expenseId)
+        .select();
 
       if (updateError) {
         console.error("Error updating expense reconciliation status:", updateError);
         throw updateError;
       }
-
+      
+      console.log("Expense successfully updated:", updatedExpense);
       console.log("Expense successfully reconciled manually:", expenseId);
       
       // Invalidate relevant queries to refresh the UI
