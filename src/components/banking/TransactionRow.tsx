@@ -8,10 +8,11 @@ export interface Transaction {
   date: string;
   description: string;
   reference: string;
-  type: "in" | "out";
+  type: "in" | "out" | "initial";
   amount: number;
   runningBalance: number | null;
   beforeInitialDate?: boolean;
+  isInitialBalance?: boolean;
 }
 
 interface TransactionRowProps {
@@ -19,6 +20,21 @@ interface TransactionRowProps {
 }
 
 export function TransactionRow({ transaction }: TransactionRowProps) {
+  // Special rendering for initial balance row
+  if (transaction.isInitialBalance) {
+    return (
+      <TableRow className="bg-muted/20 font-medium">
+        <TableCell>{formatDate(transaction.date)}</TableCell>
+        <TableCell>{transaction.description}</TableCell>
+        <TableCell>{transaction.reference}</TableCell>
+        <TableCell className="text-right">-</TableCell>
+        <TableCell className="text-right">{formatCurrency(transaction.amount)}</TableCell>
+        <TableCell className="text-right">{formatCurrency(transaction.runningBalance)}</TableCell>
+      </TableRow>
+    );
+  }
+
+  // Regular transaction rows
   return (
     <TableRow 
       className={`group hover:bg-muted/40 transition-colors ${transaction.beforeInitialDate ? 'opacity-60' : ''}`}
