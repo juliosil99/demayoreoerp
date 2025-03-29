@@ -94,20 +94,26 @@ export function ManualReconciliationDialog({
     onConfirm(reconciliationData);
     
     // Close the dialog after submission
-    toast.success("Procesando reconciliación...");
-    setTimeout(() => onOpenChange(false), 500);
+    setTimeout(() => {
+      console.log("Manually closing dialog after submission");
+      onOpenChange(false);
+    }, 100);
   };
 
   if (!expense) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      if (confirmDisabled && !newOpen) {
-        // If we're closing while disabled, that's likely a successful submission
-        console.log("Dialog closing after confirmation");
-      }
-      onOpenChange(newOpen);
-    }}>
+    <Dialog 
+      open={open} 
+      onOpenChange={(newOpen) => {
+        console.log("Dialog onOpenChange called with value:", newOpen);
+        if (isUploading) {
+          console.log("Preventing dialog close during file upload");
+          return;
+        }
+        onOpenChange(newOpen);
+      }}
+    >
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Reconciliación Manual</DialogTitle>
@@ -157,7 +163,7 @@ export function ManualReconciliationDialog({
           <div className="space-y-2">
             <Label htmlFor="account">Cuenta Contable</Label>
             <Select
-              value={chartAccountId || expense.chart_account_id}
+              value={chartAccountId || expense?.chart_account_id}
               onValueChange={(value) => {
                 console.log("Chart account changed to:", value);
                 setChartAccountId(value);

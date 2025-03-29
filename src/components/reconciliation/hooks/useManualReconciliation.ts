@@ -147,6 +147,11 @@ export const useManualReconciliation = (userId: string | undefined) => {
       console.error("Error en reconciliación manual:", error);
       toast.error("Error al reconciliar el gasto");
       return false;
+    } finally {
+      // Ensure UI refreshes by directly calling refetch on key queries
+      console.log("Forcing refresh of expense data...");
+      queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["expenses"], refetchType: 'all' });
     }
   };
 

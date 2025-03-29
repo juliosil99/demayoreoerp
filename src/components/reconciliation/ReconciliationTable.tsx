@@ -5,6 +5,7 @@ import { InvoiceSearchDialog } from "./components/InvoiceSearchDialog";
 import { AccountAdjustmentDialog } from "./components/AccountAdjustmentDialog";
 import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 interface ReconciliationTableProps {
   expenses: any[];
@@ -41,6 +42,7 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
     
     // Core reconciliation handlers
     handleInvoiceSelect,
+    resetState,
   } = useReconciliation();
 
   // Use the filterInvoices function from our hook
@@ -57,12 +59,27 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
     console.log("Manual reconciliation confirmed with data:", data);
     if (selectedExpense) {
       toast.info("Procesando reconciliación...");
-      handleManualReconciliationConfirm(data);
+      const result = handleManualReconciliationConfirm(data);
+      console.log("Manual reconciliation result:", result);
+      
+      // Ensure dialog closes
+      setTimeout(() => {
+        setShowManualReconciliation(false);
+      }, 200);
     } else {
       console.error("No expense selected for manual reconciliation");
       toast.error("Error: No hay gasto seleccionado");
     }
   };
+  
+  // Add an effect to reset the state when expenses change
+  // This ensures the UI updates after reconciliation
+  useEffect(() => {
+    if (expenses.length === 0 && selectedExpense) {
+      console.log("No expenses left, resetting state");
+      resetState();
+    }
+  }, [expenses, selectedExpense, resetState]);
 
   return (
     <div className="space-y-4 max-w-full">
@@ -108,7 +125,10 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
 
       <ManualReconciliationDialog
         open={showManualReconciliation}
-        onOpenChange={setShowManualReconciliation}
+        onOpenChange={(open) => {
+          console.log("Setting manual reconciliation dialog open state to:", open);
+          setShowManualReconciliation(open);
+        }}
         expense={selectedExpense}
         onConfirm={onManualReconciliationConfirm}
         chartAccounts={chartAccounts || []}
