@@ -25,21 +25,27 @@ export function FileUploader({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      console.log("[FileUploader] File selected:", selectedFile.name, "size:", selectedFile.size);
+      setFile(selectedFile);
       setUploadError(null);
       setUploadSuccess(false);
     }
   };
 
   const handleUpload = async () => {
-    if (!file || !user) return;
+    if (!file || !user) {
+      console.log("[FileUploader] Upload canceled - no file or user");
+      return;
+    }
 
+    console.log("[FileUploader] Starting upload for file:", file.name);
     setUploading(true);
     setUploadError(null);
     onUploadStart();
 
     try {
-      console.log("Starting file upload process...");
+      console.log("[FileUploader] Creating file metadata record in database...");
       
       // Create file metadata record first
       const { data: fileRecord, error: fileError } = await supabase
@@ -55,23 +61,27 @@ export function FileUploader({
         .single();
 
       if (fileError) {
-        console.error("Error creating file record:", fileError);
+        console.error("[FileUploader] Error creating file record:", fileError);
         throw new Error(`Error creating file record: ${fileError.message}`);
       }
       
       if (!fileRecord) {
+        console.error("[FileUploader] No file record returned after insert");
         throw new Error("Failed to create file record");
       }
 
+      console.log("[FileUploader] File record created with ID:", fileRecord.id);
+
       // Upload the actual file to 'invoice_files' bucket
-      console.log(`Uploading file to invoice_files bucket: ${fileRecord.file_path}`);
+      console.log(`[FileUploader] Uploading file to invoice_files bucket: ${fileRecord.file_path}`);
       const { error: storageError } = await supabase.storage
         .from('invoice_files')
         .upload(fileRecord.file_path, file);
 
       if (storageError) {
         // Clean up the database entry since the upload failed
-        console.error("Storage upload error:", storageError);
+        console.error("[FileUploader] Storage upload error:", storageError);
+        console.log("[FileUploader] Cleaning up failed file record:", fileRecord.id);
         await supabase
           .from("manual_invoice_files")
           .delete()
@@ -79,17 +89,20 @@ export function FileUploader({
         throw new Error(`Error uploading file: ${storageError.message}`);
       }
 
+      console.log("[FileUploader] File upload successful!");
       setUploadSuccess(true);
-      console.log("File upload successful, calling onUploadComplete with ID:", fileRecord.id);
+      console.log("[FileUploader] Calling onUploadComplete with file ID:", fileRecord.id);
       onUploadComplete(fileRecord.id);
       toast.success("Archivo subido exitosamente");
       
     } catch (error) {
-      console.error("Upload error:", error);
-      setUploadError(error instanceof Error ? error.message : "Error al subir el archivo");
+      const errorMessage = error instanceof Error ? error.message : "Error al subir el archivo";
+      console.error("[FileUploader] Upload error:", errorMessage);
+      setUploadError(errorMessage);
       toast.error("Error al subir el archivo");
     } finally {
       setUploading(false);
+      console.log("[FileUploader] Upload process completed, uploading state set to false");
     }
   };
 

@@ -14,13 +14,18 @@ export const useManualReconciliation = (userId: string | undefined) => {
     queryFn: async () => {
       if (!userId) return [];
       
+      console.log("[useManualReconciliation] Fetching chart accounts for user:", userId);
       const { data, error } = await supabase
         .from('chart_of_accounts')
         .select('id, name, code')
         .eq('user_id', userId)
         .order('code');
       
-      if (error) throw error;
+      if (error) {
+        console.error("[useManualReconciliation] Error fetching chart accounts:", error);
+        throw error;
+      }
+      console.log(`[useManualReconciliation] Fetched ${data?.length || 0} chart accounts`);
       return data;
     },
     enabled: !!userId,
@@ -38,16 +43,18 @@ export const useManualReconciliation = (userId: string | undefined) => {
   ) => {
     try {
       if (!userId) {
-        console.error("Error: Missing user ID for reconciliation");
+        console.error("[useManualReconciliation] Error: Missing user ID for reconciliation");
         toast.error("Error de autenticación");
         return false;
       }
       
-      console.log("=== MANUAL RECONCILIATION PROCESS STARTED ===");
-      console.log(`Processing reconciliation for expense: ${expenseId}`);
-      console.log("Reconciliation data:", JSON.stringify(data, null, 2));
+      console.log("=====================================================");
+      console.log("[useManualReconciliation] MANUAL RECONCILIATION PROCESS STARTED");
+      console.log(`[useManualReconciliation] Processing reconciliation for expense ID: ${expenseId}`);
+      console.log("[useManualReconciliation] Reconciliation data:", JSON.stringify(data, null, 2));
       
       // First, verify the expense exists and its current reconciliation status
+      console.log("[useManualReconciliation] Step 0: Verifying expense exists...");
       const { data: expenseCheck, error: checkError } = await supabase
         .from("expenses")
         .select("id, reconciled, reconciliation_date, reconciliation_type")
@@ -55,15 +62,15 @@ export const useManualReconciliation = (userId: string | undefined) => {
         .single();
 
       if (checkError) {
-        console.error("Error checking expense:", checkError);
+        console.error("[useManualReconciliation] Error checking expense:", checkError);
         toast.error("Error verificando gasto");
         return false;
       }
 
-      console.log("Current expense status:", JSON.stringify(expenseCheck, null, 2));
+      console.log("[useManualReconciliation] Current expense status:", JSON.stringify(expenseCheck, null, 2));
       
       // Step 1: Create a manual reconciliation record
-      console.log("Step 1: Creating manual reconciliation record...");
+      console.log("[useManualReconciliation] Step 1: Creating manual reconciliation record...");
       
       const manualRecData = {
         expense_id: expenseId,
@@ -75,7 +82,7 @@ export const useManualReconciliation = (userId: string | undefined) => {
         chart_account_id: data.chartAccountId || null
       };
       
-      console.log("Inserting record with data:", JSON.stringify(manualRecData, null, 2));
+      console.log("[useManualReconciliation] Inserting record with data:", JSON.stringify(manualRecData, null, 2));
 
       const { data: newReconciliation, error: manualError } = await supabase
         .from("manual_reconciliations")
@@ -83,16 +90,16 @@ export const useManualReconciliation = (userId: string | undefined) => {
         .select();
 
       if (manualError) {
-        console.error("Error creating manual reconciliation record:", manualError);
+        console.error("[useManualReconciliation] Error creating manual reconciliation record:", manualError);
         toast.error("Error creando registro de reconciliación");
         return false;
       }
       
-      console.log("Manual reconciliation record created:", newReconciliation);
+      console.log("[useManualReconciliation] Manual reconciliation record created:", JSON.stringify(newReconciliation, null, 2));
       
       // Step 2: Manually update the expense to mark it as reconciled
       const now = new Date().toISOString();
-      console.log(`Step 2: Updating expense ${expenseId} as reconciled at ${now}`);
+      console.log(`[useManualReconciliation] Step 2: Updating expense ${expenseId} as reconciled at ${now}`);
       
       const updateData = { 
         reconciled: true,
@@ -100,7 +107,7 @@ export const useManualReconciliation = (userId: string | undefined) => {
         reconciliation_type: 'manual'
       };
       
-      console.log("Updating expense with:", JSON.stringify(updateData, null, 2));
+      console.log("[useManualReconciliation] Updating expense with:", JSON.stringify(updateData, null, 2));
       
       const { data: updatedExpense, error: updateError } = await supabase
         .from("expenses")
@@ -109,15 +116,15 @@ export const useManualReconciliation = (userId: string | undefined) => {
         .select();
 
       if (updateError) {
-        console.error("Error updating expense reconciliation status:", updateError);
+        console.error("[useManualReconciliation] Error updating expense reconciliation status:", updateError);
         toast.error("Error actualizando estado de reconciliación");
         return false;
       }
       
-      console.log("Expense updated successfully:", updatedExpense);
+      console.log("[useManualReconciliation] Expense updated successfully:", JSON.stringify(updatedExpense, null, 2));
       
       // Step 3: Verify the update worked
-      console.log("Step 3: Verifying the update...");
+      console.log("[useManualReconciliation] Step 3: Verifying the update...");
       const { data: verifyUpdate, error: verifyError } = await supabase
         .from("expenses")
         .select("reconciled, reconciliation_date, reconciliation_type")
@@ -125,39 +132,48 @@ export const useManualReconciliation = (userId: string | undefined) => {
         .single();
         
       if (verifyError) {
-        console.error("Error verifying update:", verifyError);
+        console.error("[useManualReconciliation] Error verifying update:", verifyError);
       } else {
-        console.log("Verification result:", verifyUpdate);
+        console.log("[useManualReconciliation] Verification result:", JSON.stringify(verifyUpdate, null, 2));
         
         if (!verifyUpdate.reconciled) {
-          console.error("WARNING: Expense still not marked as reconciled even after update!");
+          console.error("[useManualReconciliation] WARNING: Expense still not marked as reconciled even after update!");
         }
       }
       
       // Step 4: Invalidate queries to refresh the UI
-      console.log("Step 4: Invalidating queries to refresh UI...");
+      console.log("[useManualReconciliation] Step 4: Invalidating queries to refresh UI...");
+      console.log("[useManualReconciliation] Invalidating 'unreconciled-expenses' query");
       queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"] });
+      console.log("[useManualReconciliation] Invalidating 'expenses' query");
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       
-      console.log("=== MANUAL RECONCILIATION COMPLETED SUCCESSFULLY ===");
+      console.log("[useManualReconciliation] MANUAL RECONCILIATION COMPLETED SUCCESSFULLY");
+      console.log("=====================================================");
       
       toast.success("Gasto conciliado manualmente");
       return true;
     } catch (error) {
-      console.error("Error en reconciliación manual:", error);
+      console.error("[useManualReconciliation] Unexpected error in reconciliation process:", error);
       toast.error("Error al reconciliar el gasto");
       return false;
     } finally {
       // Ensure UI refreshes by directly calling refetch on key queries
-      console.log("Forcing refresh of expense data...");
+      console.log("[useManualReconciliation] Forcing refresh of expense data...");
+      console.log("[useManualReconciliation] Force refreshing 'unreconciled-expenses'");
       queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"], refetchType: 'all' });
+      console.log("[useManualReconciliation] Force refreshing 'expenses'");
       queryClient.invalidateQueries({ queryKey: ["expenses"], refetchType: 'all' });
+      console.log("[useManualReconciliation] Data refresh complete");
     }
   };
 
   return {
     showManualReconciliation,
-    setShowManualReconciliation,
+    setShowManualReconciliation: (value: boolean) => {
+      console.log(`[useManualReconciliation] Setting showManualReconciliation to ${value}`);
+      setShowManualReconciliation(value);
+    },
     chartAccounts,
     handleManualReconciliationConfirm,
   };

@@ -48,7 +48,7 @@ export function ManualReconciliationDialog({
   // Reset form state when dialog opens/closes
   useEffect(() => {
     if (open) {
-      console.log("ManualReconciliationDialog opened for expense:", expense?.id);
+      console.log("[ManualReconciliationDialog] Dialog opened for expense:", expense?.id);
       // Initialize with defaults when opening
       setReconciliationType("no_invoice");
       setReferenceNumber("");
@@ -58,24 +58,29 @@ export function ManualReconciliationDialog({
       setConfirmDisabled(false);
       // Set chart account to the expense's chart account if available
       if (expense?.chart_account_id) {
-        console.log("Setting initial chart account ID to:", expense.chart_account_id);
+        console.log("[ManualReconciliationDialog] Setting initial chart account ID to:", expense.chart_account_id);
         setChartAccountId(expense.chart_account_id);
       } else {
         setChartAccountId(undefined);
       }
+    } else {
+      console.log("[ManualReconciliationDialog] Dialog closed or not open");
     }
   }, [open, expense]);
 
   const handleFileUploaded = (fileId: string) => {
-    console.log("File uploaded, received ID:", fileId);
+    console.log("[ManualReconciliationDialog] File uploaded, received ID:", fileId);
     setFileId(fileId);
     setIsUploading(false);
   };
 
   const handleSubmit = () => {
-    if (confirmDisabled) return;
+    if (confirmDisabled) {
+      console.log("[ManualReconciliationDialog] Submit button is disabled, ignoring click");
+      return;
+    }
     
-    console.log("Manual reconciliation submit button clicked");
+    console.log("[ManualReconciliationDialog] Submit button clicked - preparing reconciliation data");
     setConfirmDisabled(true);
     
     const reconciliationData = {
@@ -86,29 +91,42 @@ export function ManualReconciliationDialog({
       chartAccountId: chartAccountId || expense?.chart_account_id,
     };
     
-    console.log("Submitting manual reconciliation with data:", reconciliationData);
+    console.log("[ManualReconciliationDialog] Submitting reconciliation data:", JSON.stringify(reconciliationData, null, 2));
     
-    // Call the onConfirm callback with the form data
-    onConfirm(reconciliationData);
+    try {
+      // Call the onConfirm callback with the form data
+      onConfirm(reconciliationData);
+      console.log("[ManualReconciliationDialog] onConfirm handler called successfully");
+    } catch (error) {
+      console.error("[ManualReconciliationDialog] Error in onConfirm handler:", error);
+      setConfirmDisabled(false);
+    }
     
-    // Close the dialog after submission
+    // Force close the dialog after submission
+    console.log("[ManualReconciliationDialog] Forcing dialog close...");
     setTimeout(() => {
-      console.log("Manually closing dialog after submission");
+      console.log("[ManualReconciliationDialog] Calling onOpenChange(false) to close dialog");
       onOpenChange(false);
     }, 100);
   };
 
   if (!expense) return null;
 
+  const isSubmitDisabled = !notes || 
+    isUploading || 
+    (reconciliationType === "pdf_only" && !fileId) || 
+    confirmDisabled;
+
   return (
     <Dialog 
       open={open} 
       onOpenChange={(newOpen) => {
-        console.log("Dialog onOpenChange called with value:", newOpen);
+        console.log(`[ManualReconciliationDialog] Dialog onOpenChange triggered with value: ${newOpen}`);
         if (isUploading) {
-          console.log("Preventing dialog close during file upload");
+          console.log("[ManualReconciliationDialog] Preventing dialog close during file upload");
           return;
         }
+        console.log("[ManualReconciliationDialog] Setting manual reconciliation dialog open state to:", newOpen);
         onOpenChange(newOpen);
       }}
     >
@@ -123,32 +141,44 @@ export function ManualReconciliationDialog({
         <div className="space-y-4 py-2">
           <ReconciliationTypeSelector 
             value={reconciliationType}
-            onChange={setReconciliationType}
+            onChange={(value) => {
+              console.log("[ManualReconciliationDialog] Reconciliation type changed to:", value);
+              setReconciliationType(value);
+            }}
           />
 
           {reconciliationType !== "no_invoice" && (
             <ReferenceNumberField
               value={referenceNumber}
-              onChange={setReferenceNumber}
+              onChange={(value) => {
+                console.log("[ManualReconciliationDialog] Reference number changed to:", value);
+                setReferenceNumber(value);
+              }}
             />
           )}
 
           <ChartAccountSelector
             value={chartAccountId}
             accounts={chartAccounts}
-            onChange={setChartAccountId}
+            onChange={(value) => {
+              console.log("[ManualReconciliationDialog] Chart account changed to:", value);
+              setChartAccountId(value);
+            }}
             defaultAccountId={expense?.chart_account_id}
           />
 
           <NotesField
             value={notes}
-            onChange={setNotes}
+            onChange={(value) => {
+              console.log("[ManualReconciliationDialog] Notes changed to:", value.substring(0, 20) + (value.length > 20 ? "..." : ""));
+              setNotes(value);
+            }}
           />
 
           {reconciliationType === "pdf_only" && (
             <FileUploadSection
               onUploadStart={() => {
-                console.log("File upload started");
+                console.log("[ManualReconciliationDialog] File upload started");
                 setIsUploading(true);
               }}
               onUploadComplete={handleFileUploaded}
@@ -157,12 +187,21 @@ export function ManualReconciliationDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              console.log("[ManualReconciliationDialog] Cancel button clicked");
+              onOpenChange(false);
+            }}
+          >
             Cancelar
           </Button>
           <Button 
-            onClick={handleSubmit} 
-            disabled={!notes || isUploading || (reconciliationType === "pdf_only" && !fileId) || confirmDisabled}
+            onClick={() => {
+              console.log("[ManualReconciliationDialog] Confirm button clicked, disabled:", isSubmitDisabled);
+              handleSubmit();
+            }} 
+            disabled={isSubmitDisabled}
           >
             {confirmDisabled ? "Procesando..." : "Confirmar"}
           </Button>
