@@ -45,11 +45,11 @@ export const useDashboardMetrics = () => {
 
         if (salesError) throw salesError;
 
-        // Get all expenses that are NOT reconciled
+        // Get all expenses that are NOT reconciled - match the same condition as in Reconciliation.tsx
         const { data: unreconciledExpenses, error: expensesError, count: unreconciledCount } = await supabase
           .from("expenses")
           .select('id, amount', { count: 'exact' })
-          .is('reconciled', null);  // Only get expenses where reconciled is null (not reconciled)
+          .is('reconciled', null);  // Changed to match the reconciliation page query
 
         if (expensesError) throw expensesError;
 

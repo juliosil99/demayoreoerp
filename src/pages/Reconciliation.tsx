@@ -27,7 +27,8 @@ const Reconciliation = () => {
         console.log("No reconciled expenses found for debugging");
       }
       
-      // Query for unreconciled expenses with simplified and more direct approach
+      // Query for unreconciled expenses - revert to using IS NULL for reconciled field
+      // as this seems to be how the system was originally designed
       console.log("Querying for unreconciled expenses...");
       const { data, error } = await supabase
         .from("expenses")
@@ -38,7 +39,7 @@ const Reconciliation = () => {
           contacts (name)
         `)
         .eq("user_id", user!.id)
-        .eq("reconciled", false);
+        .is("reconciled", null); // Changed from 'false' to 'null' to match how data was originally structured
 
       if (error) {
         console.error("Error fetching unreconciled expenses:", error);
