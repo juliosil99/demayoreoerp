@@ -12,32 +12,38 @@ interface ReconciliationTableProps {
 
 export function ReconciliationTable({ expenses, invoices }: ReconciliationTableProps) {
   const {
+    // Selected items state
     selectedExpense,
     setSelectedExpense,
     selectedInvoices,
     remainingAmount,
-    showInvoiceSearch,
-    setShowInvoiceSearch,
-    searchTerm,
-    setSearchTerm,
-    handleInvoiceSelect,
+    
+    // Adjustment dialog state and handlers
     showAdjustmentDialog,
     setShowAdjustmentDialog,
     adjustmentType,
     handleAdjustmentConfirm,
-    handleManualReconciliation,
+    
+    // Manual reconciliation state and handlers
     showManualReconciliation,
     setShowManualReconciliation,
+    handleManualReconciliation,
     handleManualReconciliationConfirm,
-    chartAccounts
+    chartAccounts,
+    
+    // Invoice search state and handlers
+    showInvoiceSearch,
+    setShowInvoiceSearch,
+    searchTerm,
+    setSearchTerm,
+    filterInvoices,
+    
+    // Core reconciliation handlers
+    handleInvoiceSelect,
   } = useReconciliation();
 
-  const filteredInvoices = invoices.filter((invoice) => {
-    const searchLower = searchTerm.toLowerCase();
-    const matchesIssuer = invoice.issuer_name?.toLowerCase().includes(searchLower);
-    const matchesAmount = invoice.total_amount?.toString().includes(searchTerm);
-    return matchesIssuer || matchesAmount;
-  });
+  // Use the filterInvoices function from our hook
+  const filteredInvoices = filterInvoices(invoices, searchTerm);
 
   const handleExpenseSelect = (expense: any) => {
     setSelectedExpense(expense);
