@@ -1,16 +1,16 @@
 
-import { format } from "date-fns";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import {
-  Command,
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/utils/formatters";
+import { parseISO, format } from "date-fns";
+import { Search, FileText, RefreshCw } from "lucide-react";
 
 interface InvoiceSearchDialogProps {
   open: boolean;
@@ -19,7 +19,7 @@ interface InvoiceSearchDialogProps {
   remainingAmount: number;
   selectedInvoices: any[];
   searchTerm: string;
-  onSearchChange: (value: string) => void;
+  onSearchChange: (term: string) => void;
   filteredInvoices: any[];
   onInvoiceSelect: (invoice: any) => void;
   onManualReconciliation: () => void;
@@ -35,78 +35,95 @@ export function InvoiceSearchDialog({
   onSearchChange,
   filteredInvoices,
   onInvoiceSelect,
-  onManualReconciliation
+  onManualReconciliation,
 }: InvoiceSearchDialogProps) {
+  // Correctly parse and format the date to avoid timezone issues
+  const formatInvoiceDate = (dateString: string) => {
+    try {
+      if (!dateString) return "-";
+      
+      // Parse the ISO date string directly to avoid timezone shifts
+      const dateObj = parseISO(dateString);
+      return format(dateObj, 'dd/MM/yyyy');
+    } catch (error) {
+      console.error("Error formatting date:", error, dateString);
+      return dateString || '-';
+    }
+  };
+
+  if (!selectedExpense) return null;
+
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold">Seleccionar Facturas</h2>
-        <div className="mt-2">
-          <Label>Monto del Gasto: ${selectedExpense?.amount.toFixed(2)}</Label>
-          {remainingAmount > 0 && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Monto restante por conciliar: ${remainingAmount.toFixed(2)}
-            </p>
-          )}
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Buscar Factura para Conciliar</DialogTitle>
+          <DialogDescription>
+            Gasto: {selectedExpense.description} - {formatCurrency(selectedExpense.amount)}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
           {selectedInvoices.length > 0 && (
-            <div className="mt-2">
-              <Label>Facturas seleccionadas:</Label>
-              <ul className="mt-1 space-y-1">
-                {selectedInvoices.map((inv) => (
-                  <li key={inv.id} className="text-sm">
-                    {inv.issuer_name} - ${inv.total_amount.toFixed(2)}
+            <div className="border rounded-md p-2">
+              <h4 className="font-medium mb-2">Facturas Seleccionadas:</h4>
+              <ul className="space-y-1">
+                {selectedInvoices.map(invoice => (
+                  <li key={invoice.id} className="text-sm flex justify-between">
+                    <span>
+                      {invoice.issuer_name} - {formatInvoiceDate(invoice.invoice_date)}
+                    </span>
+                    <span className="font-semibold">{formatCurrency(invoice.total_amount)}</span>
                   </li>
                 ))}
               </ul>
+              <div className="mt-2 text-right font-medium">
+                Restante: {formatCurrency(remainingAmount)}
+              </div>
             </div>
           )}
-          
-          <div className="mt-3 flex justify-end">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onManualReconciliation}
-            >
+
+          <div className="flex items-center space-x-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por emisor o monto..."
+                value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Button variant="outline" onClick={onManualReconciliation} className="whitespace-nowrap">
+              <FileText className="h-4 w-4 mr-2" />
               Reconciliación Manual
             </Button>
           </div>
-        </div>
-      </div>
-      <CommandInput 
-        placeholder="Buscar facturas por proveedor o monto..." 
-        value={searchTerm}
-        onValueChange={onSearchChange}
-      />
-      <CommandList>
-        <CommandEmpty>No se encontraron facturas.</CommandEmpty>
-        <CommandGroup heading="Facturas Disponibles">
-          {filteredInvoices
-            .filter(invoice => !selectedInvoices.some(selected => selected.id === invoice.id))
-            .map((invoice) => (
-              <CommandItem
-                key={invoice.id}
-                onSelect={() => onInvoiceSelect(invoice)}
-              >
-                <div className="flex flex-col">
-                  <span className="font-medium">
-                    {invoice.serie 
-                      ? `${invoice.serie}-${invoice.invoice_number}`
-                      : invoice.invoice_number || invoice.uuid}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {invoice.issuer_name}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    ${invoice.total_amount?.toFixed(2)}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {format(new Date(invoice.invoice_date), "dd/MM/yyyy")}
-                  </span>
+
+          <div className="border rounded-md divide-y">
+            {filteredInvoices.length === 0 ? (
+              <div className="p-4 text-center text-muted-foreground">
+                No se encontraron facturas que coincidan con la búsqueda
+              </div>
+            ) : (
+              filteredInvoices.map(invoice => (
+                <div
+                  key={invoice.id}
+                  className="p-3 hover:bg-muted/50 cursor-pointer flex justify-between items-center"
+                  onClick={() => onInvoiceSelect(invoice)}
+                >
+                  <div>
+                    <div className="font-medium">{invoice.issuer_name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatInvoiceDate(invoice.invoice_date)} - {invoice.invoice_number || invoice.uuid}
+                    </div>
+                  </div>
+                  <div className="font-semibold">{formatCurrency(invoice.total_amount)}</div>
                 </div>
-              </CommandItem>
-            ))}
-        </CommandGroup>
-      </CommandList>
-    </CommandDialog>
+              ))
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

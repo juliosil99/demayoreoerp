@@ -4,7 +4,6 @@ import { format, parseISO } from "date-fns";
 import { es } from 'date-fns/locale';
 import { ExpenseActions } from "./ExpenseActions";
 import { useState } from "react";
-import { formatDate } from "@/utils/formatters";
 import { 
   Dialog,
   DialogContent,
@@ -69,9 +68,9 @@ export function ExpenseRow({
     try {
       if (!expense.date) return '-';
       
-      // Parse the ISO date string directly to avoid any timezone shifts
+      // Parse the ISO date string directly to avoid timezone shifts
       const dateObj = parseISO(expense.date);
-      return format(dateObj, 'MMM dd, yyyy', { locale: es });
+      return format(dateObj, 'dd MMM, yyyy', { locale: es });
     } catch (error) {
       console.error("Error formatting date:", error, expense.date);
       return expense.date || '-';
@@ -104,7 +103,7 @@ export function ExpenseRow({
             expense.expense_invoice_relations.map(relation => 
               relation.invoice.invoice_number || relation.invoice.uuid
             ).join(', ') : 
-            'Sin conciliar'}
+            expense.reconciled ? 'Conciliación manual' : 'Sin conciliar'}
         </TableCell>
         <TableCell>
           <ExpenseActions 

@@ -1,8 +1,8 @@
 
-import { format } from "date-fns";
-import { Search } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { parseISO, format } from "date-fns";
+import { formatCurrency } from "@/utils/formatters";
 
 interface ExpenseCardProps {
   expense: any;
@@ -10,41 +10,46 @@ interface ExpenseCardProps {
 }
 
 export function ExpenseCard({ expense, onSelectExpense }: ExpenseCardProps) {
+  // Correctly parse and format the date to avoid timezone issues
+  const formatExpenseDate = (dateString: string) => {
+    try {
+      if (!dateString) return "-";
+      
+      // Parse the ISO date string directly to avoid timezone shifts
+      const dateObj = parseISO(dateString);
+      return format(dateObj, 'dd/MM/yyyy');
+    } catch (error) {
+      console.error("Error formatting date:", error, dateString);
+      return dateString || '-';
+    }
+  };
+
   return (
-    <Card
-      key={expense.id}
-      className="cursor-pointer hover:bg-gray-50 transition-colors"
-      onClick={() => onSelectExpense(expense)}
-    >
-      <CardContent className="p-3 sm:p-4">
-        <div className="grid gap-1">
-          <div className="font-medium">
-            {format(new Date(expense.date), "dd/MM/yyyy")}
-          </div>
-          <div className="text-sm sm:text-base">{expense.description}</div>
-          <div className="text-sm text-muted-foreground">
-            ${expense.amount.toFixed(2)}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {expense.bank_accounts?.name}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {expense.contacts?.name || "-"}
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="mt-2 w-full sm:w-auto"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectExpense(expense);
-            }}
-          >
-            <Search className="h-4 w-4 mr-2" />
-            Buscar Factura
-          </Button>
+    <Card className="overflow-hidden">
+      <CardContent className="p-4 space-y-2">
+        <div className="flex justify-between">
+          <div className="font-semibold">{formatExpenseDate(expense.date)}</div>
+          <div className="font-bold text-primary">{formatCurrency(expense.amount)}</div>
+        </div>
+        <div className="text-sm truncate" title={expense.description}>
+          {expense.description}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          <div>Cuenta: {expense.bank_accounts.name}</div>
+          <div>Categoría: {expense.chart_of_accounts.name}</div>
+          <div>Proveedor: {expense.contacts?.name || "Sin proveedor"}</div>
         </div>
       </CardContent>
+      <CardFooter className="bg-muted/40 p-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full"
+          onClick={() => onSelectExpense(expense)}
+        >
+          Conciliar
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

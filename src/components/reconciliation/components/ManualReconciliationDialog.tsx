@@ -1,29 +1,27 @@
 
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { useState } from "react";
+import { Label } from "@/components/ui/label";
 import { FileUploader } from "./FileUploader";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { formatCurrency } from "@/utils/formatters";
+import { format, parseISO } from 'date-fns';
+import { useState } from "react";
 
 interface ManualReconciliationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  expense: any;
+  expense: any | null;
   onConfirm: (data: {
     reconciliationType: string;
     referenceNumber?: string;
@@ -31,7 +29,7 @@ interface ManualReconciliationDialogProps {
     fileId?: string;
     chartAccountId?: string;
   }) => void;
-  chartAccounts: any[];
+  chartAccounts: { id: string; name: string; code: string }[];
 }
 
 export function ManualReconciliationDialog({
@@ -39,118 +37,140 @@ export function ManualReconciliationDialog({
   onOpenChange,
   expense,
   onConfirm,
-  chartAccounts
+  chartAccounts,
 }: ManualReconciliationDialogProps) {
-  const [reconciliationType, setReconciliationType] = useState<string>("no_invoice");
-  const [referenceNumber, setReferenceNumber] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
-  const [fileId, setFileId] = useState<string>("");
-  const [chartAccountId, setChartAccountId] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reconciliationType, setReconciliationType] = useState("no_invoice");
+  const [referenceNumber, setReferenceNumber] = useState("");
+  const [notes, setNotes] = useState("");
+  const [fileId, setFileId] = useState<string | undefined>(undefined);
+  const [chartAccountId, setChartAccountId] = useState<string | undefined>(undefined);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleConfirm = () => {
-    setIsSubmitting(true);
+  const formatExpenseDate = (dateString: string) => {
+    try {
+      if (!dateString) return "-";
+      
+      // Parse the ISO date string directly to avoid timezone shifts
+      const dateObj = parseISO(dateString);
+      return format(dateObj, 'dd/MM/yyyy');
+    } catch (error) {
+      console.error("Error formatting date:", error, dateString);
+      return dateString || '-';
+    }
+  };
+
+  const handleFileUploaded = (fileId: string) => {
+    setFileId(fileId);
+    setIsUploading(false);
+  };
+
+  const handleSubmit = () => {
     onConfirm({
       reconciliationType,
-      referenceNumber,
+      referenceNumber: referenceNumber || undefined,
       notes,
-      fileId: fileId || undefined,
-      chartAccountId: chartAccountId || undefined
+      fileId: fileId,
+      chartAccountId: chartAccountId || expense?.chart_account_id,
     });
-    setIsSubmitting(false);
   };
 
-  const handleFileUpload = (id: string) => {
-    setFileId(id);
-  };
+  if (!expense) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Reconciliación Manual</DialogTitle>
+          <DialogDescription>
+            Gasto: {expense.description} - {formatCurrency(expense.amount)} ({formatExpenseDate(expense.date)})
+          </DialogDescription>
         </DialogHeader>
-        
-        <div className="grid gap-4 py-4">
-          <div>
-            <Label htmlFor="reconciliationType">Tipo de Reconciliación</Label>
-            <Select 
-              value={reconciliationType} 
+
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>Tipo de Reconciliación</Label>
+            <RadioGroup
+              value={reconciliationType}
               onValueChange={setReconciliationType}
+              className="flex flex-col space-y-1"
             >
-              <SelectTrigger id="reconciliationType">
-                <SelectValue placeholder="Seleccione un tipo" />
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="no_invoice" id="no_invoice" />
+                <Label htmlFor="no_invoice">Sin Factura</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="foreign_invoice" id="foreign_invoice" />
+                <Label htmlFor="foreign_invoice">Factura Extranjera</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="pdf_only" id="pdf_only" />
+                <Label htmlFor="pdf_only">PDF/Imagen (Sin XML)</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {reconciliationType !== "no_invoice" && (
+            <div className="space-y-2">
+              <Label htmlFor="reference">Número de Referencia (opcional)</Label>
+              <Input
+                id="reference"
+                value={referenceNumber}
+                onChange={(e) => setReferenceNumber(e.target.value)}
+                placeholder="Número de factura o referencia"
+              />
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="account">Cuenta Contable</Label>
+            <Select
+              value={chartAccountId || expense.chart_account_id}
+              onValueChange={setChartAccountId}
+            >
+              <SelectTrigger id="account">
+                <SelectValue placeholder="Seleccionar cuenta contable" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="no_invoice">Sin Factura</SelectItem>
-                <SelectItem value="foreign_invoice">Factura Extranjera</SelectItem>
-                <SelectItem value="pdf_upload">Subir PDF</SelectItem>
+                {chartAccounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.code} - {account.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
-          {reconciliationType === "pdf_upload" && (
-            <div>
-              <Label>Subir Factura (PDF)</Label>
-              <FileUploader onUploadSuccess={handleFileUpload} />
-            </div>
-          )}
-
-          <div>
-            <Label htmlFor="referenceNumber">Número de Referencia</Label>
-            <Input 
-              id="referenceNumber" 
-              value={referenceNumber} 
-              onChange={(e) => setReferenceNumber(e.target.value)} 
-              placeholder="Referencia (opcional)"
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notas de Reconciliación</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Agregar notas o detalles sobre esta reconciliación"
+              rows={3}
             />
           </div>
 
-          {reconciliationType !== "no_invoice" && (
-            <div>
-              <Label htmlFor="chartAccount">Cuenta Contable</Label>
-              <Select 
-                value={chartAccountId} 
-                onValueChange={setChartAccountId}
-              >
-                <SelectTrigger id="chartAccount">
-                  <SelectValue placeholder="Seleccione cuenta contable" />
-                </SelectTrigger>
-                <SelectContent>
-                  {chartAccounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.code} - {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {reconciliationType === "pdf_only" && (
+            <div className="space-y-2">
+              <Label>Subir Documento</Label>
+              <FileUploader
+                onUploadStart={() => setIsUploading(true)}
+                onUploadComplete={handleFileUploaded}
+              />
             </div>
           )}
-
-          <div>
-            <Label htmlFor="notes">Notas / Justificación</Label>
-            <Textarea 
-              id="notes" 
-              value={notes} 
-              onChange={(e) => setNotes(e.target.value)} 
-              placeholder="Razón por la que se hace reconciliación manual"
-              className="h-24"
-            />
-          </div>
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button 
-            onClick={handleConfirm} 
-            disabled={isSubmitting || (!notes)}
+            onClick={handleSubmit} 
+            disabled={!notes || isUploading || (reconciliationType === "pdf_only" && !fileId)}
           >
-            Confirmar Reconciliación
+            Confirmar
           </Button>
         </DialogFooter>
       </DialogContent>

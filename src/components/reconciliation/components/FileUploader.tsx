@@ -1,146 +1,140 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useRef, useState } from "react";
-import { Upload, File, Check, AlertCircle } from "lucide-react";
+import { Upload, CheckCircle, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface FileUploaderProps {
-  onUploadSuccess: (fileId: string) => void;
+  onUploadStart: () => void;
+  onUploadComplete: (fileId: string) => void;
+  acceptedTypes?: string;
 }
 
-export function FileUploader({ onUploadSuccess }: FileUploaderProps) {
-  const { user } = useAuth();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export function FileUploader({ 
+  onUploadStart, 
+  onUploadComplete,
+  acceptedTypes = ".pdf,.jpg,.jpeg,.png" 
+}: FileUploaderProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const { user } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
-    
-    if (selectedFile) {
-      if (selectedFile.type !== 'application/pdf') {
-        setError('Solo se permiten archivos PDF');
-        setFile(null);
-        return;
-      }
-      
-      if (selectedFile.size > 5 * 1024 * 1024) { // 5MB limit
-        setError('El archivo es demasiado grande (máximo 5MB)');
-        setFile(null);
-        return;
-      }
-      
-      setFile(selectedFile);
-      setError(null);
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+      setUploadError(null);
+      setUploadSuccess(false);
     }
   };
 
   const handleUpload = async () => {
     if (!file || !user) return;
-    
-    setIsUploading(true);
-    setError(null);
-    
-    try {
-      // Generate a unique filename
-      const timestamp = new Date().getTime();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `${user.id}/invoices/${fileName}`;
-      
-      // Insert the file metadata into the database first
-      const { data: fileRecord, error: dbError } = await supabase
-        .from('manual_invoice_files')
-        .insert([
-          { 
-            filename: file.name,
-            file_path: filePath,
-            content_type: file.type,
-            size: file.size,
-            user_id: user.id
-          }
-        ])
-        .select('id')
-        .single();
-      
-      if (dbError) throw dbError;
-      
-      // Upload the file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('invoices')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-      
-      if (uploadError) throw uploadError;
-      
-      setIsSuccess(true);
-      toast.success('Archivo subido correctamente');
-      onUploadSuccess(fileRecord.id);
-    } catch (err: any) {
-      console.error('Upload error:', err);
-      setError(err.message || 'Error al subir el archivo');
-      toast.error('Error al subir el archivo');
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
+    setUploading(true);
+    setUploadError(null);
+    onUploadStart();
+
+    try {
+      // First, insert file metadata
+      const { data: fileRecord, error: fileError } = await supabase
+        .from("manual_invoice_files")
+        .insert({
+          filename: file.name,
+          file_path: `${user.id}/${Date.now()}_${file.name}`,
+          content_type: file.type,
+          size: file.size,
+          user_id: user.id
+        })
+        .select()
+        .single();
+
+      if (fileError) throw new Error(fileError.message);
+      if (!fileRecord) throw new Error("Failed to create file record");
+
+      // Then, upload the actual file to storage
+      const { error: storageError } = await supabase.storage
+        .from("invoice_files")
+        .upload(fileRecord.file_path, file);
+
+      if (storageError) {
+        // Clean up the database entry since the upload failed
+        await supabase
+          .from("manual_invoice_files")
+          .delete()
+          .eq("id", fileRecord.id);
+        throw new Error(storageError.message);
+      }
+
+      setUploadSuccess(true);
+      onUploadComplete(fileRecord.id);
+      toast.success("Archivo subido exitosamente");
+    } catch (error) {
+      console.error("Upload error:", error);
+      setUploadError(error instanceof Error ? error.message : "Error al subir el archivo");
+      toast.error("Error al subir el archivo");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          onClick={triggerFileInput}
-          className="w-full"
-          disabled={isUploading}
-        >
-          <Upload className="mr-2 h-4 w-4" />
-          Seleccionar PDF
-        </Button>
-        
-        {file && (
-          <Button
-            type="button"
-            onClick={handleUpload}
-            disabled={isUploading || isSuccess}
-          >
-            {isUploading ? 'Subiendo...' : 'Subir'}
-          </Button>
-        )}
+      <div className="border-2 border-dashed border-gray-300 rounded-md p-4">
+        <div className="flex flex-col items-center justify-center space-y-2">
+          {uploadSuccess ? (
+            <div className="flex items-center text-green-600">
+              <CheckCircle className="mr-2 h-5 w-5" />
+              <span>Archivo subido correctamente</span>
+            </div>
+          ) : (
+            <>
+              <Upload className="h-10 w-10 text-gray-400" />
+              <div className="text-center">
+                <p className="text-sm text-gray-600">
+                  {file ? file.name : "Seleccione un archivo o arrástrelo aquí"}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {acceptedTypes.split(',').join(', ')}
+                </p>
+              </div>
+              <input
+                id="file-upload"
+                type="file"
+                className="sr-only"
+                onChange={handleFileChange}
+                accept={acceptedTypes}
+                disabled={uploading}
+              />
+              <label
+                htmlFor="file-upload"
+                className="mt-2 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary cursor-pointer"
+              >
+                Seleccionar Archivo
+              </label>
+            </>
+          )}
+        </div>
       </div>
-      
-      {file && (
-        <div className="flex items-center text-sm p-2 bg-muted rounded border">
-          <File className="h-4 w-4 mr-2 flex-shrink-0" />
-          <span className="truncate">{file.name}</span>
-          {isSuccess && <Check className="h-4 w-4 ml-2 text-green-500" />}
+
+      {uploadError && (
+        <div className="flex items-center text-red-600 text-sm">
+          <XCircle className="mr-1 h-4 w-4" />
+          <span>{uploadError}</span>
         </div>
       )}
-      
-      {error && (
-        <div className="flex items-center text-sm text-destructive">
-          <AlertCircle className="h-4 w-4 mr-1" />
-          <span>{error}</span>
-        </div>
+
+      {file && !uploadSuccess && (
+        <Button 
+          onClick={handleUpload} 
+          disabled={uploading}
+          className="w-full"
+        >
+          {uploading ? "Subiendo..." : "Subir Archivo"}
+        </Button>
       )}
     </div>
   );
