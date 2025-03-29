@@ -1,25 +1,12 @@
-
 import { TableCell, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { ArrowUpRight, ArrowDownRight, Banknote, FileText, ArrowRightLeft } from "lucide-react";
+import { AccountTransaction } from "./hooks/transaction-types";
 
-export interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
-  type: 'in' | 'out' | 'initial';
-  reference: string;
-  source?: 'expense' | 'payment' | 'transfer';
-  source_id?: string;
+export interface Transaction extends AccountTransaction {
   isInitialBalance?: boolean;
   runningBalance?: number | null;
   beforeInitialDate?: boolean;
-  
-  // Currency exchange fields
-  exchange_rate?: number;
-  original_amount?: number;
-  original_currency?: string;
 }
 
 interface TransactionRowProps {
