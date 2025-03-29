@@ -1,5 +1,5 @@
 
-import { Building, CreditCard, BanknoteIcon, ReceiptIcon } from "lucide-react";
+import { Building, CreditCard, BanknoteIcon, ReceiptIcon, ShoppingCart, Users } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { formatCurrency, formatDate } from "@/utils/formatters";
@@ -26,17 +26,23 @@ const Dashboard = () => {
         <MetricCard
           title="Ventas de Ayer"
           value={formatCurrency(metrics.yesterdaySales)}
-          icon={BanknoteIcon}
+          icon={ShoppingCart}
+          count={metrics.salesCount}
+          countLabel="ventas pendientes"
         />
         <MetricCard
           title="Gastos por Conciliar"
           value={formatCurrency(metrics.unreconciled)}
           icon={ReceiptIcon}
+          count={metrics.unreconciledCount}
+          countLabel="gastos sin conciliar"
         />
         <MetricCard
           title="Cuentas por Cobrar"
           value={formatCurrency(metrics.receivablesPending)}
           icon={CreditCard}
+          count={metrics.receivablesCount}
+          countLabel="cuentas pendientes"
         />
       </div>
     </div>
