@@ -1,4 +1,5 @@
 
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,12 +10,18 @@ const Invoices = () => {
   const { data: invoices, refetch } = useQuery({
     queryKey: ["invoices"],
     queryFn: async () => {
+      console.log("Fetching invoices...");
       const { data, error } = await supabase
         .from("invoices")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching invoices:", error);
+        throw error;
+      }
+      
+      console.log(`Fetched ${data?.length || 0} invoices`);
       return data;
     },
   });

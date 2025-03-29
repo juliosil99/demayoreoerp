@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { SearchInput } from "./filters/SearchInput";
 import { FilterToggleButton } from "./filters/FilterToggleButton";
 import { FilterPanel } from "./filters/FilterPanel";
@@ -24,12 +24,13 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
 }) => {
   const [showFilters, setShowFilters] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Memoize handlers to prevent them from being recreated on every render
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     onFilterChange({ ...filters, [name]: value });
-  };
+  }, [filters, onFilterChange]);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     onFilterChange({
       search: "",
       dateFrom: undefined,
@@ -38,8 +39,13 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
       minAmount: "",
       maxAmount: "",
     });
-  };
+  }, [onFilterChange]);
 
+  const toggleFilters = useCallback(() => {
+    setShowFilters(prevState => !prevState);
+  }, []);
+
+  // Calculate active filters count once
   const activeFiltersCount = Object.values(filters).filter(
     (value) => value !== "" && value !== undefined
   ).length;
@@ -52,7 +58,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
           onChange={handleInputChange} 
         />
         <FilterToggleButton 
-          onClick={() => setShowFilters(!showFilters)} 
+          onClick={toggleFilters} 
           activeFiltersCount={activeFiltersCount} 
         />
       </div>

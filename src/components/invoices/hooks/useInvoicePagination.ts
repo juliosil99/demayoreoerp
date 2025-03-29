@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface PaginationProps<T> {
   items: T[] | null;
@@ -11,11 +11,12 @@ export const useInvoicePagination = <T>({ items, itemsPerPage }: PaginationProps
   const [paginatedItems, setPaginatedItems] = useState<T[]>([]);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Reset to first page when items change
   useEffect(() => {
-    // Reset to first page when items change
     setCurrentPage(1);
   }, [items]);
 
+  // Update paginated items when page or items change
   useEffect(() => {
     if (!items || items.length === 0) {
       setPaginatedItems([]);
@@ -31,10 +32,11 @@ export const useInvoicePagination = <T>({ items, itemsPerPage }: PaginationProps
     setPaginatedItems(items.slice(startIndex, endIndex));
   }, [items, currentPage, itemsPerPage]);
 
-  const handlePageChange = (pageNumber: number) => {
+  // Memoize page change handler
+  const handlePageChange = useCallback((pageNumber: number) => {
     if (pageNumber < 1 || pageNumber > totalPages) return;
     setCurrentPage(pageNumber);
-  };
+  }, [totalPages]);
 
   return {
     currentPage,

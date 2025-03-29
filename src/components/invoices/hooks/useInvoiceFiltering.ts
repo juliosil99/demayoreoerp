@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Database } from "@/integrations/supabase/types";
 import type { InvoiceFilters } from "../InvoiceFilters";
 
@@ -17,6 +17,12 @@ export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
 
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[] | null>(invoices);
 
+  // Memoize the filter change handler
+  const handleFilterChange = useCallback((newFilters: InvoiceFilters) => {
+    setFilters(newFilters);
+  }, []);
+
+  // Effect to apply filters when invoices or filters change
   useEffect(() => {
     if (!invoices) {
       setFilteredInvoices(null);
@@ -82,10 +88,6 @@ export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
 
     setFilteredInvoices(results);
   }, [invoices, filters]);
-
-  const handleFilterChange = (newFilters: InvoiceFilters) => {
-    setFilters(newFilters);
-  };
 
   return {
     filters,

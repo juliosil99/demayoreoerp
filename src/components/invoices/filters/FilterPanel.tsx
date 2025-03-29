@@ -17,31 +17,47 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   onFilterChange,
   clearFilters,
 }) => {
-  // Create a copy of the filters to avoid direct state mutation
-  const updateFilters = (field: keyof InvoiceFilters, value: any) => {
-    onFilterChange({ ...filters, [field]: value });
-  };
+  // Create wrapped handlers to avoid the functions being recreated on each render
+  const handleDateFromChange = React.useCallback((date: Date | undefined) => {
+    onFilterChange({ ...filters, dateFrom: date });
+  }, [filters, onFilterChange]);
+
+  const handleDateToChange = React.useCallback((date: Date | undefined) => {
+    onFilterChange({ ...filters, dateTo: date });
+  }, [filters, onFilterChange]);
+
+  const handleInvoiceTypeChange = React.useCallback((type: string) => {
+    onFilterChange({ ...filters, invoiceType: type });
+  }, [filters, onFilterChange]);
+
+  const handleMinAmountChange = React.useCallback((value: string) => {
+    onFilterChange({ ...filters, minAmount: value });
+  }, [filters, onFilterChange]);
+
+  const handleMaxAmountChange = React.useCallback((value: string) => {
+    onFilterChange({ ...filters, maxAmount: value });
+  }, [filters, onFilterChange]);
 
   return (
     <div className="border p-4 rounded-md space-y-4">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="space-y-4">
         <DateRangeFilter
           dateFrom={filters.dateFrom}
           dateTo={filters.dateTo}
-          onDateFromChange={(date) => updateFilters("dateFrom", date)}
-          onDateToChange={(date) => updateFilters("dateTo", date)}
+          onDateFromChange={handleDateFromChange}
+          onDateToChange={handleDateToChange}
         />
         
         <InvoiceTypeFilter
           value={filters.invoiceType}
-          onChange={(type) => updateFilters("invoiceType", type)}
+          onChange={handleInvoiceTypeChange}
         />
         
         <AmountFilter
           minAmount={filters.minAmount}
           maxAmount={filters.maxAmount}
-          onMinAmountChange={(value) => updateFilters("minAmount", value)}
-          onMaxAmountChange={(value) => updateFilters("maxAmount", value)}
+          onMinAmountChange={handleMinAmountChange}
+          onMaxAmountChange={handleMaxAmountChange}
         />
       </div>
       

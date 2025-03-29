@@ -13,46 +13,81 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
 interface DateRangeFilterProps {
-  label: string;
-  date: Date | undefined;
-  onDateChange: (date: Date | undefined) => void;
+  dateFrom: Date | undefined;
+  dateTo: Date | undefined;
+  onDateFromChange: (date: Date | undefined) => void;
+  onDateToChange: (date: Date | undefined) => void;
 }
 
 export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
-  label,
-  date,
-  onDateChange,
+  dateFrom,
+  dateTo,
+  onDateFromChange,
+  onDateToChange,
 }) => {
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn(
-              "w-full justify-start text-left font-normal",
-              !date && "text-muted-foreground"
-            )}
-          >
-            <Calendar className="mr-2 h-4 w-4" />
-            {date ? (
-              format(date, "dd/MM/yyyy")
-            ) : (
-              <span>Seleccionar fecha</span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <CalendarComponent
-            mode="single"
-            selected={date}
-            onSelect={onDateChange}
-            initialFocus
-            className="p-3 pointer-events-auto"
-          />
-        </PopoverContent>
-      </Popover>
+    <div className="grid gap-4 md:grid-cols-2">
+      <div className="space-y-2">
+        <Label>Fecha inicial</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !dateFrom && "text-muted-foreground"
+              )}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              {dateFrom ? (
+                format(dateFrom, "dd/MM/yyyy")
+              ) : (
+                <span>Seleccionar fecha</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={dateFrom}
+              onSelect={onDateFromChange}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Fecha final</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !dateTo && "text-muted-foreground"
+              )}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              {dateTo ? (
+                format(dateTo, "dd/MM/yyyy")
+              ) : (
+                <span>Seleccionar fecha</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={dateTo}
+              onSelect={onDateToChange}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 };

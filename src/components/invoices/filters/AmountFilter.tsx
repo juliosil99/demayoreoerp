@@ -5,34 +5,58 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
 interface AmountFilterProps {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder: string;
+  minAmount: string;
+  maxAmount: string;
+  onMinAmountChange: (value: string) => void;
+  onMaxAmountChange: (value: string) => void;
 }
 
 export const AmountFilter: React.FC<AmountFilterProps> = ({
-  id,
-  label,
-  value,
-  onChange,
-  placeholder,
+  minAmount,
+  maxAmount,
+  onMinAmountChange,
+  onMaxAmountChange,
 }) => {
+  const handleMinAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onMinAmountChange(e.target.value);
+  };
+
+  const handleMaxAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onMaxAmountChange(e.target.value);
+  };
+
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <div className="relative">
-        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          id={id}
-          name={id}
-          type="number"
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          className="pl-8"
-        />
+    <div className="grid gap-4 md:grid-cols-2">
+      <div className="space-y-2">
+        <Label htmlFor="minAmount">Monto mínimo</Label>
+        <div className="relative">
+          <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="minAmount"
+            name="minAmount"
+            type="number"
+            placeholder="Monto mínimo"
+            value={minAmount}
+            onChange={handleMinAmountChange}
+            className="pl-8"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="maxAmount">Monto máximo</Label>
+        <div className="relative">
+          <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="maxAmount"
+            name="maxAmount"
+            type="number"
+            placeholder="Monto máximo"
+            value={maxAmount}
+            onChange={handleMaxAmountChange}
+            className="pl-8"
+          />
+        </div>
       </div>
     </div>
   );
