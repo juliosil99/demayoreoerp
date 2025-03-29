@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useManualReconciliation = (userId: string | undefined) => {
   const [showManualReconciliation, setShowManualReconciliation] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch chart of accounts for manual reconciliation
   const { data: chartAccounts } = useQuery({
@@ -38,6 +39,8 @@ export const useManualReconciliation = (userId: string | undefined) => {
     try {
       if (!userId) throw new Error("User ID is required");
       
+      console.log("Starting manual reconciliation process for expense:", expenseId);
+      
       // Create a manual reconciliation record
       const { error: manualError } = await supabase
         .from("manual_reconciliations")
@@ -51,7 +54,10 @@ export const useManualReconciliation = (userId: string | undefined) => {
           chart_account_id: data.chartAccountId || null
         }]);
 
-      if (manualError) throw manualError;
+      if (manualError) {
+        console.error("Error creating manual reconciliation record:", manualError);
+        throw manualError;
+      }
       
       // Update the expense to mark it as reconciled
       const { error: updateError } = await supabase
@@ -63,8 +69,16 @@ export const useManualReconciliation = (userId: string | undefined) => {
         })
         .eq("id", expenseId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Error updating expense reconciliation status:", updateError);
+        throw updateError;
+      }
 
+      console.log("Expense successfully reconciled manually:", expenseId);
+      
+      // Invalidate relevant queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"] });
+      
       toast.success("Gasto conciliado manualmente");
       return true;
     } catch (error) {

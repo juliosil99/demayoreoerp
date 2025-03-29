@@ -11,6 +11,8 @@ const Reconciliation = () => {
   const { data: expenses } = useQuery({
     queryKey: ["unreconciled-expenses", user?.id],
     queryFn: async () => {
+      console.log("Fetching unreconciled expenses...");
+      
       // Get expenses that aren't reconciled yet - check both the reconciled flag 
       // and make sure they don't have any expense_invoice_relations
       const { data, error } = await supabase
@@ -20,16 +22,21 @@ const Reconciliation = () => {
           bank_accounts (name),
           chart_of_accounts (name, code),
           contacts (name),
-          expense_invoice_relations!left (id)
+          expense_invoice_relations!left (id),
+          manual_reconciliations!left (id)
         `)
         .eq("user_id", user!.id)
-        .is("reconciled", null)
         .is("expense_invoice_relations.id", null)
+        .is("manual_reconciliations.id", null)
+        .or('reconciled.is.null,reconciled.eq.false')
         .order("date", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching unreconciled expenses:", error);
+        throw error;
+      }
       
-      // Ensure date is properly formatted
+      console.log(`Fetched ${data?.length || 0} unreconciled expenses`);
       return data;
     },
     enabled: !!user,
@@ -38,13 +45,18 @@ const Reconciliation = () => {
   const { data: invoices } = useQuery({
     queryKey: ["unreconciled-invoices"],
     queryFn: async () => {
+      console.log("Fetching unreconciled invoices...");
       const { data, error } = await supabase
         .from("invoices")
         .select("*, paid_amount")
         .is("processed", false)
         .order("invoice_date", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching unreconciled invoices:", error);
+        throw error;
+      }
+      console.log(`Fetched ${data?.length || 0} unreconciled invoices`);
       return data;
     },
   });
