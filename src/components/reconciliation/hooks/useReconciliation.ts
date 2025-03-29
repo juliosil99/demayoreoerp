@@ -36,8 +36,13 @@ export const useReconciliation = () => {
     const updatedInvoices = [...selectedInvoices, invoice];
     setSelectedInvoices(updatedInvoices);
     
-    // Calculate remaining amount
-    const totalSelectedAmount = updatedInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+    // Calculate remaining amount, accounting for credit notes (type E)
+    const totalSelectedAmount = updatedInvoices.reduce((sum, inv) => {
+      // For credit notes (type E), subtract the amount instead of adding it
+      const amountToAdd = inv.invoice_type === 'E' ? -inv.total_amount : inv.total_amount;
+      return sum + (amountToAdd || 0);
+    }, 0);
+    
     const newRemainingAmount = selectedExpense?.amount - totalSelectedAmount;
     setRemainingAmount(newRemainingAmount);
 
@@ -130,30 +135,36 @@ export const useReconciliation = () => {
 
       // Create reconciliation records for each invoice
       for (const invoice of invoicesToReconcile) {
-        const reconciliationAmount = Math.min(remainingExpenseAmount, invoice.total_amount);
-        
+        // For credit notes (type E), subtract the amount instead of adding it
+        const reconciliationAmount = invoice.invoice_type === 'E' 
+          ? -Math.min(remainingExpenseAmount, -invoice.total_amount) // Negative for credit notes
+          : Math.min(remainingExpenseAmount, invoice.total_amount);
+          
         const { error: relationError } = await supabase
           .from("expense_invoice_relations")
           .insert([{
             expense_id: selectedExpense.id,
             invoice_id: invoice.id,
-            reconciled_amount: reconciliationAmount,
-            paid_amount: reconciliationAmount
+            reconciled_amount: Math.abs(reconciliationAmount), // Store absolute value
+            paid_amount: Math.abs(reconciliationAmount) // Store absolute value
           }]);
 
         if (relationError) throw relationError;
 
-        // Update invoice paid amount
+        // Update invoice paid amount 
+        // For credit notes, we're adding a negative amount (reducing the paid amount)
         const { error: invoiceError } = await supabase
           .from("invoices")
           .update({ 
-            paid_amount: invoice.paid_amount + reconciliationAmount,
-            processed: reconciliationAmount === invoice.total_amount
+            paid_amount: invoice.paid_amount + Math.abs(reconciliationAmount),
+            // A credit note is completely processed when its full negative amount is reconciled
+            processed: Math.abs(reconciliationAmount) === Math.abs(invoice.total_amount)
           })
           .eq("id", invoice.id);
 
         if (invoiceError) throw invoiceError;
 
+        // Adjust the remaining expense amount (credit notes increase the remaining amount)
         remainingExpenseAmount -= reconciliationAmount;
       }
       

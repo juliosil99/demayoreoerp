@@ -53,14 +53,22 @@ export function InvoiceSearchDialog({
             <div className="border rounded-md p-2">
               <h4 className="font-medium mb-2">Facturas Seleccionadas:</h4>
               <ul className="space-y-1">
-                {selectedInvoices.map(invoice => (
-                  <li key={invoice.id} className="text-sm flex justify-between">
-                    <span>
-                      {invoice.issuer_name} - {formatCardDate(invoice.invoice_date)}
-                    </span>
-                    <span className="font-semibold">{formatCurrency(invoice.total_amount)}</span>
-                  </li>
-                ))}
+                {selectedInvoices.map(invoice => {
+                  const isCredit = invoice.invoice_type === 'E';
+                  const displayAmount = isCredit ? -invoice.total_amount : invoice.total_amount;
+                  
+                  return (
+                    <li key={invoice.id} className="text-sm flex justify-between">
+                      <span>
+                        {invoice.issuer_name} - {formatCardDate(invoice.invoice_date)}
+                        {isCredit && <span className="ml-2 text-red-600">(Nota de Crédito)</span>}
+                      </span>
+                      <span className={`font-semibold ${isCredit ? 'text-red-600' : ''}`}>
+                        {formatCurrency(displayAmount)}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
               <div className="mt-2 text-right font-medium">
                 Restante: {formatCurrency(remainingAmount)}
@@ -90,21 +98,31 @@ export function InvoiceSearchDialog({
                 No se encontraron facturas que coincidan con la búsqueda
               </div>
             ) : (
-              filteredInvoices.map(invoice => (
-                <div
-                  key={invoice.id}
-                  className="p-3 hover:bg-muted/50 cursor-pointer flex justify-between items-center"
-                  onClick={() => onInvoiceSelect(invoice)}
-                >
-                  <div>
-                    <div className="font-medium">{invoice.issuer_name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatCardDate(invoice.invoice_date)} - {invoice.invoice_number || invoice.uuid}
+              filteredInvoices.map(invoice => {
+                const isCredit = invoice.invoice_type === 'E';
+                const displayAmount = isCredit ? -invoice.total_amount : invoice.total_amount;
+                
+                return (
+                  <div
+                    key={invoice.id}
+                    className="p-3 hover:bg-muted/50 cursor-pointer flex justify-between items-center"
+                    onClick={() => onInvoiceSelect(invoice)}
+                  >
+                    <div>
+                      <div className="font-medium">
+                        {invoice.issuer_name}
+                        {isCredit && <span className="ml-2 text-red-600">(Nota de Crédito)</span>}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatCardDate(invoice.invoice_date)} - {invoice.invoice_number || invoice.uuid}
+                      </div>
+                    </div>
+                    <div className={`font-semibold ${isCredit ? 'text-red-600' : ''}`}>
+                      {formatCurrency(displayAmount)}
                     </div>
                   </div>
-                  <div className="font-semibold">{formatCurrency(invoice.total_amount)}</div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
