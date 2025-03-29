@@ -67,16 +67,19 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
     toast.info("Procesando reconciliación...");
     console.log("Calling handleManualReconciliationConfirm with expense ID:", selectedExpense.id);
     
-    // Add try-catch to catch any errors during reconciliation
     try {
+      // First disable dialog closing
+      setShowManualReconciliation(true);
+      
+      // Then handle reconciliation
       const result = handleManualReconciliationConfirm(data);
       console.log("Manual reconciliation result:", result);
       
-      // Close the dialog and reset state regardless of result to avoid UI being stuck
+      // Close the dialog and reset state after a delay to ensure the operation completes
       setTimeout(() => {
         console.log("Closing manual reconciliation dialog...");
         setShowManualReconciliation(false);
-      }, 500);
+      }, 800);
     } catch (error) {
       console.error("Error during manual reconciliation:", error);
       toast.error("Error durante la reconciliación manual");

@@ -34,7 +34,7 @@ export function FileUploader({
   };
 
   const handleUpload = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Prevent default to avoid any potential form submission
+    // Prevent propagation and default to avoid form submission
     e.preventDefault();
     e.stopPropagation();
     
@@ -96,11 +96,15 @@ export function FileUploader({
       console.log("[FileUploader] File upload successful!");
       setUploadSuccess(true);
       
+      // Log before calling onUploadComplete
+      console.log("[FileUploader] Upload process completed, uploading state set to false");
+      setUploading(false);
+      
       // Add a small delay before calling onUploadComplete to prevent any race conditions
       setTimeout(() => {
         console.log("[FileUploader] Calling onUploadComplete with file ID:", fileRecord.id);
         onUploadComplete(fileRecord.id);
-      }, 100);
+      }, 300);
       
       toast.success("Archivo subido exitosamente");
       
@@ -109,9 +113,7 @@ export function FileUploader({
       console.error("[FileUploader] Upload error:", errorMessage);
       setUploadError(errorMessage);
       toast.error("Error al subir el archivo");
-    } finally {
       setUploading(false);
-      console.log("[FileUploader] Upload process completed, uploading state set to false");
     }
   };
 

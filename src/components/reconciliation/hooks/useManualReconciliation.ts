@@ -141,45 +141,31 @@ export const useManualReconciliation = (userId: string | undefined) => {
         }
       }
       
-      // Step 4: Invalidate queries to refresh the UI
+      // Step 4: Invalidate queries and refetch to refresh the UI
       console.log("[useManualReconciliation] Step 4: Invalidating queries to refresh UI...");
-      console.log("[useManualReconciliation] Invalidating 'unreconciled-expenses' query");
       
-      // Force refetch queries to ensure UI updates
-      await queryClient.refetchQueries({ queryKey: ["unreconciled-expenses"] });
-      console.log("[useManualReconciliation] Invalidating 'expenses' query");
-      await queryClient.refetchQueries({ queryKey: ["expenses"] });
+      // Using a stronger approach to invalidate and force refetch
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"] }),
+        queryClient.invalidateQueries({ queryKey: ["expenses"] })
+      ]);
+      
+      // Force refetch after a small delay to ensure DB updates are complete
+      setTimeout(async () => {
+        console.log("[useManualReconciliation] Force refreshing data...");
+        await queryClient.refetchQueries({ queryKey: ["unreconciled-expenses"] });
+        await queryClient.refetchQueries({ queryKey: ["expenses"] });
+      }, 500);
       
       console.log("[useManualReconciliation] MANUAL RECONCILIATION COMPLETED SUCCESSFULLY");
       console.log("=====================================================");
       
       toast.success("Gasto conciliado manualmente");
-      
-      // Ensure dialog closes
-      setTimeout(() => {
-        console.log("[useManualReconciliation] Forcing reconciliation dialog to close");
-        setShowManualReconciliation(false);
-      }, 200);
-      
       return true;
     } catch (error) {
       console.error("[useManualReconciliation] Unexpected error in reconciliation process:", error);
       toast.error("Error al reconciliar el gasto");
       return false;
-    } finally {
-      // Ensure UI refreshes by directly calling refetch on key queries
-      console.log("[useManualReconciliation] Forcing refresh of expense data...");
-      console.log("[useManualReconciliation] Force refreshing 'unreconciled-expenses'");
-      queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"], refetchType: 'all' });
-      console.log("[useManualReconciliation] Force refreshing 'expenses'");
-      queryClient.invalidateQueries({ queryKey: ["expenses"], refetchType: 'all' });
-      console.log("[useManualReconciliation] Data refresh complete");
-      
-      // Make sure reconciliation dialog closes
-      setTimeout(() => {
-        console.log("[useManualReconciliation] Final check - ensuring reconciliation dialog is closed");
-        setShowManualReconciliation(false);
-      }, 500);
     }
   };
 
