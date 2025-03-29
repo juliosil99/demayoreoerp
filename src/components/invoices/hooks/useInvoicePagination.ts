@@ -1,42 +1,45 @@
 
-import { useState, useMemo } from 'react';
-import type { Database } from "@/integrations/supabase/types";
+import { useState, useEffect } from "react";
 
-type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
-
-interface UsePaginationProps {
-  items: Invoice[] | null | undefined;
+interface PaginationProps<T> {
+  items: T[] | null;
   itemsPerPage: number;
 }
 
-export const useInvoicePagination = ({ items, itemsPerPage }: UsePaginationProps) => {
+export const useInvoicePagination = <T>({ items, itemsPerPage }: PaginationProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
-  
-  const totalPages = useMemo(() => {
-    return items ? Math.ceil(items.length / itemsPerPage) : 0;
-  }, [items, itemsPerPage]);
-  
-  const paginatedItems = useMemo(() => {
-    if (!items) return null;
-    
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return items.slice(startIndex, endIndex);
-  }, [items, currentPage, itemsPerPage]);
-  
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-  };
-  
-  // Reset to page 1 when filters change (items array reference changes)
-  useMemo(() => {
+  const [paginatedItems, setPaginatedItems] = useState<T[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    // Reset to first page when items change
     setCurrentPage(1);
   }, [items]);
-  
+
+  useEffect(() => {
+    if (!items || items.length === 0) {
+      setPaginatedItems([]);
+      setTotalPages(1);
+      return;
+    }
+
+    const totalPagesCount = Math.ceil(items.length / itemsPerPage);
+    setTotalPages(totalPagesCount);
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, items.length);
+    setPaginatedItems(items.slice(startIndex, endIndex));
+  }, [items, currentPage, itemsPerPage]);
+
+  const handlePageChange = (pageNumber: number) => {
+    if (pageNumber < 1 || pageNumber > totalPages) return;
+    setCurrentPage(pageNumber);
+  };
+
   return {
     currentPage,
     totalPages,
     paginatedItems,
-    handlePageChange
+    handlePageChange,
   };
 };

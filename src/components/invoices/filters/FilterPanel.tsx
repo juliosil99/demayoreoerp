@@ -1,10 +1,10 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { InvoiceTypeFilter } from "./InvoiceTypeFilter";
 import { DateRangeFilter } from "./DateRangeFilter";
+import { InvoiceTypeFilter } from "./InvoiceTypeFilter";
 import { AmountFilter } from "./AmountFilter";
-import { InvoiceFilters } from "../InvoiceFilters";
+import type { InvoiceFilters } from "../InvoiceFilters";
 
 interface FilterPanelProps {
   filters: InvoiceFilters;
@@ -17,61 +17,41 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   onFilterChange,
   clearFilters,
 }) => {
-  const handleSelectChange = (value: string) => {
-    onFilterChange({ ...filters, invoiceType: value });
-  };
-
-  const handleDateFromChange = (date: Date | undefined) => {
-    onFilterChange({ ...filters, dateFrom: date });
-  };
-
-  const handleDateToChange = (date: Date | undefined) => {
-    onFilterChange({ ...filters, dateTo: date });
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    onFilterChange({ ...filters, [name]: value });
+  // Create a copy of the filters to avoid direct state mutation
+  const updateFilters = (field: keyof InvoiceFilters, value: any) => {
+    onFilterChange({ ...filters, [field]: value });
   };
 
   return (
-    <div className="grid gap-4 rounded-lg border p-4 md:grid-cols-2 lg:grid-cols-3">
-      <InvoiceTypeFilter 
-        value={filters.invoiceType} 
-        onChange={handleSelectChange} 
-      />
-
-      <DateRangeFilter 
-        label="Fecha de Emisión (Desde)" 
-        date={filters.dateFrom} 
-        onDateChange={handleDateFromChange} 
-      />
-
-      <DateRangeFilter 
-        label="Fecha de Emisión (Hasta)" 
-        date={filters.dateTo} 
-        onDateChange={handleDateToChange} 
-      />
-
-      <AmountFilter 
-        id="minAmount" 
-        label="Monto Mínimo" 
-        value={filters.minAmount} 
-        onChange={handleInputChange} 
-        placeholder="Monto mínimo" 
-      />
-
-      <AmountFilter 
-        id="maxAmount" 
-        label="Monto Máximo" 
-        value={filters.maxAmount} 
-        onChange={handleInputChange} 
-        placeholder="Monto máximo" 
-      />
-
-      <div className="flex items-end">
-        <Button variant="outline" onClick={clearFilters} className="w-full">
-          Limpiar Filtros
+    <div className="border p-4 rounded-md space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <DateRangeFilter
+          dateFrom={filters.dateFrom}
+          dateTo={filters.dateTo}
+          onDateFromChange={(date) => updateFilters("dateFrom", date)}
+          onDateToChange={(date) => updateFilters("dateTo", date)}
+        />
+        
+        <InvoiceTypeFilter
+          value={filters.invoiceType}
+          onChange={(type) => updateFilters("invoiceType", type)}
+        />
+        
+        <AmountFilter
+          minAmount={filters.minAmount}
+          maxAmount={filters.maxAmount}
+          onMinAmountChange={(value) => updateFilters("minAmount", value)}
+          onMaxAmountChange={(value) => updateFilters("maxAmount", value)}
+        />
+      </div>
+      
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          onClick={clearFilters}
+          className="text-sm"
+        >
+          Limpiar filtros
         </Button>
       </div>
     </div>

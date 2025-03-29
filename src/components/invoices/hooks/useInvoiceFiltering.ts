@@ -1,17 +1,9 @@
 
-import { useState, useCallback } from 'react';
+import React, { useState, useEffect } from "react";
 import type { Database } from "@/integrations/supabase/types";
+import type { InvoiceFilters } from "../InvoiceFilters";
 
 type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
-
-interface InvoiceFilters {
-  search: string;
-  dateFrom: Date | undefined;
-  dateTo: Date | undefined;
-  invoiceType: string;
-  minAmount: string;
-  maxAmount: string;
-}
 
 export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
   const [filters, setFilters] = useState<InvoiceFilters>({
@@ -23,72 +15,81 @@ export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
     maxAmount: "",
   });
 
-  const handleFilterChange = useCallback((newFilters: InvoiceFilters) => {
-    setFilters(newFilters);
-  }, []);
+  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[] | null>(invoices);
 
-  const searchInvoice = useCallback((invoice: Invoice, searchTerm: string): boolean => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      (invoice.issuer_name?.toLowerCase().includes(searchLower) || false) ||
-      (invoice.issuer_rfc?.toLowerCase().includes(searchLower) || false) ||
-      (invoice.receiver_name?.toLowerCase().includes(searchLower) || false) ||
-      (invoice.receiver_rfc?.toLowerCase().includes(searchLower) || false) ||
-      (invoice.invoice_number?.toLowerCase().includes(searchLower) || false) ||
-      (invoice.serie?.toLowerCase().includes(searchLower) || false) ||
-      (invoice.filename?.toLowerCase().includes(searchLower) || false)
-    );
-  }, []);
-
-  const filteredInvoices = invoices?.filter(invoice => {
-    // Search filter
-    if (filters.search && !searchInvoice(invoice, filters.search)) {
-      return false;
+  useEffect(() => {
+    if (!invoices) {
+      setFilteredInvoices(null);
+      return;
     }
 
-    // Invoice type filter
-    if (filters.invoiceType && filters.invoiceType !== "all" && invoice.invoice_type !== filters.invoiceType) {
-      return false;
+    let results = [...invoices];
+
+    // Apply search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      results = results.filter(
+        (invoice) =>
+          (invoice.invoice_number && invoice.invoice_number.toLowerCase().includes(searchLower)) ||
+          (invoice.issuer_name && invoice.issuer_name.toLowerCase().includes(searchLower)) ||
+          (invoice.receiver_name && invoice.receiver_name.toLowerCase().includes(searchLower)) ||
+          (invoice.uuid && invoice.uuid.toLowerCase().includes(searchLower))
+      );
     }
 
-    // Date range filter
-    if (filters.dateFrom && invoice.invoice_date) {
-      const invoiceDate = new Date(invoice.invoice_date);
-      if (invoiceDate < filters.dateFrom) {
-        return false;
-      }
+    // Apply date range filter
+    if (filters.dateFrom) {
+      results = results.filter(
+        (invoice) => 
+          invoice.invoice_date && 
+          new Date(invoice.invoice_date) >= new Date(filters.dateFrom!)
+      );
     }
 
-    if (filters.dateTo && invoice.invoice_date) {
-      const invoiceDate = new Date(invoice.invoice_date);
-      const endDate = new Date(filters.dateTo);
-      endDate.setHours(23, 59, 59, 999);
-      if (invoiceDate > endDate) {
-        return false;
-      }
+    if (filters.dateTo) {
+      results = results.filter(
+        (invoice) => 
+          invoice.invoice_date && 
+          new Date(invoice.invoice_date) <= new Date(filters.dateTo!)
+      );
     }
 
-    // Amount range filter
-    if (filters.minAmount && invoice.total_amount) {
+    // Apply invoice type filter
+    if (filters.invoiceType) {
+      results = results.filter(
+        (invoice) => invoice.invoice_type === filters.invoiceType
+      );
+    }
+
+    // Apply amount filters
+    if (filters.minAmount) {
       const minAmount = parseFloat(filters.minAmount);
-      if (invoice.total_amount < minAmount) {
-        return false;
+      if (!isNaN(minAmount)) {
+        results = results.filter(
+          (invoice) => (invoice.total_amount || 0) >= minAmount
+        );
       }
     }
 
-    if (filters.maxAmount && invoice.total_amount) {
+    if (filters.maxAmount) {
       const maxAmount = parseFloat(filters.maxAmount);
-      if (invoice.total_amount > maxAmount) {
-        return false;
+      if (!isNaN(maxAmount)) {
+        results = results.filter(
+          (invoice) => (invoice.total_amount || 0) <= maxAmount
+        );
       }
     }
 
-    return true;
-  });
+    setFilteredInvoices(results);
+  }, [invoices, filters]);
+
+  const handleFilterChange = (newFilters: InvoiceFilters) => {
+    setFilters(newFilters);
+  };
 
   return {
     filters,
     filteredInvoices,
-    handleFilterChange
+    handleFilterChange,
   };
 };
