@@ -185,15 +185,17 @@ export function TransactionsTable({ account, transactions }: TransactionsTablePr
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* Initial Balance Row */}
-            <TableRow className="bg-muted/20 font-medium">
-              <TableCell>{formatDate(account.balance_date)}</TableCell>
-              <TableCell>Saldo Inicial</TableCell>
-              <TableCell>-</TableCell>
-              <TableCell className="text-right">-</TableCell>
-              <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
-              <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
-            </TableRow>
+            {/* Initial Balance Row - only show on first page */}
+            {currentPage === 1 && (
+              <TableRow className="bg-muted/20 font-medium">
+                <TableCell>{formatDate(account.balance_date)}</TableCell>
+                <TableCell>Saldo Inicial</TableCell>
+                <TableCell>-</TableCell>
+                <TableCell className="text-right">-</TableCell>
+                <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
+              </TableRow>
+            )}
             
             {/* Transaction Rows for current page only */}
             {currentTransactions.map((transaction) => (
