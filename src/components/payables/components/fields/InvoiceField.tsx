@@ -1,6 +1,5 @@
 
 import React from "react";
-import { format } from "date-fns";
 import {
   FormControl,
   FormField,
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
 import { useUnpaidInvoicesQuery } from "../../hooks/usePayableQueries";
+import { formatCardDate } from "@/utils/formatters";
 
 interface PayableFormData {
   client_id: string;
@@ -53,7 +53,7 @@ export function InvoiceField({ form }: InvoiceFieldProps) {
             <SelectContent>
               {invoices?.map((invoice) => (
                 <SelectItem key={invoice.id} value={invoice.id.toString()}>
-                  {invoice.invoice_number} - {format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}
+                  {invoice.invoice_number} - {formatCardDate(invoice.invoice_date)}
                 </SelectItem>
               ))}
             </SelectContent>

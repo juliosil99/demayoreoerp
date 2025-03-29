@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -14,8 +13,7 @@ import { Label } from "@/components/ui/label";
 import { FileUploader } from "./FileUploader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { formatCurrency } from "@/utils/formatters";
-import { format, parseISO } from 'date-fns';
+import { formatCurrency, formatCardDate } from "@/utils/formatters";
 import { useState } from "react";
 
 interface ManualReconciliationDialogProps {
@@ -46,19 +44,6 @@ export function ManualReconciliationDialog({
   const [chartAccountId, setChartAccountId] = useState<string | undefined>(undefined);
   const [isUploading, setIsUploading] = useState(false);
 
-  const formatExpenseDate = (dateString: string) => {
-    try {
-      if (!dateString) return "-";
-      
-      // Parse the ISO date string directly to avoid timezone shifts
-      const dateObj = parseISO(dateString);
-      return format(dateObj, 'dd/MM/yyyy');
-    } catch (error) {
-      console.error("Error formatting date:", error, dateString);
-      return dateString || '-';
-    }
-  };
-
   const handleFileUploaded = (fileId: string) => {
     setFileId(fileId);
     setIsUploading(false);
@@ -82,7 +67,7 @@ export function ManualReconciliationDialog({
         <DialogHeader>
           <DialogTitle>Reconciliación Manual</DialogTitle>
           <DialogDescription>
-            Gasto: {expense.description} - {formatCurrency(expense.amount)} ({formatExpenseDate(expense.date)})
+            Gasto: {expense.description} - {formatCurrency(expense.amount)} ({formatCardDate(expense.date)})
           </DialogDescription>
         </DialogHeader>
 

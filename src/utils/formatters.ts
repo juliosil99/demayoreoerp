@@ -11,14 +11,20 @@ export const formatDate = (date: string | null) => {
   if (!date) return '-';
   
   try {
-    // Parse the date directly as ISO format to avoid timezone issues
-    const parsedDate = new Date(date);
+    // Create date in UTC to avoid timezone issues
+    const parts = date.split('T')[0].split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JS Date
+    const day = parseInt(parts[2], 10);
     
-    // Use toLocaleDateString to format the date
+    // Create date explicitly with component parts to avoid timezone shifts
+    const parsedDate = new Date(Date.UTC(year, month, day));
+    
     return parsedDate.toLocaleDateString('es-MX', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
+      timeZone: 'UTC' // Important to prevent timezone shifts
     });
   } catch (error) {
     console.error("Error formatting date:", error, date);
@@ -31,12 +37,20 @@ export const formatCardDate = (dateString: string) => {
   try {
     if (!dateString) return "-";
     
-    // Parse the ISO date string directly to avoid timezone shifts
-    const dateObj = new Date(dateString);
-    return dateObj.toLocaleDateString('es-MX', {
+    // Create date in UTC to avoid timezone issues
+    const parts = dateString.split('T')[0].split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JS Date
+    const day = parseInt(parts[2], 10);
+    
+    // Create date explicitly with component parts to avoid timezone shifts
+    const parsedDate = new Date(Date.UTC(year, month, day));
+    
+    return parsedDate.toLocaleDateString('es-MX', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
+      timeZone: 'UTC' // Important to prevent timezone shifts
     });
   } catch (error) {
     console.error("Error formatting date:", error, dateString);

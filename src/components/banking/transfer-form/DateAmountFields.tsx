@@ -5,6 +5,13 @@ import { Label } from "@/components/ui/label";
 import { FormFieldProps } from "./types";
 
 export function DateAmountFields({ formData, setFormData }: FormFieldProps) {
+  // Ensure date is properly formatted for the input field
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // The date input will provide the date in YYYY-MM-DD format
+    // which is exactly what we want to store
+    setFormData({ ...formData, date: e.target.value });
+  };
+
   return (
     <div className="grid grid-cols-2 gap-4">
       <div>
@@ -12,7 +19,7 @@ export function DateAmountFields({ formData, setFormData }: FormFieldProps) {
         <Input
           type="date"
           value={formData.date}
-          onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+          onChange={handleDateChange}
           required
         />
       </div>

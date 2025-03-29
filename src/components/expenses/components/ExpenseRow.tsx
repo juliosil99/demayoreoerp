@@ -1,7 +1,4 @@
-
 import { TableCell, TableRow } from "@/components/ui/table";
-import { format, parseISO } from "date-fns";
-import { es } from 'date-fns/locale';
 import { ExpenseActions } from "./ExpenseActions";
 import { useState } from "react";
 import { 
@@ -12,6 +9,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { formatCardDate } from "@/utils/formatters";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -62,26 +60,11 @@ export function ExpenseRow({
     setIsLogOpen(false);
   };
 
-  // Explicitly parse the date and ensure it's displayed correctly
-  // This avoids timezone issues that can shift the displayed date
-  const displayDate = () => {
-    try {
-      if (!expense.date) return '-';
-      
-      // Parse the ISO date string directly to avoid timezone shifts
-      const dateObj = parseISO(expense.date);
-      return format(dateObj, 'dd MMM, yyyy', { locale: es });
-    } catch (error) {
-      console.error("Error formatting date:", error, expense.date);
-      return expense.date || '-';
-    }
-  };
-
   return (
     <>
       <TableRow key={expense.id}>
         <TableCell>
-          {displayDate()}
+          {formatCardDate(expense.date)}
         </TableCell>
         <TableCell>{expense.description}</TableCell>
         <TableCell>${expense.amount.toFixed(2)}</TableCell>
