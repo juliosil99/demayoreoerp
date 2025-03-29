@@ -8,15 +8,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { FileUploader } from "./FileUploader";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { formatCurrency, formatCardDate } from "@/utils/formatters";
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { ReconciliationTypeSelector } from "./dialog-sections/ReconciliationTypeSelector";
+import { ReferenceNumberField } from "./dialog-sections/ReferenceNumberField";
+import { ChartAccountSelector } from "./dialog-sections/ChartAccountSelector";
+import { NotesField } from "./dialog-sections/NotesField";
+import { FileUploadSection } from "./dialog-sections/FileUploadSection";
 
 interface ManualReconciliationDialogProps {
   open: boolean;
@@ -123,87 +121,38 @@ export function ManualReconciliationDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <Label>Tipo de Reconciliación</Label>
-            <RadioGroup
-              value={reconciliationType}
-              onValueChange={(value) => {
-                console.log("Reconciliation type changed to:", value);
-                setReconciliationType(value);
-              }}
-              className="flex flex-col space-y-1"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="no_invoice" id="no_invoice" />
-                <Label htmlFor="no_invoice">Sin Factura</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="foreign_invoice" id="foreign_invoice" />
-                <Label htmlFor="foreign_invoice">Factura Extranjera</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="pdf_only" id="pdf_only" />
-                <Label htmlFor="pdf_only">PDF/Imagen (Sin XML)</Label>
-              </div>
-            </RadioGroup>
-          </div>
+          <ReconciliationTypeSelector 
+            value={reconciliationType}
+            onChange={setReconciliationType}
+          />
 
           {reconciliationType !== "no_invoice" && (
-            <div className="space-y-2">
-              <Label htmlFor="reference">Número de Referencia (opcional)</Label>
-              <Input
-                id="reference"
-                value={referenceNumber}
-                onChange={(e) => setReferenceNumber(e.target.value)}
-                placeholder="Número de factura o referencia"
-              />
-            </div>
+            <ReferenceNumberField
+              value={referenceNumber}
+              onChange={setReferenceNumber}
+            />
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="account">Cuenta Contable</Label>
-            <Select
-              value={chartAccountId || expense?.chart_account_id}
-              onValueChange={(value) => {
-                console.log("Chart account changed to:", value);
-                setChartAccountId(value);
-              }}
-            >
-              <SelectTrigger id="account">
-                <SelectValue placeholder="Seleccionar cuenta contable" />
-              </SelectTrigger>
-              <SelectContent>
-                {chartAccounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.code} - {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <ChartAccountSelector
+            value={chartAccountId}
+            accounts={chartAccounts}
+            onChange={setChartAccountId}
+            defaultAccountId={expense?.chart_account_id}
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notas de Reconciliación</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Agregar notas o detalles sobre esta reconciliación"
-              rows={3}
-            />
-          </div>
+          <NotesField
+            value={notes}
+            onChange={setNotes}
+          />
 
           {reconciliationType === "pdf_only" && (
-            <div className="space-y-2">
-              <Label>Subir Documento</Label>
-              <FileUploader
-                onUploadStart={() => {
-                  console.log("File upload started");
-                  setIsUploading(true);
-                }}
-                onUploadComplete={handleFileUploaded}
-              />
-            </div>
+            <FileUploadSection
+              onUploadStart={() => {
+                console.log("File upload started");
+                setIsUploading(true);
+              }}
+              onUploadComplete={handleFileUploaded}
+            />
           )}
         </div>
 
