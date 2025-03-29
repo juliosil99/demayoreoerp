@@ -20,7 +20,7 @@ export default function Payments() {
   const [showBulkReconciliation, setShowBulkReconciliation] = useState(false);
   const [paymentToEdit, setPaymentToEdit] = useState<Payment | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  const ITEMS_PER_PAGE = 30;
 
   const { data: payments, isLoading, totalCount } = usePaymentsQuery({
     page: currentPage,

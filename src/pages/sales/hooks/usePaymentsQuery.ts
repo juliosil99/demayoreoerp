@@ -14,7 +14,7 @@ type UsePaymentsQueryProps = {
   pageSize?: number;
 };
 
-export function usePaymentsQuery({ page = 1, pageSize = 10 }: UsePaymentsQueryProps = {}) {
+export function usePaymentsQuery({ page = 1, pageSize = 30 }: UsePaymentsQueryProps = {}) {
   const { user } = useAuth();
   
   // For counting total items
