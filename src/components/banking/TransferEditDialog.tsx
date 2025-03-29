@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { TransferFormFields } from "./TransferFormFields";
 import { useTransferEdit } from "./hooks/useTransferEdit";
 import { AccountTransfersTable } from "@/integrations/supabase/types/account-transfers";
+import { AccountCurrency } from "./types";
 
 interface TransferEditDialogProps {
   open: boolean;
@@ -20,6 +21,7 @@ interface TransferEditDialogProps {
     id: number;
     name: string;
     balance: number;
+    currency: AccountCurrency;
   }>;
 }
 

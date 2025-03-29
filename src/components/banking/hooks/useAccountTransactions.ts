@@ -91,7 +91,7 @@ export function useAccountTransactions(accountId: number | null) {
           reference_number, 
           notes, 
           from_account_id,
-          bank_accounts!fk_from_account(name, currency)
+          bank_accounts!account_transfers_from_account_id_fkey(name, currency)
         `)
         .eq('to_account_id', accountId)
         .eq('user_id', user.id)

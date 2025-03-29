@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BankAccount, AccountType } from "@/components/banking/types";
+import { BankAccount, AccountType, AccountCurrency } from "@/components/banking/types";
 
 export function useAccountDetails(accountId: number | null) {
   return useQuery({
@@ -26,7 +26,8 @@ export function useAccountDetails(accountId: number | null) {
           balance: data.balance || 0,
           initial_balance: data.initial_balance || 0,
           balance_date: data.balance_date || new Date().toISOString(),
-          created_at: data.created_at || new Date().toISOString()
+          created_at: data.created_at || new Date().toISOString(),
+          currency: data.currency as AccountCurrency || "MXN"
         };
         return bankAccount;
       }

@@ -12,8 +12,11 @@ export type Database = {
       account_transfers: {
         Row: {
           amount: number
+          amount_from: number
+          amount_to: number
           created_at: string | null
           date: string
+          exchange_rate: number
           from_account_id: number
           id: string
           notes: string | null
@@ -24,8 +27,11 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_from?: number
+          amount_to?: number
           created_at?: string | null
           date: string
+          exchange_rate?: number
           from_account_id: number
           id?: string
           notes?: string | null
@@ -36,8 +42,11 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_from?: number
+          amount_to?: number
           created_at?: string | null
           date?: string
+          exchange_rate?: number
           from_account_id?: number
           id?: string
           notes?: string | null
@@ -289,6 +298,7 @@ export type Database = {
           balance: number | null
           balance_date: string | null
           created_at: string | null
+          currency: string
           id: number
           initial_balance: number | null
           name: string
@@ -298,6 +308,7 @@ export type Database = {
           balance?: number | null
           balance_date?: string | null
           created_at?: string | null
+          currency?: string
           id?: number
           initial_balance?: number | null
           name: string
@@ -307,6 +318,7 @@ export type Database = {
           balance?: number | null
           balance_date?: string | null
           created_at?: string | null
+          currency?: string
           id?: number
           initial_balance?: number | null
           name?: string

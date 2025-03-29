@@ -36,12 +36,14 @@ export function useAccountTransferCreate() {
       const { error } = await supabase
         .from("account_transfers")
         .insert({
-          ...data,
+          date: data.date,
+          from_account_id: parseInt(data.from_account_id),
+          to_account_id: parseInt(data.to_account_id),
           amount_from: parseFloat(data.amount_from),
           amount_to: parseFloat(data.amount_to || data.amount_from),
           exchange_rate: parseFloat(data.exchange_rate || "1"),
-          from_account_id: parseInt(data.from_account_id),
-          to_account_id: parseInt(data.to_account_id),
+          reference_number: data.reference_number || null,
+          notes: data.notes || null,
           user_id: user?.id,
         });
       if (error) throw error;

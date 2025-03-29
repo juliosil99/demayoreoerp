@@ -16,7 +16,8 @@ interface TransferWithAccounts {
   date: string;
   from_account_id: number;
   to_account_id: number;
-  amount: number;
+  amount_from: number;
+  amount_to: number;
   reference_number: string | null;
   notes: string | null;
   user_id: string;
@@ -45,7 +46,9 @@ export default function AccountTransfers() {
       date: transfer.date,
       from_account_id: transfer.from_account_id,
       to_account_id: transfer.to_account_id,
-      amount: transfer.amount,
+      amount_from: transfer.amount_from,
+      amount_to: transfer.amount_to,
+      exchange_rate: null, // Will be filled in by the edit form
       reference_number: transfer.reference_number,
       notes: transfer.notes,
       user_id: transfer.user_id,

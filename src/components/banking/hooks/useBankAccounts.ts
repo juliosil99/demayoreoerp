@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -15,6 +14,7 @@ export function useBankAccounts() {
     balance: 0,
     initial_balance: 0,
     balance_date: new Date().toISOString().split('T')[0],
+    currency: "MXN"
   });
 
   // Fetch bank accounts
@@ -56,7 +56,8 @@ export function useBankAccounts() {
           type: account.type,
           balance: account.balance,
           initial_balance: account.initial_balance,
-          balance_date: account.balance_date
+          balance_date: account.balance_date,
+          currency: account.currency
         });
       if (error) throw error;
     },
@@ -70,6 +71,7 @@ export function useBankAccounts() {
         balance: 0,
         initial_balance: 0,
         balance_date: new Date().toISOString().split('T')[0],
+        currency: "MXN"
       });
     },
     onError: (error) => {
@@ -87,7 +89,8 @@ export function useBankAccounts() {
           type: account.type,
           balance: account.balance,
           initial_balance: account.initial_balance,
-          balance_date: account.balance_date
+          balance_date: account.balance_date,
+          currency: account.currency
         })
         .eq("id", account.id);
       if (error) throw error;
