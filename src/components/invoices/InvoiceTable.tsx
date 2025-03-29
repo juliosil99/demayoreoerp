@@ -14,7 +14,7 @@ import {
 
 type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 30;
 
 export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
   const [currentPage, setCurrentPage] = useState(1);
