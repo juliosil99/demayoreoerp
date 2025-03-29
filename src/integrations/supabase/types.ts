@@ -668,6 +668,9 @@ export type Database = {
           id: string
           notes: string | null
           payment_method: string
+          reconciled: boolean | null
+          reconciliation_date: string | null
+          reconciliation_type: string | null
           reference_number: string | null
           supplier_id: string | null
           tax_regime: string | null
@@ -684,6 +687,9 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_method: string
+          reconciled?: boolean | null
+          reconciliation_date?: string | null
+          reconciliation_type?: string | null
           reference_number?: string | null
           supplier_id?: string | null
           tax_regime?: string | null
@@ -700,6 +706,9 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_method?: string
+          reconciled?: boolean | null
+          reconciliation_date?: string | null
+          reconciliation_type?: string | null
           reference_number?: string | null
           supplier_id?: string | null
           tax_regime?: string | null
@@ -1050,6 +1059,94 @@ export type Database = {
           xml_content?: string | null
         }
         Relationships: []
+      }
+      manual_invoice_files: {
+        Row: {
+          content_type: string
+          created_at: string | null
+          file_path: string
+          filename: string
+          id: string
+          size: number
+          user_id: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string | null
+          file_path: string
+          filename: string
+          id?: string
+          size: number
+          user_id: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string | null
+          file_path?: string
+          filename?: string
+          id?: string
+          size?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      manual_reconciliations: {
+        Row: {
+          chart_account_id: string | null
+          created_at: string | null
+          expense_id: string
+          file_id: string | null
+          id: string
+          notes: string
+          reconciliation_type: string
+          reference_number: string | null
+          user_id: string
+        }
+        Insert: {
+          chart_account_id?: string | null
+          created_at?: string | null
+          expense_id: string
+          file_id?: string | null
+          id?: string
+          notes: string
+          reconciliation_type: string
+          reference_number?: string | null
+          user_id: string
+        }
+        Update: {
+          chart_account_id?: string | null
+          created_at?: string | null
+          expense_id?: string
+          file_id?: string | null
+          id?: string
+          notes?: string
+          reconciliation_type?: string
+          reference_number?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_reconciliations_chart_account_id_fkey"
+            columns: ["chart_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_reconciliations_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_reconciliations_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "manual_invoice_files"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       page_permissions: {
         Row: {

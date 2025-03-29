@@ -73,7 +73,7 @@ export default function Expenses() {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Expense[];
+      return data as unknown as Expense[];
     },
     enabled: !!user,
   });
