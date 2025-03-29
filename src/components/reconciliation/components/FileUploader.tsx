@@ -39,39 +39,106 @@ export function FileUploader({
     onUploadStart();
 
     try {
-      // First, insert file metadata
-      const { data: fileRecord, error: fileError } = await supabase
-        .from("manual_invoice_files")
-        .insert({
-          filename: file.name,
-          file_path: `${user.id}/${Date.now()}_${file.name}`,
-          content_type: file.type,
-          size: file.size,
-          user_id: user.id
-        })
-        .select()
-        .single();
-
-      if (fileError) throw new Error(fileError.message);
-      if (!fileRecord) throw new Error("Failed to create file record");
-
-      // Then, upload the actual file to storage
-      const { error: storageError } = await supabase.storage
-        .from("invoice_files")
-        .upload(fileRecord.file_path, file);
-
-      if (storageError) {
-        // Clean up the database entry since the upload failed
-        await supabase
-          .from("manual_invoice_files")
-          .delete()
-          .eq("id", fileRecord.id);
-        throw new Error(storageError.message);
+      console.log("Starting file upload process...");
+      
+      // First, check if bucket exists
+      const { data: buckets, error: bucketsError } = await supabase
+        .storage
+        .listBuckets();
+      
+      console.log("Available buckets:", buckets);
+      
+      if (bucketsError) {
+        console.error("Error listing buckets:", bucketsError);
+        throw new Error(`Error listing buckets: ${bucketsError.message}`);
       }
+      
+      // Make sure we're using a bucket that exists
+      const bucketName = 'invoice_files';
+      const bucketExists = buckets?.some(b => b.name === bucketName);
+      
+      if (!bucketExists) {
+        console.error(`Bucket "${bucketName}" does not exist`);
+        // Use 'public' bucket as fallback if the intended bucket doesn't exist
+        const fallbackBucket = buckets && buckets.length > 0 ? buckets[0].name : null;
+        
+        if (!fallbackBucket) {
+          throw new Error("No storage buckets available");
+        }
+        
+        console.log(`Using fallback bucket: ${fallbackBucket}`);
+        
+        // First, insert file metadata
+        const { data: fileRecord, error: fileError } = await supabase
+          .from("manual_invoice_files")
+          .insert({
+            filename: file.name,
+            file_path: `${user.id}/${Date.now()}_${file.name}`,
+            content_type: file.type,
+            size: file.size,
+            user_id: user.id
+          })
+          .select()
+          .single();
 
-      setUploadSuccess(true);
-      onUploadComplete(fileRecord.id);
-      toast.success("Archivo subido exitosamente");
+        if (fileError) throw new Error(fileError.message);
+        if (!fileRecord) throw new Error("Failed to create file record");
+
+        // Upload to fallback bucket
+        const { error: storageError } = await supabase.storage
+          .from(fallbackBucket)
+          .upload(fileRecord.file_path, file);
+
+        if (storageError) {
+          // Clean up the database entry since the upload failed
+          await supabase
+            .from("manual_invoice_files")
+            .delete()
+            .eq("id", fileRecord.id);
+          throw new Error(storageError.message);
+        }
+
+        setUploadSuccess(true);
+        onUploadComplete(fileRecord.id);
+        toast.success("Archivo subido exitosamente");
+      } else {
+        // Original bucket exists, proceed as normal
+        console.log(`Using bucket: ${bucketName}`);
+        
+        // First, insert file metadata
+        const { data: fileRecord, error: fileError } = await supabase
+          .from("manual_invoice_files")
+          .insert({
+            filename: file.name,
+            file_path: `${user.id}/${Date.now()}_${file.name}`,
+            content_type: file.type,
+            size: file.size,
+            user_id: user.id
+          })
+          .select()
+          .single();
+
+        if (fileError) throw new Error(fileError.message);
+        if (!fileRecord) throw new Error("Failed to create file record");
+
+        // Then, upload the actual file to storage
+        const { error: storageError } = await supabase.storage
+          .from(bucketName)
+          .upload(fileRecord.file_path, file);
+
+        if (storageError) {
+          // Clean up the database entry since the upload failed
+          await supabase
+            .from("manual_invoice_files")
+            .delete()
+            .eq("id", fileRecord.id);
+          throw new Error(storageError.message);
+        }
+
+        setUploadSuccess(true);
+        onUploadComplete(fileRecord.id);
+        toast.success("Archivo subido exitosamente");
+      }
     } catch (error) {
       console.error("Upload error:", error);
       setUploadError(error instanceof Error ? error.message : "Error al subir el archivo");
