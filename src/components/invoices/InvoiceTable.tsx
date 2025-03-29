@@ -68,7 +68,7 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
     }
 
     // Invoice type filter
-    if (filters.invoiceType && invoice.invoice_type !== filters.invoiceType) {
+    if (filters.invoiceType && filters.invoiceType !== "all" && invoice.invoice_type !== filters.invoiceType) {
       return false;
     }
 

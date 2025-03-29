@@ -113,7 +113,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
                 <SelectValue placeholder="Todos los tipos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos los tipos</SelectItem>
+                <SelectItem value="all">Todos los tipos</SelectItem>
                 <SelectItem value="I">Ingreso</SelectItem>
                 <SelectItem value="E">Egreso (Nota de Crédito)</SelectItem>
                 <SelectItem value="P">Pago</SelectItem>
