@@ -13,6 +13,10 @@ export type AccountTransaction = {
   reference: string;
   source: 'expense' | 'payment' | 'transfer';
   source_id: string;
+  // Add additional fields for currency transactions
+  exchange_rate?: number;
+  original_amount?: number;
+  original_currency?: string;
 };
 
 export function useAccountTransactions(accountId: number | null) {
@@ -52,17 +56,19 @@ export function useAccountTransactions(accountId: number | null) {
       }
 
       // Fetch transfers where this account is source of the transfer (outflows)
-      // Using the account_transfers_to_account_id_fkey relationship explicitly
+      // Including exchange rate information
       const { data: transfersFrom, error: transfersFromError } = await supabase
         .from('account_transfers')
         .select(`
           id, 
           date, 
-          amount, 
+          amount_from, 
+          amount_to,
+          exchange_rate,
           reference_number, 
           notes, 
           to_account_id,
-          bank_accounts!account_transfers_to_account_id_fkey(name)
+          bank_accounts!account_transfers_to_account_id_fkey(name, currency)
         `)
         .eq('from_account_id', accountId)
         .eq('user_id', user.id)
@@ -74,17 +80,18 @@ export function useAccountTransactions(accountId: number | null) {
       }
 
       // Fetch transfers where this account is destination of the transfer (inflows)
-      // Using the fk_from_account relationship explicitly
       const { data: transfersTo, error: transfersToError } = await supabase
         .from('account_transfers')
         .select(`
           id, 
           date, 
-          amount, 
+          amount_from,
+          amount_to,
+          exchange_rate,
           reference_number, 
           notes, 
           from_account_id,
-          bank_accounts!fk_from_account(name)
+          bank_accounts!fk_from_account(name, currency)
         `)
         .eq('to_account_id', accountId)
         .eq('user_id', user.id)
@@ -94,6 +101,20 @@ export function useAccountTransactions(accountId: number | null) {
         toast.error('Error al cargar las transferencias entrantes');
         throw transfersToError;
       }
+
+      // Fetch the current account to know its currency
+      const { data: accountData, error: accountError } = await supabase
+        .from('bank_accounts')
+        .select('currency')
+        .eq('id', accountId)
+        .single();
+
+      if (accountError) {
+        console.error('Error al cargar la información de la cuenta');
+        throw accountError;
+      }
+
+      const accountCurrency = accountData?.currency || 'MXN';
 
       // Transform data to unified format
       const expensesFormatted: AccountTransaction[] = (expenses || []).map(expense => ({
@@ -118,36 +139,52 @@ export function useAccountTransactions(accountId: number | null) {
         source_id: payment.id
       }));
 
-      // Transform transfers with the correct relationship path
+      // Transform transfers with the correct relationship path and exchange rate info
       const transfersFromFormatted: AccountTransaction[] = (transfersFrom || []).map(transfer => {
         // Get the to_account name using the properly specified foreign key relationship
         const toAccountName = transfer.bank_accounts?.name || 'otra cuenta';
+        const toCurrency = transfer.bank_accounts?.currency || 'MXN';
+        const isCrossCurrency = toCurrency !== accountCurrency;
         
+        // For outgoing transfers, use the amount_from
         return {
           id: transfer.id,
           date: transfer.date,
-          description: `Transferencia a ${toAccountName}`,
-          amount: transfer.amount,
+          description: isCrossCurrency 
+            ? `Transferencia a ${toAccountName} (${toCurrency})`
+            : `Transferencia a ${toAccountName}`,
+          amount: transfer.amount_from,
           type: 'out',
           reference: transfer.reference_number || '-',
           source: 'transfer',
-          source_id: transfer.id
+          source_id: transfer.id,
+          exchange_rate: transfer.exchange_rate || undefined,
+          original_amount: isCrossCurrency ? transfer.amount_to : undefined,
+          original_currency: isCrossCurrency ? toCurrency : undefined
         };
       });
 
       const transfersToFormatted: AccountTransaction[] = (transfersTo || []).map(transfer => {
         // Get the from_account name using the properly specified foreign key relationship
         const fromAccountName = transfer.bank_accounts?.name || 'otra cuenta';
+        const fromCurrency = transfer.bank_accounts?.currency || 'MXN';
+        const isCrossCurrency = fromCurrency !== accountCurrency;
         
+        // For incoming transfers, use the amount_to
         return {
           id: transfer.id,
           date: transfer.date,
-          description: `Transferencia de ${fromAccountName}`,
-          amount: transfer.amount,
+          description: isCrossCurrency 
+            ? `Transferencia de ${fromAccountName} (${fromCurrency})`
+            : `Transferencia de ${fromAccountName}`,
+          amount: transfer.amount_to,
           type: 'in',
           reference: transfer.reference_number || '-',
           source: 'transfer',
-          source_id: transfer.id
+          source_id: transfer.id,
+          exchange_rate: transfer.exchange_rate || undefined,
+          original_amount: isCrossCurrency ? transfer.amount_from : undefined,
+          original_currency: isCrossCurrency ? fromCurrency : undefined
         };
       });
 

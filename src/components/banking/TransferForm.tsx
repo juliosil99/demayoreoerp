@@ -3,12 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TransferFormFields } from "@/components/banking/TransferFormFields";
 import { useAccountTransferCreate } from "@/components/banking/hooks/useAccountTransferCreate";
 import { Button } from "@/components/ui/button";
+import { AccountCurrency } from "./types";
 
 interface TransferFormProps {
   accounts: Array<{
     id: number;
     name: string;
     balance: number;
+    currency: AccountCurrency;
   }>;
 }
 

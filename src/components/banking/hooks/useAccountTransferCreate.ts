@@ -10,7 +10,9 @@ export interface TransferFormData {
   date: string;
   from_account_id: string;
   to_account_id: string;
-  amount: string;
+  amount_from: string;
+  amount_to: string;
+  exchange_rate: string;
   reference_number: string;
   notes: string;
 }
@@ -22,7 +24,9 @@ export function useAccountTransferCreate() {
     date: format(new Date(), 'yyyy-MM-dd'),
     from_account_id: "",
     to_account_id: "",
-    amount: "",
+    amount_from: "",
+    amount_to: "",
+    exchange_rate: "1",
     reference_number: "",
     notes: "",
   });
@@ -33,7 +37,9 @@ export function useAccountTransferCreate() {
         .from("account_transfers")
         .insert({
           ...data,
-          amount: parseFloat(data.amount),
+          amount_from: parseFloat(data.amount_from),
+          amount_to: parseFloat(data.amount_to || data.amount_from),
+          exchange_rate: parseFloat(data.exchange_rate || "1"),
           from_account_id: parseInt(data.from_account_id),
           to_account_id: parseInt(data.to_account_id),
           user_id: user?.id,
@@ -48,7 +54,9 @@ export function useAccountTransferCreate() {
         date: format(new Date(), 'yyyy-MM-dd'),
         from_account_id: "",
         to_account_id: "",
-        amount: "",
+        amount_from: "",
+        amount_to: "",
+        exchange_rate: "1",
         reference_number: "",
         notes: "",
       });
@@ -64,6 +72,17 @@ export function useAccountTransferCreate() {
       toast.error("Las cuentas de origen y destino deben ser diferentes");
       return;
     }
+    
+    if (!formData.amount_from || parseFloat(formData.amount_from) <= 0) {
+      toast.error("El monto debe ser mayor que cero");
+      return;
+    }
+    
+    if (!formData.amount_to || parseFloat(formData.amount_to) <= 0) {
+      toast.error("El monto de destino debe ser mayor que cero");
+      return;
+    }
+    
     createTransfer.mutate(formData);
   };
 

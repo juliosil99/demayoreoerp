@@ -6,7 +6,9 @@ export interface AccountTransfersTable {
     date: string
     from_account_id: number
     to_account_id: number
-    amount: number
+    amount_from: number
+    amount_to: number
+    exchange_rate: number | null
     reference_number: string | null
     notes: string | null
     user_id: string
@@ -18,7 +20,9 @@ export interface AccountTransfersTable {
     date: string
     from_account_id: number
     to_account_id: number
-    amount: number
+    amount_from: number
+    amount_to: number
+    exchange_rate?: number | null
     reference_number?: string | null
     notes?: string | null
     user_id: string
@@ -30,7 +34,9 @@ export interface AccountTransfersTable {
     date?: string
     from_account_id?: number
     to_account_id?: number
-    amount?: number
+    amount_from?: number
+    amount_to?: number
+    exchange_rate?: number | null
     reference_number?: string | null
     notes?: string | null
     user_id?: string

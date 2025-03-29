@@ -1,18 +1,25 @@
 
-import { formatCurrency, formatDate } from "@/utils/formatters";
-import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { format } from "date-fns";
+import { ArrowUpRight, ArrowDownRight, Banknote, FileText, ArrowRightLeft } from "lucide-react";
 
 export interface Transaction {
   id: string;
   date: string;
   description: string;
-  reference: string;
-  type: "in" | "out" | "initial";
   amount: number;
-  runningBalance: number | null;
-  beforeInitialDate?: boolean;
+  type: 'in' | 'out' | 'initial';
+  reference: string;
+  source?: 'expense' | 'payment' | 'transfer';
+  source_id?: string;
   isInitialBalance?: boolean;
+  runningBalance?: number | null;
+  beforeInitialDate?: boolean;
+  
+  // Currency exchange fields
+  exchange_rate?: number;
+  original_amount?: number;
+  original_currency?: string;
 }
 
 interface TransactionRowProps {
@@ -20,57 +27,82 @@ interface TransactionRowProps {
 }
 
 export function TransactionRow({ transaction }: TransactionRowProps) {
-  // Special rendering for initial balance row
-  if (transaction.isInitialBalance) {
-    return (
-      <TableRow className="bg-muted/20 font-medium">
-        <TableCell>{formatDate(transaction.date)}</TableCell>
-        <TableCell>{transaction.description}</TableCell>
-        <TableCell>{transaction.reference}</TableCell>
-        <TableCell className="text-right">-</TableCell>
-        <TableCell className="text-right">{formatCurrency(transaction.amount)}</TableCell>
-        <TableCell className="text-right">{formatCurrency(transaction.runningBalance)}</TableCell>
-      </TableRow>
-    );
-  }
+  // Format amount with commas and 2 decimal places
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('es-MX', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
 
-  // Regular transaction rows
+  // Determine which icon to show based on transaction type
+  const getIcon = () => {
+    if (transaction.isInitialBalance) {
+      return <Banknote className="h-4 w-4 text-gray-500" />;
+    }
+    
+    if (transaction.source === 'transfer') {
+      return <ArrowRightLeft className="h-4 w-4 text-purple-500" />;
+    }
+    
+    if (transaction.type === 'in') {
+      return <ArrowDownRight className="h-4 w-4 text-green-500" />;
+    }
+    
+    if (transaction.type === 'out') {
+      return <ArrowUpRight className="h-4 w-4 text-red-500" />;
+    }
+    
+    return <FileText className="h-4 w-4 text-gray-500" />;
+  };
+
+  // Row opacity for transactions before initial date
+  const rowOpacity = transaction.beforeInitialDate ? 'opacity-50' : 'opacity-100';
+
+  // Format date string
+  const formattedDate = format(new Date(transaction.date), 'dd/MM/yyyy');
+
   return (
-    <TableRow 
-      className={`group hover:bg-muted/40 transition-colors ${transaction.beforeInitialDate ? 'opacity-60' : ''}`}
-    >
-      <TableCell>{formatDate(transaction.date)}</TableCell>
-      <TableCell>
-        {transaction.description}
-        {transaction.beforeInitialDate && (
-          <span className="ml-2 text-xs text-amber-600 font-medium">
-            (Previo al saldo inicial)
+    <TableRow className={rowOpacity}>
+      <TableCell className="whitespace-nowrap">
+        {formattedDate}
+      </TableCell>
+      <TableCell className="max-w-[200px] overflow-hidden text-ellipsis">
+        <div className="flex items-center gap-2">
+          {getIcon()}
+          <span title={transaction.description}>
+            {transaction.description}
           </span>
-        )}
-      </TableCell>
-      <TableCell>{transaction.reference}</TableCell>
-      <TableCell className="text-right">
-        {transaction.type === "in" ? (
-          <div className="flex items-center justify-end">
-            <TrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
-            <span className="text-green-500">Entrada</span>
-          </div>
-        ) : (
-          <div className="flex items-center justify-end">
-            <TrendingDownIcon className="h-4 w-4 text-red-500 mr-1" />
-            <span className="text-red-500">Salida</span>
+        </div>
+        
+        {/* Show currency exchange information if present */}
+        {transaction.exchange_rate && transaction.exchange_rate !== 1 && transaction.original_amount && transaction.original_currency && (
+          <div className="text-xs text-gray-500 mt-1">
+            Tipo de cambio: {transaction.exchange_rate.toFixed(4)} 
+            {transaction.type === 'in' 
+              ? ` (${formatAmount(transaction.original_amount)} ${transaction.original_currency})` 
+              : ` (${formatAmount(transaction.original_amount)} ${transaction.original_currency})`
+            }
           </div>
         )}
       </TableCell>
-      <TableCell className={`text-right ${transaction.type === "in" ? "text-green-500" : "text-red-500"}`}>
-        {transaction.type === "in" ? "+" : "-"}{formatCurrency(transaction.amount)}
+      <TableCell className="whitespace-nowrap">
+        {transaction.reference}
       </TableCell>
-      <TableCell className="text-right font-medium">
-        {transaction.beforeInitialDate ? (
-          <span className="text-muted-foreground">-</span>
-        ) : (
-          formatCurrency(transaction.runningBalance)
-        )}
+      <TableCell className={`text-right font-medium whitespace-nowrap ${
+        transaction.isInitialBalance 
+          ? 'text-gray-600' 
+          : transaction.type === 'in' 
+            ? 'text-green-600' 
+            : 'text-red-600'
+      }`}>
+        {transaction.isInitialBalance ? '' : transaction.type === 'in' ? '+' : '-'}
+        ${formatAmount(Math.abs(transaction.amount))}
+      </TableCell>
+      <TableCell className="text-right font-semibold whitespace-nowrap">
+        {transaction.runningBalance !== null
+          ? `$${formatAmount(Math.abs(transaction.runningBalance || 0))}`
+          : ''}
       </TableCell>
     </TableRow>
   );

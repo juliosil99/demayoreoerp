@@ -8,6 +8,7 @@ export interface BankAccountsTable {
     balance: number | null
     initial_balance: number | null
     balance_date: string | null
+    currency: "MXN" | "USD" | null
   }
   Insert: {
     id?: number
@@ -17,6 +18,7 @@ export interface BankAccountsTable {
     balance?: number | null
     initial_balance?: number | null
     balance_date?: string | null
+    currency?: "MXN" | "USD" | null
   }
   Update: {
     id?: number
@@ -26,5 +28,6 @@ export interface BankAccountsTable {
     balance?: number | null
     initial_balance?: number | null
     balance_date?: string | null
+    currency?: "MXN" | "USD" | null
   }
 }
