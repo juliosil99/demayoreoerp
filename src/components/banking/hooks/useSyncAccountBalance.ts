@@ -44,21 +44,22 @@ export function useSyncAccountBalance(
       }
     }
     
-    // Add logging to see the balance calculation
-    console.log(`Account balance calculation for ${account.name} (${account.id}):`, {
-      initialBalance: account.initial_balance,
-      calculatedBalance: calculatedBalance,
-      currentStoredBalance: account.balance,
-      difference: calculatedBalance - account.balance,
-      balanceDate: accountBalanceDate,
-      transactionCount: chronologicalTransactions.length
-    });
+    // Sanitized logging - remove sensitive details
+    if (process.env.NODE_ENV !== 'production') {
+      // Only log in development, not production
+      console.log(`Account balance calculation for account ID: ${account.id}:`, {
+        difference: Math.abs(calculatedBalance - account.balance) > 0.01 ? "needs update" : "in sync",
+        transactionCount: chronologicalTransactions.length
+      });
+    }
     
     // If the balance in the database is different from calculated balance by more than a penny,
     // update the database
     if (Math.abs(calculatedBalance - account.balance) > 0.01) {
-      // Log sync operation
-      console.log(`Account balance synchronized: ${account.balance} → ${calculatedBalance}`);
+      // Use sanitized logging
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Account balance needs synchronization for account ID: ${account.id}`);
+      }
       
       // Update the account balance in the database
       const updateBalance = async () => {
@@ -69,7 +70,7 @@ export function useSyncAccountBalance(
             .eq("id", account.id);
             
           if (error) {
-            console.error("Error updating account balance:", error);
+            console.error("Error updating account balance", { accountId: account.id });
             return;
           }
           
@@ -77,10 +78,12 @@ export function useSyncAccountBalance(
           queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
           queryClient.invalidateQueries({ queryKey: ["bank-account", account.id] });
           
-          // Log successful update
-          console.log(`Account balance updated in database: ${account.name} (ID: ${account.id}): ${calculatedBalance}`);
+          // Sanitized success log
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(`Account balance updated for account ID: ${account.id}`);
+          }
         } catch (error) {
-          console.error("Error in balance synchronization:", error);
+          console.error("Error in balance synchronization for account ID:", account.id);
         }
       };
       

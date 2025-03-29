@@ -10,6 +10,8 @@ import { AccountSkeleton } from "@/components/banking/AccountSkeleton";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSyncAccountBalance } from "@/components/banking/hooks/useSyncAccountBalance";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 export default function BankAccountMovements() {
   const { accountId } = useParams();
@@ -30,10 +32,18 @@ export default function BankAccountMovements() {
   }, [id, queryClient]);
 
   // Fetch account details
-  const { data: account, isLoading: isLoadingAccount } = useAccountDetails(id);
+  const { 
+    data: account, 
+    isLoading: isLoadingAccount, 
+    error: accountError 
+  } = useAccountDetails(id);
 
   // Fetch transactions for this account
-  const { data: transactions, isLoading: isLoadingTransactions } = useAccountTransactions(id);
+  const { 
+    data: transactions, 
+    isLoading: isLoadingTransactions,
+    error: transactionsError 
+  } = useAccountTransactions(id);
 
   // Use the synchronization hook to ensure balance is correct
   useSyncAccountBalance(account, transactions);
@@ -41,6 +51,25 @@ export default function BankAccountMovements() {
   const handleBack = () => {
     navigate("/accounting/banking");
   };
+
+  // Handle errors in a user-friendly way
+  if (accountError) {
+    return (
+      <div className="container mx-auto py-6">
+        <Button variant="outline" onClick={handleBack} className="mb-4">
+          <ArrowLeftIcon className="mr-2 h-4 w-4" />
+          Volver a Cuentas Bancarias
+        </Button>
+        <Alert variant="destructive">
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Ocurrió un error al cargar los detalles de la cuenta. Por favor, intenta de nuevo.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   if (isLoadingAccount) {
     return (
@@ -63,6 +92,26 @@ export default function BankAccountMovements() {
             La cuenta que estás buscando no existe o no tienes acceso a ella.
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // Handle transactions error
+  if (transactionsError) {
+    return (
+      <div className="container mx-auto py-6">
+        <Button variant="outline" onClick={handleBack} className="mb-4">
+          <ArrowLeftIcon className="mr-2 h-4 w-4" />
+          Volver a Cuentas Bancarias
+        </Button>
+        <AccountHeader account={account} />
+        <Alert variant="destructive" className="mt-6">
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Ocurrió un error al cargar las transacciones. Por favor, intenta de nuevo.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

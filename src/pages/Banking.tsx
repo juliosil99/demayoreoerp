@@ -39,23 +39,23 @@ export default function Banking() {
     });
   }, [queryClient, accounts]);
 
-  // Add logging to see account balances in the banking page
+  // Remove or sanitize sensitive logging
   useEffect(() => {
-    if (accounts && accounts.length > 0) {
-      console.log("Banking page - account balances:", accounts.map(acc => ({
-        id: acc.id,
-        name: acc.name,
-        balance: acc.balance,
-        initialBalance: acc.initial_balance,
-        balanceDate: acc.balance_date
-      })));
+    if (process.env.NODE_ENV !== 'production' && accounts && accounts.length > 0) {
+      console.log("Banking page - account count:", accounts.length);
     }
   }, [accounts]);
 
   if (accountsError) {
     return (
-      <div className="p-4 text-red-500">
-        Error al cargar las cuentas. Por favor, intenta de nuevo.
+      <div className="p-4">
+        <Alert variant="destructive">
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Error al cargar las cuentas. Por favor, intenta de nuevo.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
