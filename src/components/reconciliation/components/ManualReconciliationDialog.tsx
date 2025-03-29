@@ -78,21 +78,19 @@ export function ManualReconciliationDialog({
     
     console.log("Manual reconciliation submit button clicked");
     setConfirmDisabled(true);
-    console.log("Submitting manual reconciliation with data:", {
-      reconciliationType, 
-      referenceNumber, 
-      notes, 
-      fileId, 
-      chartAccountId: chartAccountId || expense?.chart_account_id
-    });
     
-    onConfirm({
+    const reconciliationData = {
       reconciliationType,
       referenceNumber: referenceNumber || undefined,
       notes,
       fileId,
       chartAccountId: chartAccountId || expense?.chart_account_id,
-    });
+    };
+    
+    console.log("Submitting manual reconciliation with data:", reconciliationData);
+    
+    // Call the onConfirm callback with the form data
+    onConfirm(reconciliationData);
   };
 
   if (!expense) return null;

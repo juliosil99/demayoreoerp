@@ -8,16 +8,21 @@ import { ReconciliationTable } from "@/components/reconciliation/ReconciliationT
 const Reconciliation = () => {
   const { user } = useAuth();
 
-  const { data: expenses } = useQuery({
+  const { data: expenses, refetch: refetchExpenses } = useQuery({
     queryKey: ["unreconciled-expenses", user?.id],
     queryFn: async () => {
       console.log("Fetching unreconciled expenses...");
+      
+      if (!user?.id) {
+        console.log("No user ID, skipping fetch");
+        return [];
+      }
       
       // Debug: Check some reconciled expenses
       const { data: reconciled, error: reconciledError } = await supabase
         .from("expenses")
         .select("id, reconciled, reconciliation_date, reconciliation_type")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .is("reconciled", true)
         .limit(3);
         
@@ -25,28 +30,6 @@ const Reconciliation = () => {
         console.log("Sample reconciled expenses:", reconciled);
       } else {
         console.log("No reconciled expenses found for debugging");
-      }
-      
-      // Debug: Check recent manual reconciliations
-      const { data: manualReconciliations, error: mrError } = await supabase
-        .from("manual_reconciliations")
-        .select("id, expense_id, reconciliation_type, created_at")
-        .order("created_at", { ascending: false })
-        .limit(3);
-        
-      if (manualReconciliations?.length) {
-        console.log("Recent manual reconciliations:", manualReconciliations);
-        
-        // Check if corresponding expenses are properly reconciled
-        if (manualReconciliations.length > 0) {
-          const expenseIds = manualReconciliations.map(mr => mr.expense_id);
-          const { data: reconciliationExpenses, error: reError } = await supabase
-            .from("expenses")
-            .select("id, reconciled, reconciliation_date, reconciliation_type")
-            .in("id", expenseIds);
-            
-          console.log("Expenses for recent reconciliations:", reconciliationExpenses);
-        }
       }
       
       // Query for unreconciled expenses - use explicit FALSE or NULL check
@@ -59,7 +42,7 @@ const Reconciliation = () => {
           chart_of_accounts (name, code),
           contacts (name)
         `)
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .or("reconciled.is.null,reconciled.eq.false"); // Check for both NULL and FALSE
 
       if (error) {
@@ -70,13 +53,20 @@ const Reconciliation = () => {
       console.log(`Fetched ${data?.length || 0} unreconciled expenses`);
       return data;
     },
-    enabled: !!user,
+    enabled: !!user?.id,
+    refetchOnWindowFocus: true, // Refresh data when window regains focus
   });
 
   const { data: invoices } = useQuery({
-    queryKey: ["unreconciled-invoices"],
+    queryKey: ["unreconciled-invoices", user?.id],
     queryFn: async () => {
       console.log("Fetching unreconciled invoices...");
+      
+      if (!user?.id) {
+        console.log("No user ID, skipping fetch");
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from("invoices")
         .select("*, paid_amount")
@@ -90,6 +80,7 @@ const Reconciliation = () => {
       console.log(`Fetched ${data?.length || 0} unreconciled invoices`);
       return data;
     },
+    enabled: !!user?.id,
   });
 
   return (
@@ -103,7 +94,10 @@ const Reconciliation = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ReconciliationTable expenses={expenses || []} invoices={invoices || []} />
+          <ReconciliationTable 
+            expenses={expenses || []} 
+            invoices={invoices || []} 
+          />
         </CardContent>
       </Card>
     </div>
