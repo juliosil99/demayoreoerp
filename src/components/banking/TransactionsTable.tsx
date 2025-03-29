@@ -1,5 +1,5 @@
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { BankAccount } from "@/components/banking/types";
 import { Transaction, TransactionRow } from "./TransactionRow";
 import { formatCurrency, formatDate } from "@/utils/formatters";
@@ -12,13 +12,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface TransactionsTableProps {
   account: BankAccount;
   transactions: Array<any>;
 }
 
+// Number of transactions to show per page
+const ITEMS_PER_PAGE = 30;
+
 export function TransactionsTable({ account, transactions }: TransactionsTableProps) {
+  // State for current page (1-based index)
+  const [currentPage, setCurrentPage] = useState(1);
+  
   // Use the synchronization hook to ensure balance is correct
   useSyncAccountBalance(account, transactions);
   
@@ -84,6 +99,66 @@ export function TransactionsTable({ account, transactions }: TransactionsTablePr
     return [...reversedProcessedTransactionsAfter, ...processedTransactionsBefore];
   }, [transactions, account]);
 
+  // Calculate the total number of pages
+  const totalPages = Math.ceil(transactionsWithBalance.length / ITEMS_PER_PAGE);
+  
+  // Get current page of transactions
+  const currentTransactions = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return transactionsWithBalance.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [transactionsWithBalance, currentPage]);
+  
+  // Handle page changes
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of the table
+    window.scrollTo(0, 0);
+  };
+  
+  // Generate page numbers to display (always show first, last, and pages around current)
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      // If we have 7 or fewer pages, show all page numbers
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    
+    // Always include first, last, and pages around current
+    const pageNumbers = [1];
+    
+    // Calculate range around current page
+    let rangeStart = Math.max(2, currentPage - 1);
+    let rangeEnd = Math.min(totalPages - 1, currentPage + 1);
+    
+    // Adjust range to always show 3 pages
+    if (rangeEnd - rangeStart < 2) {
+      if (rangeStart === 2) {
+        rangeEnd = Math.min(4, totalPages - 1);
+      } else {
+        rangeStart = Math.max(2, totalPages - 3);
+      }
+    }
+    
+    // Add ellipsis if needed before range
+    if (rangeStart > 2) {
+      pageNumbers.push(-1); // Use -1 to represent ellipsis
+    }
+    
+    // Add range
+    for (let i = rangeStart; i <= rangeEnd; i++) {
+      pageNumbers.push(i);
+    }
+    
+    // Add ellipsis if needed after range
+    if (rangeEnd < totalPages - 1) {
+      pageNumbers.push(-2); // Use -2 to represent second ellipsis
+    }
+    
+    // Add last page
+    pageNumbers.push(totalPages);
+    
+    return pageNumbers;
+  };
+
   if (!transactionsWithBalance || transactionsWithBalance.length === 0) {
     return (
       <div className="text-center p-8 border rounded-md">
@@ -96,38 +171,93 @@ export function TransactionsTable({ account, transactions }: TransactionsTablePr
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead>Fecha</TableHead>
-            <TableHead>Descripción</TableHead>
-            <TableHead>Referencia</TableHead>
-            <TableHead className="text-right">Tipo</TableHead>
-            <TableHead className="text-right">Monto</TableHead>
-            <TableHead className="text-right font-medium">Saldo</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {/* Initial Balance Row */}
-          <TableRow className="bg-muted/20 font-medium">
-            <TableCell>{formatDate(account.balance_date)}</TableCell>
-            <TableCell>Saldo Inicial</TableCell>
-            <TableCell>-</TableCell>
-            <TableCell className="text-right">-</TableCell>
-            <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
-            <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
-          </TableRow>
-          
-          {/* Transaction Rows */}
-          {transactionsWithBalance.map((transaction) => (
-            <TransactionRow 
-              key={`${transaction.source}-${transaction.id}`} 
-              transaction={transaction}
-            />
-          ))}
-        </TableBody>
-      </Table>
+    <div className="space-y-4">
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead>Fecha</TableHead>
+              <TableHead>Descripción</TableHead>
+              <TableHead>Referencia</TableHead>
+              <TableHead className="text-right">Tipo</TableHead>
+              <TableHead className="text-right">Monto</TableHead>
+              <TableHead className="text-right font-medium">Saldo</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {/* Initial Balance Row */}
+            <TableRow className="bg-muted/20 font-medium">
+              <TableCell>{formatDate(account.balance_date)}</TableCell>
+              <TableCell>Saldo Inicial</TableCell>
+              <TableCell>-</TableCell>
+              <TableCell className="text-right">-</TableCell>
+              <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
+              <TableCell className="text-right">{formatCurrency(account.initial_balance || 0)}</TableCell>
+            </TableRow>
+            
+            {/* Transaction Rows for current page only */}
+            {currentTransactions.map((transaction) => (
+              <TransactionRow 
+                key={`${transaction.source}-${transaction.id}`} 
+                transaction={transaction}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination className="mt-4">
+          <PaginationContent>
+            {/* Previous Page Button */}
+            <PaginationItem>
+              <PaginationPrevious 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage > 1) handlePageChange(currentPage - 1);
+                }}
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            
+            {/* Page Numbers */}
+            {getPageNumbers().map((pageNumber, index) => (
+              pageNumber < 0 ? (
+                <PaginationItem key={`ellipsis-${index}`}>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              ) : (
+                <PaginationItem key={pageNumber}>
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePageChange(pageNumber);
+                    }}
+                    isActive={pageNumber === currentPage}
+                  >
+                    {pageNumber}
+                  </PaginationLink>
+                </PaginationItem>
+              )
+            ))}
+            
+            {/* Next Page Button */}
+            <PaginationItem>
+              <PaginationNext 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                }}
+                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   );
 }
