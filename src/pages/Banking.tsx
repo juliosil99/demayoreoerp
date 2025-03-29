@@ -6,7 +6,7 @@ import { useBankAccounts } from "@/components/banking/hooks/useBankAccounts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
-import { BankAccount, NewBankAccount } from "@/components/banking/types";
+import { BankAccount, NewBankAccount, AccountCurrency } from "@/components/banking/types";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -60,6 +60,12 @@ export default function Banking() {
     );
   }
 
+  // Ensure accounts are properly typed with AccountCurrency
+  const typedAccounts: BankAccount[] = accounts.map(account => ({
+    ...account,
+    currency: (account.currency || "MXN") as AccountCurrency
+  }));
+
   return (
     <div className="space-y-6">
       <BankingHeader onAddAccount={() => setIsAddingAccount(true)} />
@@ -81,7 +87,7 @@ export default function Banking() {
         </div>
       ) : (
         <BankAccountsTable
-          accounts={accounts || []}
+          accounts={typedAccounts || []}
           onEdit={openEditDialog}
           onDelete={handleDeleteAccount}
         />

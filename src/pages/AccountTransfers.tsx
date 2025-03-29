@@ -54,9 +54,8 @@ export default function AccountTransfers() {
       notes: transfer.notes,
       user_id: transfer.user_id,
       status: transfer.status,
-      created_at: transfer.created_at,
-      // For backward compatibility
-      amount: transfer.amount_from
+      created_at: transfer.created_at
+      // Remove the invalid 'amount' property
     };
     
     setSelectedTransfer(baseTransfer);

@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { NewBankAccount, BankAccount, AccountType } from "@/components/banking/types";
+import { NewBankAccount, BankAccount, AccountType, AccountCurrency } from "@/components/banking/types";
 
 export function useBankAccounts() {
   const queryClient = useQueryClient();
@@ -35,10 +36,11 @@ export function useBankAccounts() {
       // Log the fetched accounts for debugging
       console.log("Fetched bank accounts:", data);
       
-      // Convert the type string to AccountType
+      // Convert the type string to AccountType and ensure currency is of type AccountCurrency
       return data.map(account => ({
         ...account,
-        type: account.type as AccountType
+        type: account.type as AccountType,
+        currency: (account.currency || "MXN") as AccountCurrency
       }));
     },
     refetchOnWindowFocus: true,
