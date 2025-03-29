@@ -76,6 +76,7 @@ export function ManualReconciliationDialog({
   const handleSubmit = () => {
     if (confirmDisabled) return;
     
+    console.log("Manual reconciliation submit button clicked");
     setConfirmDisabled(true);
     console.log("Submitting manual reconciliation with data:", {
       reconciliationType, 

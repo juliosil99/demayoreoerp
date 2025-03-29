@@ -13,7 +13,7 @@ const Reconciliation = () => {
     queryFn: async () => {
       console.log("Fetching unreconciled expenses...");
       
-      // Check if we can retrieve some reconciled expenses to debug
+      // Debug: Check some reconciled expenses
       const { data: reconciled, error: reconciledError } = await supabase
         .from("expenses")
         .select("id, reconciled, reconciliation_date, reconciliation_type")
@@ -27,8 +27,29 @@ const Reconciliation = () => {
         console.log("No reconciled expenses found for debugging");
       }
       
-      // Query for unreconciled expenses - revert to using IS NULL for reconciled field
-      // as this seems to be how the system was originally designed
+      // Debug: Check recent manual reconciliations
+      const { data: manualReconciliations, error: mrError } = await supabase
+        .from("manual_reconciliations")
+        .select("id, expense_id, reconciliation_type, created_at")
+        .order("created_at", { ascending: false })
+        .limit(3);
+        
+      if (manualReconciliations?.length) {
+        console.log("Recent manual reconciliations:", manualReconciliations);
+        
+        // Check if corresponding expenses are properly reconciled
+        if (manualReconciliations.length > 0) {
+          const expenseIds = manualReconciliations.map(mr => mr.expense_id);
+          const { data: reconciliationExpenses, error: reError } = await supabase
+            .from("expenses")
+            .select("id, reconciled, reconciliation_date, reconciliation_type")
+            .in("id", expenseIds);
+            
+          console.log("Expenses for recent reconciliations:", reconciliationExpenses);
+        }
+      }
+      
+      // Query for unreconciled expenses - use explicit FALSE or NULL check
       console.log("Querying for unreconciled expenses...");
       const { data, error } = await supabase
         .from("expenses")
@@ -39,7 +60,7 @@ const Reconciliation = () => {
           contacts (name)
         `)
         .eq("user_id", user!.id)
-        .is("reconciled", null); // Changed from 'false' to 'null' to match how data was originally structured
+        .or("reconciled.is.null,reconciled.eq.false"); // Check for both NULL and FALSE
 
       if (error) {
         console.error("Error fetching unreconciled expenses:", error);

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -56,7 +57,17 @@ export const useManualReconciliation = (userId: string | undefined) => {
 
       console.log("Current expense status:", JSON.stringify(expenseCheck, null, 2));
       
-      // Create a manual reconciliation record
+      // Step 1: Create a manual reconciliation record
+      console.log("Step 1: Creating manual reconciliation record with data:", {
+        expense_id: expenseId,
+        user_id: userId,
+        reconciliation_type: data.reconciliationType,
+        reference_number: data.referenceNumber || null,
+        notes: data.notes,
+        file_id: data.fileId || null,
+        chart_account_id: data.chartAccountId || null
+      });
+
       const { data: newReconciliation, error: manualError } = await supabase
         .from("manual_reconciliations")
         .insert([{
@@ -77,11 +88,10 @@ export const useManualReconciliation = (userId: string | undefined) => {
       
       console.log("Manual reconciliation record created:", JSON.stringify(newReconciliation, null, 2));
       
-      // Update the expense to mark it as reconciled
-      // Note: This should be done by the database trigger now, but we'll keep the code
-      // for backwards compatibility and to verify the trigger is working
+      // Step 2: Manually update the expense to mark it as reconciled
+      // We'll do this even though there's a trigger, to ensure it works
       const now = new Date().toISOString();
-      console.log(`Attempting to set expense ${expenseId} as reconciled at ${now}`);
+      console.log(`Step 2: Manually setting expense ${expenseId} as reconciled at ${now}`);
       
       const { data: updatedExpense, error: updateError } = await supabase
         .from("expenses")
@@ -98,7 +108,8 @@ export const useManualReconciliation = (userId: string | undefined) => {
         throw updateError;
       }
       
-      // Double-check if the update worked
+      // Step 3: Double-check if the update worked by refetching the expense
+      console.log("Step 3: Verifying the expense update...");
       const { data: verifyUpdate, error: verifyError } = await supabase
         .from("expenses")
         .select("reconciled, reconciliation_date, reconciliation_type")
@@ -113,10 +124,13 @@ export const useManualReconciliation = (userId: string | undefined) => {
       
       console.log("Expense successfully updated:", JSON.stringify(updatedExpense, null, 2));
       console.log("Manual reconciliation complete for expense:", expenseId);
-      console.log("=== END DEBUG LOG ===");
       
-      // Invalidate relevant queries to refresh the UI
+      // Step 4: Invalidate queries to refresh the UI
+      console.log("Step 4: Invalidating queries to refresh UI...");
       queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      
+      console.log("=== END DEBUG LOG ===");
       
       toast.success("Gasto conciliado manualmente");
       return true;
