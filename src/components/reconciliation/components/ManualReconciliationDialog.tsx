@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -15,6 +14,7 @@ import { ReferenceNumberField } from "./dialog-sections/ReferenceNumberField";
 import { ChartAccountSelector } from "./dialog-sections/ChartAccountSelector";
 import { NotesField } from "./dialog-sections/NotesField";
 import { FileUploadSection } from "./dialog-sections/FileUploadSection";
+import { toast } from "sonner";
 
 interface ManualReconciliationDialogProps {
   open: boolean;
@@ -45,18 +45,15 @@ export function ManualReconciliationDialog({
   const [isUploading, setIsUploading] = useState(false);
   const [confirmDisabled, setConfirmDisabled] = useState(false);
 
-  // Reset form state when dialog opens/closes
   useEffect(() => {
     if (open) {
       console.log("[ManualReconciliationDialog] Dialog opened for expense:", expense?.id);
-      // Initialize with defaults when opening
       setReconciliationType("no_invoice");
       setReferenceNumber("");
       setNotes("");
       setFileId(undefined);
       setIsUploading(false);
       setConfirmDisabled(false);
-      // Set chart account to the expense's chart account if available
       if (expense?.chart_account_id) {
         console.log("[ManualReconciliationDialog] Setting initial chart account ID to:", expense.chart_account_id);
         setChartAccountId(expense.chart_account_id);
@@ -75,7 +72,6 @@ export function ManualReconciliationDialog({
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    // Prevent default browser form submission
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -88,7 +84,6 @@ export function ManualReconciliationDialog({
       return;
     }
     
-    // Basic validation before submitting
     if (reconciliationType === "pdf_only" && !fileId) {
       console.log("[ManualReconciliationDialog] Cannot submit: 'pdf_only' selected but no file uploaded");
       toast.error("Por favor suba un archivo PDF");
@@ -115,11 +110,9 @@ export function ManualReconciliationDialog({
     console.log("[ManualReconciliationDialog] Submitting reconciliation data:", JSON.stringify(reconciliationData, null, 2));
     
     try {
-      // Call the onConfirm callback with the form data
       onConfirm(reconciliationData);
       console.log("[ManualReconciliationDialog] onConfirm handler called successfully");
       
-      // Force close the dialog after submission
       setTimeout(() => {
         console.log("[ManualReconciliationDialog] Forcing dialog close...");
         onOpenChange(false);
