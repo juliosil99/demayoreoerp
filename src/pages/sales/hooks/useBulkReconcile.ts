@@ -53,7 +53,7 @@ export function useBulkReconcile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] });
-      queryClient.invalidateQueries({ queryKey: ["unreconciled-sales"] });
+      queryClient.invalidateQueries({ queryKey: ["unreconciled"] });
       toast.success("Ventas reconciliadas exitosamente");
     },
     onError: (error) => {

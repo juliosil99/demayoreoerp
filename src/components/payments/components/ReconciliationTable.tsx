@@ -8,19 +8,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCardDate } from "@/utils/formatters";
-
-interface Sale {
-  id: number;
-  date: string;
-  Channel: string;
-  orderNumber: string;
-  price: number;
-  productName: string;
-  type?: string; // Added type field to identify credit notes
-}
+import type { UnreconciledSale } from "../hooks/useBulkReconciliation";
 
 interface ReconciliationTableProps {
-  sales?: Sale[];
+  sales?: UnreconciledSale[];
   isLoading: boolean;
 }
 
@@ -55,7 +46,7 @@ export function ReconciliationTable({ sales, isLoading }: ReconciliationTablePro
             // Format the price based on whether it's a credit note
             const isCredit = sale.type === 'E';
             const formattedPrice = isCredit 
-              ? `-$${Math.abs(sale.price).toFixed(2)}` 
+              ? `-$${Math.abs(sale.price || 0).toFixed(2)}` 
               : `$${sale.price?.toFixed(2) || "0.00"}`;
               
             return (

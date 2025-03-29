@@ -2,6 +2,18 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { SalesTable } from "@/integrations/supabase/types";
+
+// Define a specific type for our use case
+export type UnreconciledSale = SalesTable['Row'] & {
+  id: number;
+  date: string | null;
+  Channel: string | null;
+  orderNumber: string | null;
+  price: number | null;
+  productName: string | null;
+  type?: string;
+};
 
 export function useBulkReconciliation(open: boolean) {
   const [selectedChannel, setSelectedChannel] = useState("all");
@@ -38,13 +50,13 @@ export function useBulkReconciliation(open: boolean) {
     queryKey: ["unreconciled", selectedChannel, orderNumbers],
     queryFn: async () => {
       let query = supabase
-        .from("sales")
+        .from("Sales")
         .select("*")
-        .is("payment_id", null);
+        .is("reconciliation_id", null);
 
       // Apply channel filter if not "all"
       if (selectedChannel !== "all") {
-        query = query.eq("sales_channel_id", selectedChannel);
+        query = query.eq("Channel", selectedChannel);
       }
 
       // Apply order numbers filter if provided
@@ -55,13 +67,13 @@ export function useBulkReconciliation(open: boolean) {
           .filter(Boolean);
         
         if (orderNumbersList.length > 0) {
-          query = query.in("order_number", orderNumbersList);
+          query = query.in("orderNumber", orderNumbersList);
         }
       }
 
       const { data, error } = await query.order("date", { ascending: false });
       if (error) throw error;
-      return data;
+      return data as UnreconciledSale[];
     },
     enabled: open,
   });

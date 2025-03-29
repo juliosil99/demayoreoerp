@@ -1,12 +1,7 @@
 
-interface Sale {
-  price: number;
-  comission?: number | null;
-  retention?: number | null;
-  shipping?: number | null;
-}
+import type { UnreconciledSale } from "../hooks/useBulkReconciliation";
 
-export const calculateTotals = (sales: Sale[]) => {
+export const calculateTotals = (sales: UnreconciledSale[]) => {
   const subtotal = sales.reduce((sum, sale) => sum + (sale.price || 0), 0);
   
   const commissions = sales.reduce(
