@@ -11,6 +11,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { InvoiceFilters } from "./InvoiceFilters";
 
 type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 
@@ -18,6 +19,15 @@ const ITEMS_PER_PAGE = 30;
 
 export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState({
+    search: "",
+    dateFrom: undefined,
+    dateTo: undefined,
+    invoiceType: "",
+    minAmount: "",
+    maxAmount: "",
+  });
+  
   console.log("Received invoices data:", invoices);
   
   const getStatusIcon = (status: string | null) => {
@@ -50,11 +60,77 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
     return `${invoice.currency || "MXN"} ${amount.toFixed(2)}`;
   };
 
+  // Filter invoices based on selected filters
+  const filteredInvoices = invoices?.filter(invoice => {
+    // Search filter
+    if (filters.search && !searchInvoice(invoice, filters.search)) {
+      return false;
+    }
+
+    // Invoice type filter
+    if (filters.invoiceType && invoice.invoice_type !== filters.invoiceType) {
+      return false;
+    }
+
+    // Date range filter
+    if (filters.dateFrom && invoice.invoice_date) {
+      const invoiceDate = new Date(invoice.invoice_date);
+      if (invoiceDate < filters.dateFrom) {
+        return false;
+      }
+    }
+
+    if (filters.dateTo && invoice.invoice_date) {
+      const invoiceDate = new Date(invoice.invoice_date);
+      const endDate = new Date(filters.dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      if (invoiceDate > endDate) {
+        return false;
+      }
+    }
+
+    // Amount range filter
+    if (filters.minAmount && invoice.total_amount) {
+      const minAmount = parseFloat(filters.minAmount);
+      if (invoice.total_amount < minAmount) {
+        return false;
+      }
+    }
+
+    if (filters.maxAmount && invoice.total_amount) {
+      const maxAmount = parseFloat(filters.maxAmount);
+      if (invoice.total_amount > maxAmount) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  function searchInvoice(invoice: Invoice, searchTerm: string): boolean {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (invoice.issuer_name?.toLowerCase().includes(searchLower) || false) ||
+      (invoice.issuer_rfc?.toLowerCase().includes(searchLower) || false) ||
+      (invoice.receiver_name?.toLowerCase().includes(searchLower) || false) ||
+      (invoice.receiver_rfc?.toLowerCase().includes(searchLower) || false) ||
+      (invoice.invoice_number?.toLowerCase().includes(searchLower) || false) ||
+      (invoice.serie?.toLowerCase().includes(searchLower) || false) ||
+      (invoice.filename?.toLowerCase().includes(searchLower) || false)
+    );
+  }
+
   // Calculate pagination
-  const totalPages = invoices ? Math.ceil(invoices.length / ITEMS_PER_PAGE) : 0;
+  const totalPages = filteredInvoices ? Math.ceil(filteredInvoices.length / ITEMS_PER_PAGE) : 0;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentInvoices = invoices?.slice(startIndex, endIndex);
+  const currentInvoices = filteredInvoices?.slice(startIndex, endIndex);
+
+  // When filters change, reset to first page
+  const handleFilterChange = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+    setCurrentPage(1);
+  };
 
   // Generate page numbers array
   const getPageNumbers = () => {
@@ -75,6 +151,8 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
 
   return (
     <div className="space-y-4">
+      <InvoiceFilters filters={filters} onFilterChange={handleFilterChange} />
+      
       <Table>
         <TableHeader>
           <TableRow>
@@ -116,7 +194,11 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
                     ? 'Egreso (Nota de Crédito)'
                     : invoice.invoice_type === 'I'
                       ? 'Ingreso'
-                      : invoice.invoice_type || "-"}
+                      : invoice.invoice_type === 'P'
+                        ? 'Pago'
+                        : invoice.invoice_type === 'N'
+                          ? 'Nómina'
+                          : invoice.invoice_type || "-"}
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col">
@@ -150,40 +232,46 @@ export const InvoiceTable = ({ invoices }: { invoices: Invoice[] | null }) => {
         </TableBody>
       </Table>
 
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-              />
-            </PaginationItem>
-
-            {getPageNumbers().map((pageNumber, index) => (
-              <PaginationItem key={index}>
-                {pageNumber === '...' ? (
-                  <span className="px-4 py-2">...</span>
-                ) : (
-                  <PaginationLink
-                    onClick={() => setCurrentPage(Number(pageNumber))}
-                    isActive={currentPage === pageNumber}
-                    className="cursor-pointer"
-                  >
-                    {pageNumber}
-                  </PaginationLink>
-                )}
+      {filteredInvoices && filteredInvoices.length > 0 ? (
+        totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
               </PaginationItem>
-            ))}
 
-            <PaginationItem>
-              <PaginationNext
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+              {getPageNumbers().map((pageNumber, index) => (
+                <PaginationItem key={index}>
+                  {pageNumber === '...' ? (
+                    <span className="px-4 py-2">...</span>
+                  ) : (
+                    <PaginationLink
+                      onClick={() => setCurrentPage(Number(pageNumber))}
+                      isActive={currentPage === pageNumber}
+                      className="cursor-pointer"
+                    >
+                      {pageNumber}
+                    </PaginationLink>
+                  )}
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )
+      ) : (
+        <div className="py-8 text-center">
+          <p className="text-muted-foreground">No se encontraron facturas que coincidan con los filtros aplicados.</p>
+        </div>
       )}
     </div>
   );
