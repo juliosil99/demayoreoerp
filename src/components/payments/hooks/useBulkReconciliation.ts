@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { SalesTable } from "@/integrations/supabase/types";
+import type { SalesTable } from "@/integrations/supabase/types/sales";
 
 // Define a specific type for our use case
 export type UnreconciledSale = SalesTable['Row'] & {
