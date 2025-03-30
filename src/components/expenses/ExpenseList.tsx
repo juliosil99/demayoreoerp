@@ -30,7 +30,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 30; // Changed from 10 to 30
   const { deleteError, handleDelete, deleteLog } = useExpenseDelete();
 
   const handleOpenDialog = useCallback((expense: Expense) => {
