@@ -113,12 +113,12 @@ export function ExpenseActions({
             
             try {
               // Try to get file from storage to verify it exists before attempting download
-              const { data: fileExists, error: fileExistsError } = await supabase.storage
+              const { data: fileExists } = await supabase.storage
                 .from('invoices')
                 .getPublicUrl(fileData.file_path);
                 
-              if (fileExistsError) {
-                console.error("File existence check failed:", fileExistsError);
+              if (!fileExists) {
+                console.error("File existence check failed");
                 toast.error("El archivo no se encontró en el almacenamiento");
                 return;
               }
@@ -159,12 +159,12 @@ export function ExpenseActions({
         
         try {
           // Verify file exists before attempting download
-          const { data: fileExists, error: fileExistsError } = await supabase.storage
+          const { data: fileExists } = await supabase.storage
             .from('invoices')
             .getPublicUrl(invoiceRelation.invoice.file_path);
             
-          if (fileExistsError) {
-            console.error("File existence check failed:", fileExistsError);
+          if (!fileExists) {
+            console.error("File existence check failed");
             toast.error("El archivo no se encontró en el almacenamiento");
             return;
           }
