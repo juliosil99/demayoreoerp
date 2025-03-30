@@ -76,40 +76,40 @@ export function ExpenseActions({
   };
   
   const handleDownloadInvoice = async () => {
-    // Check if there are invoice relations
-    if (!expense.expense_invoice_relations?.length) {
-      toast.error("No hay facturas asociadas a este gasto");
-      return;
-    }
-    
     setIsDownloading(true);
     try {
-      // Get the first invoice relation (we'll handle multiple invoices in a future enhancement)
-      const invoiceRelation = expense.expense_invoice_relations[0];
-      
-      if (!invoiceRelation.invoice.file_path) {
-        toast.error("No se encontró la ruta del archivo de factura");
-        return;
-      }
-
-      // For manual reconciliations that have a file_id instead of a direct invoice relation
+      // Case 1: Manual reconciliation - check for manual_reconciliations table
       if (expense.reconciliation_type === 'manual') {
-        // Fetch the manual reconciliation record to get the file_id
-        const { data: manualRec } = await supabase
+        // First, get the manual reconciliation record to get file_id
+        const { data: manualRec, error: manualRecError } = await supabase
           .from('manual_reconciliations')
-          .select('file_id')
+          .select('file_id, reconciliation_type')
           .eq('expense_id', expense.id)
           .single();
           
-        if (manualRec?.file_id) {
+        if (manualRecError) {
+          console.error("Error fetching manual reconciliation:", manualRecError);
+          toast.error("Error al buscar información de conciliación manual");
+          return;
+        }
+          
+        // Only proceed if we have a file_id and reconciliation type is pdf_only
+        if (manualRec?.file_id && manualRec.reconciliation_type === 'pdf_only') {
           // Fetch the file details
-          const { data: fileData } = await supabase
+          const { data: fileData, error: fileError } = await supabase
             .from('manual_invoice_files')
             .select('file_path, filename, content_type')
             .eq('id', manualRec.file_id)
             .single();
             
+          if (fileError) {
+            console.error("Error fetching file data:", fileError);
+            toast.error("Error al buscar el archivo de factura manual");
+            return;
+          }
+            
           if (fileData) {
+            console.log("Manual file found:", fileData);
             await downloadInvoiceFile(
               fileData.file_path,
               fileData.filename.replace(/\.[^/.]+$/, ""), // Remove extension
@@ -117,22 +117,39 @@ export function ExpenseActions({
             );
             toast.success("Archivo descargado correctamente");
             return;
+          } else {
+            toast.error("No se encontró el archivo asociado a esta conciliación manual");
+            return;
           }
+        } else if (manualRec?.reconciliation_type !== 'pdf_only') {
+          toast.info("Este gasto fue conciliado manualmente sin adjuntar un archivo");
+          return;
         }
       }
       
-      // For regular invoice reconciliations
-      const fileName = invoiceRelation.invoice.invoice_number || 
-                       invoiceRelation.invoice.uuid ||
-                       `factura-${new Date().toISOString().split('T')[0]}`;
-      
-      await downloadInvoiceFile(
-        invoiceRelation.invoice.file_path,
-        fileName,
-        invoiceRelation.invoice.content_type
-      );
-      
-      toast.success("Factura descargada correctamente");
+      // Case 2: Regular invoice reconciliation through expense_invoice_relations
+      if (expense.expense_invoice_relations?.length) {
+        const invoiceRelation = expense.expense_invoice_relations[0];
+        
+        if (!invoiceRelation.invoice.file_path) {
+          toast.error("No se encontró la ruta del archivo de factura");
+          return;
+        }
+        
+        const fileName = invoiceRelation.invoice.invoice_number || 
+                         invoiceRelation.invoice.uuid ||
+                         `factura-${new Date().toISOString().split('T')[0]}`;
+        
+        await downloadInvoiceFile(
+          invoiceRelation.invoice.file_path,
+          fileName,
+          invoiceRelation.invoice.content_type
+        );
+        
+        toast.success("Factura descargada correctamente");
+      } else {
+        toast.error("No hay facturas asociadas a este gasto");
+      }
       
     } catch (error) {
       console.error("Error downloading invoice:", error);
@@ -142,7 +159,7 @@ export function ExpenseActions({
     }
   };
 
-  // Check if the expense is reconciled and has invoice relations
+  // Check if the expense is reconciled and needs download button
   const hasInvoice = !!expense.reconciled && 
                      (!!expense.expense_invoice_relations?.length || 
                       expense.reconciliation_type === 'manual');
