@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { MoreHorizontal, Pencil, Trash2, Download, Bug } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Download, Bug, FileX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -116,6 +116,21 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
                 ) : (
                   <p className="text-slate-500">No hay logs de descarga disponibles. Intente descargar primero.</p>
                 )}
+              </div>
+            </div>
+            
+            <div className="border p-4 rounded-md">
+              <h3 className="font-semibold mb-2">Problema Común: Archivo No Encontrado</h3>
+              <div className="text-sm space-y-2">
+                <p>Si ve el mensaje <strong>"File not found in storage bucket"</strong>, significa que:</p>
+                <ol className="list-decimal list-inside pl-4 space-y-1">
+                  <li>El registro del archivo existe en la base de datos</li>
+                  <li>Pero el archivo físico no se encuentra en el bucket de almacenamiento</li>
+                </ol>
+                <div className="flex items-center p-2 bg-amber-50 border border-amber-200 rounded mt-2">
+                  <FileX className="text-amber-500 mr-2 h-5 w-5" />
+                  <p className="text-amber-700">Es posible que el archivo haya sido eliminado del bucket o que nunca se haya subido correctamente.</p>
+                </div>
               </div>
             </div>
             

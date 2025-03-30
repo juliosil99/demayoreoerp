@@ -19,11 +19,26 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
   try {
     console.log("Attempting to download file:", filePath);
     
+    // First check if the path looks valid
+    if (!filePath || filePath.trim() === '') {
+      console.error("Invalid file path:", filePath);
+      toast.error("La ruta del archivo no es válida");
+      return;
+    }
+
+    // Extract bucket path and file name for better error handling
+    const pathParts = filePath.split('/');
+    const fileNameFromPath = pathParts.pop() || '';
+    const bucketPath = pathParts.join('/');
+    
+    console.log("Bucket path:", bucketPath);
+    console.log("File name from path:", fileNameFromPath);
+    
     // First check if file exists (doesn't actually download it)
-    const { data: fileInfo, error: fileCheckError } = await supabase.storage
+    const { data: fileList, error: fileCheckError } = await supabase.storage
       .from('invoices')
-      .list(filePath.split('/').slice(0, -1).join('/'), {
-        search: filePath.split('/').pop() || ''
+      .list(bucketPath, {
+        search: fileNameFromPath
       });
       
     if (fileCheckError) {
@@ -32,15 +47,21 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
       return;
     }
     
-    console.log("File check result:", fileInfo);
+    console.log("File check result:", fileList);
     
-    if (!fileInfo || fileInfo.length === 0) {
-      console.error("File not found in storage");
-      toast.error("Archivo no encontrado en el almacenamiento");
+    if (!fileList || fileList.length === 0) {
+      console.error("File not found in storage bucket:", filePath);
+      
+      // More descriptive error message for missing files
+      toast.error(
+        "Archivo no encontrado en el almacenamiento. " +
+        "El registro existe en la base de datos pero el archivo físico no se encuentra en el bucket de almacenamiento. " +
+        "Contacte al administrador del sistema."
+      );
       return;
     }
     
-    // Get the file from storage
+    // If we get here, the file exists in the bucket, so attempt to download it
     const { data, error } = await supabase.storage
       .from('invoices')
       .download(filePath);

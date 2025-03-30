@@ -80,32 +80,12 @@ export function useInvoiceDownload() {
             logAction(`File data found: ${JSON.stringify(fileData)}`);
             
             try {
-              logAction(`File path: ${fileData.file_path}`);
+              const filePath = fileData.file_path;
+              logAction(`File path: ${filePath}`);
               
-              // Check if file exists in the bucket
-              const { data: fileList, error: fileListError } = await supabase.storage
-                .from('invoices')
-                .list(fileData.file_path.split('/').slice(0, -1).join('/'), {
-                  search: fileData.file_path.split('/').pop() || ''
-                });
-                
-              if (fileListError) {
-                logAction(`Error checking file existence: ${fileListError.message}`);
-                toast.error(`Error verificando archivo: ${fileListError.message}`);
-                return;
-              }
-              
-              logAction(`File list result: ${JSON.stringify(fileList)}`);
-              
-              if (!fileList || fileList.length === 0) {
-                logAction('File not found in storage bucket');
-                toast.error("El archivo no se encontró en el almacenamiento");
-                return;
-              }
-              
-              logAction('Proceeding with download');
+              // Attempt to download the file
               await downloadInvoiceFile(
-                fileData.file_path,
+                filePath,
                 fileData.filename.replace(/\.[^/.]+$/, ""), // Remove extension
                 fileData.content_type
               );
@@ -115,9 +95,6 @@ export function useInvoiceDownload() {
               logAction(`Download error: ${errorMessage}`);
               console.error("Download error:", downloadError);
               toast.error("Error al descargar el archivo");
-              
-              // Show detailed error in console
-              console.log("Download log:", downloadLog);
             }
             return;
           } else {
@@ -152,28 +129,6 @@ export function useInvoiceDownload() {
         logAction(`File path: ${invoiceRelation.invoice.file_path}`);
         
         try {
-          // Check if file exists in the bucket
-          const { data: fileList, error: fileListError } = await supabase.storage
-            .from('invoices')
-            .list(invoiceRelation.invoice.file_path.split('/').slice(0, -1).join('/'), {
-              search: invoiceRelation.invoice.file_path.split('/').pop() || ''
-            });
-            
-          if (fileListError) {
-            logAction(`Error checking file existence: ${fileListError.message}`);
-            toast.error(`Error verificando archivo: ${fileListError.message}`);
-            return;
-          }
-          
-          logAction(`File list result: ${JSON.stringify(fileList)}`);
-          
-          if (!fileList || fileList.length === 0) {
-            logAction('File not found in storage bucket');
-            toast.error("El archivo no se encontró en el almacenamiento");
-            return;
-          }
-          
-          logAction('Proceeding with download');
           await downloadInvoiceFile(
             invoiceRelation.invoice.file_path,
             fileName,
