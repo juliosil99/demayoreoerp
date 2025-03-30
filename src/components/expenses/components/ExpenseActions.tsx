@@ -93,8 +93,8 @@ export function ExpenseActions({
           return;
         }
           
-        // Only proceed if we have a file_id and reconciliation type is pdf_only
-        if (manualRec?.file_id && manualRec.reconciliation_type === 'pdf_only') {
+        // Only proceed if we have a file_id
+        if (manualRec?.file_id) {
           // Fetch the file details
           const { data: fileData, error: fileError } = await supabase
             .from('manual_invoice_files')
@@ -110,18 +110,35 @@ export function ExpenseActions({
             
           if (fileData) {
             console.log("Manual file found:", fileData);
-            await downloadInvoiceFile(
-              fileData.file_path,
-              fileData.filename.replace(/\.[^/.]+$/, ""), // Remove extension
-              fileData.content_type
-            );
-            toast.success("Archivo descargado correctamente");
+            
+            try {
+              // Try to get file from storage to verify it exists before attempting download
+              const { data: fileExists, error: fileExistsError } = await supabase.storage
+                .from('invoices')
+                .getPublicUrl(fileData.file_path);
+                
+              if (fileExistsError) {
+                console.error("File existence check failed:", fileExistsError);
+                toast.error("El archivo no se encontró en el almacenamiento");
+                return;
+              }
+              
+              await downloadInvoiceFile(
+                fileData.file_path,
+                fileData.filename.replace(/\.[^/.]+$/, ""), // Remove extension
+                fileData.content_type
+              );
+              toast.success("Archivo descargado correctamente");
+            } catch (downloadError) {
+              console.error("Download error:", downloadError);
+              toast.error("Error al descargar el archivo");
+            }
             return;
           } else {
             toast.error("No se encontró el archivo asociado a esta conciliación manual");
             return;
           }
-        } else if (manualRec?.reconciliation_type !== 'pdf_only') {
+        } else {
           toast.info("Este gasto fue conciliado manualmente sin adjuntar un archivo");
           return;
         }
@@ -140,13 +157,29 @@ export function ExpenseActions({
                          invoiceRelation.invoice.uuid ||
                          `factura-${new Date().toISOString().split('T')[0]}`;
         
-        await downloadInvoiceFile(
-          invoiceRelation.invoice.file_path,
-          fileName,
-          invoiceRelation.invoice.content_type
-        );
-        
-        toast.success("Factura descargada correctamente");
+        try {
+          // Verify file exists before attempting download
+          const { data: fileExists, error: fileExistsError } = await supabase.storage
+            .from('invoices')
+            .getPublicUrl(invoiceRelation.invoice.file_path);
+            
+          if (fileExistsError) {
+            console.error("File existence check failed:", fileExistsError);
+            toast.error("El archivo no se encontró en el almacenamiento");
+            return;
+          }
+          
+          await downloadInvoiceFile(
+            invoiceRelation.invoice.file_path,
+            fileName,
+            invoiceRelation.invoice.content_type
+          );
+          
+          toast.success("Factura descargada correctamente");
+        } catch (downloadError) {
+          console.error("Download error:", downloadError);
+          toast.error("Error al descargar el archivo");
+        }
       } else {
         toast.error("No hay facturas asociadas a este gasto");
       }

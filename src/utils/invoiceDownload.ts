@@ -17,6 +17,8 @@ export const isXmlFile = (filePath: string, contentType?: string | null): boolea
  */
 export const downloadInvoiceFile = async (filePath: string, fileName: string, contentType?: string | null): Promise<void> => {
   try {
+    console.log("Attempting to download file:", filePath);
+    
     // Get the file from storage
     const { data, error } = await supabase.storage
       .from('invoices')
@@ -24,19 +26,28 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
     
     if (error) {
       console.error("Error downloading file:", error);
-      toast.error("Error al descargar el archivo");
+      
+      // More descriptive error message based on error type
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        toast.error("Archivo no encontrado. Verifique que exista en el almacenamiento.");
+      } else if (error.message.includes('403') || error.message.includes('forbidden')) {
+        toast.error("No tiene permisos para acceder a este archivo.");
+      } else {
+        toast.error(`Error al descargar: ${error.message || "Error desconocido"}`);
+      }
       return;
     }
 
     if (!data) {
-      toast.error("No se encontró el archivo");
+      toast.error("No se pudo obtener el archivo.");
       return;
     }
+
+    console.log("File downloaded successfully, size:", data.size);
 
     // If it's an XML file and we want to convert it to PDF, we could do that here
     if (isXmlFile(filePath, contentType)) {
       // For now, just download the XML file as is
-      // In a future implementation, we could convert XML to PDF
       downloadBlob(data, `${fileName}.xml`);
       return;
     }
@@ -62,7 +73,7 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
     
   } catch (error) {
     console.error("Error in download process:", error);
-    toast.error("Error al descargar el archivo");
+    toast.error("Error al descargar el archivo: " + (error instanceof Error ? error.message : "Error desconocido"));
   }
 };
 
@@ -70,21 +81,29 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
  * Creates a download from a blob
  */
 const downloadBlob = (blob: Blob, fileName: string): void => {
-  // Create an object URL for the blob
-  const url = window.URL.createObjectURL(blob);
-  
-  // Create a temporary link element
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  
-  // Append to body, click and remove
-  document.body.appendChild(link);
-  link.click();
-  
-  // Clean up
-  setTimeout(() => {
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  }, 100);
+  try {
+    console.log("Creating download for blob, size:", blob.size, "filename:", fileName);
+    
+    // Create an object URL for the blob
+    const url = window.URL.createObjectURL(blob);
+    
+    // Create a temporary link element
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    
+    // Append to body, click and remove
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      console.log("Download initiated and link cleaned up");
+    }, 100);
+  } catch (error) {
+    console.error("Error in downloadBlob:", error);
+    toast.error("Error al preparar la descarga del archivo");
+  }
 };
