@@ -4,7 +4,6 @@ import { ExpenseCard } from "./components/ExpenseCard";
 import { InvoiceSearchDialog } from "./components/InvoiceSearchDialog";
 import { AccountAdjustmentDialog } from "./components/AccountAdjustmentDialog";
 import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
-import { toast } from "sonner";
 import { useEffect } from "react";
 
 interface ReconciliationTableProps {
@@ -49,53 +48,14 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
   const filteredInvoices = filterInvoices(invoices, searchTerm);
 
   const handleExpenseSelect = (expense: any) => {
-    console.log("Expense selected:", expense.id);
     setSelectedExpense(expense);
     setShowInvoiceSearch(true);
   };
 
-  // Monitor when manual reconciliation is confirmed
-  const onManualReconciliationConfirm = (data: any) => {
-    console.log("Manual reconciliation confirmed with data:", JSON.stringify(data, null, 2));
-    
-    if (!selectedExpense) {
-      console.error("No expense selected for manual reconciliation");
-      toast.error("Error: No hay gasto seleccionado");
-      return;
-    }
-    
-    toast.info("Procesando reconciliación...");
-    console.log("Calling handleManualReconciliationConfirm with expense ID:", selectedExpense.id);
-    
-    try {
-      // First disable dialog closing
-      setShowManualReconciliation(true);
-      
-      // Then handle reconciliation
-      const result = handleManualReconciliationConfirm(data);
-      console.log("Manual reconciliation result:", result);
-      
-      // Close the dialog and reset state after a delay to ensure the operation completes
-      setTimeout(() => {
-        console.log("Closing manual reconciliation dialog...");
-        setShowManualReconciliation(false);
-      }, 800);
-    } catch (error) {
-      console.error("Error during manual reconciliation:", error);
-      toast.error("Error durante la reconciliación manual");
-      
-      // Make sure dialog closes even if there's an error
-      setTimeout(() => {
-        setShowManualReconciliation(false);
-      }, 500);
-    }
-  };
-  
   // Add an effect to reset the state when expenses change
   // This ensures the UI updates after reconciliation
   useEffect(() => {
     if (expenses.length === 0 && selectedExpense) {
-      console.log("No expenses left, resetting state");
       resetState();
     }
   }, [expenses, selectedExpense, resetState]);
@@ -144,12 +104,9 @@ export function ReconciliationTable({ expenses, invoices }: ReconciliationTableP
 
       <ManualReconciliationDialog
         open={showManualReconciliation}
-        onOpenChange={(open) => {
-          console.log("Setting manual reconciliation dialog open state to:", open);
-          setShowManualReconciliation(open);
-        }}
+        onOpenChange={setShowManualReconciliation}
         expense={selectedExpense}
-        onConfirm={onManualReconciliationConfirm}
+        onConfirm={handleManualReconciliationConfirm}
         chartAccounts={chartAccounts || []}
       />
     </div>

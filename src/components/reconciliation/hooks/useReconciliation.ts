@@ -52,19 +52,13 @@ export const useReconciliation = () => {
 
   // Wrap the raw handlers to provide context-specific parameters
   const handleReconcile = useCallback((invoicesToReconcile: any[]) => {
-    console.log("[useReconciliation] handleReconcile called with", invoicesToReconcile.length, "invoices");
     return rawHandleReconcile(selectedExpense, invoicesToReconcile);
   }, [rawHandleReconcile, selectedExpense]);
 
   const handleAdjustmentConfirm = useCallback((chartAccountId: string, notes: string) => {
     if (!selectedExpense || !selectedInvoices.length) {
-      console.log("[useReconciliation] handleAdjustmentConfirm - missing expense or invoices, aborting");
       return;
     }
-    
-    console.log("[useReconciliation] handleAdjustmentConfirm called with chartAccountId:", chartAccountId);
-    console.log("[useReconciliation] Adjustment type:", adjustmentType);
-    console.log("[useReconciliation] Remaining amount:", remainingAmount);
     
     const result = rawHandleAdjustmentConfirm(
       selectedExpense.id,
@@ -76,10 +70,7 @@ export const useReconciliation = () => {
     );
     
     if (result) {
-      console.log("[useReconciliation] Adjustment successful, proceeding with reconciliation");
       handleReconcile(selectedInvoices);
-    } else {
-      console.log("[useReconciliation] Adjustment failed, not proceeding with reconciliation");
     }
     
     setShowAdjustmentDialog(false);
@@ -94,18 +85,11 @@ export const useReconciliation = () => {
   ]);
 
   const handleManualReconciliation = useCallback(() => {
-    console.log("[useReconciliation] handleManualReconciliation called");
-    console.log("[useReconciliation] Closing invoice search dialog");
     setShowInvoiceSearch(false);
-    
-    console.log("[useReconciliation] Opening manual reconciliation dialog");
     setShowManualReconciliation(true);
     
     if (selectedExpense) {
-      console.log(`[useReconciliation] Setting remaining amount to expense amount: ${selectedExpense.amount}`);
       setRemainingAmount(selectedExpense.amount);
-    } else {
-      console.log("[useReconciliation] No expense selected for manual reconciliation");
     }
   }, [setShowInvoiceSearch, setShowManualReconciliation, setRemainingAmount, selectedExpense]);
 
@@ -117,25 +101,15 @@ export const useReconciliation = () => {
     chartAccountId?: string;
   }) => {
     if (!selectedExpense) {
-      console.log("[useReconciliation] handleManualReconciliationConfirm - no expense selected, aborting");
       return;
     }
     
-    console.log("[useReconciliation] handleManualReconciliationConfirm called with data:", JSON.stringify(data, null, 2));
-    console.log("[useReconciliation] Expense ID:", selectedExpense.id);
-    
     const result = rawHandleManualReconciliationConfirm(selectedExpense.id, data);
     
-    console.log("[useReconciliation] Manual reconciliation result:", result);
-    
     if (result) {
-      console.log("[useReconciliation] Manual reconciliation successful, resetting state");
       resetState();
-    } else {
-      console.log("[useReconciliation] Manual reconciliation failed");
     }
     
-    console.log("[useReconciliation] Closing manual reconciliation dialog");
     setShowManualReconciliation(false);
   }, [selectedExpense, rawHandleManualReconciliationConfirm, resetState, setShowManualReconciliation]);
 

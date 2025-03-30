@@ -38,7 +38,6 @@ export function useManualReconciliationForm({
   // Reset form state when dialog opens
   useEffect(() => {
     if (expense) {
-      console.log("[ManualReconciliationForm] Setting form for expense:", expense.id);
       setReconciliationType("no_invoice");
       setReferenceNumber("");
       setNotes("");
@@ -46,18 +45,14 @@ export function useManualReconciliationForm({
       setIsUploading(false);
       setConfirmDisabled(false);
       if (expense.chart_account_id) {
-        console.log("[ManualReconciliationForm] Setting initial chart account ID to:", expense.chart_account_id);
         setChartAccountId(expense.chart_account_id);
       } else {
         setChartAccountId(undefined);
       }
-    } else {
-      console.log("[ManualReconciliationForm] No expense provided");
     }
   }, [expense]);
 
   const handleFileUploaded = (fileId: string) => {
-    console.log("[ManualReconciliationForm] File uploaded, received ID:", fileId);
     setFileId(fileId);
     setIsUploading(false);
   };
@@ -68,26 +63,20 @@ export function useManualReconciliationForm({
       e.stopPropagation();
     }
     
-    console.log("[ManualReconciliationForm] Submit handler called, confirmDisabled:", confirmDisabled);
-    
     if (confirmDisabled) {
-      console.log("[ManualReconciliationForm] Submit button is disabled, ignoring click");
       return;
     }
     
     if (reconciliationType === "pdf_only" && !fileId) {
-      console.log("[ManualReconciliationForm] Cannot submit: 'pdf_only' selected but no file uploaded");
       toast.error("Por favor suba un archivo PDF");
       return;
     }
     
     if (!notes || notes.trim() === "") {
-      console.log("[ManualReconciliationForm] Cannot submit: Notes field is empty");
       toast.error("Por favor agregue notas");
       return;
     }
     
-    console.log("[ManualReconciliationForm] Submit button clicked - preparing reconciliation data");
     setConfirmDisabled(true);
     
     const reconciliationData = {
@@ -98,18 +87,13 @@ export function useManualReconciliationForm({
       chartAccountId: chartAccountId || expense?.chart_account_id,
     };
     
-    console.log("[ManualReconciliationForm] Submitting reconciliation data:", JSON.stringify(reconciliationData, null, 2));
-    
     try {
       onConfirm(reconciliationData);
-      console.log("[ManualReconciliationForm] onConfirm handler called successfully");
       
       setTimeout(() => {
-        console.log("[ManualReconciliationForm] Forcing dialog close...");
         onOpenChange(false);
       }, 300);
     } catch (error) {
-      console.error("[ManualReconciliationForm] Error in onConfirm handler:", error);
       setConfirmDisabled(false);
       toast.error("Error al procesar la reconciliación");
     }

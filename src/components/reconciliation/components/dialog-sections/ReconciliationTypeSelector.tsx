@@ -16,10 +16,7 @@ export function ReconciliationTypeSelector({
       <Label>Tipo de Reconciliación</Label>
       <RadioGroup
         value={value}
-        onValueChange={(value) => {
-          console.log("Reconciliation type changed to:", value);
-          onChange(value);
-        }}
+        onValueChange={onChange}
         className="flex flex-col space-y-1"
       >
         <div className="flex items-center space-x-2">

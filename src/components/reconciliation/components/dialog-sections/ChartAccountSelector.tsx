@@ -26,10 +26,7 @@ export function ChartAccountSelector({
       <Label htmlFor="account">Cuenta Contable</Label>
       <Select
         value={value || defaultAccountId}
-        onValueChange={(value) => {
-          console.log("Chart account changed to:", value);
-          onChange(value);
-        }}
+        onValueChange={onChange}
       >
         <SelectTrigger id="account">
           <SelectValue placeholder="Seleccionar cuenta contable" />

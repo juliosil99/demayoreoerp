@@ -11,17 +11,7 @@ export function FileUploadSection({
   onUploadStart, 
   onUploadComplete 
 }: FileUploadSectionProps) {
-  console.log("[FileUploadSection] Rendering file upload section");
-  
-  const handleUploadStart = () => {
-    console.log("[FileUploadSection] Upload start event received, calling onUploadStart");
-    onUploadStart();
-  };
-  
   const handleUploadComplete = (fileId: string) => {
-    console.log("[FileUploadSection] Upload complete event received with fileId:", fileId);
-    console.log("[FileUploadSection] Calling onUploadComplete");
-    
     // Call onUploadComplete with a slight delay to prevent race conditions
     setTimeout(() => {
       onUploadComplete(fileId);
@@ -38,7 +28,7 @@ export function FileUploadSection({
         }}
       >
         <FileUploader
-          onUploadStart={handleUploadStart}
+          onUploadStart={onUploadStart}
           onUploadComplete={handleUploadComplete}
         />
       </div>

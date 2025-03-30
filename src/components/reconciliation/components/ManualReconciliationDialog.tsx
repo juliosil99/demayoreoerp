@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { formatCurrency, formatCardDate } from "@/utils/formatters";
 import { ManualReconciliationDialogForm } from "./ManualReconciliationDialogForm";
-import { toast } from "sonner";
 
 interface ManualReconciliationDialogProps {
   open: boolean;
@@ -36,10 +35,7 @@ export function ManualReconciliationDialog({
   return (
     <Dialog 
       open={open} 
-      onOpenChange={(newOpen) => {
-        console.log(`[ManualReconciliationDialog] Dialog onOpenChange triggered with value: ${newOpen}`);
-        onOpenChange(newOpen);
-      }}
+      onOpenChange={onOpenChange}
     >
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>

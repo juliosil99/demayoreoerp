@@ -50,46 +50,31 @@ export function ManualReconciliationDialogForm({
     <form onSubmit={handleSubmit} className="space-y-4 py-2">
       <ReconciliationTypeSelector 
         value={formState.reconciliationType}
-        onChange={(value) => {
-          console.log("[ManualReconciliationDialog] Reconciliation type changed to:", value);
-          setReconciliationType(value);
-        }}
+        onChange={setReconciliationType}
       />
 
       {formState.reconciliationType !== "no_invoice" && (
         <ReferenceNumberField
           value={formState.referenceNumber}
-          onChange={(value) => {
-            console.log("[ManualReconciliationDialog] Reference number changed to:", value);
-            setReferenceNumber(value);
-          }}
+          onChange={setReferenceNumber}
         />
       )}
 
       <ChartAccountSelector
         value={formState.chartAccountId}
         accounts={chartAccounts}
-        onChange={(value) => {
-          console.log("[ManualReconciliationDialog] Chart account changed to:", value);
-          setChartAccountId(value);
-        }}
+        onChange={setChartAccountId}
         defaultAccountId={expense?.chart_account_id}
       />
 
       <NotesField
         value={formState.notes}
-        onChange={(value) => {
-          console.log("[ManualReconciliationDialog] Notes changed to:", value.substring(0, 20) + (value.length > 20 ? "..." : ""));
-          setNotes(value);
-        }}
+        onChange={setNotes}
       />
 
       {formState.reconciliationType === "pdf_only" && (
         <FileUploadSection
-          onUploadStart={() => {
-            console.log("[ManualReconciliationDialog] File upload started");
-            setIsUploading(true);
-          }}
+          onUploadStart={() => setIsUploading(true)}
           onUploadComplete={handleFileUploaded}
         />
       )}
@@ -98,10 +83,7 @@ export function ManualReconciliationDialogForm({
         <Button 
           type="button"
           variant="outline" 
-          onClick={() => {
-            console.log("[ManualReconciliationDialog] Cancel button clicked");
-            onOpenChange(false);
-          }}
+          onClick={() => onOpenChange(false)}
         >
           Cancelar
         </Button>
@@ -109,7 +91,6 @@ export function ManualReconciliationDialogForm({
           type="submit"
           onClick={(e) => {
             e.preventDefault();
-            console.log("[ManualReconciliationDialog] Confirm button clicked manually, disabled:", isSubmitDisabled);
             handleSubmit(e);
           }} 
           disabled={isSubmitDisabled}
