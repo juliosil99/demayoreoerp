@@ -1,3 +1,4 @@
+
 import { TableCell, TableRow } from "@/components/ui/table";
 import { ExpenseActions } from "./ExpenseActions";
 import { useState } from "react";
@@ -20,6 +21,9 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
     invoice: {
       uuid: string;
       invoice_number: string;
+      file_path: string;
+      filename: string;
+      content_type?: string;
     }
   }[];
 };

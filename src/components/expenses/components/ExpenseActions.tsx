@@ -1,5 +1,5 @@
 
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,11 +21,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types/base";
+import { downloadInvoiceFile } from "@/utils/invoiceDownload";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
   bank_accounts: { name: string };
   chart_of_accounts: { name: string; code: string };
   contacts: { name: string } | null;
+  expense_invoice_relations?: {
+    invoice: {
+      uuid: string;
+      invoice_number: string;
+      file_path: string;
+      filename: string;
+      content_type?: string;
+    }
+  }[];
 };
 
 interface ExpenseActionsProps {
@@ -47,6 +59,7 @@ export function ExpenseActions({
 }: ExpenseActionsProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDeleteClick = async () => {
     setIsDeleting(true);
@@ -61,6 +74,78 @@ export function ExpenseActions({
   const handleEditSuccess = () => {
     handleCloseDialog();
   };
+  
+  const handleDownloadInvoice = async () => {
+    // Check if there are invoice relations
+    if (!expense.expense_invoice_relations?.length) {
+      toast.error("No hay facturas asociadas a este gasto");
+      return;
+    }
+    
+    setIsDownloading(true);
+    try {
+      // Get the first invoice relation (we'll handle multiple invoices in a future enhancement)
+      const invoiceRelation = expense.expense_invoice_relations[0];
+      
+      if (!invoiceRelation.invoice.file_path) {
+        toast.error("No se encontró la ruta del archivo de factura");
+        return;
+      }
+
+      // For manual reconciliations that have a file_id instead of a direct invoice relation
+      if (expense.reconciliation_type === 'manual') {
+        // Fetch the manual reconciliation record to get the file_id
+        const { data: manualRec } = await supabase
+          .from('manual_reconciliations')
+          .select('file_id')
+          .eq('expense_id', expense.id)
+          .single();
+          
+        if (manualRec?.file_id) {
+          // Fetch the file details
+          const { data: fileData } = await supabase
+            .from('manual_invoice_files')
+            .select('file_path, filename, content_type')
+            .eq('id', manualRec.file_id)
+            .single();
+            
+          if (fileData) {
+            await downloadInvoiceFile(
+              fileData.file_path,
+              fileData.filename.replace(/\.[^/.]+$/, ""), // Remove extension
+              fileData.content_type
+            );
+            toast.success("Archivo descargado correctamente");
+            return;
+          }
+        }
+      }
+      
+      // For regular invoice reconciliations
+      const fileName = invoiceRelation.invoice.invoice_number || 
+                       invoiceRelation.invoice.uuid ||
+                       `factura-${new Date().toISOString().split('T')[0]}`;
+      
+      await downloadInvoiceFile(
+        invoiceRelation.invoice.file_path,
+        fileName,
+        invoiceRelation.invoice.content_type
+      );
+      
+      toast.success("Factura descargada correctamente");
+      
+    } catch (error) {
+      console.error("Error downloading invoice:", error);
+      toast.error("Error al descargar la factura");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Check if the expense is reconciled and has invoice relations
+  const hasInvoice = !!expense.reconciled && 
+                     (!!expense.expense_invoice_relations?.length || 
+                      expense.reconciliation_type === 'manual');
 
   return (
     <div className="flex items-center justify-end">
@@ -76,6 +161,15 @@ export function ExpenseActions({
             <Pencil className="mr-2 h-4 w-4" />
             Editar
           </DropdownMenuItem>
+          {hasInvoice && (
+            <DropdownMenuItem 
+              onClick={handleDownloadInvoice}
+              disabled={isDownloading}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {isDownloading ? "Descargando..." : "Descargar Factura"}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onSelect={() => setConfirmOpen(true)}>
             <Trash2 className="mr-2 h-4 w-4" />
             Eliminar
