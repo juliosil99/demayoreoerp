@@ -14,6 +14,9 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
     invoice: {
       uuid: string;
       invoice_number: string;
+      file_path: string;
+      filename: string;
+      content_type?: string;
     }
   }[];
 };

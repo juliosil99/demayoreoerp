@@ -26,6 +26,9 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
     invoice: {
       uuid: string;
       invoice_number: string;
+      file_path: string;
+      filename: string;
+      content_type?: string;
     }
   }[];
 };
@@ -52,7 +55,7 @@ export default function Expenses() {
           chart_of_accounts (name, code),
           contacts (name),
           expense_invoice_relations (
-            invoice:invoices (uuid, invoice_number)
+            invoice:invoices (uuid, invoice_number, file_path, filename, content_type)
           )
         `)
         .eq('user_id', user!.id);
