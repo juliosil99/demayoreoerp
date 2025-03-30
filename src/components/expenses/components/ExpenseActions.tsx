@@ -24,7 +24,7 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
 
 interface ExpenseActionsProps {
   expense: Expense;
-  onDelete: () => Promise<void>;
+  onDelete: () => Promise<{ success: boolean; log: string[] } | void>;
   onEdit: (expense: Expense) => void;
   isDialogOpen: boolean;
   selectedExpense: Expense | null;
@@ -46,7 +46,7 @@ export function ExpenseActions({
   const handleDeleteClick = async () => {
     try {
       const result = await onDelete();
-      if (result && !result.success) {
+      if (result && 'success' in result && !result.success) {
         setDeletionLog(result.log);
         setIsLogOpen(true);
       }

@@ -14,7 +14,7 @@ import {
 interface ExpenseDeleteDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onDelete: () => Promise<void>;
+  onDelete: () => Promise<void | { success: boolean; log: string[] }>;
 }
 
 export function ExpenseDeleteDialog({ isOpen, onOpenChange, onDelete }: ExpenseDeleteDialogProps) {
