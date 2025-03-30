@@ -19,6 +19,27 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
   try {
     console.log("Attempting to download file:", filePath);
     
+    // First check if file exists (doesn't actually download it)
+    const { data: fileInfo, error: fileCheckError } = await supabase.storage
+      .from('invoices')
+      .list(filePath.split('/').slice(0, -1).join('/'), {
+        search: filePath.split('/').pop() || ''
+      });
+      
+    if (fileCheckError) {
+      console.error("Error checking file existence:", fileCheckError);
+      toast.error("Error verificando existencia del archivo: " + fileCheckError.message);
+      return;
+    }
+    
+    console.log("File check result:", fileInfo);
+    
+    if (!fileInfo || fileInfo.length === 0) {
+      console.error("File not found in storage");
+      toast.error("Archivo no encontrado en el almacenamiento");
+      return;
+    }
+    
     // Get the file from storage
     const { data, error } = await supabase.storage
       .from('invoices')
