@@ -26,6 +26,15 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
       return;
     }
 
+    // Determine which bucket to use based on file path pattern
+    // For manually uploaded PDF files, they'll be in the invoice_files bucket
+    // For XML/invoice files, they'll be in the invoices bucket
+    const bucket = filePath.includes('/') && !filePath.startsWith('invoices/') 
+      ? 'invoice_files' 
+      : 'invoices';
+      
+    console.log(`Using storage bucket: ${bucket}`);
+
     // Extract bucket path and file name for better error handling
     const pathParts = filePath.split('/');
     const fileNameFromPath = pathParts.pop() || '';
@@ -36,7 +45,7 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
     
     // First check if file exists (doesn't actually download it)
     const { data: fileList, error: fileCheckError } = await supabase.storage
-      .from('invoices')
+      .from(bucket)
       .list(bucketPath, {
         search: fileNameFromPath
       });
@@ -56,14 +65,14 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
       toast.error(
         "Archivo no encontrado en el almacenamiento. " +
         "El registro existe en la base de datos pero el archivo físico no se encuentra en el bucket de almacenamiento. " +
-        "Contacte al administrador del sistema."
+        "Es posible que el archivo nunca se haya subido correctamente o que haya sido eliminado."
       );
       return;
     }
     
     // If we get here, the file exists in the bucket, so attempt to download it
     const { data, error } = await supabase.storage
-      .from('invoices')
+      .from(bucket)
       .download(filePath);
     
     if (error) {

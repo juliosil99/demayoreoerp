@@ -7,12 +7,14 @@ import { UploadButton } from "./UploadButton";
 interface FileUploaderProps {
   onUploadStart: () => void;
   onUploadComplete: (fileId: string) => void;
+  onUploadError?: () => void;
   acceptedTypes?: string;
 }
 
 export function FileUploader({ 
   onUploadStart, 
   onUploadComplete,
+  onUploadError,
   acceptedTypes = ".pdf,.jpg,.jpeg,.png" 
 }: FileUploaderProps) {
   const {
@@ -26,6 +28,11 @@ export function FileUploader({
     onUploadStart,
     onUploadComplete
   });
+
+  // Trigger onUploadError callback when an error occurs
+  if (uploadError && onUploadError) {
+    onUploadError();
+  }
 
   return (
     <div className="space-y-2">
