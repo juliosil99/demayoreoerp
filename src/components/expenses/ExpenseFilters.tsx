@@ -35,7 +35,8 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
         .from('contacts')
         .select('id, name')
         .eq('user_id', user!.id)
-        .eq('type', 'supplier');
+        .eq('type', 'supplier')
+        .order('name');
 
       if (error) throw error;
       return data;

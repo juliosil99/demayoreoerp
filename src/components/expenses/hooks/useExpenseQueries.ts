@@ -52,7 +52,8 @@ export function useExpenseQueries() {
       const { data, error } = await supabase
         .from("contacts")
         .select("*")
-        .eq("type", "supplier");
+        .eq("type", "supplier")
+        .order('name');  // Added ordering by name
       if (error) throw error;
       return data as Supplier[];
     },
