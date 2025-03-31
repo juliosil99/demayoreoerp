@@ -42,6 +42,9 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
   const hasInvoice = !!expense.reconciled && 
                      (!!expense.expense_invoice_relations?.length || 
                       expense.reconciliation_type === 'manual');
+  
+  // Count the number of invoices for better UX messaging
+  const invoiceCount = expense.expense_invoice_relations?.length || 0;
                       
   const handleDownload = async () => {
     await handleDownloadInvoice(expense);
@@ -67,7 +70,9 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
               disabled={isDownloading}
             >
               <Download className="mr-2 h-4 w-4" />
-              {isDownloading ? "Descargando..." : "Descargar Factura"}
+              {isDownloading ? "Descargando..." : invoiceCount > 1 
+                ? `Descargar ${invoiceCount} Facturas` 
+                : "Descargar Factura"}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onSelect={onDelete}>
@@ -100,6 +105,7 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
                   reconciled: expense.reconciled,
                   reconciliation_type: expense.reconciliation_type,
                   has_invoice_relations: !!expense.expense_invoice_relations?.length,
+                  invoice_relations_count: expense.expense_invoice_relations?.length || 0,
                 }, null, 2)}
               </pre>
             </div>

@@ -112,35 +112,59 @@ export function useInvoiceDownload() {
       // Case 2: Regular invoice reconciliation through expense_invoice_relations
       if (expense.expense_invoice_relations?.length) {
         logAction('Processing as regular invoice reconciliation');
-        const invoiceRelation = expense.expense_invoice_relations[0];
-        logAction(`Invoice relation: ${JSON.stringify(invoiceRelation.invoice)}`);
+        logAction(`Found ${expense.expense_invoice_relations.length} invoice relations`);
         
-        if (!invoiceRelation.invoice.file_path) {
-          logAction('No file path found in invoice relation');
-          toast.error("No se encontró la ruta del archivo de factura");
-          return;
+        // Check if there are multiple invoices
+        const invoiceCount = expense.expense_invoice_relations.length;
+        
+        if (invoiceCount > 1) {
+          logAction(`Multiple invoices found (${invoiceCount}), downloading all`);
+          toast.info(`Descargando ${invoiceCount} facturas asociadas a este gasto...`);
         }
         
-        const fileName = invoiceRelation.invoice.invoice_number || 
-                         invoiceRelation.invoice.uuid ||
-                         `factura-${new Date().toISOString().split('T')[0]}`;
-        
-        logAction(`Using filename: ${fileName}`);
-        logAction(`File path: ${invoiceRelation.invoice.file_path}`);
-        
-        try {
-          await downloadInvoiceFile(
-            invoiceRelation.invoice.file_path,
-            fileName,
-            invoiceRelation.invoice.content_type
-          );
+        // Process all invoice relations (not just the first one)
+        for (let i = 0; i < expense.expense_invoice_relations.length; i++) {
+          const invoiceRelation = expense.expense_invoice_relations[i];
+          logAction(`Processing invoice relation ${i+1}/${invoiceCount}: ${JSON.stringify(invoiceRelation.invoice)}`);
           
-          toast.success("Factura descargada correctamente");
-        } catch (downloadError) {
-          const errorMessage = downloadError instanceof Error ? downloadError.message : String(downloadError);
-          logAction(`Download error: ${errorMessage}`);
-          console.error("Download error:", downloadError);
-          toast.error("Error al descargar el archivo");
+          if (!invoiceRelation.invoice.file_path) {
+            logAction(`No file path found for invoice relation ${i+1}`);
+            continue; // Skip this invoice but continue with others
+          }
+          
+          const fileName = invoiceRelation.invoice.invoice_number || 
+                          invoiceRelation.invoice.uuid ||
+                          `factura-${new Date().toISOString().split('T')[0]}-${i+1}`;
+          
+          logAction(`Using filename for invoice ${i+1}: ${fileName}`);
+          logAction(`File path for invoice ${i+1}: ${invoiceRelation.invoice.file_path}`);
+          
+          try {
+            await downloadInvoiceFile(
+              invoiceRelation.invoice.file_path,
+              fileName,
+              invoiceRelation.invoice.content_type
+            );
+            
+            // Don't show multiple toasts for batch downloads
+            if (invoiceCount === 1) {
+              toast.success("Factura descargada correctamente");
+            }
+          } catch (downloadError) {
+            const errorMessage = downloadError instanceof Error ? downloadError.message : String(downloadError);
+            logAction(`Download error for invoice ${i+1}: ${errorMessage}`);
+            console.error(`Download error for invoice ${i+1}:`, downloadError);
+            
+            // Show individual error toast only for single invoice downloads
+            if (invoiceCount === 1) {
+              toast.error("Error al descargar el archivo");
+            }
+          }
+        }
+        
+        // Show a completion toast only for multiple invoice downloads
+        if (invoiceCount > 1) {
+          toast.success(`Se completó la descarga de ${invoiceCount} facturas`);
         }
       } else {
         logAction('No invoice relations found');

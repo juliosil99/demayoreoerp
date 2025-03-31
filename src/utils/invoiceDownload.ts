@@ -15,7 +15,7 @@ export const isXmlFile = (filePath: string, contentType?: string | null): boolea
  * @param filePath Path to the file in Supabase Storage
  * @param fileName Desired filename for the download
  */
-export const downloadInvoiceFile = async (filePath: string, fileName: string, contentType?: string | null): Promise<void> => {
+export const downloadInvoiceFile = async (filePath: string, fileName: string, contentType?: string | null): Promise<boolean> => {
   try {
     console.log("Attempting to download file:", filePath);
     
@@ -23,7 +23,7 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
     if (!filePath || filePath.trim() === '') {
       console.error("Invalid file path:", filePath);
       toast.error("La ruta del archivo no es válida");
-      return;
+      return false;
     }
 
     // Determine which bucket to use based on file path pattern
@@ -53,7 +53,7 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
     if (fileCheckError) {
       console.error("Error checking file existence:", fileCheckError);
       toast.error("Error verificando existencia del archivo: " + fileCheckError.message);
-      return;
+      return false;
     }
     
     console.log("File check result:", fileList);
@@ -67,7 +67,7 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
         "El registro existe en la base de datos pero el archivo físico no se encuentra en el bucket de almacenamiento. " +
         "Es posible que el archivo nunca se haya subido correctamente o que haya sido eliminado."
       );
-      return;
+      return false;
     }
     
     // If we get here, the file exists in the bucket, so attempt to download it
@@ -86,12 +86,12 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
       } else {
         toast.error(`Error al descargar: ${error.message || "Error desconocido"}`);
       }
-      return;
+      return false;
     }
 
     if (!data) {
       toast.error("No se pudo obtener el archivo.");
-      return;
+      return false;
     }
 
     console.log("File downloaded successfully, size:", data.size);
@@ -100,7 +100,7 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
     if (isXmlFile(filePath, contentType)) {
       // For now, just download the XML file as is
       downloadBlob(data, `${fileName}.xml`);
-      return;
+      return true;
     }
     
     // Create a valid extension based on content type
@@ -121,10 +121,12 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
 
     // Download the file with the appropriate extension
     downloadBlob(data, `${fileName}.${extension}`);
+    return true;
     
   } catch (error) {
     console.error("Error in download process:", error);
     toast.error("Error al descargar el archivo: " + (error instanceof Error ? error.message : "Error desconocido"));
+    return false;
   }
 };
 
