@@ -1,78 +1,54 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import React, { useState } from "react";
+import { useExpenseQueries } from "./hooks/useExpenseQueries";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+
+type Filters = {
+  supplier_id?: string;
+  account_id?: number;
+  unreconciled?: boolean;
+};
 
 interface ExpenseFiltersProps {
-  filters: {
-    supplier_id?: string;
-    account_id?: number;
-    unreconciled?: boolean;
-  };
-  onFiltersChange: (filters: {
-    supplier_id?: string;
-    account_id?: number;
-    unreconciled?: boolean;
-  }) => void;
+  filters: Filters;
+  onFiltersChange: (filters: Filters) => void;
 }
 
 export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps) {
-  const { user } = useAuth();
+  const { suppliers, bankAccounts, isLoading } = useExpenseQueries();
 
-  const { data: suppliers } = useQuery({
-    queryKey: ["suppliers", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('id, name')
-        .eq('user_id', user!.id)
-        .eq('type', 'supplier')
-        .order('name');
+  const handleSupplierChange = (value: string) => {
+    onFiltersChange({ ...filters, supplier_id: value || undefined });
+  };
 
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
+  const handleAccountChange = (value: string) => {
+    onFiltersChange({ ...filters, account_id: value ? parseInt(value) : undefined });
+  };
 
-  const { data: bankAccounts } = useQuery({
-    queryKey: ["bankAccounts", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('bank_accounts')
-        .select('id, name');
+  const handleUnreconciledChange = (checked: boolean | "indeterminate") => {
+    onFiltersChange({ ...filters, unreconciled: checked === true });
+  };
 
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
+  if (isLoading) {
+    return <div>Cargando filtros...</div>;
+  }
 
   return (
-    <div className="flex flex-wrap gap-4 items-end">
-      <div className="space-y-2">
-        <Label>Proveedor</Label>
+    <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+      <div className="w-full sm:w-64">
+        <Label htmlFor="supplier" className="mb-2 block">Proveedor</Label>
         <Select
-          value={filters.supplier_id || "all_suppliers"}
-          onValueChange={(value) =>
-            onFiltersChange({ ...filters, supplier_id: value === "all_suppliers" ? undefined : value })
-          }
+          value={filters.supplier_id || ""}
+          onValueChange={handleSupplierChange}
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger id="supplier">
             <SelectValue placeholder="Todos los proveedores" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all_suppliers">Todos los proveedores</SelectItem>
-            {suppliers?.map((supplier) => (
+            <SelectItem value="">Todos los proveedores</SelectItem>
+            {suppliers.map((supplier) => (
               <SelectItem key={supplier.id} value={supplier.id}>
                 {supplier.name}
               </SelectItem>
@@ -81,20 +57,18 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label>Cuenta Bancaria</Label>
+      <div className="w-full sm:w-64">
+        <Label htmlFor="account" className="mb-2 block">Cuenta Bancaria</Label>
         <Select
-          value={filters.account_id?.toString() || "all_accounts"}
-          onValueChange={(value) =>
-            onFiltersChange({ ...filters, account_id: value === "all_accounts" ? undefined : parseInt(value) })
-          }
+          value={filters.account_id?.toString() || ""}
+          onValueChange={handleAccountChange}
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger id="account">
             <SelectValue placeholder="Todas las cuentas" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all_accounts">Todas las cuentas</SelectItem>
-            {bankAccounts?.map((account) => (
+            <SelectItem value="">Todas las cuentas</SelectItem>
+            {bankAccounts.map((account) => (
               <SelectItem key={account.id} value={account.id.toString()}>
                 {account.name}
               </SelectItem>
@@ -103,14 +77,18 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
         </Select>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Label>Solo gastos sin conciliar</Label>
-        <Switch
-          checked={filters.unreconciled || false}
-          onCheckedChange={(checked) =>
-            onFiltersChange({ ...filters, unreconciled: checked })
-          }
+      <div className="flex items-center space-x-2 pt-6">
+        <Checkbox 
+          id="unreconciled" 
+          checked={!!filters.unreconciled} 
+          onCheckedChange={handleUnreconciledChange} 
         />
+        <Label 
+          htmlFor="unreconciled" 
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          Sin conciliar
+        </Label>
       </div>
     </div>
   );

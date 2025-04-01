@@ -173,10 +173,12 @@ export default function Expenses() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
+      <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-end">
+        <div className="flex-1">
+          <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
+        </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 whitespace-nowrap">
           <Checkbox 
             id="fromPayable" 
             checked={!!filters.from_payable} 

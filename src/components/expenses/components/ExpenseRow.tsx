@@ -54,23 +54,27 @@ export function ExpenseRow({
   return (
     <TableRow key={expense.id} className={isFromPayable ? "bg-blue-50/50" : ""}>
       <TableCell>
-        {formatCardDate(expense.date)}
-        {isFromPayable && (
-          <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800 border-blue-200">
-            Cuenta por Pagar
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {formatCardDate(expense.date)}
+          {isFromPayable && (
+            <Badge variant="outline" className="ml-1 bg-blue-100 text-blue-800 border-blue-200 text-xs">
+              Cuenta por Pagar
+            </Badge>
+          )}
+        </div>
       </TableCell>
       <TableCell>{expense.description}</TableCell>
-      <TableCell>${expense.amount.toFixed(2)}</TableCell>
+      <TableCell className="text-right font-medium">${expense.amount.toFixed(2)}</TableCell>
       <TableCell>{expense.bank_accounts.name}</TableCell>
       <TableCell>
-        {expense.chart_of_accounts.code} - {expense.chart_of_accounts.name}
+        <span className="whitespace-nowrap">
+          {expense.chart_of_accounts.code} - {expense.chart_of_accounts.name}
+        </span>
       </TableCell>
       <TableCell>
         {expense.contacts?.name || (isFromPayable && expense.accounts_payable?.client?.name) || '-'}
       </TableCell>
-      <TableCell className="capitalize">
+      <TableCell className="capitalize whitespace-nowrap">
         {expense.payment_method === 'cash' ? 'Efectivo' :
           expense.payment_method === 'transfer' ? 'Transferencia' :
           expense.payment_method === 'check' ? 'Cheque' :
