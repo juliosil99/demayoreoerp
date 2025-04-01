@@ -16,15 +16,7 @@ import {
 } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
 import { useClientQuery } from "../../hooks/usePayableQueries";
-
-interface PayableFormData {
-  client_id: string;
-  invoice_id: number | null;
-  amount: number;
-  due_date: Date;
-  payment_term: number;
-  notes: string | null;
-}
+import { PayableFormData } from "../../PayableForm";
 
 interface ClientFieldProps {
   form: UseFormReturn<PayableFormData>;
@@ -40,7 +32,10 @@ export function ClientField({ form }: ClientFieldProps) {
       render={({ field }) => (
         <FormItem>
           <FormLabel>Proveedor</FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <Select 
+            onValueChange={field.onChange} 
+            value={field.value}
+          >
             <FormControl>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar proveedor" />

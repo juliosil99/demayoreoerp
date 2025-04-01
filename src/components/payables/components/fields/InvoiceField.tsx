@@ -20,15 +20,7 @@ import { UseFormReturn } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { useInvoiceQuery } from "../../hooks/usePayableQueries";
 import { formatCurrency } from "@/utils/formatters";
-
-interface PayableFormData {
-  client_id: string;
-  invoice_id: number | null;
-  amount: number;
-  due_date: Date;
-  payment_term: number;
-  notes: string | null;
-}
+import { PayableFormData } from "../../PayableForm";
 
 interface InvoiceFieldProps {
   form: UseFormReturn<PayableFormData>;
@@ -71,7 +63,7 @@ export function InvoiceField({ form }: InvoiceFieldProps) {
             />
             <Select 
               onValueChange={(value) => field.onChange(value ? parseInt(value) : null)} 
-              value={field.value ? field.value.toString() : ""}
+              value={field.value ? field.value.toString() : undefined}
               disabled={!client_id}
             >
               <FormControl>
@@ -80,7 +72,7 @@ export function InvoiceField({ form }: InvoiceFieldProps) {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="">Ninguna factura</SelectItem>
+                <SelectItem value="none">Ninguna factura</SelectItem>
                 {!isLoading && filteredInvoices.map((invoice) => (
                   <SelectItem key={invoice.id} value={invoice.id.toString()}>
                     {invoice.invoice_number || invoice.uuid.substring(0, 8)} - {formatCurrency(invoice.total_amount)}
