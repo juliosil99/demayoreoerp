@@ -3,9 +3,20 @@ import React from "react";
 import { PayablesList } from "@/components/payables/components/PayablesList";
 import { PayableFormDialog } from "@/components/payables/components/PayableFormDialog";
 import { usePayables } from "@/components/payables/hooks/usePayables";
+import { PayableFormData } from "@/components/payables/PayableForm";
 
 const Payables = () => {
   const { payables, isLoading, createPayable, markAsPaid } = usePayables();
+
+  const handleCreatePayable = async (data: PayableFormData): Promise<boolean> => {
+    try {
+      await createPayable.mutateAsync(data);
+      return true;
+    } catch (error) {
+      console.error("Error creating payable:", error);
+      return false;
+    }
+  };
 
   const handleMarkAsPaid = (payableId: string) => {
     markAsPaid.mutate(payableId);
@@ -16,7 +27,7 @@ const Payables = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Cuentas por Pagar</h1>
         <PayableFormDialog 
-          onSubmit={createPayable.mutateAsync}
+          onSubmit={handleCreatePayable}
           isSubmitting={createPayable.isPending}
         />
       </div>

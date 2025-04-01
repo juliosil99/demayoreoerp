@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import { PayableForm } from "../PayableForm";
-import { PayableFormData } from "../PayableForm";
+import { PayableFormData } from "../types/payableTypes";
 
 interface PayableFormDialogProps {
   onSubmit: (data: PayableFormData) => Promise<boolean>;

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AccountPayable } from "@/types/payables";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { PayableFormData } from "../types/payableTypes";
 
 export function usePayables() {
   const queryClient = useQueryClient();
@@ -26,7 +27,7 @@ export function usePayables() {
   });
 
   const createPayable = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: PayableFormData) => {
       const { error } = await supabase
         .from('accounts_payable')
         .insert([{
@@ -41,12 +42,10 @@ export function usePayables() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payables"] });
       toast.success("Cuenta por pagar creada exitosamente");
-      return true;
     },
     onError: (error) => {
       console.error('Error creating payable:', error);
       toast.error("Error al crear la cuenta por pagar");
-      return false;
     },
   });
 

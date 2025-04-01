@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   FormControl,
   FormField,
@@ -13,14 +13,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  SelectGroup,
-  SelectLabel,
 } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { useInvoiceQuery } from "../../hooks/usePayableQueries";
 import { formatCurrency } from "@/utils/formatters";
-import { PayableFormData } from "../../PayableForm";
+import { PayableFormData } from "../../types/payableTypes";
 
 interface InvoiceFieldProps {
   form: UseFormReturn<PayableFormData>;
@@ -34,7 +32,7 @@ export function InvoiceField({ form }: InvoiceFieldProps) {
   const { data: invoices, isLoading } = useInvoiceQuery(client_id);
   
   // Filter invoices based on search term
-  const filteredInvoices = React.useMemo(() => {
+  const filteredInvoices = useMemo(() => {
     if (!invoices) return [];
     if (!searchTerm) return invoices;
     
@@ -45,6 +43,24 @@ export function InvoiceField({ form }: InvoiceFieldProps) {
       (invoice.total_amount && invoice.total_amount.toString().includes(searchTerm))
     );
   }, [invoices, searchTerm]);
+
+  const handleSelectChange = (value: string) => {
+    // Handle the "none" value specially
+    if (value === "none") {
+      form.setValue('invoice_id', null);
+      
+      // Don't clear the amount, let the user specify it manually
+    } else {
+      const invoiceId = parseInt(value);
+      form.setValue('invoice_id', invoiceId);
+      
+      // Find the invoice to get its amount
+      const selectedInvoice = invoices?.find(inv => inv.id === invoiceId);
+      if (selectedInvoice && selectedInvoice.total_amount) {
+        form.setValue('amount', selectedInvoice.total_amount);
+      }
+    }
+  };
 
   return (
     <FormField
@@ -62,14 +78,7 @@ export function InvoiceField({ form }: InvoiceFieldProps) {
               className="mb-2"
             />
             <Select 
-              onValueChange={(value) => {
-                // Handle the "none" value specially
-                if (value === "none") {
-                  field.onChange(null);
-                } else {
-                  field.onChange(parseInt(value));
-                }
-              }} 
+              onValueChange={handleSelectChange} 
               value={field.value ? field.value.toString() : "none"}
               disabled={!client_id}
             >
