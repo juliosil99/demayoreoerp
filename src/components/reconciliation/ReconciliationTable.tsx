@@ -1,7 +1,7 @@
 
 import { useReconciliation } from "./hooks/useReconciliation";
 import { ExpenseCard } from "./components/ExpenseCard";
-import { InvoiceSearchDialog } from "./components/InvoiceSearchDialog";
+import { InvoiceSearchDialog } from "./components/invoice-search";
 import { AccountAdjustmentDialog } from "./components/AccountAdjustmentDialog";
 import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
 import { useEffect } from "react";
