@@ -17,9 +17,11 @@ import { AccountPayable } from "@/types/payables";
 import { toast } from "sonner";
 import { PayableForm } from "@/components/payables/PayableForm";
 import { PlusIcon, FileText } from "lucide-react";
+import { useState } from "react";
 
 const Payables = () => {
   const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: payables, isLoading } = useQuery({
     queryKey: ["payables"],
@@ -56,6 +58,8 @@ const Payables = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payables"] });
       toast.success("Cuenta por pagar creada exitosamente");
+      // Close the dialog after successful creation
+      setDialogOpen(false);
     },
     onError: (error) => {
       console.error('Error creating payable:', error);
@@ -125,7 +129,7 @@ const Payables = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Cuentas por Pagar</h1>
-        <Dialog>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <PlusIcon className="w-4 h-4 mr-2" />
