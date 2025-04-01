@@ -1,5 +1,6 @@
 
 import { useCallback } from "react";
+import { useInvoiceAmountCalculator } from "./calculation/useInvoiceAmountCalculator";
 
 export const useInvoiceSelection = (
   expense: any | null,
@@ -10,30 +11,35 @@ export const useInvoiceSelection = (
   setShowAdjustmentDialog: (show: boolean) => void,
   handleReconcile: (expense: any, invoices: any[]) => Promise<boolean>
 ) => {
+  const { calculateRemainingAmount, determineAdjustmentType } = useInvoiceAmountCalculator();
+
   const handleInvoiceSelect = useCallback((invoices: any[]) => {
     if (!expense) return;
     
     const updatedInvoices = invoices;
     setSelectedInvoices(updatedInvoices);
     
-    // Calculate remaining amount, accounting for credit notes (type E)
-    const totalSelectedAmount = updatedInvoices.reduce((sum, inv) => {
-      // For credit notes (type E), subtract the amount instead of adding it
-      const amountToAdd = inv.invoice_type === 'E' ? -inv.total_amount : inv.total_amount;
-      return sum + (amountToAdd || 0);
-    }, 0);
-    
-    const newRemainingAmount = expense.amount - totalSelectedAmount;
+    const newRemainingAmount = calculateRemainingAmount(expense.amount, updatedInvoices);
     setRemainingAmount(newRemainingAmount);
 
     if (newRemainingAmount !== 0) {
-      setAdjustmentType(newRemainingAmount > 0 ? "expense_excess" : "invoice_excess");
+      const adjustmentType = determineAdjustmentType(newRemainingAmount);
+      setAdjustmentType(adjustmentType);
       setShowAdjustmentDialog(true);
     } else {
       // If remaining amount is zero, proceed with reconciliation
       handleReconcile(expense, updatedInvoices);
     }
-  }, [expense, selectedInvoices, setSelectedInvoices, setRemainingAmount, setAdjustmentType, setShowAdjustmentDialog, handleReconcile]);
+  }, [
+    expense, 
+    setSelectedInvoices, 
+    setRemainingAmount, 
+    setAdjustmentType, 
+    setShowAdjustmentDialog, 
+    handleReconcile,
+    calculateRemainingAmount,
+    determineAdjustmentType
+  ]);
 
   return {
     handleInvoiceSelect
