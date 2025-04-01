@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UseFormReturn } from "react-hook-form";
-import { PayableFormData } from "../../PayableForm";
+import { PayableFormData } from "../../types/payableTypes";
 
 interface DueDateFieldProps {
   form: UseFormReturn<PayableFormData>;
@@ -45,15 +45,7 @@ export function DueDateField({ form }: DueDateFieldProps) {
                   )}
                 >
                   {field.value ? (
-                    format(
-                      // Ensure we use the date as-is without timezone conversions
-                      new Date(
-                        field.value.getFullYear(),
-                        field.value.getMonth(),
-                        field.value.getDate()
-                      ),
-                      "dd/MM/yyyy"
-                    )
+                    format(field.value, "dd/MM/yyyy")
                   ) : (
                     <span>Seleccionar fecha</span>
                   )}
@@ -66,8 +58,16 @@ export function DueDateField({ form }: DueDateFieldProps) {
                 mode="single"
                 selected={field.value}
                 onSelect={(date) => {
-                  field.onChange(date);
-                  // Close the popover after selecting a date
+                  // Use a new Date object at noon to avoid timezone issues
+                  if (date) {
+                    const selectedDate = new Date(
+                      date.getFullYear(),
+                      date.getMonth(),
+                      date.getDate(),
+                      12 // Set to noon to avoid timezone issues
+                    );
+                    field.onChange(selectedDate);
+                  }
                   setOpen(false);
                 }}
                 disabled={(date) => date < new Date()}
