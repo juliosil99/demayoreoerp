@@ -34,12 +34,13 @@ export function useInvoiceDownload() {
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   
   const logAction = (message: string) => {
-    console.log(message);
+    console.log(`[useInvoiceDownload] ${message}`);
     setDownloadLog(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
   };
 
   // Queue to process downloads sequentially with delays
   const processDownloadQueue = async (items: DownloadItem[]): Promise<boolean> => {
+    logAction(`Starting download queue processing with ${items.length} items`);
     const total = items.length;
     setProgress({ current: 0, total });
     
@@ -49,41 +50,47 @@ export function useInvoiceDownload() {
       const item = items[i];
       const currentIndex = i + 1;
       
-      logAction(`Processing download ${currentIndex}/${total}: ${item.fileName}`);
+      logAction(`Processing download ${currentIndex}/${total}: ${item.fileName} (${item.filePath})`);
       setProgress({ current: currentIndex, total });
       
       // Show progress toast for multiple files
       if (total > 1) {
-        toast.info(`Descargando archivo ${currentIndex} de ${total}...`, {
-          id: "download-progress",
-          duration: 2000,
+        toast.info(`Descargando archivo ${currentIndex} de ${total}: ${item.fileName}`, {
+          id: `download-progress-${i}`,
+          duration: 3000,
         });
       }
       
       try {
         // Download the file
+        logAction(`Calling downloadInvoiceFile for ${item.filePath}`);
         const success = await downloadInvoiceFile(
           item.filePath,
           item.fileName,
           item.contentType
         );
         
-        if (!success) {
+        if (success) {
+          logAction(`Successfully downloaded file ${currentIndex}/${total}`);
+        } else {
           logAction(`Failed to download file ${currentIndex}/${total}`);
           allSuccessful = false;
         }
       } catch (error) {
-        logAction(`Error downloading file ${currentIndex}/${total}: ${error instanceof Error ? error.message : String(error)}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logAction(`Error downloading file ${currentIndex}/${total}: ${errorMessage}`);
         allSuccessful = false;
       }
       
       // Add delay between downloads (only if there are more files)
       if (i < items.length - 1) {
-        logAction(`Adding delay between downloads (1 second)`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        logAction(`Adding delay of 3 seconds between downloads (item ${currentIndex}/${total})`);
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        logAction(`Delay completed, continuing to next download`);
       }
     }
     
+    logAction(`Download queue processing completed. All successful: ${allSuccessful}`);
     return allSuccessful;
   };
 
@@ -95,6 +102,12 @@ export function useInvoiceDownload() {
       logAction(`Starting download process for expense ID: ${expense.id}`);
       logAction(`Expense reconciliation type: ${expense.reconciliation_type || 'Not set'}`);
       logAction(`Expense has invoice relations: ${Boolean(expense.expense_invoice_relations?.length)}`);
+      if (expense.expense_invoice_relations?.length) {
+        logAction(`Number of relations: ${expense.expense_invoice_relations.length}`);
+        expense.expense_invoice_relations.forEach((rel, i) => {
+          logAction(`Relation ${i+1}: File path: ${rel.invoice.file_path}, Filename: ${rel.invoice.filename}, Invoice number: ${rel.invoice.invoice_number}`);
+        });
+      }
       
       // Case 1: Manual reconciliation - check for manual_reconciliations table
       if (expense.reconciliation_type === 'manual') {
@@ -206,7 +219,9 @@ export function useInvoiceDownload() {
         }
         
         // Process the queue
+        logAction(`Starting to process download queue with ${downloadQueue.length} items`);
         const success = await processDownloadQueue(downloadQueue);
+        logAction(`Queue processing completed with success: ${success}`);
         
         // Show completion message
         if (downloadQueue.length > 1) {
@@ -231,6 +246,7 @@ export function useInvoiceDownload() {
       setProgress({ current: 0, total: 0 });
       
       // Log the complete download process
+      logAction("Download attempt completed");
       console.log("Download attempt log:", downloadLog);
     }
   };

@@ -49,6 +49,18 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
   const invoiceCount = expense.expense_invoice_relations?.length || 0;
                       
   const handleDownload = async () => {
+    console.log(`[ExpenseActionMenu] Initiating download for expense ID: ${expense.id}`);
+    console.log(`[ExpenseActionMenu] Invoice count: ${invoiceCount}`);
+    if (expense.expense_invoice_relations) {
+      console.log(`[ExpenseActionMenu] Invoice relations details:`, 
+        expense.expense_invoice_relations.map(rel => ({
+          uuid: rel.invoice.uuid,
+          number: rel.invoice.invoice_number,
+          path: rel.invoice.file_path
+        }))
+      );
+    }
+    
     await handleDownloadInvoice(expense);
   };
 
@@ -122,6 +134,12 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
                   reconciliation_type: expense.reconciliation_type,
                   has_invoice_relations: !!expense.expense_invoice_relations?.length,
                   invoice_relations_count: expense.expense_invoice_relations?.length || 0,
+                  invoice_relations: expense.expense_invoice_relations?.map(rel => ({
+                    uuid: rel.invoice.uuid,
+                    invoice_number: rel.invoice.invoice_number,
+                    file_path: rel.invoice.file_path,
+                    filename: rel.invoice.filename,
+                  }))
                 }, null, 2)}
               </pre>
             </div>
@@ -145,7 +163,7 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
               <Alert>
                 <AlertDescription>
                   Este gasto tiene {invoiceCount} facturas asociadas. Al hacer clic en "Descargar Facturas", 
-                  se descargarán todas secuencialmente con un breve retraso entre cada una.
+                  se descargarán todas secuencialmente con un retraso de 3 segundos entre cada una para evitar conflictos.
                 </AlertDescription>
               </Alert>
             )}
@@ -166,13 +184,13 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
             </div>
             
             <div className="border p-4 rounded-md">
-              <h3 className="font-semibold mb-2">Instrucciones de Depuración</h3>
-              <ol className="list-decimal list-inside text-sm space-y-2">
-                <li>Haga clic en "Descargar Factura" para intentar descargar el archivo.</li>
-                <li>Revise los logs para identificar dónde ocurre el problema.</li>
-                <li>Verifique que el archivo exista en el bucket de almacenamiento.</li>
-                <li>Verifique que la ruta del archivo sea correcta.</li>
-              </ol>
+              <h3 className="font-semibold mb-2">Estado de la Descarga</h3>
+              <div className="text-sm">
+                <p><strong>Procesamiento:</strong> {isDownloading ? "Descargando..." : "Inactivo"}</p>
+                <p><strong>Progreso:</strong> {progress.current}/{progress.total} ({progressPercentage}%)</p>
+                <p><strong>Tiempo de espera entre descargas:</strong> 3 segundos</p>
+                <p><strong>Tiempo de limpieza:</strong> 5 segundos</p>
+              </div>
             </div>
           </div>
           

@@ -17,11 +17,13 @@ export const isXmlFile = (filePath: string, contentType?: string | null): boolea
  */
 export const downloadInvoiceFile = async (filePath: string, fileName: string, contentType?: string | null): Promise<boolean> => {
   try {
-    console.log("Attempting to download file:", filePath);
+    console.log("[downloadInvoiceFile] Attempting to download file:", filePath);
+    console.log("[downloadInvoiceFile] With filename:", fileName);
+    console.log("[downloadInvoiceFile] Content type:", contentType);
     
     // First check if the path looks valid
     if (!filePath || filePath.trim() === '') {
-      console.error("Invalid file path:", filePath);
+      console.error("[downloadInvoiceFile] Invalid file path:", filePath);
       toast.error("La ruta del archivo no es válida");
       return false;
     }
@@ -33,15 +35,15 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
       ? 'invoice_files' 
       : 'invoices';
       
-    console.log(`Using storage bucket: ${bucket}`);
+    console.log(`[downloadInvoiceFile] Using storage bucket: ${bucket}`);
 
     // Extract bucket path and file name for better error handling
     const pathParts = filePath.split('/');
     const fileNameFromPath = pathParts.pop() || '';
     const bucketPath = pathParts.join('/');
     
-    console.log("Bucket path:", bucketPath);
-    console.log("File name from path:", fileNameFromPath);
+    console.log("[downloadInvoiceFile] Bucket path:", bucketPath);
+    console.log("[downloadInvoiceFile] File name from path:", fileNameFromPath);
     
     // First check if file exists (doesn't actually download it)
     const { data: fileList, error: fileCheckError } = await supabase.storage
@@ -51,15 +53,15 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
       });
       
     if (fileCheckError) {
-      console.error("Error checking file existence:", fileCheckError);
+      console.error("[downloadInvoiceFile] Error checking file existence:", fileCheckError);
       toast.error("Error verificando existencia del archivo: " + fileCheckError.message);
       return false;
     }
     
-    console.log("File check result:", fileList);
+    console.log("[downloadInvoiceFile] File check result:", fileList);
     
     if (!fileList || fileList.length === 0) {
-      console.error("File not found in storage bucket:", filePath);
+      console.error("[downloadInvoiceFile] File not found in storage bucket:", filePath);
       
       // More descriptive error message for missing files
       toast.error(
@@ -71,12 +73,13 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
     }
     
     // If we get here, the file exists in the bucket, so attempt to download it
+    console.log("[downloadInvoiceFile] File exists, proceeding with download from bucket:", bucket);
     const { data, error } = await supabase.storage
       .from(bucket)
       .download(filePath);
     
     if (error) {
-      console.error("Error downloading file:", error);
+      console.error("[downloadInvoiceFile] Error downloading file:", error);
       
       // More descriptive error message based on error type
       if (error.message.includes('404') || error.message.includes('not found')) {
@@ -90,14 +93,16 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
     }
 
     if (!data) {
+      console.error("[downloadInvoiceFile] No data returned from storage download");
       toast.error("No se pudo obtener el archivo.");
       return false;
     }
 
-    console.log("File downloaded successfully, size:", data.size);
+    console.log("[downloadInvoiceFile] File downloaded successfully, size:", data.size);
 
     // If it's an XML file and we want to convert it to PDF, we could do that here
     if (isXmlFile(filePath, contentType)) {
+      console.log("[downloadInvoiceFile] XML file detected, downloading as XML");
       // For now, just download the XML file as is
       downloadBlob(data, `${fileName}.xml`);
       return true;
@@ -119,12 +124,14 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
       }
     }
 
+    console.log("[downloadInvoiceFile] Using file extension:", extension);
+    
     // Download the file with the appropriate extension
     downloadBlob(data, `${fileName}.${extension}`);
     return true;
     
   } catch (error) {
-    console.error("Error in download process:", error);
+    console.error("[downloadInvoiceFile] Error in download process:", error);
     toast.error("Error al descargar el archivo: " + (error instanceof Error ? error.message : "Error desconocido"));
     return false;
   }
@@ -135,10 +142,11 @@ export const downloadInvoiceFile = async (filePath: string, fileName: string, co
  */
 const downloadBlob = (blob: Blob, fileName: string): void => {
   try {
-    console.log("Creating download for blob, size:", blob.size, "filename:", fileName);
+    console.log("[downloadBlob] Creating download for blob, size:", blob.size, "filename:", fileName);
     
     // Create an object URL for the blob
     const url = window.URL.createObjectURL(blob);
+    console.log("[downloadBlob] Created URL:", url);
     
     // Create a temporary link element
     const link = document.createElement('a');
@@ -147,16 +155,23 @@ const downloadBlob = (blob: Blob, fileName: string): void => {
     
     // Append to body, click and remove
     document.body.appendChild(link);
+    console.log("[downloadBlob] Link added to DOM, initiating click");
     link.click();
     
     // Clean up - Increased timeout to give browser more time to handle the download
     setTimeout(() => {
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      console.log("Download initiated and link cleaned up");
-    }, 3000); // Increased timeout from 100ms to 3000ms
+      console.log("[downloadBlob] Starting cleanup in setTimeout");
+      try {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        console.log("[downloadBlob] Download initiated and link cleaned up");
+      } catch (cleanupError) {
+        console.error("[downloadBlob] Error during cleanup:", cleanupError);
+      }
+    }, 5000); // Increased timeout to 5 seconds from 3 seconds
   } catch (error) {
-    console.error("Error in downloadBlob:", error);
+    console.error("[downloadBlob] Error in downloadBlob:", error);
     toast.error("Error al preparar la descarga del archivo");
   }
 };
+
