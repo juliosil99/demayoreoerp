@@ -9,15 +9,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { UseFormReturn } from "react-hook-form";
-
-interface PayableFormData {
-  client_id: string;
-  invoice_id: number | null;
-  amount: number;
-  due_date: Date;
-  payment_term: number;
-  notes: string | null;
-}
+import { PayableFormData } from "../../PayableForm";
 
 interface NotesFieldProps {
   form: UseFormReturn<PayableFormData>;

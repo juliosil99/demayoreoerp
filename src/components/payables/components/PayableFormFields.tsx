@@ -7,15 +7,7 @@ import { AmountField } from "./fields/AmountField";
 import { PaymentTermField } from "./fields/PaymentTermField";
 import { DueDateField } from "./fields/DueDateField";
 import { NotesField } from "./fields/NotesField";
-
-interface PayableFormData {
-  client_id: string;
-  invoice_id: number | null;
-  amount: number;
-  due_date: Date;
-  payment_term: number;
-  notes: string | null;
-}
+import { PayableFormData } from "../PayableForm";
 
 interface PayableFormFieldsProps {
   form: UseFormReturn<PayableFormData>;

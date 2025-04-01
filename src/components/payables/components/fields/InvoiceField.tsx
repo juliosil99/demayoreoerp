@@ -62,8 +62,15 @@ export function InvoiceField({ form }: InvoiceFieldProps) {
               className="mb-2"
             />
             <Select 
-              onValueChange={(value) => field.onChange(value ? parseInt(value) : null)} 
-              value={field.value ? field.value.toString() : undefined}
+              onValueChange={(value) => {
+                // Handle the "none" value specially
+                if (value === "none") {
+                  field.onChange(null);
+                } else {
+                  field.onChange(parseInt(value));
+                }
+              }} 
+              value={field.value ? field.value.toString() : "none"}
               disabled={!client_id}
             >
               <FormControl>
