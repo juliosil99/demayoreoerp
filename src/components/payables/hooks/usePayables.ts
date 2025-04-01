@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AccountPayable } from "@/types/payables";
@@ -27,9 +26,8 @@ export function usePayables() {
 
   const createPayable = useMutation({
     mutationFn: async (data: PayableFormData) => {
-      // Create a date-only string in YYYY-MM-DD format
-      // This ensures we don't introduce timezone issues
-      const dueDateString = data.due_date.toISOString().split('T')[0];
+      const dueDate = new Date(data.due_date);
+      const dueDateString = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`;
       
       const { error } = await supabase
         .from('accounts_payable')
@@ -58,8 +56,8 @@ export function usePayables() {
 
   const updatePayable = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: PayableFormData }) => {
-      // Create a date-only string in YYYY-MM-DD format
-      const dueDateString = data.due_date.toISOString().split('T')[0];
+      const dueDate = new Date(data.due_date);
+      const dueDateString = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`;
       
       const { error } = await supabase
         .from('accounts_payable')

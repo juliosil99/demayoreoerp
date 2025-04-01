@@ -43,13 +43,22 @@ export function PayableEditDialog({ payable, onClose, onSubmit, isSubmitting }: 
   const getInitialData = (): PayableFormData | undefined => {
     if (!payable) return undefined;
 
+    // Create a date at noon to avoid timezone issues
+    const dueDate = new Date(payable.due_date);
+    const fixedDueDate = new Date(
+      dueDate.getFullYear(),
+      dueDate.getMonth(),
+      dueDate.getDate(),
+      12, 0, 0
+    );
+
     return {
       client_id: payable.client_id || "",
       invoice_id: payable.invoice_id || null,
       amount: payable.amount,
       payment_term: payable.payment_term,
       notes: payable.notes || "",
-      due_date: new Date(payable.due_date),
+      due_date: fixedDueDate,
     };
   };
 

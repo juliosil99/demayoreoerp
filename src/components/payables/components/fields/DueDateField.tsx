@@ -58,14 +58,16 @@ export function DueDateField({ form }: DueDateFieldProps) {
                 mode="single"
                 selected={field.value}
                 onSelect={(date) => {
-                  // Use a new Date object at noon to avoid timezone issues
                   if (date) {
-                    const selectedDate = new Date(
-                      date.getFullYear(),
-                      date.getMonth(),
-                      date.getDate(),
-                      12 // Set to noon to avoid timezone issues
-                    );
+                    // Create a date object at mid-day to avoid timezone issues
+                    // This ensures that when the date is displayed or sent to the server,
+                    // it won't shift to the previous day due to timezone conversions
+                    const year = date.getFullYear();
+                    const month = date.getMonth();
+                    const day = date.getDate();
+                    
+                    // Create new date with time set to noon to avoid timezone issues
+                    const selectedDate = new Date(year, month, day, 12, 0, 0);
                     field.onChange(selectedDate);
                   }
                   setOpen(false);

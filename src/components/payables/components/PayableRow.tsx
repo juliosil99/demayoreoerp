@@ -4,8 +4,8 @@ import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileText, Edit } from "lucide-react";
-import { format } from "date-fns";
 import { AccountPayable } from "@/types/payables";
+import { formatCardDate } from "@/utils/formatters";
 
 interface PayableRowProps {
   payable: AccountPayable;
@@ -49,7 +49,7 @@ export function PayableRow({ payable, onMarkAsPaid, onEdit, isPending }: Payable
             <div>
               <div>{payable.invoice.invoice_number}</div>
               <div className="text-sm text-muted-foreground">
-                {format(new Date(payable.invoice.invoice_date), 'dd/MM/yyyy')}
+                {formatCardDate(payable.invoice.invoice_date)}
               </div>
             </div>
             {payable.invoice.id && (
@@ -68,7 +68,7 @@ export function PayableRow({ payable, onMarkAsPaid, onEdit, isPending }: Payable
         )}
       </TableCell>
       <TableCell>{formatCurrency(payable.amount)}</TableCell>
-      <TableCell>{format(new Date(payable.due_date), 'dd/MM/yyyy')}</TableCell>
+      <TableCell>{formatCardDate(payable.due_date)}</TableCell>
       <TableCell>
         <Badge className={getStatusColor(payable.status)}>
           {payable.status === 'pending' ? 'Pendiente' : 'Pagado'}
