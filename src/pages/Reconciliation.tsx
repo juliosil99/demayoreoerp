@@ -25,7 +25,8 @@ const Reconciliation = () => {
           contacts (name)
         `)
         .eq("user_id", user.id)
-        .or("reconciled.is.null,reconciled.eq.false"); // Check for both NULL and FALSE
+        .or("reconciled.is.null,reconciled.eq.false") // Check for both NULL and FALSE
+        .order('date', { ascending: false }) // Order by date, newest first
 
       if (error) {
         throw error;
