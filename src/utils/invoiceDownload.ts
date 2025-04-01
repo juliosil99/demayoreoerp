@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -174,4 +173,3 @@ const downloadBlob = (blob: Blob, fileName: string): void => {
     toast.error("Error al preparar la descarga del archivo");
   }
 };
-

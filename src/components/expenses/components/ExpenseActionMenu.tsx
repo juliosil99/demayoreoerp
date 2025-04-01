@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MoreHorizontal, Pencil, Trash2, Download, Bug, FileX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,11 +8,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useInvoiceDownload } from "../hooks/useInvoiceDownload";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { Database } from "@/integrations/supabase/types/base";
+import type { Expense } from "../hooks/download/types";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
   bank_accounts: { name: string };
@@ -40,12 +39,10 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
   const { isDownloading, handleDownloadInvoice, downloadLog, progress } = useInvoiceDownload();
   const [isDebugOpen, setIsDebugOpen] = useState(false);
   
-  // Check if the expense is reconciled and needs download button
   const hasInvoice = !!expense.reconciled && 
                      (!!expense.expense_invoice_relations?.length || 
                       expense.reconciliation_type === 'manual');
   
-  // Count the number of invoices for better UX messaging
   const invoiceCount = expense.expense_invoice_relations?.length || 0;
                       
   const handleDownload = async () => {
