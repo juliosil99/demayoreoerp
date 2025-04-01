@@ -24,18 +24,21 @@ export function useInvoiceQuery(clientId?: string) {
     queryFn: async () => {
       if (!clientId) return [];
 
+      // First get the supplier's RFC
+      const { data: supplierData, error: supplierError } = await supabase
+        .from("contacts")
+        .select("rfc")
+        .eq("id", clientId)
+        .single();
+
+      if (supplierError) throw supplierError;
+      const supplierRfc = supplierData?.rfc || '';
+
+      // Now use the RFC to query invoices
       const { data, error } = await supabase
         .from("invoices")
         .select("id, invoice_number, uuid, total_amount, invoice_date")
-        .eq("issuer_rfc", 
-          // Get the supplier's RFC using the client_id
-          supabase
-            .from("contacts")
-            .select("rfc")
-            .eq("id", clientId)
-            .single()
-            .then(res => res.data?.rfc || '')
-        )
+        .eq("issuer_rfc", supplierRfc)
         .eq("processed", false) // Only show unprocessed invoices
         .order("invoice_date", { ascending: false });
 

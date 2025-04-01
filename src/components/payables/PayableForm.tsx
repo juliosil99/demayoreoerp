@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ const payableFormSchema = z.object({
   notes: z.string().nullable()
 });
 
-type PayableFormData = z.infer<typeof payableFormSchema>;
+export type PayableFormData = z.infer<typeof payableFormSchema>;
 
 interface PayableFormProps {
   onSubmit: (data: PayableFormData) => void;
@@ -27,6 +28,7 @@ export function PayableForm({ onSubmit, isSubmitting }: PayableFormProps) {
   const form = useForm<PayableFormData>({
     resolver: zodResolver(payableFormSchema),
     defaultValues: {
+      client_id: "", // Set a default empty string to make it non-optional
       invoice_id: null,
       amount: 0,
       payment_term: 30,
