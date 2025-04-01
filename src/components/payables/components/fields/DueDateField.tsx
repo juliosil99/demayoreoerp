@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -25,6 +25,8 @@ interface DueDateFieldProps {
 }
 
 export function DueDateField({ form }: DueDateFieldProps) {
+  const [open, setOpen] = useState(false);
+
   return (
     <FormField
       control={form.control}
@@ -32,7 +34,7 @@ export function DueDateField({ form }: DueDateFieldProps) {
       render={({ field }) => (
         <FormItem className="flex flex-col">
           <FormLabel>Fecha de Vencimiento</FormLabel>
-          <Popover>
+          <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <FormControl>
                 <Button
@@ -63,7 +65,11 @@ export function DueDateField({ form }: DueDateFieldProps) {
               <Calendar
                 mode="single"
                 selected={field.value}
-                onSelect={field.onChange}
+                onSelect={(date) => {
+                  field.onChange(date);
+                  // Close the popover after selecting a date
+                  setOpen(false);
+                }}
                 disabled={(date) => date < new Date()}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
