@@ -20,11 +20,11 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
   const { suppliers, bankAccounts, isLoading } = useExpenseQueries();
 
   const handleSupplierChange = (value: string) => {
-    onFiltersChange({ ...filters, supplier_id: value || undefined });
+    onFiltersChange({ ...filters, supplier_id: value === "all" ? undefined : value });
   };
 
   const handleAccountChange = (value: string) => {
-    onFiltersChange({ ...filters, account_id: value ? parseInt(value) : undefined });
+    onFiltersChange({ ...filters, account_id: value === "all" ? undefined : parseInt(value) });
   };
 
   const handleUnreconciledChange = (checked: boolean | "indeterminate") => {
@@ -40,14 +40,14 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
       <div className="w-full sm:w-64">
         <Label htmlFor="supplier" className="mb-2 block">Proveedor</Label>
         <Select
-          value={filters.supplier_id || ""}
+          value={filters.supplier_id || "all"}
           onValueChange={handleSupplierChange}
         >
           <SelectTrigger id="supplier">
             <SelectValue placeholder="Todos los proveedores" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="_all">Todos los proveedores</SelectItem>
+            <SelectItem value="all">Todos los proveedores</SelectItem>
             {suppliers.map((supplier) => (
               <SelectItem key={supplier.id} value={supplier.id}>
                 {supplier.name}
@@ -60,14 +60,14 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
       <div className="w-full sm:w-64">
         <Label htmlFor="account" className="mb-2 block">Cuenta Bancaria</Label>
         <Select
-          value={filters.account_id?.toString() || ""}
+          value={filters.account_id?.toString() || "all"}
           onValueChange={handleAccountChange}
         >
           <SelectTrigger id="account">
             <SelectValue placeholder="Todas las cuentas" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="_all">Todas las cuentas</SelectItem>
+            <SelectItem value="all">Todas las cuentas</SelectItem>
             {bankAccounts.map((account) => (
               <SelectItem key={account.id} value={account.id.toString()}>
                 {account.name}

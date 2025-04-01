@@ -54,10 +54,10 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers }: Prop
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <Select
-            value={formData.supplier_id || ""}
+            value={formData.supplier_id || "none"}
             onValueChange={(value) => {
               console.log("Selected supplier ID:", value);
-              setFormData({ ...formData, supplier_id: value || undefined });
+              setFormData({ ...formData, supplier_id: value === "none" ? undefined : value });
             }}
           >
             <SelectTrigger>
@@ -71,7 +71,7 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers }: Prop
                   </SelectItem>
                 ))
               ) : (
-                <SelectItem value="_none">No se encontraron proveedores</SelectItem>
+                <SelectItem value="no_results">No se encontraron proveedores</SelectItem>
               )}
             </SelectContent>
           </Select>

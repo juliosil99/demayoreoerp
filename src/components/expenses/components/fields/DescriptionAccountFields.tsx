@@ -50,8 +50,8 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts =
       <div className="space-y-2">
         <Label>Cuenta Bancaria</Label>
         <Select
-          value={formData.account_id}
-          onValueChange={(value) => setFormData({ ...formData, account_id: value })}
+          value={formData.account_id || "none"}
+          onValueChange={(value) => setFormData({ ...formData, account_id: value === "none" ? undefined : value })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar cuenta" />
@@ -64,7 +64,7 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts =
                 </SelectItem>
               ))
             ) : (
-              <SelectItem value="_none">No hay cuentas disponibles</SelectItem>
+              <SelectItem value="no_accounts">No hay cuentas disponibles</SelectItem>
             )}
           </SelectContent>
         </Select>
@@ -73,8 +73,8 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts =
       <div className="space-y-2">
         <Label>Cuenta Contable</Label>
         <Select
-          value={formData.chart_account_id}
-          onValueChange={(value) => setFormData({ ...formData, chart_account_id: value })}
+          value={formData.chart_account_id || "none"}
+          onValueChange={(value) => setFormData({ ...formData, chart_account_id: value === "none" ? undefined : value })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar cuenta contable" />
@@ -92,7 +92,7 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts =
                 </SelectGroup>
               ))
             ) : (
-              <SelectItem value="_none">No hay cuentas contables disponibles</SelectItem>
+              <SelectItem value="no_chart_accounts">No hay cuentas contables disponibles</SelectItem>
             )}
           </SelectContent>
         </Select>

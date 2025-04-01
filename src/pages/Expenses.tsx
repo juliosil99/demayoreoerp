@@ -73,7 +73,7 @@ export default function Expenses() {
         .eq('user_id', user!.id);
 
       // Add supplier filter
-      if (filters.supplier_id && filters.supplier_id !== "_all") {
+      if (filters.supplier_id && filters.supplier_id !== "all") {
         console.log("Applying supplier filter with ID:", filters.supplier_id);
         query = query.eq('supplier_id', filters.supplier_id);
       }
@@ -106,12 +106,12 @@ export default function Expenses() {
         throw error;
       }
       
-      console.log("Supplier filter active:", !!filters.supplier_id && filters.supplier_id !== "_all");
+      console.log("Supplier filter active:", !!filters.supplier_id && filters.supplier_id !== "all");
       console.log("Payable filter active:", !!filters.from_payable);
       console.log("Fetched expenses:", data?.length);
       
       // If using supplier filter but no results, let's log why
-      if (filters.supplier_id && filters.supplier_id !== "_all" && (!data || data.length === 0)) {
+      if (filters.supplier_id && filters.supplier_id !== "all" && (!data || data.length === 0)) {
         console.log("No expenses found for supplier ID:", filters.supplier_id);
         
         // Check if the supplier exists
