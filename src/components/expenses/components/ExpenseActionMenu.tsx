@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { useInvoiceDownload } from "../hooks/useInvoiceDownload";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -35,7 +37,7 @@ interface ExpenseActionMenuProps {
 }
 
 export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMenuProps) {
-  const { isDownloading, handleDownloadInvoice, downloadLog } = useInvoiceDownload();
+  const { isDownloading, handleDownloadInvoice, downloadLog, progress } = useInvoiceDownload();
   const [isDebugOpen, setIsDebugOpen] = useState(false);
   
   // Check if the expense is reconciled and needs download button
@@ -49,6 +51,10 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
   const handleDownload = async () => {
     await handleDownloadInvoice(expense);
   };
+
+  const progressPercentage = progress.total > 0 
+    ? Math.round((progress.current / progress.total) * 100) 
+    : 0;
 
   return (
     <>
@@ -96,6 +102,16 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
           </DialogHeader>
           
           <div className="space-y-4">
+            {isDownloading && progress.total > 0 && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Descargando archivos</span>
+                  <span>{progress.current} de {progress.total}</span>
+                </div>
+                <Progress value={progressPercentage} className="h-2" />
+              </div>
+            )}
+            
             <div className="border p-4 rounded-md">
               <h3 className="font-semibold mb-2">Información del Gasto</h3>
               <pre className="text-xs bg-slate-100 p-3 rounded overflow-x-auto">
@@ -124,6 +140,15 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
                 )}
               </div>
             </div>
+            
+            {invoiceCount > 1 && (
+              <Alert>
+                <AlertDescription>
+                  Este gasto tiene {invoiceCount} facturas asociadas. Al hacer clic en "Descargar Facturas", 
+                  se descargarán todas secuencialmente con un breve retraso entre cada una.
+                </AlertDescription>
+              </Alert>
+            )}
             
             <div className="border p-4 rounded-md">
               <h3 className="font-semibold mb-2">Problema Común: Archivo No Encontrado</h3>

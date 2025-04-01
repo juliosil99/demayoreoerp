@@ -149,12 +149,12 @@ const downloadBlob = (blob: Blob, fileName: string): void => {
     document.body.appendChild(link);
     link.click();
     
-    // Clean up
+    // Clean up - Increased timeout to give browser more time to handle the download
     setTimeout(() => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       console.log("Download initiated and link cleaned up");
-    }, 100);
+    }, 3000); // Increased timeout from 100ms to 3000ms
   } catch (error) {
     console.error("Error in downloadBlob:", error);
     toast.error("Error al preparar la descarga del archivo");

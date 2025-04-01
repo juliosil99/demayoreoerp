@@ -20,13 +20,71 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
   }[];
 };
 
+type DownloadItem = {
+  filePath: string;
+  fileName: string;
+  contentType?: string;
+  index: number;
+  total: number;
+};
+
 export function useInvoiceDownload() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadLog, setDownloadLog] = useState<string[]>([]);
-
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  
   const logAction = (message: string) => {
     console.log(message);
     setDownloadLog(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
+  };
+
+  // Queue to process downloads sequentially with delays
+  const processDownloadQueue = async (items: DownloadItem[]): Promise<boolean> => {
+    const total = items.length;
+    setProgress({ current: 0, total });
+    
+    let allSuccessful = true;
+    
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const currentIndex = i + 1;
+      
+      logAction(`Processing download ${currentIndex}/${total}: ${item.fileName}`);
+      setProgress({ current: currentIndex, total });
+      
+      // Show progress toast for multiple files
+      if (total > 1) {
+        toast.info(`Descargando archivo ${currentIndex} de ${total}...`, {
+          id: "download-progress",
+          duration: 2000,
+        });
+      }
+      
+      try {
+        // Download the file
+        const success = await downloadInvoiceFile(
+          item.filePath,
+          item.fileName,
+          item.contentType
+        );
+        
+        if (!success) {
+          logAction(`Failed to download file ${currentIndex}/${total}`);
+          allSuccessful = false;
+        }
+      } catch (error) {
+        logAction(`Error downloading file ${currentIndex}/${total}: ${error instanceof Error ? error.message : String(error)}`);
+        allSuccessful = false;
+      }
+      
+      // Add delay between downloads (only if there are more files)
+      if (i < items.length - 1) {
+        logAction(`Adding delay between downloads (1 second)`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    return allSuccessful;
   };
 
   const handleDownloadInvoice = async (expense: Expense) => {
@@ -79,29 +137,23 @@ export function useInvoiceDownload() {
           if (fileData) {
             logAction(`File data found: ${JSON.stringify(fileData)}`);
             
-            try {
-              const filePath = fileData.file_path;
-              logAction(`File path: ${filePath}`);
-              
-              // Attempt to download the file
-              await downloadInvoiceFile(
-                filePath,
-                fileData.filename.replace(/\.[^/.]+$/, ""), // Remove extension
-                fileData.content_type
-              );
+            const downloadQueue: DownloadItem[] = [{
+              filePath: fileData.file_path,
+              fileName: fileData.filename.replace(/\.[^/.]+$/, ""), // Remove extension
+              contentType: fileData.content_type,
+              index: 1,
+              total: 1
+            }];
+            
+            const success = await processDownloadQueue(downloadQueue);
+            if (success) {
               toast.success("Archivo descargado correctamente");
-            } catch (downloadError) {
-              const errorMessage = downloadError instanceof Error ? downloadError.message : String(downloadError);
-              logAction(`Download error: ${errorMessage}`);
-              console.error("Download error:", downloadError);
-              toast.error("Error al descargar el archivo");
             }
-            return;
           } else {
             logAction('No file data found');
             toast.error("No se encontró el archivo asociado a esta conciliación manual");
-            return;
           }
+          return;
         } else {
           logAction('No file_id found in manual reconciliation record');
           toast.info("Este gasto fue conciliado manualmente sin adjuntar un archivo");
@@ -112,59 +164,57 @@ export function useInvoiceDownload() {
       // Case 2: Regular invoice reconciliation through expense_invoice_relations
       if (expense.expense_invoice_relations?.length) {
         logAction('Processing as regular invoice reconciliation');
-        logAction(`Found ${expense.expense_invoice_relations.length} invoice relations`);
         
-        // Check if there are multiple invoices
         const invoiceCount = expense.expense_invoice_relations.length;
+        logAction(`Found ${invoiceCount} invoice relations`);
         
         if (invoiceCount > 1) {
-          logAction(`Multiple invoices found (${invoiceCount}), downloading all`);
-          toast.info(`Descargando ${invoiceCount} facturas asociadas a este gasto...`);
+          logAction(`Multiple invoices found (${invoiceCount}), preparing download queue`);
+          toast.info(`Preparando descarga de ${invoiceCount} facturas...`);
         }
         
-        // Process all invoice relations (not just the first one)
+        // Build the download queue
+        const downloadQueue: DownloadItem[] = [];
+        
         for (let i = 0; i < expense.expense_invoice_relations.length; i++) {
-          const invoiceRelation = expense.expense_invoice_relations[i];
-          logAction(`Processing invoice relation ${i+1}/${invoiceCount}: ${JSON.stringify(invoiceRelation.invoice)}`);
+          const relation = expense.expense_invoice_relations[i];
           
-          if (!invoiceRelation.invoice.file_path) {
-            logAction(`No file path found for invoice relation ${i+1}`);
-            continue; // Skip this invoice but continue with others
+          if (!relation.invoice.file_path) {
+            logAction(`Skipping invoice relation ${i+1} - no file path`);
+            continue;
           }
           
-          const fileName = invoiceRelation.invoice.invoice_number || 
-                          invoiceRelation.invoice.uuid ||
+          const fileName = relation.invoice.invoice_number || 
+                          relation.invoice.uuid ||
                           `factura-${new Date().toISOString().split('T')[0]}-${i+1}`;
           
-          logAction(`Using filename for invoice ${i+1}: ${fileName}`);
-          logAction(`File path for invoice ${i+1}: ${invoiceRelation.invoice.file_path}`);
+          downloadQueue.push({
+            filePath: relation.invoice.file_path,
+            fileName,
+            contentType: relation.invoice.content_type,
+            index: i + 1,
+            total: invoiceCount
+          });
           
-          try {
-            await downloadInvoiceFile(
-              invoiceRelation.invoice.file_path,
-              fileName,
-              invoiceRelation.invoice.content_type
-            );
-            
-            // Don't show multiple toasts for batch downloads
-            if (invoiceCount === 1) {
-              toast.success("Factura descargada correctamente");
-            }
-          } catch (downloadError) {
-            const errorMessage = downloadError instanceof Error ? downloadError.message : String(downloadError);
-            logAction(`Download error for invoice ${i+1}: ${errorMessage}`);
-            console.error(`Download error for invoice ${i+1}:`, downloadError);
-            
-            // Show individual error toast only for single invoice downloads
-            if (invoiceCount === 1) {
-              toast.error("Error al descargar el archivo");
-            }
-          }
+          logAction(`Added to queue: ${fileName} (${relation.invoice.file_path})`);
         }
         
-        // Show a completion toast only for multiple invoice downloads
-        if (invoiceCount > 1) {
-          toast.success(`Se completó la descarga de ${invoiceCount} facturas`);
+        if (downloadQueue.length === 0) {
+          logAction('No valid files to download');
+          toast.error("No hay archivos válidos para descargar");
+          return;
+        }
+        
+        // Process the queue
+        const success = await processDownloadQueue(downloadQueue);
+        
+        // Show completion message
+        if (downloadQueue.length > 1) {
+          if (success) {
+            toast.success(`Se completó la descarga de ${downloadQueue.length} facturas`);
+          } else {
+            toast.warning(`Descarga completada con algunos errores. Revise el log para más detalles.`);
+          }
         }
       } else {
         logAction('No invoice relations found');
@@ -178,6 +228,7 @@ export function useInvoiceDownload() {
       toast.error("Error al descargar la factura");
     } finally {
       setIsDownloading(false);
+      setProgress({ current: 0, total: 0 });
       
       // Log the complete download process
       console.log("Download attempt log:", downloadLog);
@@ -187,6 +238,7 @@ export function useInvoiceDownload() {
   return {
     isDownloading,
     handleDownloadInvoice,
-    downloadLog
+    downloadLog,
+    progress
   };
 }
