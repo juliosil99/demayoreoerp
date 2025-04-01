@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BankAccount as BankAccountType } from "@/components/banking/types";
@@ -61,7 +60,10 @@ export function useExpenseQueries() {
       }
       
       console.log("Fetched suppliers count:", data?.length);
-      return data as Supplier[];
+      return data ? data.map(supplier => ({
+        ...supplier,
+        id: String(supplier.id)
+      })) : [];
     },
     initialData: [],
   });
