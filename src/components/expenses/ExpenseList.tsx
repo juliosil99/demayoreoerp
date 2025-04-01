@@ -1,5 +1,4 @@
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExpenseTable } from "./components/ExpenseTable";
 import { useState, useCallback, useMemo } from "react";
 import { useExpenseDelete } from "./hooks/useExpenseDelete";
@@ -19,6 +18,12 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
       content_type?: string;
     }
   }[];
+  accounts_payable?: {
+    id: string;
+    client: {
+      name: string;
+    };
+  };
 };
 
 interface ExpenseListProps {
@@ -30,7 +35,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 30; // Changed from 10 to 30
+  const itemsPerPage = 30;
   const { deleteError, handleDelete, deleteLog } = useExpenseDelete();
 
   const handleOpenDialog = useCallback((expense: Expense) => {
@@ -40,7 +45,6 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
 
   const handleCloseDialog = useCallback(() => {
     setIsDialogOpen(false);
-    // Use setTimeout to ensure the dialog is fully closed before clearing the selected expense
     setTimeout(() => setSelectedExpense(null), 100);
   }, []);
 
@@ -61,14 +65,6 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
 
   return (
     <div className="space-y-4">
-      {deleteError && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {deleteError}
-          </AlertDescription>
-        </Alert>
-      )}
-      
       <ExpenseTable 
         expenses={paginatedExpenses}
         onDelete={handleDelete}

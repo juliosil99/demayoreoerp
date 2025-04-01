@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, ImportIcon } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Database } from "@/integrations/supabase/types/base";
@@ -106,33 +106,6 @@ export default function Expenses() {
         throw error;
       }
       
-      console.log("Supplier filter active:", !!filters.supplier_id && filters.supplier_id !== "all");
-      console.log("Payable filter active:", !!filters.from_payable);
-      console.log("Fetched expenses:", data?.length);
-      
-      // If using supplier filter but no results, let's log why
-      if (filters.supplier_id && filters.supplier_id !== "all" && (!data || data.length === 0)) {
-        console.log("No expenses found for supplier ID:", filters.supplier_id);
-        
-        // Check if the supplier exists
-        const { data: supplierCheck } = await supabase
-          .from('contacts')
-          .select('id, name')
-          .eq('id', filters.supplier_id)
-          .single();
-          
-        console.log("Supplier check:", supplierCheck);
-        
-        // Check if any expenses have this supplier_id
-        const { data: expenseCheck } = await supabase
-          .from('expenses')
-          .select('id, supplier_id')
-          .eq('supplier_id', filters.supplier_id)
-          .limit(1);
-          
-        console.log("Expense check:", expenseCheck);
-      }
-      
       return data as unknown as Expense[];
     },
     enabled: !!user,
@@ -143,20 +116,21 @@ export default function Expenses() {
     setOpen(false);
   }, [refetch]);
 
-  // Log the filter state for debugging
-  useEffect(() => {
-    console.log("Current filters:", filters);
-  }, [filters]);
-
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Gastos</h1>
         <div className="flex gap-2">
-          <ExpenseImporter onSuccess={refetch} />
+          <ExpenseImporter onSuccess={refetch}>
+            <Button variant="default" className="bg-black text-white hover:bg-gray-800">
+              <ImportIcon className="w-4 h-4 mr-2" />
+              Importar Gastos
+            </Button>
+          </ExpenseImporter>
+
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button variant="default" className="bg-white text-black border border-gray-300 hover:bg-gray-100">
                 <PlusIcon className="w-4 h-4 mr-2" />
                 Agregar Gasto
               </Button>
@@ -174,29 +148,9 @@ export default function Expenses() {
         </div>
       </div>
 
-      <div className="flex flex-col space-y-4">
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-end">
-            <div className="flex-1">
-              <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
-            </div>
-            
-            <div className="flex items-center space-x-2 whitespace-nowrap pt-2 sm:pt-0">
-              <Checkbox 
-                id="fromPayable" 
-                checked={!!filters.from_payable} 
-                onCheckedChange={(checked) => {
-                  setFilters(prev => ({ ...prev, from_payable: !!checked }));
-                }} 
-              />
-              <label 
-                htmlFor="fromPayable" 
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Mostrar solo gastos de cuentas por pagar
-              </label>
-            </div>
-          </div>
+      <div className="space-y-4">
+        <div className="p-4 bg-white rounded-md">
+          <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
         </div>
         
         <ExpenseList expenses={expenses || []} isLoading={isLoading} />

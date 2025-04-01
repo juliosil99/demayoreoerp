@@ -52,18 +52,20 @@ export function ExpenseRow({
   const isFromPayable = !!expense.accounts_payable;
 
   return (
-    <TableRow key={expense.id} className={isFromPayable ? "bg-blue-50/50" : ""}>
+    <TableRow key={expense.id} className={isFromPayable ? "bg-gray-300" : "odd:bg-gray-300 even:bg-gray-300"}>
+      <TableCell>{formatCardDate(expense.date)}</TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
-          {formatCardDate(expense.date)}
+          {expense.description}
           {isFromPayable && (
-            <Badge variant="outline" className="ml-1 bg-blue-100 text-blue-800 border-blue-200 text-xs">
-              Cuenta por Pagar
-            </Badge>
+            <div className="ml-2">
+              <Badge className="bg-blue-200 text-blue-800 rounded-full px-2 py-1 text-xs">
+                Cuenta por Pagar
+              </Badge>
+            </div>
           )}
         </div>
       </TableCell>
-      <TableCell>{expense.description}</TableCell>
       <TableCell className="text-right font-medium">${expense.amount.toFixed(2)}</TableCell>
       <TableCell>{expense.bank_accounts.name}</TableCell>
       <TableCell>

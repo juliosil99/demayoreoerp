@@ -40,7 +40,7 @@ export function ExpenseTable({
   handleCloseDialog
 }: ExpenseTableProps) {
   return (
-    <div className="rounded-md border">
+    <div className="overflow-hidden rounded-md">
       <Table>
         <ExpenseTableHeader />
         <TableBody>
