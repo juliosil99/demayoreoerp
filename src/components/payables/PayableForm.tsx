@@ -28,12 +28,12 @@ export function PayableForm({ onSubmit, isSubmitting }: PayableFormProps) {
   const form = useForm<PayableFormData>({
     resolver: zodResolver(payableFormSchema),
     defaultValues: {
-      client_id: "", // Set a default empty string to make it non-optional
+      client_id: "", 
       invoice_id: null,
       amount: 0,
       payment_term: 30,
       notes: null,
-      due_date: new Date(),
+      due_date: new Date(), // Default to today
     },
   });
 
@@ -41,6 +41,12 @@ export function PayableForm({ onSubmit, isSubmitting }: PayableFormProps) {
   console.log('Form object:', form);
   console.log('Form values:', form.watch());
   console.log('Form errors:', form.formState.errors);
+
+  // Monitor for payment_term changes
+  const payment_term = form.watch('payment_term');
+  
+  // When payment term changes, DON'T automatically update the due date
+  // This allows the user to manually select a date regardless of the payment term
 
   // When invoice changes, update the amount if possible
   React.useEffect(() => {

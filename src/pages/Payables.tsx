@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { format, addDays } from "date-fns";
+import { format } from "date-fns";
 import { AccountPayable } from "@/types/payables";
 import { toast } from "sonner";
 import { PayableForm } from "@/components/payables/PayableForm";
@@ -42,13 +42,15 @@ const Payables = () => {
 
   const createPayable = useMutation({
     mutationFn: async (data: any) => {
-      const dueDate = addDays(new Date(), data.payment_term);
+      // Important change: Remove the due_date calculation based on payment_term
+      // and use the manually selected due_date directly
       
       const { error } = await supabase
         .from('accounts_payable')
         .insert([{
           ...data,
-          due_date: format(dueDate, 'yyyy-MM-dd'),
+          // Format the due_date to ISO format (YYYY-MM-DD)
+          due_date: format(data.due_date, 'yyyy-MM-dd'),
           status: 'pending',
           user_id: (await supabase.auth.getUser()).data.user?.id,
         }]);
