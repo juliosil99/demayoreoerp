@@ -47,7 +47,7 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
             <SelectValue placeholder="Todos los proveedores" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos los proveedores</SelectItem>
+            <SelectItem value="_all">Todos los proveedores</SelectItem>
             {suppliers.map((supplier) => (
               <SelectItem key={supplier.id} value={supplier.id}>
                 {supplier.name}
@@ -67,7 +67,7 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
             <SelectValue placeholder="Todas las cuentas" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas las cuentas</SelectItem>
+            <SelectItem value="_all">Todas las cuentas</SelectItem>
             {bankAccounts.map((account) => (
               <SelectItem key={account.id} value={account.id.toString()}>
                 {account.name}

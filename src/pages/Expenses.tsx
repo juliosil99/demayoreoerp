@@ -72,12 +72,13 @@ export default function Expenses() {
         `)
         .eq('user_id', user!.id);
 
-      // Add supplier filter - log for debugging
-      if (filters.supplier_id) {
+      // Add supplier filter
+      if (filters.supplier_id && filters.supplier_id !== "_all") {
         console.log("Applying supplier filter with ID:", filters.supplier_id);
         query = query.eq('supplier_id', filters.supplier_id);
       }
       
+      // Add account filter
       if (filters.account_id) {
         query = query.eq('account_id', filters.account_id);
       }
@@ -105,12 +106,12 @@ export default function Expenses() {
         throw error;
       }
       
-      console.log("Supplier filter active:", !!filters.supplier_id);
+      console.log("Supplier filter active:", !!filters.supplier_id && filters.supplier_id !== "_all");
       console.log("Payable filter active:", !!filters.from_payable);
       console.log("Fetched expenses:", data?.length);
       
       // If using supplier filter but no results, let's log why
-      if (filters.supplier_id && (!data || data.length === 0)) {
+      if (filters.supplier_id && filters.supplier_id !== "_all" && (!data || data.length === 0)) {
         console.log("No expenses found for supplier ID:", filters.supplier_id);
         
         // Check if the supplier exists
@@ -173,29 +174,33 @@ export default function Expenses() {
         </div>
       </div>
 
-      <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-end">
-        <div className="flex-1">
-          <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
+      <div className="flex flex-col space-y-4">
+        <div className="bg-white p-4 rounded-lg shadow-sm border">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-end">
+            <div className="flex-1">
+              <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
+            </div>
+            
+            <div className="flex items-center space-x-2 whitespace-nowrap pt-2 sm:pt-0">
+              <Checkbox 
+                id="fromPayable" 
+                checked={!!filters.from_payable} 
+                onCheckedChange={(checked) => {
+                  setFilters(prev => ({ ...prev, from_payable: !!checked }));
+                }} 
+              />
+              <label 
+                htmlFor="fromPayable" 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Mostrar solo gastos de cuentas por pagar
+              </label>
+            </div>
+          </div>
         </div>
         
-        <div className="flex items-center space-x-2 whitespace-nowrap">
-          <Checkbox 
-            id="fromPayable" 
-            checked={!!filters.from_payable} 
-            onCheckedChange={(checked) => {
-              setFilters(prev => ({ ...prev, from_payable: !!checked }));
-            }} 
-          />
-          <label 
-            htmlFor="fromPayable" 
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Mostrar solo gastos de cuentas por pagar
-          </label>
-        </div>
+        <ExpenseList expenses={expenses || []} isLoading={isLoading} />
       </div>
-      
-      <ExpenseList expenses={expenses || []} isLoading={isLoading} />
     </div>
   );
 }

@@ -57,11 +57,15 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts =
             <SelectValue placeholder="Seleccionar cuenta" />
           </SelectTrigger>
           <SelectContent>
-            {bankAccounts.map((account) => (
-              <SelectItem key={account.id} value={String(account.id)}>
-                {account.name}
-              </SelectItem>
-            ))}
+            {bankAccounts.length > 0 ? (
+              bankAccounts.map((account) => (
+                <SelectItem key={account.id} value={String(account.id)}>
+                  {account.name}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="_none">No hay cuentas disponibles</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -76,16 +80,20 @@ export function DescriptionAccountFields({ formData, setFormData, bankAccounts =
             <SelectValue placeholder="Seleccionar cuenta contable" />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(groupedAccounts).map(([type, accounts]) => (
-              <SelectGroup key={type}>
-                <SelectLabel>{accountTypeLabels[type] || type}</SelectLabel>
-                {accounts.map((account: any) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.code} - {account.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            ))}
+            {Object.keys(groupedAccounts).length > 0 ? (
+              Object.entries(groupedAccounts).map(([type, accounts]) => (
+                <SelectGroup key={type}>
+                  <SelectLabel>{accountTypeLabels[type] || type}</SelectLabel>
+                  {accounts.map((account: any) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.code} - {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ))
+            ) : (
+              <SelectItem value="_none">No hay cuentas contables disponibles</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
