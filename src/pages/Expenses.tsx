@@ -60,12 +60,16 @@ export default function Expenses() {
         `)
         .eq('user_id', user!.id);
 
+      // Add supplier filter - log for debugging
       if (filters.supplier_id) {
+        console.log("Applying supplier filter with ID:", filters.supplier_id);
         query = query.eq('supplier_id', filters.supplier_id);
       }
+      
       if (filters.account_id) {
         query = query.eq('account_id', filters.account_id);
       }
+      
       if (filters.unreconciled) {
         // Modified filter logic: 
         // We want expenses that BOTH:
@@ -79,8 +83,37 @@ export default function Expenses() {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching expenses:", error);
+        throw error;
+      }
+      
+      console.log("Supplier filter active:", !!filters.supplier_id);
       console.log("Fetched expenses:", data?.length);
+      
+      // If using supplier filter but no results, let's log why
+      if (filters.supplier_id && (!data || data.length === 0)) {
+        console.log("No expenses found for supplier ID:", filters.supplier_id);
+        
+        // Check if the supplier exists
+        const { data: supplierCheck } = await supabase
+          .from('contacts')
+          .select('id, name')
+          .eq('id', filters.supplier_id)
+          .single();
+          
+        console.log("Supplier check:", supplierCheck);
+        
+        // Check if any expenses have this supplier_id
+        const { data: expenseCheck } = await supabase
+          .from('expenses')
+          .select('id, supplier_id')
+          .eq('supplier_id', filters.supplier_id)
+          .limit(1);
+          
+        console.log("Expense check:", expenseCheck);
+      }
+      
       return data as unknown as Expense[];
     },
     enabled: !!user,

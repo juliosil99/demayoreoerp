@@ -54,15 +54,18 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers }: Prop
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <Select
-            value={formData.supplier_id}
-            onValueChange={(value) => setFormData({ ...formData, supplier_id: value })}
+            value={formData.supplier_id || ""}
+            onValueChange={(value) => {
+              console.log("Selected supplier ID:", value);
+              setFormData({ ...formData, supplier_id: value });
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Seleccionar proveedor" />
             </SelectTrigger>
             <SelectContent>
               {filteredSuppliers.map((supplier) => (
-                <SelectItem key={supplier.id} value={String(supplier.id)}>
+                <SelectItem key={supplier.id} value={supplier.id}>
                   {supplier.name}
                 </SelectItem>
               ))}

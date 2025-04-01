@@ -51,10 +51,16 @@ export function useExpenseQueries() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contacts")
-        .select("*")
+        .select("id, name, type, rfc")
         .eq("type", "supplier")
-        .order('name');  // Added ordering by name
-      if (error) throw error;
+        .order('name');
+        
+      if (error) {
+        console.error("Error fetching suppliers:", error);
+        throw error;
+      }
+      
+      console.log("Fetched suppliers count:", data?.length);
       return data as Supplier[];
     },
     initialData: [],
