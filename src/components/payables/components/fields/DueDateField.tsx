@@ -66,6 +66,7 @@ export function DueDateField({ form }: DueDateFieldProps) {
                 onSelect={field.onChange}
                 disabled={(date) => date < new Date()}
                 initialFocus
+                className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>
