@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
-import { PayableFormData } from "../../PayableForm";
+import { PayableFormData } from "../../types/payableTypes";
 
 interface PaymentTermFieldProps {
   form: UseFormReturn<PayableFormData>;

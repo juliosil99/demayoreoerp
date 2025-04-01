@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { UseFormReturn } from "react-hook-form";
-import { PayableFormData } from "../../PayableForm";
+import { PayableFormData } from "../../types/payableTypes";
 
 interface NotesFieldProps {
   form: UseFormReturn<PayableFormData>;

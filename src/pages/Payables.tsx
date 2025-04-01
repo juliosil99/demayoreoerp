@@ -3,7 +3,7 @@ import React from "react";
 import { PayablesList } from "@/components/payables/components/PayablesList";
 import { PayableFormDialog } from "@/components/payables/components/PayableFormDialog";
 import { usePayables } from "@/components/payables/hooks/usePayables";
-import { PayableFormData } from "@/components/payables/PayableForm";
+import { PayableFormData } from "@/components/payables/types/payableTypes";
 
 const Payables = () => {
   const { payables, isLoading, createPayable, markAsPaid } = usePayables();

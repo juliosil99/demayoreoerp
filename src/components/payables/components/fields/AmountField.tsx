@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
-import { PayableFormData } from "../../PayableForm";
+import { PayableFormData } from "../../types/payableTypes";
 
 interface AmountFieldProps {
   form: UseFormReturn<PayableFormData>;

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
 import { useClientQuery } from "../../hooks/usePayableQueries";
-import { PayableFormData } from "../../PayableForm";
+import { PayableFormData } from "../../types/payableTypes";
 
 interface ClientFieldProps {
   form: UseFormReturn<PayableFormData>;
