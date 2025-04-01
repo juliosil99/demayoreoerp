@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MoreHorizontal, Pencil, Trash2, Download, Bug, FileX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,21 +14,6 @@ import { useInvoiceDownload } from "../hooks/useInvoiceDownload";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Expense } from "../hooks/download/types";
-
-type Expense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string };
-  chart_of_accounts: { name: string; code: string };
-  contacts: { name: string } | null;
-  expense_invoice_relations?: {
-    invoice: {
-      uuid: string;
-      invoice_number: string;
-      file_path: string;
-      filename: string;
-      content_type?: string;
-    }
-  }[];
-};
 
 interface ExpenseActionMenuProps {
   expense: Expense;
