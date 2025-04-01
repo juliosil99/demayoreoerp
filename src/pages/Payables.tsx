@@ -1,12 +1,15 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { PayablesList } from "@/components/payables/components/PayablesList";
 import { PayableFormDialog } from "@/components/payables/components/PayableFormDialog";
+import { PayableEditDialog } from "@/components/payables/components/PayableEditDialog";
 import { usePayables } from "@/components/payables/hooks/usePayables";
 import { PayableFormData } from "@/components/payables/types/payableTypes";
+import { AccountPayable } from "@/types/payables";
 
 const Payables = () => {
-  const { payables, isLoading, createPayable, markAsPaid } = usePayables();
+  const { payables, isLoading, createPayable, updatePayable, markAsPaid } = usePayables();
+  const [editingPayable, setEditingPayable] = useState<AccountPayable | null>(null);
 
   const handleCreatePayable = async (data: PayableFormData): Promise<boolean> => {
     try {
@@ -16,6 +19,24 @@ const Payables = () => {
       console.error("Error creating payable:", error);
       return false;
     }
+  };
+
+  const handleUpdatePayable = async (id: string, data: PayableFormData): Promise<boolean> => {
+    try {
+      await updatePayable.mutateAsync({ id, data });
+      return true;
+    } catch (error) {
+      console.error("Error updating payable:", error);
+      return false;
+    }
+  };
+
+  const handleEditPayable = (payable: AccountPayable) => {
+    setEditingPayable(payable);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditingPayable(null);
   };
 
   const handleMarkAsPaid = (payableId: string) => {
@@ -36,7 +57,15 @@ const Payables = () => {
         payables={payables} 
         isLoading={isLoading}
         onMarkAsPaid={handleMarkAsPaid}
-        isPending={markAsPaid.isPending}
+        onEdit={handleEditPayable}
+        isPending={markAsPaid.isPending || updatePayable.isPending}
+      />
+
+      <PayableEditDialog
+        payable={editingPayable}
+        onClose={handleCloseEditDialog}
+        onSubmit={handleUpdatePayable}
+        isSubmitting={updatePayable.isPending}
       />
     </div>
   );

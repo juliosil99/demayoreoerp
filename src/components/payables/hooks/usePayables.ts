@@ -56,6 +56,35 @@ export function usePayables() {
     },
   });
 
+  const updatePayable = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: PayableFormData }) => {
+      // Create a date-only string in YYYY-MM-DD format
+      const dueDateString = data.due_date.toISOString().split('T')[0];
+      
+      const { error } = await supabase
+        .from('accounts_payable')
+        .update({
+          client_id: data.client_id,
+          invoice_id: data.invoice_id,
+          amount: data.amount,
+          due_date: dueDateString,
+          payment_term: data.payment_term,
+          notes: data.notes,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payables"] });
+      toast.success("Cuenta por pagar actualizada exitosamente");
+    },
+    onError: (error) => {
+      console.error('Error updating payable:', error);
+      toast.error("Error al actualizar la cuenta por pagar");
+    },
+  });
+
   const markAsPaid = useMutation({
     mutationFn: async (payableId: string) => {
       const { data: payable, error: fetchError } = await supabase
@@ -93,6 +122,7 @@ export function usePayables() {
     payables,
     isLoading,
     createPayable,
+    updatePayable,
     markAsPaid
   };
 }

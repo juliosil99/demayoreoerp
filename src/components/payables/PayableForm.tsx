@@ -11,12 +11,13 @@ import type { PayableFormData } from "./types/payableTypes";
 interface PayableFormProps {
   onSubmit: (data: PayableFormData) => void;
   isSubmitting: boolean;
+  initialData?: PayableFormData;
 }
 
-export function PayableForm({ onSubmit, isSubmitting }: PayableFormProps) {
+export function PayableForm({ onSubmit, isSubmitting, initialData }: PayableFormProps) {
   const form = useForm<PayableFormData>({
     resolver: zodResolver(payableFormSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       client_id: "", 
       invoice_id: null,
       amount: 0,
@@ -36,7 +37,7 @@ export function PayableForm({ onSubmit, isSubmitting }: PayableFormProps) {
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <PayableFormFields form={form} />
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Guardando..." : "Guardar"}
+          {isSubmitting ? "Guardando..." : initialData ? "Actualizar" : "Guardar"}
         </Button>
       </form>
     </Form>

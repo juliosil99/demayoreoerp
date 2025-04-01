@@ -3,17 +3,18 @@ import React from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { AccountPayable } from "@/types/payables";
 
 interface PayableRowProps {
   payable: AccountPayable;
   onMarkAsPaid: (id: string) => void;
+  onEdit: (payable: AccountPayable) => void;
   isPending: boolean;
 }
 
-export function PayableRow({ payable, onMarkAsPaid, isPending }: PayableRowProps) {
+export function PayableRow({ payable, onMarkAsPaid, onEdit, isPending }: PayableRowProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
@@ -74,15 +75,28 @@ export function PayableRow({ payable, onMarkAsPaid, isPending }: PayableRowProps
         </Badge>
       </TableCell>
       <TableCell>
-        {payable.status === 'pending' && (
-          <Button
-            size="sm"
-            onClick={() => onMarkAsPaid(payable.id)}
-            disabled={isPending}
-          >
-            Marcar como Pagado
-          </Button>
-        )}
+        <div className="flex space-x-2">
+          {payable.status === 'pending' && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => onMarkAsPaid(payable.id)}
+                disabled={isPending}
+              >
+                Marcar como Pagado
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onEdit(payable)}
+                disabled={isPending}
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                Editar
+              </Button>
+            </>
+          )}
+        </div>
       </TableCell>
     </TableRow>
   );

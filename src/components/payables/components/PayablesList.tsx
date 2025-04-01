@@ -9,10 +9,11 @@ interface PayablesListProps {
   payables: AccountPayable[] | undefined;
   isLoading: boolean;
   onMarkAsPaid: (id: string) => void;
+  onEdit: (payable: AccountPayable) => void;
   isPending: boolean;
 }
 
-export function PayablesList({ payables, isLoading, onMarkAsPaid, isPending }: PayablesListProps) {
+export function PayablesList({ payables, isLoading, onMarkAsPaid, onEdit, isPending }: PayablesListProps) {
   return (
     <Card>
       <CardHeader>
@@ -39,6 +40,7 @@ export function PayablesList({ payables, isLoading, onMarkAsPaid, isPending }: P
                   key={payable.id}
                   payable={payable}
                   onMarkAsPaid={onMarkAsPaid}
+                  onEdit={onEdit}
                   isPending={isPending}
                 />
               ))}
