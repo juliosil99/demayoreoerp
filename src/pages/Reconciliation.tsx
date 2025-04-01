@@ -22,7 +22,12 @@ const Reconciliation = () => {
           *,
           bank_accounts (name),
           chart_of_accounts (name, code),
-          contacts (name)
+          contacts (name),
+          accounts_payable!expense_id (
+            id,
+            invoice_id,
+            client:contacts!client_id (name)
+          )
         `)
         .eq("user_id", user.id)
         .or("reconciled.is.null,reconciled.eq.false") // Check for both NULL and FALSE

@@ -16,7 +16,7 @@ import { format, addDays } from "date-fns";
 import { AccountPayable } from "@/types/payables";
 import { toast } from "sonner";
 import { PayableForm } from "@/components/payables/PayableForm";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, FileText } from "lucide-react";
 
 const Payables = () => {
   const queryClient = useQueryClient();
@@ -29,7 +29,7 @@ const Payables = () => {
         .select(`
           *,
           client:contacts!client_id(name, rfc),
-          invoice:invoices!invoice_id(invoice_number, invoice_date)
+          invoice:invoices!invoice_id(invoice_number, invoice_date, id, uuid)
         `)
         .order('created_at', { ascending: false });
 
@@ -65,16 +65,33 @@ const Payables = () => {
 
   const markAsPaid = useMutation({
     mutationFn: async (payableId: string) => {
+      // First check if the payable has an associated invoice
+      const { data: payable, error: fetchError } = await supabase
+        .from('accounts_payable')
+        .select('invoice_id')
+        .eq('id', payableId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Mark the payable as paid which will trigger the database function to create an expense
       const { error } = await supabase
         .from('accounts_payable')
         .update({ status: 'paid' })
         .eq('id', payableId);
 
       if (error) throw error;
+      
+      // If there's an invoice associated, we'll display a different message
+      return !!payable.invoice_id;
     },
-    onSuccess: () => {
+    onSuccess: (hasInvoice) => {
       queryClient.invalidateQueries({ queryKey: ["payables"] });
-      toast.success("Cuenta por pagar marcada como pagada");
+      if (hasInvoice) {
+        toast.success("Cuenta por pagar marcada como pagada y gasto creado con conciliación automática");
+      } else {
+        toast.success("Cuenta por pagar marcada como pagada y gasto creado");
+      }
     },
     onError: (error) => {
       console.error('Error marking payable as paid:', error);
@@ -160,13 +177,27 @@ const Payables = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {payable.invoice && (
-                        <div>
-                          <div>{payable.invoice.invoice_number}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {format(new Date(payable.invoice.invoice_date), 'dd/MM/yyyy')}
+                      {payable.invoice ? (
+                        <div className="flex items-center space-x-2">
+                          <div>
+                            <div>{payable.invoice.invoice_number}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {format(new Date(payable.invoice.invoice_date), 'dd/MM/yyyy')}
+                            </div>
                           </div>
+                          {payable.invoice.id && (
+                            <a 
+                              href={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/invoices/${payable.invoice.uuid}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:text-blue-700"
+                            >
+                              <FileText size={16} />
+                            </a>
+                          )}
                         </div>
+                      ) : (
+                        <span className="text-muted-foreground">Sin factura</span>
                       )}
                     </TableCell>
                     <TableCell>{formatCurrency(payable.amount)}</TableCell>

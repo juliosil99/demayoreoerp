@@ -1,7 +1,7 @@
 
 import { TableCell, TableRow } from "@/components/ui/table";
 import { ExpenseActions } from "./ExpenseActions";
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { formatCardDate } from "@/utils/formatters";
 import type { Database } from "@/integrations/supabase/types/base";
 
@@ -18,6 +18,12 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
       content_type?: string;
     }
   }[];
+  accounts_payable?: {
+    id: string;
+    client: {
+      name: string;
+    };
+  };
 };
 
 interface ExpenseRowProps {
@@ -42,10 +48,18 @@ export function ExpenseRow({
     return onDelete(expense);
   };
 
+  // Check if the expense comes from a payable
+  const isFromPayable = !!expense.accounts_payable;
+
   return (
-    <TableRow key={expense.id}>
+    <TableRow key={expense.id} className={isFromPayable ? "bg-blue-50/50" : ""}>
       <TableCell>
         {formatCardDate(expense.date)}
+        {isFromPayable && (
+          <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800 border-blue-200">
+            Cuenta por Pagar
+          </Badge>
+        )}
       </TableCell>
       <TableCell>{expense.description}</TableCell>
       <TableCell>${expense.amount.toFixed(2)}</TableCell>
@@ -53,7 +67,9 @@ export function ExpenseRow({
       <TableCell>
         {expense.chart_of_accounts.code} - {expense.chart_of_accounts.name}
       </TableCell>
-      <TableCell>{expense.contacts?.name || '-'}</TableCell>
+      <TableCell>
+        {expense.contacts?.name || (isFromPayable && expense.accounts_payable?.client?.name) || '-'}
+      </TableCell>
       <TableCell className="capitalize">
         {expense.payment_method === 'cash' ? 'Efectivo' :
           expense.payment_method === 'transfer' ? 'Transferencia' :

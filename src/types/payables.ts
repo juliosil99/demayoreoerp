@@ -17,7 +17,9 @@ export interface AccountPayable {
     rfc: string;
   };
   invoice?: {
+    id: number;
     invoice_number: string;
     invoice_date: string;
+    uuid: string;
   };
 }

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { PlusIcon } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -31,12 +32,19 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
       content_type?: string;
     }
   }[];
+  accounts_payable?: {
+    id: string;
+    client: {
+      name: string;
+    };
+  };
 };
 
 type Filters = {
   supplier_id?: string;
   account_id?: number;
   unreconciled?: boolean;
+  from_payable?: boolean;
 };
 
 export default function Expenses() {
@@ -56,6 +64,10 @@ export default function Expenses() {
           contacts (name),
           expense_invoice_relations (
             invoice:invoices (uuid, invoice_number, file_path, filename, content_type)
+          ),
+          accounts_payable!expense_id (
+            id,
+            client:contacts!client_id (name)
           )
         `)
         .eq('user_id', user!.id);
@@ -78,6 +90,11 @@ export default function Expenses() {
         query = query.is('expense_invoice_relations', null);
         query = query.or('reconciled.is.null,reconciled.eq.false');
       }
+      
+      if (filters.from_payable) {
+        // Filter for expenses that are associated with payables
+        query = query.not('accounts_payable', 'is', null);
+      }
 
       query = query.order('date', { ascending: false });
 
@@ -89,6 +106,7 @@ export default function Expenses() {
       }
       
       console.log("Supplier filter active:", !!filters.supplier_id);
+      console.log("Payable filter active:", !!filters.from_payable);
       console.log("Fetched expenses:", data?.length);
       
       // If using supplier filter but no results, let's log why
@@ -155,7 +173,26 @@ export default function Expenses() {
         </div>
       </div>
 
-      <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
+      <div className="flex items-center gap-4">
+        <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="fromPayable" 
+            checked={!!filters.from_payable} 
+            onCheckedChange={(checked) => {
+              setFilters(prev => ({ ...prev, from_payable: !!checked }));
+            }} 
+          />
+          <label 
+            htmlFor="fromPayable" 
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Mostrar solo gastos de cuentas por pagar
+          </label>
+        </div>
+      </div>
+      
       <ExpenseList expenses={expenses || []} isLoading={isLoading} />
     </div>
   );
