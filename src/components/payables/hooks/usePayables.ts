@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AccountPayable } from "@/types/payables";
@@ -17,7 +18,7 @@ export function usePayables() {
           client:contacts!client_id(name, rfc),
           invoice:invoices!invoice_id(invoice_number, invoice_date, id, uuid)
         `)
-        .order('created_at', { ascending: false });
+        .order('due_date', { ascending: true });
 
       if (error) throw error;
       return data as AccountPayable[];
