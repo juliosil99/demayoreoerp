@@ -23,7 +23,7 @@ interface InvoiceSearchDialogProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   filteredInvoices: any[];
-  onInvoiceSelect: (invoice: any) => void;
+  onInvoiceSelect: (invoices: any[]) => void;
   onManualReconciliation: () => void;
 }
 
@@ -75,10 +75,9 @@ export function InvoiceSearchDialog({
   };
 
   const handleConfirmSelection = () => {
-    // Process each selected invoice in sequence
+    // Process all selected invoices at once
     if (tempSelectedInvoices.length > 0) {
-      const firstInvoice = tempSelectedInvoices[0];
-      onInvoiceSelect(firstInvoice);
+      onInvoiceSelect(tempSelectedInvoices);
     }
   };
 

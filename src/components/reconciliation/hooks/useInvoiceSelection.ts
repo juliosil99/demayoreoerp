@@ -10,10 +10,10 @@ export const useInvoiceSelection = (
   setShowAdjustmentDialog: (show: boolean) => void,
   handleReconcile: (expense: any, invoices: any[]) => Promise<boolean>
 ) => {
-  const handleInvoiceSelect = useCallback((invoice: any) => {
+  const handleInvoiceSelect = useCallback((invoices: any[]) => {
     if (!expense) return;
     
-    const updatedInvoices = [...selectedInvoices, invoice];
+    const updatedInvoices = invoices;
     setSelectedInvoices(updatedInvoices);
     
     // Calculate remaining amount, accounting for credit notes (type E)
