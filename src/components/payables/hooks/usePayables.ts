@@ -2,11 +2,11 @@
 import { useCreatePayable } from "./useCreatePayable";
 import { useUpdatePayable } from "./useUpdatePayable";
 import { useMarkPayableAsPaid } from "./useMarkPayableAsPaid";
-import { useFetchPayables } from "./useFetchPayables";
+import { useFetchPayables, PayableStatusFilter } from "./useFetchPayables";
 import { UpdatePayableParams } from "./useUpdatePayable";
 
-export function usePayables() {
-  const { data: payables, isLoading } = useFetchPayables();
+export function usePayables(statusFilter: PayableStatusFilter = "pending") {
+  const { data: payables, isLoading } = useFetchPayables(statusFilter);
   const createPayable = useCreatePayable();
   const updatePayable = useUpdatePayable();
   const markAsPaid = useMarkPayableAsPaid();
@@ -21,4 +21,4 @@ export function usePayables() {
 }
 
 // Re-export the UpdatePayableParams type for consumers that need it
-export type { UpdatePayableParams };
+export type { UpdatePayableParams, PayableStatusFilter };

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PayableRow } from "./PayableRow";
 import { AccountPayable } from "@/types/payables";
+import { PayableStatusFilter } from "../hooks/useFetchPayables";
 
 interface PayablesListProps {
   payables: AccountPayable[] | undefined;
@@ -11,9 +12,17 @@ interface PayablesListProps {
   onMarkAsPaid: (id: string) => void;
   onEdit: (payable: AccountPayable) => void;
   isPending: boolean;
+  statusFilter: PayableStatusFilter;
 }
 
-export function PayablesList({ payables, isLoading, onMarkAsPaid, onEdit, isPending }: PayablesListProps) {
+export function PayablesList({ 
+  payables, 
+  isLoading, 
+  onMarkAsPaid, 
+  onEdit, 
+  isPending,
+  statusFilter 
+}: PayablesListProps) {
   return (
     <Card>
       <CardHeader>
@@ -22,7 +31,7 @@ export function PayablesList({ payables, isLoading, onMarkAsPaid, onEdit, isPend
       <CardContent>
         {isLoading ? (
           <div>Cargando...</div>
-        ) : (
+        ) : payables && payables.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -35,7 +44,7 @@ export function PayablesList({ payables, isLoading, onMarkAsPaid, onEdit, isPend
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payables?.map((payable) => (
+              {payables.map((payable) => (
                 <PayableRow 
                   key={payable.id}
                   payable={payable}
@@ -46,6 +55,18 @@ export function PayablesList({ payables, isLoading, onMarkAsPaid, onEdit, isPend
               ))}
             </TableBody>
           </Table>
+        ) : (
+          <div className="text-center py-6">
+            {statusFilter === "pending" && (
+              <p>No hay cuentas pendientes por pagar.</p>
+            )}
+            {statusFilter === "paid" && (
+              <p>No hay cuentas pagadas.</p>
+            )}
+            {statusFilter === "all" && (
+              <p>No hay cuentas por pagar registradas.</p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>

@@ -1,14 +1,16 @@
 
 import React, { useState } from "react";
 import { PayablesList } from "@/components/payables/components/PayablesList";
+import { PayablesFilter } from "@/components/payables/components/PayablesFilter";
 import { PayableFormDialog } from "@/components/payables/components/PayableFormDialog";
 import { PayableEditDialog } from "@/components/payables/components/PayableEditDialog";
-import { usePayables } from "@/components/payables/hooks/usePayables";
+import { usePayables, PayableStatusFilter } from "@/components/payables/hooks/usePayables";
 import { PayableFormData } from "@/components/payables/types/payableTypes";
 import { AccountPayable } from "@/types/payables";
 
 const Payables = () => {
-  const { payables, isLoading, createPayable, updatePayable, markAsPaid } = usePayables();
+  const [statusFilter, setStatusFilter] = useState<PayableStatusFilter>("pending");
+  const { payables, isLoading, createPayable, updatePayable, markAsPaid } = usePayables(statusFilter);
   const [editingPayable, setEditingPayable] = useState<AccountPayable | null>(null);
 
   const handleCreatePayable = async (data: PayableFormData): Promise<boolean> => {
@@ -47,6 +49,10 @@ const Payables = () => {
     markAsPaid.mutate(payableId);
   };
 
+  const handleFilterChange = (value: PayableStatusFilter) => {
+    setStatusFilter(value);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -57,12 +63,20 @@ const Payables = () => {
         />
       </div>
 
+      <div className="flex justify-between items-center">
+        <PayablesFilter 
+          currentFilter={statusFilter} 
+          onFilterChange={handleFilterChange} 
+        />
+      </div>
+
       <PayablesList 
         payables={payables} 
         isLoading={isLoading}
         onMarkAsPaid={handleMarkAsPaid}
         onEdit={handleEditPayable}
         isPending={markAsPaid.isPending || updatePayable.isPending}
+        statusFilter={statusFilter}
       />
 
       <PayableEditDialog
@@ -73,6 +87,6 @@ const Payables = () => {
       />
     </div>
   );
-};
+}
 
 export default Payables;
