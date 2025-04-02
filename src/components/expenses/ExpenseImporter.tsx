@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -21,9 +21,10 @@ import { FileUploadForm } from "./components/importer/FileUploadForm";
 
 interface ExpenseImporterProps {
   onSuccess: () => void;
+  children?: ReactNode; // Adding children as an optional prop
 }
 
-export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
+export function ExpenseImporter({ onSuccess, children }: ExpenseImporterProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
@@ -101,10 +102,12 @@ export function ExpenseImporter({ onSuccess }: ExpenseImporterProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Upload className="mr-2 h-4 w-4" />
-          Importar Gastos
-        </Button>
+        {children || (
+          <Button variant="outline">
+            <Upload className="mr-2 h-4 w-4" />
+            Importar Gastos
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-xl">
         <DialogHeader>
