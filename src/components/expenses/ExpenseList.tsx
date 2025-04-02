@@ -3,6 +3,7 @@ import { ExpenseTable } from "./components/ExpenseTable";
 import { useState, useCallback } from "react";
 import { useExpenseDelete } from "./hooks/useExpenseDelete";
 import { ExpensePagination } from "./components/ExpensePagination";
+import { ExpenseEditDialog } from "./components/ExpenseEditDialog";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -32,8 +33,6 @@ interface ExpenseListProps {
 }
 
 export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
-  console.log('[ExpenseList] Rendering with', expenses.length, 'expenses');
-  
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,22 +43,17 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedExpenses = expenses.slice(startIndex, startIndex + itemsPerPage);
 
-  const handleOpenDialog = useCallback((expense: Expense) => {
-    console.log('[ExpenseList] Opening dialog for expense:', expense.id);
+  const handleEditExpense = useCallback((expense: Expense) => {
     setSelectedExpense(expense);
     setIsDialogOpen(true);
   }, []);
 
   const handleCloseDialog = useCallback(() => {
-    console.log('[ExpenseList] Closing dialog');
     setIsDialogOpen(false);
-    // Clear the selected expense immediately when closing
-    setSelectedExpense(null);
   }, []);
 
   const handleEditSuccess = useCallback(() => {
-    console.log('[ExpenseList] Edit successful');
-    // Success is handled by handleCloseDialog
+    // Just trigger a refetch - actual dialog closing is handled by handleCloseDialog
   }, []);
 
   // Handle page change
@@ -76,11 +70,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
       <ExpenseTable 
         expenses={paginatedExpenses}
         onDelete={handleDelete}
-        onEdit={handleOpenDialog}
-        isDialogOpen={isDialogOpen}
-        selectedExpense={selectedExpense}
-        handleCloseDialog={handleCloseDialog}
-        onEditSuccess={handleEditSuccess}
+        onEdit={handleEditExpense}
       />
 
       <ExpensePagination
@@ -89,6 +79,15 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
         currentPage={currentPage}
         onPageChange={handlePageChange}
       />
+
+      {selectedExpense && (
+        <ExpenseEditDialog
+          isOpen={isDialogOpen}
+          expense={selectedExpense}
+          onClose={handleCloseDialog}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </div>
   );
 }

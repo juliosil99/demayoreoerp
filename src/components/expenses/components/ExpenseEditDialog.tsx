@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import type { Database } from "@/integrations/supabase/types/base";
@@ -31,12 +32,9 @@ interface ExpenseEditDialogProps {
 }
 
 export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: ExpenseEditDialogProps) {
-  console.log('[ExpenseEditDialog] Rendering with isOpen:', isOpen, 'expense:', expense?.id);
-  
   if (!expense) return null;
   
   const handleFormSuccess = () => {
-    console.log('[ExpenseEditDialog] Form submitted successfully, closing dialog');
     onSuccess();
     onClose();
   };
@@ -45,15 +43,15 @@ export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: Expen
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => {
-        if (!open) {
-          console.log('[ExpenseEditDialog] Dialog closing via onOpenChange');
-          onClose();
-        }
+        if (!open) onClose();
       }}
     >
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Editar Gasto</DialogTitle>
+          <DialogDescription>
+            Modifique los detalles del gasto y guarde los cambios
+          </DialogDescription>
         </DialogHeader>
         <ExpenseForm 
           initialData={expense} 

@@ -1,8 +1,8 @@
 
 import { TableCell, TableRow } from "@/components/ui/table";
-import { ExpenseActions } from "./ExpenseActions";
 import { Badge } from "@/components/ui/badge";
 import { formatCardDate } from "@/utils/formatters";
+import { ExpenseActions } from "./ExpenseActions";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -30,24 +30,20 @@ interface ExpenseRowProps {
   expense: Expense;
   onDelete: (expense: Expense) => Promise<{ success: boolean; log: string[] } | void>;
   onEdit: (expense: Expense) => void;
-  isDialogOpen: boolean;
-  selectedExpense: Expense | null;
-  handleCloseDialog: () => void;
-  onEditSuccess: () => void;
 }
 
 export function ExpenseRow({ 
   expense,
   onDelete,
   onEdit,
-  isDialogOpen,
-  selectedExpense,
-  handleCloseDialog,
-  onEditSuccess
 }: ExpenseRowProps) {
 
   const handleDeleteClick = async () => {
     return onDelete(expense);
+  };
+
+  const handleEditClick = () => {
+    onEdit(expense);
   };
 
   // Check if the expense comes from a payable
@@ -97,11 +93,7 @@ export function ExpenseRow({
         <ExpenseActions 
           expense={expense}
           onDelete={handleDeleteClick}
-          onEdit={onEdit}
-          isDialogOpen={isDialogOpen}
-          selectedExpense={selectedExpense}
-          handleCloseDialog={handleCloseDialog}
-          onEditSuccess={onEditSuccess}
+          onEdit={handleEditClick}
         />
       </TableCell>
     </TableRow>

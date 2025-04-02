@@ -26,20 +26,12 @@ interface ExpenseTableProps {
   expenses: Expense[];
   onDelete: (expense: Expense) => Promise<{ success: boolean; log: string[] } | void>;
   onEdit: (expense: Expense) => void;
-  isDialogOpen: boolean;
-  selectedExpense: Expense | null;
-  handleCloseDialog: () => void;
-  onEditSuccess: () => void;
 }
 
 export function ExpenseTable({ 
   expenses,
   onDelete,
   onEdit,
-  isDialogOpen,
-  selectedExpense,
-  handleCloseDialog,
-  onEditSuccess
 }: ExpenseTableProps) {
   return (
     <div className="overflow-hidden rounded-md">
@@ -52,10 +44,6 @@ export function ExpenseTable({
               expense={expense}
               onDelete={onDelete}
               onEdit={onEdit}
-              isDialogOpen={isDialogOpen}
-              selectedExpense={selectedExpense}
-              handleCloseDialog={handleCloseDialog}
-              onEditSuccess={onEditSuccess}
             />
           ))}
         </TableBody>

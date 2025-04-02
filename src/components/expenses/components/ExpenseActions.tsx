@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { ExpenseActionMenu } from "./ExpenseActionMenu";
 import { ExpenseDeleteDialog } from "./ExpenseDeleteDialog";
-import { ExpenseEditDialog } from "./ExpenseEditDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { Database } from "@/integrations/supabase/types/base";
@@ -25,24 +24,14 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
 interface ExpenseActionsProps {
   expense: Expense;
   onDelete: () => Promise<{ success: boolean; log: string[] } | void>;
-  onEdit: (expense: Expense) => void;
-  isDialogOpen: boolean;
-  selectedExpense: Expense | null;
-  handleCloseDialog: () => void;
-  onEditSuccess: () => void;
+  onEdit: () => void;
 }
 
 export function ExpenseActions({
   expense,
   onDelete,
   onEdit,
-  isDialogOpen,
-  selectedExpense,
-  handleCloseDialog,
-  onEditSuccess
 }: ExpenseActionsProps) {
-  console.log('[ExpenseActions] Rendering for expense:', expense.id, 'isDialogOpen:', isDialogOpen, 'selectedExpense:', selectedExpense?.id);
-  
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deletionLog, setDeletionLog] = useState<string[]>([]);
   const [isLogOpen, setIsLogOpen] = useState(false);
@@ -59,22 +48,15 @@ export function ExpenseActions({
     }
   };
 
-  const handleEditClick = () => {
-    console.log('[ExpenseActions] handleEditClick called for expense:', expense.id);
-    onEdit(expense);
-  };
-
   const closeLogDialog = () => {
     setIsLogOpen(false);
   };
-
-  const isThisExpenseSelected = selectedExpense && selectedExpense.id === expense.id;
 
   return (
     <div className="flex items-center justify-end">
       <ExpenseActionMenu 
         expense={expense}
-        onEdit={handleEditClick}
+        onEdit={onEdit}
         onDelete={() => setConfirmOpen(true)}
       />
 
@@ -83,15 +65,6 @@ export function ExpenseActions({
         onOpenChange={setConfirmOpen}
         onDelete={handleDeleteClick}
       />
-
-      {isDialogOpen && isThisExpenseSelected && (
-        <ExpenseEditDialog
-          isOpen={true}
-          expense={selectedExpense}
-          onClose={handleCloseDialog}
-          onSuccess={onEditSuccess}
-        />
-      )}
 
       <Dialog open={isLogOpen} onOpenChange={setIsLogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

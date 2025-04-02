@@ -40,12 +40,10 @@ const initialFormData: ExpenseFormData = {
 };
 
 export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void) {
-  console.log('[useExpenseForm] Initializing with initialExpense:', initialExpense?.id);
-  
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<ExpenseFormData>(initialFormData);
+  const [formData, setFormData] = useState<ExpenseFormData>({...initialFormData});
 
   useEffect(() => {
     if (initialExpense) {
@@ -84,8 +82,6 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     mutationFn: async (values: ExpenseFormData) => {
       if (!user?.id) throw new Error("User not authenticated");
 
-      console.log("[useExpenseForm] Submitting expense data:", values.date);
-
       const expenseData = {
         user_id: user.id,
         date: values.date, // This is already in YYYY-MM-DD format from the input
@@ -101,7 +97,6 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       };
 
       if (initialExpense) {
-        console.log("[useExpenseForm] Updating existing expense:", initialExpense.id);
         const { data, error } = await supabase
           .from("expenses")
           .update(expenseData)
@@ -112,7 +107,6 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
         if (error) throw error;
         return data;
       } else {
-        console.log("[useExpenseForm] Creating new expense");
         const { data, error } = await supabase
           .from("expenses")
           .insert([expenseData])
@@ -124,23 +118,21 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       }
     },
     onSuccess: (data) => {
-      console.log("[useExpenseForm] Expense saved successfully:", data?.id);
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       toast.success(initialExpense ? "Gasto actualizado exitosamente" : "Gasto creado exitosamente");
       
       if (!initialExpense) {
-        setFormData(initialFormData);
+        setFormData({...initialFormData});
       }
       
       if (onSuccess) {
-        console.log("[useExpenseForm] Calling onSuccess callback");
         onSuccess();
       }
       
       setIsSubmitting(false);
     },
     onError: (error: Error) => {
-      console.error("[useExpenseForm] Error saving expense:", error);
+      console.error("Error saving expense:", error);
       toast.error("Error al procesar el gasto. Por favor, intenta de nuevo.");
       setIsSubmitting(false);
     },
@@ -148,7 +140,6 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[useExpenseForm] Form submitted");
     
     if (!user) {
       toast.error("Por favor inicia sesión para realizar esta acción");
