@@ -40,6 +40,8 @@ const initialFormData: ExpenseFormData = {
 };
 
 export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void) {
+  console.log('[useExpenseForm] Initializing with initialExpense:', initialExpense?.id);
+  
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,7 +84,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     mutationFn: async (values: ExpenseFormData) => {
       if (!user?.id) throw new Error("User not authenticated");
 
-      console.log("Fecha antes de crear el expense:", values.date);
+      console.log("[useExpenseForm] Fecha antes de crear el expense:", values.date);
 
       const expenseData = {
         user_id: user.id,
@@ -98,9 +100,10 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
         category: values.category || null,
       };
 
-      console.log("Datos que se envían a Supabase:", expenseData);
+      console.log("[useExpenseForm] Datos que se envían a Supabase:", expenseData);
 
       if (initialExpense) {
+        console.log("[useExpenseForm] Updating existing expense:", initialExpense.id);
         const { data, error } = await supabase
           .from("expenses")
           .update(expenseData)
@@ -110,9 +113,10 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
 
         if (error) throw error;
         
-        console.log("Respuesta de Supabase (update):", data);
+        console.log("[useExpenseForm] Respuesta de Supabase (update):", data);
         return data;
       } else {
+        console.log("[useExpenseForm] Creating new expense");
         const { data, error } = await supabase
           .from("expenses")
           .insert([expenseData])
@@ -121,12 +125,12 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
 
         if (error) throw error;
         
-        console.log("Respuesta de Supabase (insert):", data);
+        console.log("[useExpenseForm] Respuesta de Supabase (insert):", data);
         return data;
       }
     },
     onSuccess: (data) => {
-      console.log("Datos después de guardar:", data);
+      console.log("[useExpenseForm] Datos después de guardar:", data?.id);
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       toast.success(initialExpense ? "Gasto actualizado exitosamente" : "Gasto creado exitosamente");
       
@@ -134,7 +138,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
         setFormData(initialFormData);
       }
       
-      // Call onSuccess callback directly without setTimeout
+      console.log("[useExpenseForm] Mutation successful, calling onSuccess callback directly");
       if (onSuccess) {
         onSuccess();
       }
@@ -142,7 +146,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       setIsSubmitting(false);
     },
     onError: (error: Error) => {
-      console.error("Error with expense:", error);
+      console.error("[useExpenseForm] Error with expense:", error);
       toast.error("Error al procesar el gasto. Por favor, intenta de nuevo.");
       setIsSubmitting(false);
     },
@@ -150,6 +154,8 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[useExpenseForm] Handle submit called");
+    
     if (!user) {
       toast.error("Por favor inicia sesión para realizar esta acción");
       return;
@@ -160,13 +166,14 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       return;
     }
 
-    console.log("Fecha en el momento del submit:", formData.date);
+    console.log("[useExpenseForm] Fecha en el momento del submit:", formData.date);
     setIsSubmitting(true);
     try {
+      console.log("[useExpenseForm] Calling mutation");
       await createOrUpdateExpense.mutateAsync(formData);
     } catch (error) {
       // Error is handled in the mutation's onError
-      console.error("Error en handleSubmit:", error);
+      console.error("[useExpenseForm] Error en handleSubmit:", error);
     }
   };
 

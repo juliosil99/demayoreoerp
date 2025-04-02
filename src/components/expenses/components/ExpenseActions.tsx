@@ -29,7 +29,7 @@ interface ExpenseActionsProps {
   isDialogOpen: boolean;
   selectedExpense: Expense | null;
   handleCloseDialog: () => void;
-  onEditSuccess: () => void; // Add this new prop
+  onEditSuccess: () => void;
 }
 
 export function ExpenseActions({
@@ -41,6 +41,8 @@ export function ExpenseActions({
   handleCloseDialog,
   onEditSuccess
 }: ExpenseActionsProps) {
+  console.log('[ExpenseActions] Rendering for expense:', expense.id, 'isDialogOpen:', isDialogOpen, 'selectedExpense:', selectedExpense?.id);
+  
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deletionLog, setDeletionLog] = useState<string[]>([]);
   const [isLogOpen, setIsLogOpen] = useState(false);
@@ -58,11 +60,22 @@ export function ExpenseActions({
   };
 
   const handleEditClick = () => {
+    console.log('[ExpenseActions] handleEditClick called for expense:', expense.id);
     onEdit(expense);
   };
 
   const closeLogDialog = () => {
     setIsLogOpen(false);
+  };
+
+  const handleEditSuccess = () => {
+    console.log('[ExpenseActions] handleEditSuccess called');
+    onEditSuccess();
+  };
+
+  const handleDialogClose = () => {
+    console.log('[ExpenseActions] handleDialogClose called, calling handleCloseDialog');
+    handleCloseDialog();
   };
 
   return (
@@ -83,8 +96,8 @@ export function ExpenseActions({
         <ExpenseEditDialog
           isOpen={isDialogOpen}
           expense={selectedExpense}
-          onClose={handleCloseDialog}
-          onSuccess={onEditSuccess}
+          onClose={handleDialogClose}
+          onSuccess={handleEditSuccess}
         />
       )}
 

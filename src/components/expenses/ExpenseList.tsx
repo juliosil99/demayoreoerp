@@ -1,6 +1,6 @@
 
 import { ExpenseTable } from "./components/ExpenseTable";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { useExpenseDelete } from "./hooks/useExpenseDelete";
 import { ExpensePagination } from "./components/ExpensePagination";
 import type { Database } from "@/integrations/supabase/types/base";
@@ -32,25 +32,44 @@ interface ExpenseListProps {
 }
 
 export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
+  console.log('[ExpenseList] Rendering with', expenses.length, 'expenses');
+  
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
   const { deleteError, handleDelete, deleteLog } = useExpenseDelete();
+  const operationInProgressRef = useRef(false);
 
   const handleOpenDialog = useCallback((expense: Expense) => {
+    console.log('[ExpenseList] handleOpenDialog called for expense:', expense.id);
     setSelectedExpense(expense);
     setIsDialogOpen(true);
   }, []);
 
   const handleCloseDialog = useCallback(() => {
+    console.log('[ExpenseList] handleCloseDialog called, operationInProgress:', operationInProgressRef.current);
+    if (operationInProgressRef.current) {
+      console.log('[ExpenseList] Operation in progress, not closing dialog');
+      return;
+    }
+    
+    operationInProgressRef.current = true;
+    console.log('[ExpenseList] Setting isDialogOpen to false');
     setIsDialogOpen(false);
-    setSelectedExpense(null); // Immediately clear the selected expense
+    
+    // Use requestAnimationFrame to ensure the dialog closes before clearing the selected expense
+    requestAnimationFrame(() => {
+      console.log('[ExpenseList] In requestAnimationFrame, setting selectedExpense to null');
+      setSelectedExpense(null);
+      operationInProgressRef.current = false;
+    });
   }, []);
 
   const handleEditSuccess = useCallback(() => {
-    // This will be called when an edit is successful
-    // No need for setTimeout, just ensure the page is refreshed
+    console.log('[ExpenseList] handleEditSuccess called');
+    // No need for setTimeout, just mark the operation as in progress
+    operationInProgressRef.current = true;
   }, []);
 
   // Get paginated expenses
