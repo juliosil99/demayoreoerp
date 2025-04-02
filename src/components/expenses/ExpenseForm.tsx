@@ -25,7 +25,6 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
   
   const { formData, setFormData, isSubmitting, handleSubmit, setChartAccountId } = useExpenseForm(dataToUse, () => {
     if (onSuccess) onSuccess();
-    if (onClose) onClose();
   });
   const { bankAccounts, chartAccounts, suppliers, isLoading } = useExpenseQueries();
 

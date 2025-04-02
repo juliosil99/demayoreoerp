@@ -33,15 +33,23 @@ interface ExpenseEditDialogProps {
 export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: ExpenseEditDialogProps) {
   if (!expense) return null;
   
+  const handleSuccess = () => {
+    // Call both callbacks, but ensure onSuccess is called after onClose
+    onClose();
+    setTimeout(() => onSuccess(), 0);
+  };
+  
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) onClose();
+    }}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Editar Gasto</DialogTitle>
         </DialogHeader>
         <ExpenseForm 
           initialData={expense} 
-          onSuccess={onSuccess} 
+          onSuccess={handleSuccess} 
           onClose={onClose} 
         />
       </DialogContent>
