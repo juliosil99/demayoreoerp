@@ -9,4 +9,5 @@ export const contactSchema = z.object({
   tax_regime: z.string().min(1, "Tax regime is required"),
   postal_code: z.string().min(5, "Postal code must be 5 digits"),
   address: z.string().nullable().optional(),
+  default_chart_account_id: z.string().nullable().optional(),
 });

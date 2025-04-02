@@ -62,6 +62,14 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     }
   }, [initialExpense]);
 
+  // Function to set the chart account ID directly
+  const setChartAccountId = (chartAccountId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      chart_account_id: chartAccountId
+    }));
+  };
+
   const createOrUpdateExpense = useMutation({
     mutationFn: async (values: ExpenseFormData) => {
       if (!user?.id) throw new Error("User not authenticated");
@@ -158,5 +166,6 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     setFormData,
     isSubmitting,
     handleSubmit,
+    setChartAccountId,
   };
 }

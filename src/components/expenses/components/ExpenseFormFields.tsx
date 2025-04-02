@@ -12,6 +12,7 @@ interface ExpenseFormFieldsProps {
   bankAccounts: any[];
   chartAccounts: any[];
   suppliers: any[];
+  onSupplierSelect?: (supplierId: string, defaultChartAccountId?: string) => void;
 }
 
 export function ExpenseFormFields({
@@ -20,6 +21,7 @@ export function ExpenseFormFields({
   bankAccounts,
   chartAccounts,
   suppliers,
+  onSupplierSelect,
 }: ExpenseFormFieldsProps) {
   return (
     <div className="space-y-6">
@@ -35,6 +37,7 @@ export function ExpenseFormFields({
           formData={formData} 
           setFormData={setFormData}
           suppliers={suppliers}
+          onSupplierSelect={onSupplierSelect}
         />
       </div>
 

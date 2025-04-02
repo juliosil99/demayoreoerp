@@ -9,6 +9,7 @@ export interface Contact {
   postal_code: string;
   address?: string;
   user_id: string;
+  default_chart_account_id?: string;
 }
 
 export interface ContactFormValues {
@@ -19,4 +20,5 @@ export interface ContactFormValues {
   tax_regime: string;
   postal_code: string;
   address?: string;
+  default_chart_account_id?: string;
 }

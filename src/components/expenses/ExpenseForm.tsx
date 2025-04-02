@@ -23,7 +23,7 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
   // Use expenseData as fallback for initialData for backwards compatibility
   const dataToUse = initialData || expenseData;
   
-  const { formData, setFormData, isSubmitting, handleSubmit } = useExpenseForm(dataToUse, () => {
+  const { formData, setFormData, isSubmitting, handleSubmit, setChartAccountId } = useExpenseForm(dataToUse, () => {
     if (onSuccess) onSuccess();
     if (onClose) onClose();
   });
@@ -46,6 +46,14 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
     return <div className="text-center p-4">No se encontraron las cuentas necesarias.</div>;
   }
 
+  // Handle supplier selection with default chart account
+  const handleSupplierSelect = (supplierId: string, defaultChartAccountId?: string) => {
+    if (defaultChartAccountId) {
+      console.log("Setting default chart account from supplier:", defaultChartAccountId);
+      setChartAccountId(defaultChartAccountId);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <ExpenseFormFields
@@ -54,6 +62,7 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
         bankAccounts={bankAccounts}
         chartAccounts={chartAccounts}
         suppliers={Array.isArray(suppliers) ? suppliers : []}
+        onSupplierSelect={handleSupplierSelect}
       />
 
       <div className="flex justify-end">

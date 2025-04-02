@@ -448,6 +448,7 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string | null
+          default_chart_account_id: string | null
           id: string
           name: string
           phone: string | null
@@ -460,6 +461,7 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string | null
+          default_chart_account_id?: string | null
           id?: string
           name: string
           phone?: string | null
@@ -472,6 +474,7 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string | null
+          default_chart_account_id?: string | null
           id?: string
           name?: string
           phone?: string | null
@@ -481,7 +484,15 @@ export type Database = {
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contacts_default_chart_account_id_fkey"
+            columns: ["default_chart_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       diot_configurations: {
         Row: {

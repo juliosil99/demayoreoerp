@@ -14,14 +14,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, useWatch } from "react-hook-form";
 import { ContactFormValues } from "../types";
+import { DefaultChartAccountField } from "./DefaultChartAccountField";
 
 interface ContactFormFieldsProps {
   form: UseFormReturn<ContactFormValues>;
 }
 
 export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
+  // Watch the type field to determine if we should show the default chart account field
+  const contactType = useWatch({
+    control: form.control,
+    name: "type",
+    defaultValue: form.formState.defaultValues?.type || "client"
+  });
+
+  // Only show the default chart account field for suppliers
+  const isSupplier = contactType === "supplier";
+
   return (
     <>
       <FormField
@@ -88,6 +99,8 @@ export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
           </FormItem>
         )}
       />
+
+      <DefaultChartAccountField form={form} visible={isSupplier} />
 
       <FormField
         control={form.control}
