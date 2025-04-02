@@ -33,10 +33,10 @@ interface ExpenseEditDialogProps {
 export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: ExpenseEditDialogProps) {
   if (!expense) return null;
   
-  const handleSuccess = () => {
-    // Call both callbacks, but ensure onSuccess is called after onClose
+  // Simple direct handling - no nested setTimeout
+  const handleFormSuccess = () => {
+    onSuccess();
     onClose();
-    setTimeout(() => onSuccess(), 0);
   };
   
   return (
@@ -49,7 +49,7 @@ export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: Expen
         </DialogHeader>
         <ExpenseForm 
           initialData={expense} 
-          onSuccess={handleSuccess} 
+          onSuccess={handleFormSuccess}
           onClose={onClose} 
         />
       </DialogContent>

@@ -33,6 +33,7 @@ interface ExpenseRowProps {
   isDialogOpen: boolean;
   selectedExpense: Expense | null;
   handleCloseDialog: () => void;
+  onEditSuccess: () => void; // Add this new prop
 }
 
 export function ExpenseRow({ 
@@ -41,7 +42,8 @@ export function ExpenseRow({
   onEdit,
   isDialogOpen,
   selectedExpense,
-  handleCloseDialog
+  handleCloseDialog,
+  onEditSuccess
 }: ExpenseRowProps) {
 
   const handleDeleteClick = async () => {
@@ -99,6 +101,7 @@ export function ExpenseRow({
           isDialogOpen={isDialogOpen}
           selectedExpense={selectedExpense}
           handleCloseDialog={handleCloseDialog}
+          onEditSuccess={onEditSuccess}
         />
       </TableCell>
     </TableRow>

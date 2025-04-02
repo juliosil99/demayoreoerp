@@ -129,16 +129,17 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       console.log("Datos después de guardar:", data);
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       toast.success(initialExpense ? "Gasto actualizado exitosamente" : "Gasto creado exitosamente");
+      
       if (!initialExpense) {
         setFormData(initialFormData);
       }
-      // Always call onSuccess if provided, even for updates
+      
+      // Call onSuccess callback directly without setTimeout
       if (onSuccess) {
-        // Use setTimeout to give React a chance to finish any pending updates
-        setTimeout(() => {
-          onSuccess();
-        }, 0);
+        onSuccess();
       }
+      
+      setIsSubmitting(false);
     },
     onError: (error: Error) => {
       console.error("Error with expense:", error);

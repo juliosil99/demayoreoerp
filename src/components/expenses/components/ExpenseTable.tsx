@@ -29,6 +29,7 @@ interface ExpenseTableProps {
   isDialogOpen: boolean;
   selectedExpense: Expense | null;
   handleCloseDialog: () => void;
+  onEditSuccess: () => void; // Add this new prop
 }
 
 export function ExpenseTable({ 
@@ -37,7 +38,8 @@ export function ExpenseTable({
   onEdit,
   isDialogOpen,
   selectedExpense,
-  handleCloseDialog
+  handleCloseDialog,
+  onEditSuccess
 }: ExpenseTableProps) {
   return (
     <div className="overflow-hidden rounded-md">
@@ -53,6 +55,7 @@ export function ExpenseTable({
               isDialogOpen={isDialogOpen}
               selectedExpense={selectedExpense}
               handleCloseDialog={handleCloseDialog}
+              onEditSuccess={onEditSuccess}
             />
           ))}
         </TableBody>

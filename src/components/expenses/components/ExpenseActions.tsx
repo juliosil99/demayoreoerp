@@ -29,6 +29,7 @@ interface ExpenseActionsProps {
   isDialogOpen: boolean;
   selectedExpense: Expense | null;
   handleCloseDialog: () => void;
+  onEditSuccess: () => void; // Add this new prop
 }
 
 export function ExpenseActions({
@@ -37,7 +38,8 @@ export function ExpenseActions({
   onEdit,
   isDialogOpen,
   selectedExpense,
-  handleCloseDialog
+  handleCloseDialog,
+  onEditSuccess
 }: ExpenseActionsProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deletionLog, setDeletionLog] = useState<string[]>([]);
@@ -53,10 +55,6 @@ export function ExpenseActions({
     } catch (error) {
       console.error("Error during deletion:", error);
     }
-  };
-
-  const handleEditSuccess = () => {
-    handleCloseDialog();
   };
 
   const handleEditClick = () => {
@@ -86,7 +84,7 @@ export function ExpenseActions({
           isOpen={isDialogOpen}
           expense={selectedExpense}
           onClose={handleCloseDialog}
-          onSuccess={handleEditSuccess}
+          onSuccess={onEditSuccess}
         />
       )}
 
