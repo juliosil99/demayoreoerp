@@ -21,9 +21,13 @@ const Payables = () => {
     }
   };
 
-  const handleUpdatePayable = async (id: string, data: PayableFormData): Promise<boolean> => {
+  const handleUpdatePayable = async (
+    id: string, 
+    data: PayableFormData, 
+    updateSeries: boolean = false
+  ): Promise<boolean> => {
     try {
-      await updatePayable.mutateAsync({ id, data });
+      await updatePayable.mutateAsync({ id, data, updateSeries });
       return true;
     } catch (error) {
       console.error("Error updating payable:", error);

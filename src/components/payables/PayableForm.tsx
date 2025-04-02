@@ -24,7 +24,11 @@ export function PayableForm({ onSubmit, isSubmitting, initialData }: PayableForm
       payment_term: 30,
       notes: null,
       due_date: new Date(), // Default to today
-      chart_account_id: null, // Add this default value
+      chart_account_id: null,
+      is_recurring: false,
+      recurrence_pattern: null,
+      recurrence_day: null,
+      recurrence_end_date: null
     },
   });
 

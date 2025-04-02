@@ -5,20 +5,24 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { PayableForm } from "../PayableForm";
 import { PayableFormData } from "../types/payableTypes";
 import { AccountPayable } from "@/types/payables";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface PayableEditDialogProps {
   payable: AccountPayable | null;
   onClose: () => void;
-  onSubmit: (id: string, data: PayableFormData) => Promise<boolean>;
+  onSubmit: (id: string, data: PayableFormData, updateSeries?: boolean) => Promise<boolean>;
   isSubmitting: boolean;
 }
 
 export function PayableEditDialog({ payable, onClose, onSubmit, isSubmitting }: PayableEditDialogProps) {
   const [dialogOpen, setDialogOpen] = useState(!!payable);
+  const [updateSeries, setUpdateSeries] = useState(false);
 
   useEffect(() => {
     setDialogOpen(!!payable);
@@ -32,7 +36,7 @@ export function PayableEditDialog({ payable, onClose, onSubmit, isSubmitting }: 
   const handleSubmit = async (data: PayableFormData) => {
     if (!payable) return;
     
-    const success = await onSubmit(payable.id, data);
+    const success = await onSubmit(payable.id, data, updateSeries);
     if (success) {
       setDialogOpen(false);
       onClose();
@@ -52,6 +56,18 @@ export function PayableEditDialog({ payable, onClose, onSubmit, isSubmitting }: 
       12, 0, 0
     );
 
+    // Create end date if exists
+    let endDate = null;
+    if (payable.recurrence_end_date) {
+      const rawEndDate = new Date(payable.recurrence_end_date);
+      endDate = new Date(
+        rawEndDate.getFullYear(),
+        rawEndDate.getMonth(),
+        rawEndDate.getDate(),
+        12, 0, 0
+      );
+    }
+
     return {
       client_id: payable.client_id || "",
       invoice_id: payable.invoice_id || null,
@@ -60,8 +76,18 @@ export function PayableEditDialog({ payable, onClose, onSubmit, isSubmitting }: 
       notes: payable.notes || "",
       due_date: fixedDueDate,
       chart_account_id: payable.chart_account_id || null,
+      is_recurring: payable.is_recurring || false,
+      recurrence_pattern: payable.recurrence_pattern || null,
+      recurrence_day: payable.recurrence_day || null,
+      recurrence_end_date: endDate
     };
   };
+
+  // Only show series update option if this is a recurring payable with series_number 0 (the original)
+  const showUpdateSeriesOption = 
+    payable && 
+    payable.is_recurring && 
+    (payable.series_number === 0 || payable.series_number === null);
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -70,11 +96,31 @@ export function PayableEditDialog({ payable, onClose, onSubmit, isSubmitting }: 
           <DialogTitle>Editar Cuenta por Pagar</DialogTitle>
         </DialogHeader>
         {payable && (
-          <PayableForm
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-            initialData={getInitialData()}
-          />
+          <>
+            <PayableForm
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              initialData={getInitialData()}
+            />
+            
+            {showUpdateSeriesOption && (
+              <DialogFooter className="mt-4 flex items-center space-x-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="update_series" 
+                    checked={updateSeries}
+                    onCheckedChange={(checked) => setUpdateSeries(!!checked)}
+                  />
+                  <label
+                    htmlFor="update_series"
+                    className="text-sm text-muted-foreground"
+                  >
+                    Actualizar todos los pagos futuros en esta serie
+                  </label>
+                </div>
+              </DialogFooter>
+            )}
+          </>
         )}
       </DialogContent>
     </Dialog>

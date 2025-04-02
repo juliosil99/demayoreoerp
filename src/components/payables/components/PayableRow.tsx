@@ -3,7 +3,7 @@ import React from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Edit } from "lucide-react";
+import { FileText, Edit, Repeat } from "lucide-react";
 import { AccountPayable } from "@/types/payables";
 import { formatCardDate } from "@/utils/formatters";
 
@@ -32,6 +32,13 @@ export function PayableRow({ payable, onMarkAsPaid, onEdit, isPending }: Payable
         return 'bg-yellow-500';
     }
   };
+
+  // Check if this is a recurring payable
+  const isRecurring = payable.is_recurring;
+  // Get the series number if available
+  const seriesNumber = payable.series_number !== null && payable.series_number !== undefined 
+    ? payable.series_number 
+    : null;
 
   return (
     <TableRow key={payable.id}>
@@ -68,7 +75,24 @@ export function PayableRow({ payable, onMarkAsPaid, onEdit, isPending }: Payable
         )}
       </TableCell>
       <TableCell>{formatCurrency(payable.amount)}</TableCell>
-      <TableCell>{formatCardDate(payable.due_date)}</TableCell>
+      <TableCell>
+        <div className="flex flex-col">
+          <div>{formatCardDate(payable.due_date)}</div>
+          {isRecurring && (
+            <div className="flex items-center text-xs text-muted-foreground mt-1">
+              <Repeat className="h-3 w-3 mr-1" />
+              {seriesNumber !== null && (
+                <span>#{seriesNumber} - </span>
+              )}
+              <span>
+                {payable.recurrence_pattern === 'monthly' && 'Mensual'}
+                {payable.recurrence_pattern === 'weekly' && 'Semanal'}
+                {payable.recurrence_pattern === 'yearly' && 'Anual'}
+              </span>
+            </div>
+          )}
+        </div>
+      </TableCell>
       <TableCell>
         <Badge className={getStatusColor(payable.status)}>
           {payable.status === 'pending' ? 'Pendiente' : 'Pagado'}

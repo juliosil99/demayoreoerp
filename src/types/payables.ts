@@ -13,6 +13,13 @@ export interface AccountPayable {
   payment_term: number;
   created_at: string;
   chart_account_id?: string;
+  // Recurring payment fields
+  is_recurring?: boolean;
+  recurrence_pattern?: string;
+  recurrence_day?: number;
+  recurrence_end_date?: string;
+  parent_payable_id?: string;
+  series_number?: number;
   client?: {
     name: string;
     rfc: string;
@@ -24,3 +31,4 @@ export interface AccountPayable {
     uuid: string;
   };
 }
+

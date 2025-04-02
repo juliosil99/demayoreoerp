@@ -157,9 +157,15 @@ export type Database = {
           expense_id: string | null
           id: string
           invoice_id: number | null
+          is_recurring: boolean | null
           notes: string | null
+          parent_payable_id: string | null
           payment_id: string | null
           payment_term: number
+          recurrence_day: number | null
+          recurrence_end_date: string | null
+          recurrence_pattern: string | null
+          series_number: number | null
           status: string | null
           user_id: string
         }
@@ -172,9 +178,15 @@ export type Database = {
           expense_id?: string | null
           id?: string
           invoice_id?: number | null
+          is_recurring?: boolean | null
           notes?: string | null
+          parent_payable_id?: string | null
           payment_id?: string | null
           payment_term?: number
+          recurrence_day?: number | null
+          recurrence_end_date?: string | null
+          recurrence_pattern?: string | null
+          series_number?: number | null
           status?: string | null
           user_id: string
         }
@@ -187,9 +199,15 @@ export type Database = {
           expense_id?: string | null
           id?: string
           invoice_id?: number | null
+          is_recurring?: boolean | null
           notes?: string | null
+          parent_payable_id?: string | null
           payment_id?: string | null
           payment_term?: number
+          recurrence_day?: number | null
+          recurrence_end_date?: string | null
+          recurrence_pattern?: string | null
+          series_number?: number | null
           status?: string | null
           user_id?: string
         }
@@ -199,6 +217,13 @@ export type Database = {
             columns: ["chart_account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_payable_parent_payable_id_fkey"
+            columns: ["parent_payable_id"]
+            isOneToOne: false
+            referencedRelation: "accounts_payable"
             referencedColumns: ["id"]
           },
           {

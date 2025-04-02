@@ -8,6 +8,7 @@ import { PaymentTermField } from "./fields/PaymentTermField";
 import { DueDateField } from "./fields/DueDateField";
 import { NotesField } from "./fields/NotesField";
 import { ChartAccountField } from "./fields/ChartAccountField";
+import { RecurringPaymentFields } from "./fields/RecurringPaymentFields";
 import { PayableFormData } from "../types/payableTypes";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -58,6 +59,7 @@ export function PayableFormFields({ form }: PayableFormFieldsProps) {
       </div>
       <ChartAccountField form={form} />
       <DueDateField form={form} />
+      <RecurringPaymentFields form={form} />
       <NotesField form={form} />
     </>
   );
