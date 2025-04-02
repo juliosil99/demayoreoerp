@@ -184,12 +184,16 @@ export function usePayables() {
     },
   });
 
+  // Fix for the infinite type instantiation error by explicitly defining the type
+  // of the mutation function parameter
+  interface UpdatePayableParams {
+    id: string;
+    data: PayableFormData;
+    updateSeries?: boolean;
+  }
+
   const updatePayable = useMutation({
-    mutationFn: async ({ id, data, updateSeries = false }: { 
-      id: string; 
-      data: PayableFormData; 
-      updateSeries?: boolean;
-    }) => {
+    mutationFn: async ({ id, data, updateSeries = false }: UpdatePayableParams) => {
       const dueDate = new Date(data.due_date);
       const dueDateString = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`;
       
