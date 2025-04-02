@@ -85,7 +85,7 @@ export const DefaultChartAccountField = ({ form, visible }: DefaultChartAccountF
           <FormLabel>Cuenta Contable Predeterminada</FormLabel>
           <Select 
             onValueChange={field.onChange} 
-            value={field.value || ""}
+            value={field.value || "none"}
           >
             <FormControl>
               <SelectTrigger>
@@ -93,7 +93,7 @@ export const DefaultChartAccountField = ({ form, visible }: DefaultChartAccountF
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="">Ninguna</SelectItem>
+              <SelectItem value="none">Ninguna</SelectItem>
               {Object.entries(groupedAccounts).map(([type, accounts]) => (
                 <SelectGroup key={type}>
                   <SelectLabel>{accountTypeLabels[type] || type}</SelectLabel>

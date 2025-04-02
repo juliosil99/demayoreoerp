@@ -43,6 +43,7 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers, onSupp
       }
       
       if (data && data.default_chart_account_id && onSupplierSelect) {
+        console.log("Found default chart account for supplier:", data.default_chart_account_id);
         onSupplierSelect(supplierId, data.default_chart_account_id);
       } else if (onSupplierSelect) {
         onSupplierSelect(supplierId);
