@@ -24,11 +24,16 @@ export function PayableForm({ onSubmit, isSubmitting, initialData }: PayableForm
       payment_term: 30,
       notes: null,
       due_date: new Date(), // Default to today
+      chart_account_id: null, // Add this default value
     },
   });
 
   const handleSubmit = (data: PayableFormData) => {
     console.log('Submitting data:', data);
+    // Convert "none" to null for chart_account_id
+    if (data.chart_account_id === "none") {
+      data.chart_account_id = null;
+    }
     onSubmit(data);
   };
 

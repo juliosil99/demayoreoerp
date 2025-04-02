@@ -70,7 +70,8 @@ export function useChartAccountsQuery() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("chart_of_accounts")
-        .select("id, code, name")
+        .select("id, code, name, account_type")
+        .eq("account_type", "expense")
         .order("code");
 
       if (error) throw error;

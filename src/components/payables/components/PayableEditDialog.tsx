@@ -59,6 +59,7 @@ export function PayableEditDialog({ payable, onClose, onSubmit, isSubmitting }: 
       payment_term: payable.payment_term,
       notes: payable.notes || "",
       due_date: fixedDueDate,
+      chart_account_id: payable.chart_account_id || null,
     };
   };
 

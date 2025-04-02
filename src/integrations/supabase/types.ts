@@ -150,6 +150,7 @@ export type Database = {
       accounts_payable: {
         Row: {
           amount: number
+          chart_account_id: string | null
           client_id: string | null
           created_at: string | null
           due_date: string
@@ -164,6 +165,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          chart_account_id?: string | null
           client_id?: string | null
           created_at?: string | null
           due_date: string
@@ -178,6 +180,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          chart_account_id?: string | null
           client_id?: string | null
           created_at?: string | null
           due_date?: string
@@ -191,6 +194,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "accounts_payable_chart_account_id_fkey"
+            columns: ["chart_account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "accounts_receivable_client_id_fkey"
             columns: ["client_id"]

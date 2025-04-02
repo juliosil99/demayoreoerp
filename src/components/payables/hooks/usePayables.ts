@@ -40,6 +40,7 @@ export function usePayables() {
           payment_term: data.payment_term,
           notes: data.notes,
           status: 'pending',
+          chart_account_id: data.chart_account_id === "none" ? null : data.chart_account_id,
           user_id: (await supabase.auth.getUser()).data.user?.id,
         }]);
 
@@ -69,6 +70,7 @@ export function usePayables() {
           due_date: dueDateString,
           payment_term: data.payment_term,
           notes: data.notes,
+          chart_account_id: data.chart_account_id === "none" ? null : data.chart_account_id,
         })
         .eq('id', id);
 

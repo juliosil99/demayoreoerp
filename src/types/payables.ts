@@ -12,6 +12,7 @@ export interface AccountPayable {
   status: 'pending' | 'paid';
   payment_term: number;
   created_at: string;
+  chart_account_id?: string;
   client?: {
     name: string;
     rfc: string;

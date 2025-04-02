@@ -7,5 +7,6 @@ export const payableFormSchema = z.object({
   amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
   due_date: z.date(),
   payment_term: z.number(),
-  notes: z.string().nullable()
+  notes: z.string().nullable(),
+  chart_account_id: z.string().nullable().optional()
 });
