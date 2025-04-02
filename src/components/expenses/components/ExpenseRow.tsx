@@ -33,7 +33,7 @@ interface ExpenseRowProps {
   isDialogOpen: boolean;
   selectedExpense: Expense | null;
   handleCloseDialog: () => void;
-  onEditSuccess: () => void; // Add this new prop
+  onEditSuccess: () => void;
 }
 
 export function ExpenseRow({ 

@@ -1,6 +1,6 @@
 
 import { ExpenseTable } from "./components/ExpenseTable";
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useExpenseDelete } from "./hooks/useExpenseDelete";
 import { ExpensePagination } from "./components/ExpensePagination";
 import type { Database } from "@/integrations/supabase/types/base";
@@ -39,44 +39,28 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
   const { deleteError, handleDelete, deleteLog } = useExpenseDelete();
-  const operationInProgressRef = useRef(false);
+
+  // Get paginated expenses
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedExpenses = expenses.slice(startIndex, startIndex + itemsPerPage);
 
   const handleOpenDialog = useCallback((expense: Expense) => {
-    console.log('[ExpenseList] handleOpenDialog called for expense:', expense.id);
+    console.log('[ExpenseList] Opening dialog for expense:', expense.id);
     setSelectedExpense(expense);
     setIsDialogOpen(true);
   }, []);
 
   const handleCloseDialog = useCallback(() => {
-    console.log('[ExpenseList] handleCloseDialog called, operationInProgress:', operationInProgressRef.current);
-    if (operationInProgressRef.current) {
-      console.log('[ExpenseList] Operation in progress, not closing dialog');
-      return;
-    }
-    
-    operationInProgressRef.current = true;
-    console.log('[ExpenseList] Setting isDialogOpen to false');
+    console.log('[ExpenseList] Closing dialog');
     setIsDialogOpen(false);
-    
-    // Use requestAnimationFrame to ensure the dialog closes before clearing the selected expense
-    requestAnimationFrame(() => {
-      console.log('[ExpenseList] In requestAnimationFrame, setting selectedExpense to null');
-      setSelectedExpense(null);
-      operationInProgressRef.current = false;
-    });
+    // Clear the selected expense immediately when closing
+    setSelectedExpense(null);
   }, []);
 
   const handleEditSuccess = useCallback(() => {
-    console.log('[ExpenseList] handleEditSuccess called');
-    // No need for setTimeout, just mark the operation as in progress
-    operationInProgressRef.current = true;
+    console.log('[ExpenseList] Edit successful');
+    // Success is handled by handleCloseDialog
   }, []);
-
-  // Get paginated expenses
-  const paginatedExpenses = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return expenses.slice(startIndex, startIndex + itemsPerPage);
-  }, [expenses, currentPage, itemsPerPage]);
 
   // Handle page change
   const handlePageChange = useCallback((page: number) => {

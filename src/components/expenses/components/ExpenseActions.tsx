@@ -68,15 +68,7 @@ export function ExpenseActions({
     setIsLogOpen(false);
   };
 
-  const handleEditSuccess = () => {
-    console.log('[ExpenseActions] handleEditSuccess called');
-    onEditSuccess();
-  };
-
-  const handleDialogClose = () => {
-    console.log('[ExpenseActions] handleDialogClose called, calling handleCloseDialog');
-    handleCloseDialog();
-  };
+  const isThisExpenseSelected = selectedExpense && selectedExpense.id === expense.id;
 
   return (
     <div className="flex items-center justify-end">
@@ -92,12 +84,12 @@ export function ExpenseActions({
         onDelete={handleDeleteClick}
       />
 
-      {isDialogOpen && selectedExpense?.id === expense.id && (
+      {isDialogOpen && isThisExpenseSelected && (
         <ExpenseEditDialog
-          isOpen={isDialogOpen}
+          isOpen={true}
           expense={selectedExpense}
-          onClose={handleDialogClose}
-          onSuccess={handleEditSuccess}
+          onClose={handleCloseDialog}
+          onSuccess={onEditSuccess}
         />
       )}
 

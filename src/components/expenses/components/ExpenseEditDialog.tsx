@@ -36,20 +36,21 @@ export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: Expen
   if (!expense) return null;
   
   const handleFormSuccess = () => {
-    console.log('[ExpenseEditDialog] handleFormSuccess called, calling onSuccess and onClose');
+    console.log('[ExpenseEditDialog] Form submitted successfully, closing dialog');
     onSuccess();
     onClose();
   };
   
-  console.log('[ExpenseEditDialog] Setting up dialog with onOpenChange handler');
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      console.log('[ExpenseEditDialog] onOpenChange triggered with value:', open);
-      if (!open) {
-        console.log('[ExpenseEditDialog] Dialog closing, calling onClose');
-        onClose();
-      }
-    }}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) {
+          console.log('[ExpenseEditDialog] Dialog closing via onOpenChange');
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Editar Gasto</DialogTitle>
@@ -57,10 +58,7 @@ export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: Expen
         <ExpenseForm 
           initialData={expense} 
           onSuccess={handleFormSuccess}
-          onClose={() => {
-            console.log('[ExpenseEditDialog] ExpenseForm onClose called');
-            onClose();
-          }} 
+          onClose={onClose}
         />
       </DialogContent>
     </Dialog>
