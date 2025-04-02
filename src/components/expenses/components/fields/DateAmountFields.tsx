@@ -11,7 +11,11 @@ export function DateAmountFields({ formData, setFormData }: BaseFieldProps) {
         <Input
           type="date"
           value={formData.date}
-          onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+          onChange={(e) => {
+            // Ensure date is stored in ISO format (YYYY-MM-DD)
+            console.log("Selected date value:", e.target.value);
+            setFormData({ ...formData, date: e.target.value });
+          }}
           required
         />
       </div>

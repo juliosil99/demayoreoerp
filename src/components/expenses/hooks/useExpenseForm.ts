@@ -47,8 +47,16 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
 
   useEffect(() => {
     if (initialExpense) {
+      // Ensure the date is in YYYY-MM-DD format (ISO)
+      // This prevents timezone issues when editing expenses
+      const rawDate = new Date(initialExpense.date);
+      const year = rawDate.getUTCFullYear();
+      const month = String(rawDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(rawDate.getUTCDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+      
       setFormData({
-        date: format(new Date(initialExpense.date), 'yyyy-MM-dd'),
+        date: formattedDate,
         description: initialExpense.description,
         amount: initialExpense.amount.toString(),
         account_id: initialExpense.account_id.toString(),
@@ -78,7 +86,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
 
       const expenseData = {
         user_id: user.id,
-        date: values.date,
+        date: values.date, // This is already in YYYY-MM-DD format from the input
         description: values.description,
         amount: parseFloat(values.amount),
         account_id: parseInt(values.account_id),

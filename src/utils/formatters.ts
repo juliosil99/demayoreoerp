@@ -11,21 +11,15 @@ export const formatDate = (date: string | null) => {
   if (!date) return '-';
   
   try {
-    // Parse the date string and create a date object
-    // By using split and creating a new date, we avoid timezone issues
-    const parts = date.split('-');
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JS Date
-    const day = parseInt(parts[2], 10);
-    
-    // Create a date object with the date parts
-    const parsedDate = new Date(year, month, day);
+    // Parse the date string and create a date object (using UTC to avoid timezone issues)
+    const parsedDate = parseUTCDate(date);
     
     // Format the date for display
     return parsedDate.toLocaleDateString('es-MX', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
+      timeZone: 'UTC' // Use UTC timezone to prevent shifts
     });
   } catch (error) {
     console.error("Error formatting date:", error, date);
