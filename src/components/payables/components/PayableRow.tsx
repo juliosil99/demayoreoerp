@@ -1,20 +1,32 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileText, Edit, Repeat } from "lucide-react";
 import { AccountPayable } from "@/types/payables";
 import { formatCardDate } from "@/utils/formatters";
+import { DeletePayableButton, DeletePayableDialog } from "./DeletePayableDialog";
 
 interface PayableRowProps {
   payable: AccountPayable;
   onMarkAsPaid: (id: string) => void;
   onEdit: (payable: AccountPayable) => void;
+  onDelete: (id: string) => void;
   isPending: boolean;
+  isDeleting: boolean;
 }
 
-export function PayableRow({ payable, onMarkAsPaid, onEdit, isPending }: PayableRowProps) {
+export function PayableRow({ 
+  payable, 
+  onMarkAsPaid, 
+  onEdit, 
+  onDelete,
+  isPending,
+  isDeleting 
+}: PayableRowProps) {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
@@ -39,6 +51,15 @@ export function PayableRow({ payable, onMarkAsPaid, onEdit, isPending }: Payable
   const seriesNumber = payable.series_number !== null && payable.series_number !== undefined 
     ? payable.series_number 
     : null;
+
+  const handleDeleteClick = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete(payable.id);
+    setIsDeleteDialogOpen(false);
+  };
 
   return (
     <TableRow key={payable.id}>
@@ -118,10 +139,21 @@ export function PayableRow({ payable, onMarkAsPaid, onEdit, isPending }: Payable
                 <Edit className="w-4 h-4 mr-1" />
                 Editar
               </Button>
+              <DeletePayableButton
+                onClick={handleDeleteClick}
+                disabled={isPending || isDeleting}
+              />
             </>
           )}
         </div>
       </TableCell>
+      
+      <DeletePayableDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+      />
     </TableRow>
   );
 }

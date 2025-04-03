@@ -11,7 +11,9 @@ interface PayablesListProps {
   isLoading: boolean;
   onMarkAsPaid: (id: string) => void;
   onEdit: (payable: AccountPayable) => void;
+  onDelete: (id: string) => void;
   isPending: boolean;
+  isDeleting: boolean;
   statusFilter: PayableStatusFilter;
 }
 
@@ -19,8 +21,10 @@ export function PayablesList({
   payables, 
   isLoading, 
   onMarkAsPaid, 
-  onEdit, 
+  onEdit,
+  onDelete,
   isPending,
+  isDeleting,
   statusFilter 
 }: PayablesListProps) {
   return (
@@ -50,7 +54,9 @@ export function PayablesList({
                   payable={payable}
                   onMarkAsPaid={onMarkAsPaid}
                   onEdit={onEdit}
+                  onDelete={onDelete}
                   isPending={isPending}
+                  isDeleting={isDeleting}
                 />
               ))}
             </TableBody>

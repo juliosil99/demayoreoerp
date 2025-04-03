@@ -5,12 +5,14 @@ import { PayablesFilter } from "@/components/payables/components/PayablesFilter"
 import { PayableFormDialog } from "@/components/payables/components/PayableFormDialog";
 import { PayableEditDialog } from "@/components/payables/components/PayableEditDialog";
 import { usePayables, PayableStatusFilter } from "@/components/payables/hooks/usePayables";
+import { useDeletePayable } from "@/components/payables/hooks/useDeletePayable";
 import { PayableFormData } from "@/components/payables/types/payableTypes";
 import { AccountPayable } from "@/types/payables";
 
 const Payables = () => {
   const [statusFilter, setStatusFilter] = useState<PayableStatusFilter>("pending");
   const { payables, isLoading, createPayable, updatePayable, markAsPaid } = usePayables(statusFilter);
+  const deletePayable = useDeletePayable();
   const [editingPayable, setEditingPayable] = useState<AccountPayable | null>(null);
 
   const handleCreatePayable = async (data: PayableFormData): Promise<boolean> => {
@@ -49,6 +51,10 @@ const Payables = () => {
     markAsPaid.mutate(payableId);
   };
 
+  const handleDeletePayable = (payableId: string) => {
+    deletePayable.mutate(payableId);
+  };
+
   const handleFilterChange = (value: PayableStatusFilter) => {
     setStatusFilter(value);
   };
@@ -75,7 +81,9 @@ const Payables = () => {
         isLoading={isLoading}
         onMarkAsPaid={handleMarkAsPaid}
         onEdit={handleEditPayable}
+        onDelete={handleDeletePayable}
         isPending={markAsPaid.isPending || updatePayable.isPending}
+        isDeleting={deletePayable.isPending}
         statusFilter={statusFilter}
       />
 
