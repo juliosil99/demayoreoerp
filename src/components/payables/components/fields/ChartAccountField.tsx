@@ -42,9 +42,7 @@ export function ChartAccountField({ form }: ChartAccountFieldProps) {
     console.log("[ChartAccountField] Available chart accounts:", chartAccounts);
     
     return chartAccounts.reduce((acc, account) => {
-      // Extract account_type from the account name or code if available
-      // This is a simplification - ideally the API would return account_type
-      let accountType = "expense";
+      const accountType = account.account_type || "other";
       
       if (!acc[accountType]) {
         acc[accountType] = [];
@@ -58,7 +56,10 @@ export function ChartAccountField({ form }: ChartAccountFieldProps) {
   const accountTypeLabels: Record<string, string> = {
     asset: "Activos",
     liability: "Pasivos",
-    expense: "Gastos"
+    expense: "Gastos",
+    equity: "Capital",
+    income: "Ingresos",
+    other: "Otros"
   };
 
   if (isLoading) {

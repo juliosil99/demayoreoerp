@@ -78,7 +78,7 @@ export function useChartAccountsQuery() {
       const { data, error } = await supabase
         .from("chart_of_accounts")
         .select("id, code, name, account_type")
-        .eq("account_type", "expense")
+        .or("account_type.eq.expense,account_type.eq.asset") // Include both expense and asset accounts
         .order("code");
 
       if (error) {
