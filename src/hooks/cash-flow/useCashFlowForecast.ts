@@ -99,7 +99,8 @@ export function useCashFlowForecast(forecastId?: string) {
         .insert({
           name: forecastName,
           start_date: startDate,
-          status: 'draft'
+          status: 'draft',
+          user_id: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
         .single();
