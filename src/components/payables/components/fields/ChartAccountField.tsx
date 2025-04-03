@@ -28,7 +28,7 @@ interface ChartAccountFieldProps {
 export function ChartAccountField({ form }: ChartAccountFieldProps) {
   const { data: chartAccounts, isLoading } = useChartAccountsQuery();
   
-  // Log the current chart account value whenever it changes
+  // Watch chart_account_id for debugging only
   const chartAccountId = form.watch("chart_account_id");
   
   useEffect(() => {
