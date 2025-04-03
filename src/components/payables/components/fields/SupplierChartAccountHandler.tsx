@@ -14,26 +14,34 @@ export function SupplierChartAccountHandler({ form }: SupplierChartAccountHandle
   
   useEffect(() => {
     if (clientId) {
+      console.log("[SupplierChartAccountHandler] Client ID changed to:", clientId);
+      
       // Fetch supplier's default chart account
       const fetchSupplierDefaultChartAccount = async () => {
         try {
+          console.log("[SupplierChartAccountHandler] Fetching chart account for supplier:", clientId);
+          
           const { data, error } = await supabase
             .from("contacts")
-            .select("default_chart_account_id")
+            .select("id, name, default_chart_account_id")
             .eq("id", clientId)
             .single();
           
           if (error) {
-            console.error("Error fetching supplier default chart account:", error);
+            console.error("[SupplierChartAccountHandler] Error fetching supplier default chart account:", error);
             return;
           }
           
+          console.log("[SupplierChartAccountHandler] Supplier data:", data);
+          
           if (data && data.default_chart_account_id) {
-            console.log("Found default chart account for supplier:", data.default_chart_account_id);
+            console.log("[SupplierChartAccountHandler] Found default chart account for supplier:", data.default_chart_account_id);
             form.setValue("chart_account_id", data.default_chart_account_id);
+          } else {
+            console.log("[SupplierChartAccountHandler] No default chart account found for supplier");
           }
         } catch (error) {
-          console.error("Error in fetchSupplierDefaultChartAccount:", error);
+          console.error("[SupplierChartAccountHandler] Error in fetchSupplierDefaultChartAccount:", error);
         }
       };
       

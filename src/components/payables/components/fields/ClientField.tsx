@@ -23,7 +23,14 @@ interface ClientFieldProps {
 }
 
 export function ClientField({ form }: ClientFieldProps) {
-  const { data: clients } = useClientQuery();
+  const { data: clients, isLoading } = useClientQuery();
+
+  const handleClientChange = (value: string) => {
+    console.log("[ClientField] Client selected:", value);
+    const client = clients?.find(c => c.id === value);
+    console.log("[ClientField] Selected client details:", client);
+    form.setValue("client_id", value);
+  };
 
   return (
     <FormField
@@ -33,7 +40,7 @@ export function ClientField({ form }: ClientFieldProps) {
         <FormItem>
           <FormLabel>Proveedor</FormLabel>
           <Select 
-            onValueChange={field.onChange} 
+            onValueChange={handleClientChange} 
             value={field.value}
           >
             <FormControl>

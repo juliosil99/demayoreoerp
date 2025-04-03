@@ -28,9 +28,18 @@ interface ChartAccountFieldProps {
 export function ChartAccountField({ form }: ChartAccountFieldProps) {
   const { data: chartAccounts, isLoading } = useChartAccountsQuery();
   
+  // Log the current chart account value whenever it changes
+  const chartAccountId = form.watch("chart_account_id");
+  
+  useEffect(() => {
+    console.log("[ChartAccountField] Current chart_account_id:", chartAccountId);
+  }, [chartAccountId]);
+  
   // Group accounts by type
   const groupedAccounts = React.useMemo(() => {
     if (!chartAccounts) return {};
+    
+    console.log("[ChartAccountField] Available chart accounts:", chartAccounts);
     
     return chartAccounts.reduce((acc, account) => {
       // Extract account_type from the account name or code if available
@@ -61,6 +70,11 @@ export function ChartAccountField({ form }: ChartAccountFieldProps) {
     );
   }
 
+  const handleChartAccountChange = (value: string) => {
+    console.log("[ChartAccountField] Chart account selected manually:", value);
+    form.setValue("chart_account_id", value);
+  };
+
   return (
     <FormField
       control={form.control}
@@ -69,7 +83,7 @@ export function ChartAccountField({ form }: ChartAccountFieldProps) {
         <FormItem>
           <FormLabel>Cuenta Contable</FormLabel>
           <Select 
-            onValueChange={field.onChange} 
+            onValueChange={handleChartAccountChange} 
             value={field.value || "none"}
           >
             <FormControl>
