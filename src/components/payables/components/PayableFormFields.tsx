@@ -19,7 +19,9 @@ interface PayableFormFieldsProps {
 export function PayableFormFields({ form }: PayableFormFieldsProps) {
   return (
     <>
+      {/* This silent component handles setting the default chart account */}
       <SupplierChartAccountHandler form={form} />
+      
       <ClientField form={form} />
       <InvoiceField form={form} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

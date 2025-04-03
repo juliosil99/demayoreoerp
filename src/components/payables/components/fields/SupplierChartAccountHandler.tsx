@@ -39,11 +39,11 @@ export function SupplierChartAccountHandler({ form }: SupplierChartAccountHandle
         
         console.log("[SupplierChartAccountHandler] Supplier data:", data);
         
+        // Mark this client as processed to prevent infinite loops
+        hasSetDefaultRef.current[clientId] = true;
+        
         if (data && data.default_chart_account_id && !currentChartAccountId) {
           console.log("[SupplierChartAccountHandler] Found default chart account for supplier:", data.default_chart_account_id);
-          
-          // Mark this client as processed
-          hasSetDefaultRef.current[clientId] = true;
           
           // Set the chart account
           form.setValue("chart_account_id", data.default_chart_account_id, {
@@ -55,8 +55,6 @@ export function SupplierChartAccountHandler({ form }: SupplierChartAccountHandle
           console.log("[SupplierChartAccountHandler] Set chart account to:", data.default_chart_account_id);
         } else {
           console.log("[SupplierChartAccountHandler] No default chart account found or chart account already set");
-          // Still mark this client as processed to avoid repeated calls
-          hasSetDefaultRef.current[clientId] = true;
         }
       } catch (error) {
         console.error("[SupplierChartAccountHandler] Error in fetchSupplierDefaultChartAccount:", error);

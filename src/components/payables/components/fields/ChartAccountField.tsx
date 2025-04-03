@@ -75,9 +75,13 @@ export function ChartAccountField({ form }: ChartAccountFieldProps) {
     
     // If selecting "none", set to null, otherwise use the selected value
     const newValue = value === "none" ? null : value;
-    form.setValue("chart_account_id", newValue, {
-      shouldValidate: true
-    });
+    
+    // Only update if the value is different
+    if (chartAccountId !== newValue) {
+      form.setValue("chart_account_id", newValue, {
+        shouldValidate: true
+      });
+    }
   };
 
   // Find the currently selected account to display its name
@@ -109,7 +113,7 @@ export function ChartAccountField({ form }: ChartAccountFieldProps) {
             <FormControl>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar cuenta contable">
-                  {field.value ? findAccountName() : "Seleccionar cuenta contable"}
+                  {findAccountName()}
                 </SelectValue>
               </SelectTrigger>
             </FormControl>
