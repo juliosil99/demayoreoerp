@@ -29,7 +29,16 @@ export function ClientField({ form }: ClientFieldProps) {
     console.log("[ClientField] Client selected:", value);
     const client = clients?.find(c => c.id === value);
     console.log("[ClientField] Selected client details:", client);
-    form.setValue("client_id", value);
+    
+    // Set the client ID first
+    form.setValue("client_id", value, { 
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
+    
+    // Clear the invoice_id since it's related to the client
+    form.setValue("invoice_id", null);
   };
 
   return (
@@ -42,6 +51,7 @@ export function ClientField({ form }: ClientFieldProps) {
           <Select 
             onValueChange={handleClientChange} 
             value={field.value}
+            disabled={isLoading}
           >
             <FormControl>
               <SelectTrigger>

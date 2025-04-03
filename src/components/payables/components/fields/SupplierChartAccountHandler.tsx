@@ -11,6 +11,7 @@ interface SupplierChartAccountHandlerProps {
 export function SupplierChartAccountHandler({ form }: SupplierChartAccountHandlerProps) {
   // When client changes, watch for supplier's default chart account
   const clientId = form.watch("client_id");
+  const currentChartAccountId = form.watch("chart_account_id");
   
   useEffect(() => {
     if (clientId) {
@@ -36,7 +37,18 @@ export function SupplierChartAccountHandler({ form }: SupplierChartAccountHandle
           
           if (data && data.default_chart_account_id) {
             console.log("[SupplierChartAccountHandler] Found default chart account for supplier:", data.default_chart_account_id);
-            form.setValue("chart_account_id", data.default_chart_account_id);
+            
+            // Only update if the current value is empty or null
+            if (!currentChartAccountId || currentChartAccountId === "") {
+              console.log("[SupplierChartAccountHandler] Setting chart account to:", data.default_chart_account_id);
+              form.setValue("chart_account_id", data.default_chart_account_id, {
+                shouldValidate: true,
+                shouldDirty: true,
+                shouldTouch: true
+              });
+            } else {
+              console.log("[SupplierChartAccountHandler] Not updating chart account as it already has a value:", currentChartAccountId);
+            }
           } else {
             console.log("[SupplierChartAccountHandler] No default chart account found for supplier");
           }
@@ -47,7 +59,7 @@ export function SupplierChartAccountHandler({ form }: SupplierChartAccountHandle
       
       fetchSupplierDefaultChartAccount();
     }
-  }, [clientId, form]);
+  }, [clientId, form, currentChartAccountId]);
 
   return null;
 }

@@ -72,7 +72,26 @@ export function ChartAccountField({ form }: ChartAccountFieldProps) {
 
   const handleChartAccountChange = (value: string) => {
     console.log("[ChartAccountField] Chart account selected manually:", value);
-    form.setValue("chart_account_id", value);
+    
+    // If selecting "none", set to null, otherwise use the selected value
+    const newValue = value === "none" ? null : value;
+    form.setValue("chart_account_id", newValue, {
+      shouldValidate: true
+    });
+  };
+
+  // Find the currently selected account to display its name
+  const findAccountName = () => {
+    if (!chartAccountId || chartAccountId === "none") return "Ninguna";
+    
+    for (const accountType in groupedAccounts) {
+      const account = groupedAccounts[accountType]?.find(a => a.id === chartAccountId);
+      if (account) {
+        return `${account.code} - ${account.name}`;
+      }
+    }
+    
+    return "Cuenta seleccionada";
   };
 
   return (
@@ -85,10 +104,13 @@ export function ChartAccountField({ form }: ChartAccountFieldProps) {
           <Select 
             onValueChange={handleChartAccountChange} 
             value={field.value || "none"}
+            defaultValue={field.value || "none"}
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="Seleccionar cuenta contable" />
+                <SelectValue placeholder="Seleccionar cuenta contable">
+                  {field.value ? findAccountName() : "Seleccionar cuenta contable"}
+                </SelectValue>
               </SelectTrigger>
             </FormControl>
             <SelectContent>
