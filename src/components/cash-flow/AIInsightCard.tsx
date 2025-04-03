@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { InfoIcon } from "lucide-react";
+import { Info } from "lucide-react";
 
 interface AIInsightCardProps {
   insights: string;
@@ -46,7 +46,7 @@ export function AIInsightCard({ insights, isLoading }: AIInsightCardProps) {
     <Card className="col-span-3">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2">
-          <InfoIcon className="h-5 w-5 text-blue-500" />
+          <Info className="h-5 w-5 text-blue-500" />
           Análisis de IA
         </CardTitle>
       </CardHeader>

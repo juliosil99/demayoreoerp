@@ -1,10 +1,10 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.23.0'
-import { Configuration, OpenAIApi } from 'https://esm.sh/openai@3.3.0'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0'
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { OpenAI } from 'https://esm.sh/openai@4.0.0'
 
-// Define types for the API
-interface ForecastRequestBody {
+// Types for this function
+interface ForecastRequest {
   forecastId: string;
   startDate: string;
   historicalData: {
@@ -17,300 +17,416 @@ interface ForecastRequestBody {
   config?: Record<string, any>;
 }
 
-interface ForecastWeek {
-  id?: string;
-  forecast_id: string;
-  week_number: number;
-  week_start_date: string;
-  week_end_date: string;
-  predicted_inflows: number;
-  predicted_outflows: number;
-  actual_inflows?: number;
-  actual_outflows?: number;
-  notes?: string;
+interface ForecastItemData {
+  category: string;
+  amount: number;
+  type: 'inflow' | 'outflow';
+  source: 'historical' | 'ai_predicted';
+  description?: string;
+  is_recurring?: boolean;
   confidence_score?: number;
 }
 
-interface ForecastResponse {
-  success: boolean;
-  forecast?: ForecastWeek[];
-  insights?: string;
-  error?: string;
+interface ForecastWeekData {
+  weekNumber: number;
+  startDate: string;
+  endDate: string;
+  predictedInflows: number;
+  predictedOutflows: number;
+  items: ForecastItemData[];
 }
 
-// Set up CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Function to calculate the expected value based on historical data
+function calculateExpectedValue(
+  historicalData: any[],
+  confidenceAdjustment: number = 1.0
+): number {
+  if (historicalData.length === 0) return 0;
+  
+  // Calculate average
+  const sum = historicalData.reduce((acc, val) => acc + val, 0);
+  const average = sum / historicalData.length;
+  
+  // Apply confidence adjustment (lower for future periods)
+  return average * confidenceAdjustment;
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
+// Format date to YYYY-MM-DD
+function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
+// Function to generate AI insights
+async function generateAIInsights(
+  historicalData: ForecastRequest['historicalData'],
+  forecastData: ForecastWeekData[],
+  openai: OpenAI
+): Promise<string> {
   try {
-    // Get request data
-    const requestData: ForecastRequestBody = await req.json()
-    const { forecastId, startDate, historicalData, config } = requestData
+    // Create a summary of the data for the AI to analyze
+    const weeksWithNegativeCashFlow = forecastData.filter(
+      week => week.predictedInflows < week.predictedOutflows
+    );
     
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    // Initialize OpenAI client
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
-    if (!openaiApiKey) {
-      throw new Error('OPENAI_API_KEY is not set')
-    }
+    const totalInflows = forecastData.reduce(
+      (sum, week) => sum + week.predictedInflows, 0
+    );
     
-    const configuration = new Configuration({ apiKey: openaiApiKey })
-    const openai = new OpenAIApi(configuration)
-
-    // Prepare the data for the cash flow forecast
-    const { payables, receivables, expenses, sales, bankAccounts } = historicalData
-
-    // Analyze historical data to generate forecast
-    console.log(`Generating forecast for id ${forecastId} starting on ${startDate}`)
-    console.log(`Historical data counts: Payables: ${payables.length}, Receivables: ${receivables.length}, Expenses: ${expenses.length}, Sales: ${sales.length}`)
-
-    // Initialize weeks data
-    // Each week is 7 days from the start date
-    const weeks: ForecastWeek[] = []
-    const startDateObj = new Date(startDate)
-
-    for (let i = 0; i < 13; i++) {
-      const weekStartDate = new Date(startDateObj)
-      weekStartDate.setDate(startDateObj.getDate() + (i * 7))
-      
-      const weekEndDate = new Date(weekStartDate)
-      weekEndDate.setDate(weekStartDate.getDate() + 6)
-      
-      weeks.push({
-        forecast_id: forecastId,
-        week_number: i + 1,
-        week_start_date: weekStartDate.toISOString().split('T')[0],
-        week_end_date: weekEndDate.toISOString().split('T')[0],
-        predicted_inflows: 0,
-        predicted_outflows: 0,
-        confidence_score: 0.7
-      })
-    }
-
-    // Generate the forecast based on historical data
-    // This is a simplified model that could be enhanced with more sophisticated analysis
-    let forecastInsights = ''
-
-    // Process payables (upcoming payments)
-    for (const payable of payables) {
-      if (payable.status === 'pending') {
-        const dueDate = new Date(payable.due_date)
-        
-        // Find the week this payable is due
-        const weekIndex = weeks.findIndex(week => {
-          const weekStart = new Date(week.week_start_date)
-          const weekEnd = new Date(week.week_end_date)
-          return dueDate >= weekStart && dueDate <= weekEnd
-        })
-        
-        if (weekIndex !== -1) {
-          weeks[weekIndex].predicted_outflows += Number(payable.amount)
-        }
-      }
-    }
-
-    // Process receivables (upcoming income)
-    for (const receivable of receivables) {
-      if (receivable.status === 'pending') {
-        // Assume receivables will be received within the next 4 weeks
-        // Distribution: 20% week 1, 40% week 2, 30% week 3, 10% week 4
-        const amount = Number(receivable.amount)
-        
-        if (weeks.length >= 4) {
-          weeks[0].predicted_inflows += amount * 0.2
-          weeks[1].predicted_inflows += amount * 0.4
-          weeks[2].predicted_inflows += amount * 0.3
-          weeks[3].predicted_inflows += amount * 0.1
-        }
-      }
-    }
-
-    // Process historical sales for recurring patterns
-    if (sales.length > 0) {
-      // Group sales by week
-      const salesByWeek = new Map<number, number>()
-      for (const sale of sales) {
-        const saleDate = new Date(sale.date)
-        const weekNumber = Math.floor((saleDate.getTime() - startDateObj.getTime()) / (7 * 24 * 60 * 60 * 1000))
-        
-        if (weekNumber >= 0 && weekNumber < 13) {
-          const amount = Number(sale.price || 0)
-          salesByWeek.set(weekNumber, (salesByWeek.get(weekNumber) || 0) + amount)
-        }
-      }
-      
-      // Calculate weekly average sales
-      const totalSales = Array.from(salesByWeek.values()).reduce((sum, val) => sum + val, 0)
-      const avgWeeklySales = totalSales / Math.max(salesByWeek.size, 1)
-      
-      // Apply average sales to future weeks
-      for (let i = 0; i < Math.min(13, weeks.length); i++) {
-        // Add some randomness to simulate real-world variability
-        const randomFactor = 0.8 + Math.random() * 0.4 // between 0.8 and 1.2
-        weeks[i].predicted_inflows += avgWeeklySales * randomFactor
-      }
-    }
-
-    // Process historical expenses for recurring patterns
-    if (expenses.length > 0) {
-      // Group expenses by week
-      const expensesByWeek = new Map<number, number>()
-      for (const expense of expenses) {
-        const expenseDate = new Date(expense.date)
-        const weekNumber = Math.floor((expenseDate.getTime() - startDateObj.getTime()) / (7 * 24 * 60 * 60 * 1000))
-        
-        if (weekNumber >= 0 && weekNumber < 13) {
-          const amount = Number(expense.amount || 0)
-          expensesByWeek.set(weekNumber, (expensesByWeek.get(weekNumber) || 0) + amount)
-        }
-      }
-      
-      // Calculate weekly average expenses
-      const totalExpenses = Array.from(expensesByWeek.values()).reduce((sum, val) => sum + val, 0)
-      const avgWeeklyExpenses = totalExpenses / Math.max(expensesByWeek.size, 1)
-      
-      // Apply average expenses to future weeks
-      for (let i = 0; i < Math.min(13, weeks.length); i++) {
-        // Add some randomness to simulate real-world variability
-        const randomFactor = 0.9 + Math.random() * 0.2 // between 0.9 and 1.1
-        weeks[i].predicted_outflows += avgWeeklyExpenses * randomFactor
-      }
-    }
-
-    // Add predictable recurring expense patterns
-    // Example: Rent or subscription services that occur at specific periods
-    const monthlyRecurringExpenses = 2000 // Example value
-    for (let i = 0; i < weeks.length; i++) {
-      const weekNumber = i + 1
-      // Add monthly expenses in the first week of each month
-      if (weekNumber % 4 === 1) {
-        weeks[i].predicted_outflows += monthlyRecurringExpenses
-      }
-    }
-
-    // Round numbers to make them cleaner
-    for (const week of weeks) {
-      week.predicted_inflows = Math.round(week.predicted_inflows)
-      week.predicted_outflows = Math.round(week.predicted_outflows)
-    }
-
-    // Use OpenAI to generate insights
-    const netCashFlows = weeks.map(week => week.predicted_inflows - week.predicted_outflows)
-    let cumulativeCashFlow = 0
-    const cumulativeCashFlows = netCashFlows.map(flow => {
-      cumulativeCashFlow += flow
-      return cumulativeCashFlow
-    })
-
-    const weeksSummary = weeks.map((week, index) => {
-      return {
-        weekNumber: week.week_number,
-        startDate: week.week_start_date,
-        endDate: week.week_end_date,
-        inflows: week.predicted_inflows,
-        outflows: week.predicted_outflows,
-        netCashFlow: netCashFlows[index],
-        cumulativeCashFlow: cumulativeCashFlows[index]
-      }
-    })
-
-    // Generate AI insights
+    const totalOutflows = forecastData.reduce(
+      (sum, week) => sum + week.predictedOutflows, 0
+    );
+    
+    const netCashFlow = totalInflows - totalOutflows;
+    
+    // Format the data for the prompt
+    const forecastSummary = forecastData.map(week => ({
+      weekNumber: week.weekNumber,
+      dates: `${week.startDate} to ${week.endDate}`,
+      inflows: week.predictedInflows.toFixed(2),
+      outflows: week.predictedOutflows.toFixed(2),
+      netCashFlow: (week.predictedInflows - week.predictedOutflows).toFixed(2)
+    }));
+    
+    // Get historical data stats
+    const historicalStats = {
+      totalPayables: historicalData.payables.length,
+      totalReceivables: historicalData.receivables.length,
+      totalExpenses: historicalData.expenses.length,
+      totalSales: historicalData.sales.length
+    };
+    
+    // Create the prompt for the AI
     const prompt = `
-      You are a financial advisor analyzing a 13-week cash flow forecast.
-      Please provide insights on the following cash flow forecast data. 
-      This is a week-by-week summary of predicted cash inflows and outflows:
+      You are a financial analyst specializing in cash flow management for small businesses. 
+      You're analyzing a 13-week cash flow forecast with the following data:
       
-      ${JSON.stringify(weeksSummary, null, 2)}
+      FORECAST DATA:
+      ${JSON.stringify(forecastSummary, null, 2)}
       
-      Based on this data, please provide:
+      SUMMARY METRICS:
+      - Total Inflows over 13 weeks: $${totalInflows.toFixed(2)}
+      - Total Outflows over 13 weeks: $${totalOutflows.toFixed(2)}
+      - Net Cash Flow over 13 weeks: $${netCashFlow.toFixed(2)}
+      - Number of weeks with negative cash flow: ${weeksWithNegativeCashFlow.length}
       
-      1. Analysis of Cash Flow Trend: Is the overall trend positive or negative?
-      2. Weeks with Potential Cash Flow Issues: Identify specific weeks where cash flow might be tight.
-      3. Cash Flow Patterns: Identify any notable patterns in the cash flow data.
-      4. Cash Flow Optimization Suggestions: Provide recommendations for improving cash flow.
-      5. Risks and Opportunities: What are the main risks and opportunities based on this forecast?
+      HISTORICAL DATA STATS:
+      ${JSON.stringify(historicalStats, null, 2)}
       
-      Format your response in clear sections with bullet points where appropriate. Be concise but thorough.
-    `
+      Please provide a detailed analysis in Spanish with the following sections:
+      
+      1. Analysis of Cash Flow Trend: Overall assessment of the 13-week cash flow trend.
+      2. Weeks with Potential Cash Flow Issues: Identify specific weeks where cash flow problems might occur.
+      3. Cash Flow Patterns: Identify any notable patterns or seasonality.
+      4. Cash Flow Optimization Suggestions: Practical recommendations for improving cash flow.
+      5. Risks and Opportunities: Highlight potential risks and opportunities based on the forecast.
+      
+      Each section should be 2-3 paragraphs with specific, actionable insights. Be specific about dollar amounts and timing.
+    `;
+    
+    // Request analysis from OpenAI
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: "You are a financial analyst specializing in cash flow management." },
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.5,
+      max_tokens: 1500
+    });
+    
+    return response.choices[0]?.message?.content || '';
+  } catch (error) {
+    console.error("Error generating AI insights:", error);
+    return "No se pudieron generar insights debido a un error.";
+  }
+}
 
-    const openaiResponse = await openai.createCompletion({
-      model: "text-davinci-003",
-      prompt,
-      temperature: 0.7,
-      max_tokens: 800,
-      top_p: 1,
-      frequency_penalty: 0,
-      presence_penalty: 0
-    })
+// Main handler for the edge function
+serve(async (req) => {
+  try {
+    // Set up CORS headers
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    };
 
-    forecastInsights = openaiResponse.data.choices[0].text?.trim() || ''
-
-    // Update the database with the forecast and insights
-    // First update the weeks
-    for (const week of weeks) {
-      const { error: weekError } = await supabase
-        .from('forecast_weeks')
-        .update({
-          predicted_inflows: week.predicted_inflows,
-          predicted_outflows: week.predicted_outflows,
-          confidence_score: week.confidence_score
-        })
-        .eq('forecast_id', forecastId)
-        .eq('week_number', week.week_number)
-      
-      if (weekError) {
-        console.error('Error updating forecast week:', weekError)
-        throw new Error(`Failed to update forecast week ${week.week_number}: ${weekError.message}`)
-      }
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
     }
 
-    // Update the forecast with AI insights
-    const { error: forecastError } = await supabase
+    // Parse request
+    const requestData: ForecastRequest = await req.json();
+    const { forecastId, startDate, historicalData, config } = requestData;
+
+    // Validate inputs
+    if (!forecastId) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing forecast ID' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    // Set up Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Set up OpenAI client if key is available
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null;
+
+    // Generate the 13-week forecast
+    const startDateObj = new Date(startDate);
+    const forecastWeeks: ForecastWeekData[] = [];
+
+    // Process each week
+    for (let i = 0; i < 13; i++) {
+      const weekStartDate = new Date(startDateObj);
+      weekStartDate.setDate(weekStartDate.getDate() + (i * 7));
+      
+      const weekEndDate = new Date(weekStartDate);
+      weekEndDate.setDate(weekEndDate.getDate() + 6);
+      
+      // Format dates to ISO strings (YYYY-MM-DD)
+      const formattedStartDate = formatDate(weekStartDate);
+      const formattedEndDate = formatDate(weekEndDate);
+      
+      // Calculate expected inflows and outflows based on historical data
+      // Apply a confidence factor that decreases for weeks further in the future
+      const confidenceFactor = Math.max(0.4, 1 - (i * 0.05)); // Starts at 1.0, decreases by 0.05 each week, min 0.4
+      
+      // Calculate expected inflows from sales and receivables
+      let predictedInflows = 0;
+      const inflowItems: ForecastItemData[] = [];
+      
+      // Process sales data for this week
+      if (historicalData.sales && historicalData.sales.length > 0) {
+        const avgWeeklySales = calculateExpectedValue(
+          historicalData.sales.map(sale => sale.price || 0),
+          confidenceFactor
+        );
+        
+        if (avgWeeklySales > 0) {
+          predictedInflows += avgWeeklySales;
+          inflowItems.push({
+            category: 'Ventas',
+            amount: avgWeeklySales,
+            type: 'inflow',
+            source: 'ai_predicted',
+            description: 'Ventas proyectadas basadas en históricos',
+            confidence_score: confidenceFactor
+          });
+        }
+      }
+      
+      // Process receivables data for this week
+      if (historicalData.receivables && historicalData.receivables.length > 0) {
+        const avgReceivables = calculateExpectedValue(
+          historicalData.receivables.map(rec => rec.amount || 0),
+          confidenceFactor
+        );
+        
+        if (avgReceivables > 0) {
+          predictedInflows += avgReceivables;
+          inflowItems.push({
+            category: 'Cuentas por Cobrar',
+            amount: avgReceivables,
+            type: 'inflow',
+            source: 'ai_predicted',
+            description: 'Cobros proyectados basados en históricos',
+            confidence_score: confidenceFactor
+          });
+        }
+      }
+      
+      // Calculate expected outflows from expenses and payables
+      let predictedOutflows = 0;
+      const outflowItems: ForecastItemData[] = [];
+      
+      // Process expense data for this week
+      if (historicalData.expenses && historicalData.expenses.length > 0) {
+        const avgWeeklyExpenses = calculateExpectedValue(
+          historicalData.expenses.map(exp => exp.amount || 0),
+          confidenceFactor
+        );
+        
+        if (avgWeeklyExpenses > 0) {
+          predictedOutflows += avgWeeklyExpenses;
+          outflowItems.push({
+            category: 'Gastos Operativos',
+            amount: avgWeeklyExpenses,
+            type: 'outflow',
+            source: 'ai_predicted',
+            description: 'Gastos proyectados basados en históricos',
+            confidence_score: confidenceFactor
+          });
+        }
+      }
+      
+      // Process payables data for this week
+      if (historicalData.payables && historicalData.payables.length > 0) {
+        const avgPayables = calculateExpectedValue(
+          historicalData.payables.map(pay => pay.amount || 0),
+          confidenceFactor
+        );
+        
+        if (avgPayables > 0) {
+          predictedOutflows += avgPayables;
+          outflowItems.push({
+            category: 'Cuentas por Pagar',
+            amount: avgPayables,
+            type: 'outflow',
+            source: 'ai_predicted',
+            description: 'Pagos proyectados basados en históricos',
+            confidence_score: confidenceFactor
+          });
+        }
+      }
+      
+      // Add fixed costs that occur in specific weeks (examples)
+      if (i % 4 === 0) { // Monthly costs (every 4 weeks)
+        const rentAmount = 2000;
+        predictedOutflows += rentAmount;
+        outflowItems.push({
+          category: 'Renta',
+          amount: rentAmount,
+          type: 'outflow',
+          source: 'ai_predicted',
+          description: 'Pago mensual de renta',
+          is_recurring: true,
+          confidence_score: 0.9
+        });
+      }
+      
+      if (i % 2 === 0) { // Bi-weekly costs (every 2 weeks)
+        const payrollAmount = 3000;
+        predictedOutflows += payrollAmount;
+        outflowItems.push({
+          category: 'Nómina',
+          amount: payrollAmount,
+          type: 'outflow',
+          source: 'ai_predicted',
+          description: 'Pago quincenal de nómina',
+          is_recurring: true,
+          confidence_score: 0.95
+        });
+      }
+      
+      // Combine all items
+      const allItems = [...inflowItems, ...outflowItems];
+      
+      // Add week to forecast
+      forecastWeeks.push({
+        weekNumber: i + 1,
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+        predictedInflows,
+        predictedOutflows,
+        items: allItems
+      });
+    }
+
+    // Generate AI insights if OpenAI client is available
+    let aiInsights = "";
+    if (openai) {
+      aiInsights = await generateAIInsights(historicalData, forecastWeeks, openai);
+    }
+
+    // Update the forecast in the database
+    const { error: updateError } = await supabase
       .from('cash_flow_forecasts')
       .update({
-        ai_insights: forecastInsights,
-        status: 'active'
+        status: 'active',
+        ai_insights: aiInsights
       })
-      .eq('id', forecastId)
-    
-    if (forecastError) {
-      console.error('Error updating forecast insights:', forecastError)
-      throw new Error(`Failed to update forecast insights: ${forecastError.message}`)
+      .eq('id', forecastId);
+
+    if (updateError) {
+      console.error('Error updating forecast:', updateError);
+      throw new Error('Failed to update forecast status');
     }
 
-    const response: ForecastResponse = {
-      success: true,
-      forecast: weeks,
-      insights: forecastInsights
+    // Insert forecast weeks data
+    for (const week of forecastWeeks) {
+      // Update week data
+      const { data: weekData, error: weekUpdateError } = await supabase
+        .from('forecast_weeks')
+        .update({
+          predicted_inflows: week.predictedInflows,
+          predicted_outflows: week.predictedOutflows
+        })
+        .eq('forecast_id', forecastId)
+        .eq('week_number', week.weekNumber)
+        .select('id')
+        .single();
+
+      if (weekUpdateError) {
+        console.error('Error updating forecast week:', weekUpdateError);
+        continue;
+      }
+
+      // Insert forecast items
+      if (week.items.length > 0) {
+        // Delete existing AI predicted items for this week
+        await supabase
+          .from('forecast_items')
+          .delete()
+          .eq('forecast_id', forecastId)
+          .eq('week_id', weekData.id)
+          .eq('source', 'ai_predicted');
+
+        // Insert new items
+        const forecastItems = week.items.map(item => ({
+          forecast_id: forecastId,
+          week_id: weekData.id,
+          category: item.category,
+          amount: item.amount,
+          description: item.description || null,
+          is_recurring: item.is_recurring || false,
+          confidence_score: item.confidence_score || 0.5,
+          type: item.type,
+          source: item.source
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('forecast_items')
+          .insert(forecastItems);
+
+        if (itemsError) {
+          console.error('Error inserting forecast items:', itemsError);
+        }
+      }
     }
 
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
+    // Return success response
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Forecast generated successfully',
+        insights: aiInsights
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
-    console.error('Error in cash-flow-forecast function:', error)
+    console.error('Error processing request:', error);
     
-    const errorResponse: ForecastResponse = {
-      success: false,
-      error: error.message || 'An unknown error occurred'
-    }
-    
-    return new Response(JSON.stringify(errorResponse), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    })
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message || 'An unknown error occurred'
+      }),
+      { 
+        headers: { 
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+          'Content-Type': 'application/json'
+        }, 
+        status: 500 
+      }
+    );
   }
-})
+});

@@ -26,10 +26,15 @@ export function useCashFlowForecasts() {
 
   // Create a new forecast
   const createForecast = useMutation({
-    mutationFn: async (forecast: Partial<CashFlowForecast>) => {
+    mutationFn: async (forecast: { name: string; start_date: string; status?: string; }) => {
       const { data, error } = await supabase
         .from('cash_flow_forecasts')
-        .insert(forecast)
+        .insert({
+          name: forecast.name,
+          start_date: forecast.start_date,
+          status: forecast.status || 'draft',
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        })
         .select()
         .single();
         

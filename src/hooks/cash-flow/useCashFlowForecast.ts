@@ -248,7 +248,16 @@ export function useCashFlowForecast(forecastId?: string) {
         // Update
         const { error } = await supabase
           .from('forecast_items')
-          .update(item)
+          .update({
+            category: item.category || '',
+            amount: item.amount || 0,
+            description: item.description,
+            is_recurring: item.is_recurring,
+            confidence_score: item.confidence_score,
+            type: item.type || 'inflow',
+            source: item.source || 'manual',
+            week_id: item.week_id || ''
+          })
           .eq('id', item.id);
           
         if (error) throw error;
@@ -259,8 +268,15 @@ export function useCashFlowForecast(forecastId?: string) {
         const { error } = await supabase
           .from('forecast_items')
           .insert({
-            ...item,
-            forecast_id: forecastId
+            forecast_id: forecastId,
+            week_id: item.week_id || '',
+            category: item.category || '',
+            amount: item.amount || 0,
+            description: item.description,
+            is_recurring: item.is_recurring,
+            confidence_score: item.confidence_score,
+            type: item.type || 'inflow',
+            source: item.source || 'manual'
           });
           
         if (error) throw error;
