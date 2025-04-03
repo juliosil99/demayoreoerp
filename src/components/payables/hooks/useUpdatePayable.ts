@@ -65,7 +65,6 @@ export function useUpdatePayable() {
       toast.success("Cuenta por pagar actualizada exitosamente");
     },
     onError: (error) => {
-      console.error('Error updating payable:', error);
       toast.error("Error al actualizar la cuenta por pagar");
     },
   });

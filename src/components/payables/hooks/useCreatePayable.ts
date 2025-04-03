@@ -56,7 +56,6 @@ export function useCreatePayable() {
       }
     },
     onError: (error) => {
-      console.error('Error creating payable:', error);
       toast.error("Error al crear la cuenta por pagar");
     },
   });

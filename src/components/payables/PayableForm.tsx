@@ -33,7 +33,6 @@ export function PayableForm({ onSubmit, isSubmitting, initialData }: PayableForm
   });
 
   const handleSubmit = (data: PayableFormData) => {
-    console.log('Submitting data:', data);
     // Convert "none" to null for chart_account_id
     if (data.chart_account_id === "none") {
       data.chart_account_id = null;

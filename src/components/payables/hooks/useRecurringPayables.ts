@@ -102,7 +102,6 @@ export const generateRecurringPayables = async (
       }]);
       
     if (error) {
-      console.error('Error creating recurring payable:', error);
       throw error;
     }
   }

@@ -31,15 +31,9 @@ export function ChartAccountField({ form }: ChartAccountFieldProps) {
   // Watch chart_account_id for debugging only
   const chartAccountId = form.watch("chart_account_id");
   
-  useEffect(() => {
-    console.log("[ChartAccountField] Current chart_account_id:", chartAccountId);
-  }, [chartAccountId]);
-  
   // Group accounts by type
   const groupedAccounts = React.useMemo(() => {
     if (!chartAccounts) return {};
-    
-    console.log("[ChartAccountField] Available chart accounts:", chartAccounts);
     
     return chartAccounts.reduce((acc, account) => {
       const accountType = account.account_type || "other";
@@ -72,8 +66,6 @@ export function ChartAccountField({ form }: ChartAccountFieldProps) {
   }
 
   const handleChartAccountChange = (value: string) => {
-    console.log("[ChartAccountField] Chart account selected manually:", value);
-    
     // If selecting "none", set to null, otherwise use the selected value
     const newValue = value === "none" ? null : value;
     

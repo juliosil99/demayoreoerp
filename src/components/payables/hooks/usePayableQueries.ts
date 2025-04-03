@@ -6,7 +6,6 @@ export function useClientQuery() {
   return useQuery({
     queryKey: ["suppliers"],
     queryFn: async () => {
-      console.log("[useClientQuery] Fetching suppliers");
       const { data, error } = await supabase
         .from("contacts")
         .select("id, name, rfc, default_chart_account_id")
@@ -14,11 +13,9 @@ export function useClientQuery() {
         .order("name");
 
       if (error) {
-        console.error("[useClientQuery] Error fetching suppliers:", error);
         throw error;
       }
       
-      console.log("[useClientQuery] Fetched suppliers:", data?.length, "with data:", data);
       return data;
     },
   });
@@ -74,7 +71,6 @@ export function useChartAccountsQuery() {
   return useQuery({
     queryKey: ["chart-accounts"],
     queryFn: async () => {
-      console.log("[useChartAccountsQuery] Fetching chart accounts");
       const { data, error } = await supabase
         .from("chart_of_accounts")
         .select("id, code, name, account_type")
@@ -82,11 +78,9 @@ export function useChartAccountsQuery() {
         .order("code");
 
       if (error) {
-        console.error("[useChartAccountsQuery] Error fetching chart accounts:", error);
         throw error;
       }
       
-      console.log("[useChartAccountsQuery] Fetched chart accounts:", data?.length);
       return data;
     },
   });

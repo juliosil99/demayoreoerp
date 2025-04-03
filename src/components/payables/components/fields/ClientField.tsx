@@ -26,9 +26,7 @@ export function ClientField({ form }: ClientFieldProps) {
   const { data: clients, isLoading } = useClientQuery();
 
   const handleClientChange = (value: string) => {
-    console.log("[ClientField] Client selected:", value);
     const client = clients?.find(c => c.id === value);
-    console.log("[ClientField] Selected client details:", client);
     
     // Set the client ID first
     form.setValue("client_id", value, { 
