@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Receipt, Wallet, Building2, FileText, BanknoteIcon, ArrowLeftRight, DollarSign, CreditCard, FileX, Users, BookOpen, UserCog, ChevronRight } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -18,6 +19,10 @@ const menuItems = [{
     icon: FileX,
     label: "Facturas",
     to: "/sales/invoices"
+  }, {
+    icon: Receipt,
+    label: "Cuentas por Cobrar",
+    to: "/expenses/receivables"
   }]
 }, {
   icon: Receipt,
@@ -27,10 +32,6 @@ const menuItems = [{
     icon: ArrowLeftRight,
     label: "Conciliación",
     to: "/expenses/reconciliation"
-  }, {
-    icon: Receipt,
-    label: "Cuentas por Cobrar",
-    to: "/expenses/receivables"
   }, {
     icon: Wallet,
     label: "Cuentas por Pagar",
