@@ -25,6 +25,7 @@ import Payables from "@/pages/Payables";
 import Profile from "@/pages/Profile";
 import SalesChannels from "@/pages/SalesChannels";
 import UserManagement from "@/pages/UserManagement";
+import CashFlowForecast from "@/pages/CashFlowForecast";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -71,6 +72,7 @@ function App() {
             <Route path="accounting/banking/account/:accountId" element={<BankAccountMovements />} />
             <Route path="accounting/reports" element={<Reports />} />
             <Route path="accounting/transfers" element={<AccountTransfers />} />
+            <Route path="accounting/cash-flow-forecast" element={<CashFlowForecast />} />
             <Route path="sales-channels" element={<SalesChannels />} />
             <Route path="users" element={<UserManagement />} />
           </Route>

@@ -361,6 +361,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_flow_forecasts: {
+        Row: {
+          ai_insights: string | null
+          config: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          start_date: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          ai_insights?: string | null
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          start_date: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          ai_insights?: string | null
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          start_date?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chart_of_accounts: {
         Row: {
           account_type: string
@@ -780,6 +816,110 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forecast_items: {
+        Row: {
+          amount: number
+          category: string
+          confidence_score: number | null
+          description: string | null
+          forecast_id: string
+          id: string
+          is_recurring: boolean | null
+          source: string
+          type: string
+          week_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          confidence_score?: number | null
+          description?: string | null
+          forecast_id: string
+          id?: string
+          is_recurring?: boolean | null
+          source: string
+          type: string
+          week_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          confidence_score?: number | null
+          description?: string | null
+          forecast_id?: string
+          id?: string
+          is_recurring?: boolean | null
+          source?: string
+          type?: string
+          week_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_items_forecast_id_fkey"
+            columns: ["forecast_id"]
+            isOneToOne: false
+            referencedRelation: "cash_flow_forecasts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forecast_items_week_id_fkey"
+            columns: ["week_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_weeks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forecast_weeks: {
+        Row: {
+          actual_inflows: number | null
+          actual_outflows: number | null
+          confidence_score: number | null
+          forecast_id: string
+          id: string
+          notes: string | null
+          predicted_inflows: number | null
+          predicted_outflows: number | null
+          week_end_date: string
+          week_number: number
+          week_start_date: string
+        }
+        Insert: {
+          actual_inflows?: number | null
+          actual_outflows?: number | null
+          confidence_score?: number | null
+          forecast_id: string
+          id?: string
+          notes?: string | null
+          predicted_inflows?: number | null
+          predicted_outflows?: number | null
+          week_end_date: string
+          week_number: number
+          week_start_date: string
+        }
+        Update: {
+          actual_inflows?: number | null
+          actual_outflows?: number | null
+          confidence_score?: number | null
+          forecast_id?: string
+          id?: string
+          notes?: string | null
+          predicted_inflows?: number | null
+          predicted_outflows?: number | null
+          week_end_date?: string
+          week_number?: number
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_weeks_forecast_id_fkey"
+            columns: ["forecast_id"]
+            isOneToOne: false
+            referencedRelation: "cash_flow_forecasts"
             referencedColumns: ["id"]
           },
         ]

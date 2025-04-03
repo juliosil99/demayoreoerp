@@ -1,6 +1,6 @@
 
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Receipt, Wallet, Building2, FileText, BanknoteIcon, ArrowLeftRight, DollarSign, CreditCard, FileX, Users, BookOpen, UserCog, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Receipt, Wallet, Building2, FileText, BanknoteIcon, ArrowLeftRight, DollarSign, CreditCard, FileX, Users, BookOpen, UserCog, ChevronRight, LineChart } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
 const menuItems = [{
@@ -57,6 +57,10 @@ const menuItems = [{
     icon: FileText,
     label: "Reportes",
     to: "/accounting/reports"
+  }, {
+    icon: LineChart,
+    label: "Pronóstico de Flujo",
+    to: "/accounting/cash-flow-forecast"
   }]
 }, {
   icon: UserCog,
