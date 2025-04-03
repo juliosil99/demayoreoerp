@@ -4,14 +4,29 @@ import { PayablesList } from "@/components/payables/components/PayablesList";
 import { PayablesFilter } from "@/components/payables/components/PayablesFilter";
 import { PayableFormDialog } from "@/components/payables/components/PayableFormDialog";
 import { PayableEditDialog } from "@/components/payables/components/PayableEditDialog";
-import { usePayables, PayableStatusFilter } from "@/components/payables/hooks/usePayables";
+import { PayableStatusFilter } from "@/components/payables/hooks/usePayables";
 import { useDeletePayable } from "@/components/payables/hooks/useDeletePayable";
 import { PayableFormData } from "@/components/payables/types/payableTypes";
 import { AccountPayable } from "@/types/payables";
+import { usePaginatedPayables } from "@/components/payables/hooks/usePaginatedPayables";
+import { PayablesPagination } from "@/components/payables/components/PayablesPagination";
+import { useMarkPayableAsPaid } from "@/components/payables/hooks/useMarkPayableAsPaid";
+import { useCreatePayable } from "@/components/payables/hooks/useCreatePayable";
+import { useUpdatePayable } from "@/components/payables/hooks/useUpdatePayable";
 
 const Payables = () => {
   const [statusFilter, setStatusFilter] = useState<PayableStatusFilter>("pending");
-  const { payables, isLoading, createPayable, updatePayable, markAsPaid } = usePayables(statusFilter);
+  const { 
+    payables, 
+    isLoading, 
+    currentPage, 
+    totalPages, 
+    setPage 
+  } = usePaginatedPayables(statusFilter);
+  
+  const createPayable = useCreatePayable();
+  const updatePayable = useUpdatePayable();
+  const markAsPaid = useMarkPayableAsPaid();
   const deletePayable = useDeletePayable();
   const [editingPayable, setEditingPayable] = useState<AccountPayable | null>(null);
 
@@ -20,7 +35,6 @@ const Payables = () => {
       await createPayable.mutateAsync(data);
       return true;
     } catch (error) {
-      console.error("Error creating payable:", error);
       return false;
     }
   };
@@ -34,7 +48,6 @@ const Payables = () => {
       await updatePayable.mutateAsync({ id, data, updateSeries });
       return true;
     } catch (error) {
-      console.error("Error updating payable:", error);
       return false;
     }
   };
@@ -57,6 +70,8 @@ const Payables = () => {
 
   const handleFilterChange = (value: PayableStatusFilter) => {
     setStatusFilter(value);
+    // Reset to first page when filter changes
+    setPage(1);
   };
 
   return (
@@ -85,6 +100,12 @@ const Payables = () => {
         isPending={markAsPaid.isPending || updatePayable.isPending}
         isDeleting={deletePayable.isPending}
         statusFilter={statusFilter}
+      />
+
+      <PayablesPagination 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setPage}
       />
 
       <PayableEditDialog
