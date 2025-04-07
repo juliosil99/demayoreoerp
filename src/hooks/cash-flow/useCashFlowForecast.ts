@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { CashFlowForecast, ForecastWeek, ForecastItem, ForecastHistoricalData, ForecastResponse } from "@/types/cashFlow";
 import { format, addDays } from "date-fns";
+import { toast } from "sonner";
 
 // Get the Supabase URL from the environment or use a fallback
 const SUPABASE_URL = "https://dulmmxtkgqkcfovvfxzu.supabase.co";
@@ -16,7 +17,8 @@ export function useCashFlowForecast(forecastId?: string) {
   const { 
     data: forecast, 
     isLoading: isLoadingForecast,
-    error: forecastError
+    error: forecastError,
+    refetch: refetchForecast
   } = useQuery({
     queryKey: ['cash-flow-forecast', forecastId],
     queryFn: async () => {
@@ -38,7 +40,8 @@ export function useCashFlowForecast(forecastId?: string) {
   const { 
     data: weeks, 
     isLoading: isLoadingWeeks,
-    error: weeksError
+    error: weeksError,
+    refetch: refetchWeeks
   } = useQuery({
     queryKey: ['cash-flow-forecast-weeks', forecastId],
     queryFn: async () => {
@@ -74,7 +77,8 @@ export function useCashFlowForecast(forecastId?: string) {
   const { 
     data: items, 
     isLoading: isLoadingItems,
-    error: itemsError
+    error: itemsError,
+    refetch: refetchItems
   } = useQuery({
     queryKey: ['cash-flow-forecast-items', forecastId],
     queryFn: async () => {
@@ -171,16 +175,25 @@ export function useCashFlowForecast(forecastId?: string) {
       
       if (!response.ok) {
         const errorText = await response.text();
+        console.error("API Error Response:", errorText);
         throw new Error(`Failed to generate forecast: ${errorText}`);
       }
       
       const data = await response.json() as ForecastResponse;
       
       if (!data.success) {
+        console.error("API Error Response:", data.error);
         throw new Error(data.error || 'Unknown error generating forecast');
       }
       
-      // Invalidate queries to refresh data
+      // Forcing refetch of all data
+      await Promise.all([
+        refetchForecast(),
+        refetchWeeks(),
+        refetchItems()
+      ]);
+      
+      // Additionally invalidate queries
       queryClient.invalidateQueries({ queryKey: ['cash-flow-forecast', forecastId] });
       queryClient.invalidateQueries({ queryKey: ['cash-flow-forecast-weeks', forecastId] });
       queryClient.invalidateQueries({ queryKey: ['cash-flow-forecast-items', forecastId] });
@@ -188,6 +201,7 @@ export function useCashFlowForecast(forecastId?: string) {
       return data;
     } catch (error) {
       console.error('Error generating forecast:', error);
+      toast.error(`Error al generar el pronóstico: ${error instanceof Error ? error.message : 'Error desconocido'}`);
       throw error;
     } finally {
       setIsGenerating(false);
@@ -307,6 +321,17 @@ export function useCashFlowForecast(forecastId?: string) {
     }
   });
   
+  // Function to force refresh all forecast data
+  const refreshAllForecastData = async () => {
+    if (!forecastId) return;
+    
+    await Promise.all([
+      refetchForecast(),
+      refetchWeeks(),
+      refetchItems()
+    ]);
+  };
+  
   return {
     forecast,
     weeks,
@@ -320,6 +345,7 @@ export function useCashFlowForecast(forecastId?: string) {
     deleteForecast,
     updateWeek,
     upsertItem,
-    deleteItem
+    deleteItem,
+    refreshAllForecastData
   };
 }

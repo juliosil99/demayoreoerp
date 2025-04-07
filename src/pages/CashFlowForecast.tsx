@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useCashFlowForecast } from "@/hooks/cash-flow/useCashFlowForecast";
 import { useCashFlowForecasts } from "@/hooks/cash-flow/useCashFlowForecasts";
@@ -13,6 +12,7 @@ import { GenerateForecastDialog } from "@/components/cash-flow/GenerateForecastD
 import { ForecastItemDialog } from "@/components/cash-flow/ForecastItemDialog";
 import { OpenAIKeyDialog } from "@/components/cash-flow/OpenAIKeyDialog";
 import { ForecastItem, ForecastWeek } from "@/types/cashFlow";
+import { supabase } from "@/lib/supabase";
 
 const CashFlowForecast = () => {
   const [selectedForecastId, setSelectedForecastId] = useState<string | undefined>();
@@ -26,7 +26,8 @@ const CashFlowForecast = () => {
   const { 
     forecasts, 
     isLoading: isLoadingForecasts,
-    createForecast: createForecastMutation
+    createForecast: createForecastMutation,
+    refetch: refetchForecasts
   } = useCashFlowForecasts();
   
   const { 
@@ -37,13 +38,20 @@ const CashFlowForecast = () => {
     isGenerating,
     generateAIForecast,
     upsertItem,
-    updateForecast
+    updateForecast,
+    refreshAllForecastData
   } = useCashFlowForecast(selectedForecastId);
   
   const { 
     historicalData, 
     isLoading: isLoadingHistoricalData 
   } = useHistoricalData();
+  
+  useEffect(() => {
+    if (selectedForecastId) {
+      refreshAllForecastData();
+    }
+  }, [selectedForecastId]);
   
   const handleCreateForecast = async (name: string, startDate: Date) => {
     try {
@@ -56,6 +64,8 @@ const CashFlowForecast = () => {
       setSelectedForecastId(result.id);
       setIsCreateDialogOpen(false);
       toast.success('Pronóstico creado correctamente');
+      
+      await refetchForecasts();
     } catch (error) {
       console.error('Error creating forecast:', error);
       toast.error('Error al crear el pronóstico');
@@ -74,6 +84,8 @@ const CashFlowForecast = () => {
       
       setIsGenerateDialogOpen(false);
       toast.success('Pronóstico generado correctamente');
+      
+      await refreshAllForecastData();
     } catch (error) {
       console.error('Error generating forecast:', error);
       toast.error('Error al generar el pronóstico');
@@ -99,6 +111,8 @@ const CashFlowForecast = () => {
       await upsertItem.mutateAsync(item);
       setIsItemDialogOpen(false);
       toast.success('Elemento guardado correctamente');
+      
+      await refreshAllForecastData();
     } catch (error) {
       console.error('Error saving item:', error);
       toast.error('Error al guardar el elemento');
@@ -113,6 +127,41 @@ const CashFlowForecast = () => {
   const handleOpenAISetup = () => {
     setIsOpenAIDialogOpen(true);
   };
+
+  const handleSaveOpenAIKey = async (apiKey: string) => {
+    try {
+      const response = await fetch(`https://dulmmxtkgqkcfovvfxzu.supabase.co/functions/v1/set-api-key`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({ apiKey })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to save API key: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Unknown error saving API key');
+      }
+      
+      setIsOpenAIDialogOpen(false);
+      toast.success('API Key guardada correctamente');
+      
+      if (selectedForecastId) {
+        await generateAIForecast(historicalData);
+        await refreshAllForecastData();
+      }
+    } catch (error) {
+      console.error('Error saving API key:', error);
+      toast.error(`Error al guardar API key: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  };
   
   const historicalDataCount = {
     payables: historicalData.payables.length,
@@ -124,7 +173,7 @@ const CashFlowForecast = () => {
   
   const isDataLoading = isLoading || isLoadingForecasts || isLoadingHistoricalData;
   const hasWeeks = weeks && weeks.length > 0;
-
+  
   return (
     <div className="container p-6 space-y-6">
       <ForecastHeader 
@@ -200,6 +249,7 @@ const CashFlowForecast = () => {
       <OpenAIKeyDialog 
         isOpen={isOpenAIDialogOpen}
         onClose={() => setIsOpenAIDialogOpen(false)}
+        onSave={handleSaveOpenAIKey}
       />
     </div>
   );

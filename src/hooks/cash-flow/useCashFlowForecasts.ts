@@ -5,12 +5,13 @@ import { CashFlowForecast } from "@/types/cashFlow";
 
 export function useCashFlowForecasts() {
   const queryClient = useQueryClient();
-
+  
   // Fetch all forecasts
   const { 
     data: forecasts, 
-    isLoading, 
-    error 
+    isLoading,
+    error,
+    refetch 
   } = useQuery({
     queryKey: ['cash-flow-forecasts'],
     queryFn: async () => {
@@ -23,16 +24,14 @@ export function useCashFlowForecasts() {
       return data as CashFlowForecast[];
     }
   });
-
+  
   // Create a new forecast
   const createForecast = useMutation({
-    mutationFn: async (forecast: { name: string; start_date: string; status?: string; }) => {
+    mutationFn: async (forecast: { name: string; start_date: string; status: string }) => {
       const { data, error } = await supabase
         .from('cash_flow_forecasts')
         .insert({
-          name: forecast.name,
-          start_date: forecast.start_date,
-          status: forecast.status || 'draft',
+          ...forecast,
           user_id: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
@@ -45,11 +44,12 @@ export function useCashFlowForecasts() {
       queryClient.invalidateQueries({ queryKey: ['cash-flow-forecasts'] });
     }
   });
-
+  
   return {
     forecasts,
     isLoading,
     error,
-    createForecast
+    createForecast,
+    refetch
   };
 }

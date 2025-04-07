@@ -2,142 +2,80 @@
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Key } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
-
-const SUPABASE_URL = "https://dulmmxtkgqkcfovvfxzu.supabase.co";
 
 interface OpenAIKeyDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave: (apiKey: string) => void;
 }
 
-export function OpenAIKeyDialog({ isOpen, onClose }: OpenAIKeyDialogProps) {
-  const [openaiApiKey, setOpenaiApiKey] = useState("");
-  const [isSavingApiKey, setIsSavingApiKey] = useState(false);
-  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
-  
-  const validateApiKey = (key: string) => {
-    if (!key.trim()) {
-      setApiKeyError("La clave API es requerida");
-      return false;
-    }
+export function OpenAIKeyDialog({ isOpen, onClose, onSave }: OpenAIKeyDialogProps) {
+  const [apiKey, setApiKey] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!apiKey) return;
     
-    if (!key.startsWith("sk-")) {
-      setApiKeyError("La clave API de OpenAI debe comenzar con 'sk-'");
-      return false;
+    setIsLoading(true);
+    try {
+      await onSave(apiKey);
+      setApiKey("");
+    } finally {
+      setIsLoading(false);
     }
-    
-    setApiKeyError(null);
-    return true;
   };
 
-  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOpenaiApiKey(e.target.value);
-    if (apiKeyError) {
-      validateApiKey(e.target.value);
-    }
-  };
-  
-  const handleSaveOpenAIKey = async () => {
-    if (!validateApiKey(openaiApiKey)) {
-      return;
-    }
-    
-    setIsSavingApiKey(true);
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('No hay una sesión activa');
-      }
-      
-      console.log("Calling edge function at:", `${SUPABASE_URL}/functions/v1/set-api-key`);
-      
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/set-api-key`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          key: 'OPENAI_API_KEY',
-          value: openaiApiKey
-        })
-      });
-      
-      console.log("Response status:", response.status);
-      
-      if (!response.ok) {
-        const responseBody = await response.text();
-        console.error('Error response:', response.status);
-        console.error('Response body:', responseBody);
-        
-        let errorMessage = 'Error al guardar la clave API';
-        try {
-          const errorJson = JSON.parse(responseBody);
-          if (errorJson.error) {
-            errorMessage = errorJson.error;
-          }
-        } catch (e) {
-          console.error('Error parsing response:', e);
-        }
-        
-        throw new Error(errorMessage);
-      }
-      
-      toast.success('Clave API guardada correctamente');
-      onClose();
-      setOpenaiApiKey("");
-      setApiKeyError(null);
-    } catch (error) {
-      console.error('Error saving API key:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al guardar la clave API');
-    } finally {
-      setIsSavingApiKey(false);
-    }
-  };
-  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Configurar API Key de OpenAI</DialogTitle>
+          <DialogTitle>Configurar OpenAI API Key</DialogTitle>
           <DialogDescription>
-            Ingrese su clave API de OpenAI para habilitar el análisis de IA en sus pronósticos de flujo de efectivo.
+            Configure su API Key de OpenAI para generar pronósticos con inteligencia artificial.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="apiKey">API Key de OpenAI</Label>
-            <Input
-              id="apiKey"
-              type="password"
-              placeholder="sk-..."
-              value={openaiApiKey}
-              onChange={handleApiKeyChange}
-              className={apiKeyError ? "border-red-500" : ""}
-            />
-            {apiKeyError ? (
-              <p className="text-xs text-red-500">{apiKeyError}</p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                La clave API debe comenzar con "sk-". Se guardará de forma segura en la base de datos.
-              </p>
-            )}
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="apiKey">OpenAI API Key</Label>
+            <div className="flex items-center space-x-2">
+              <Key className="h-4 w-4 text-muted-foreground" />
+              <Input
+                id="apiKey"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-..."
+                required
+                type="password"
+                className="flex-1"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Puede obtener su API Key en{" "}
+              <a 
+                href="https://platform.openai.com/api-keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                platform.openai.com/api-keys
+              </a>
+            </p>
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSaveOpenAIKey} disabled={isSavingApiKey}>
-            {isSavingApiKey ? "Guardando..." : "Guardar"}
-          </Button>
-        </DialogFooter>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={!apiKey || isLoading}>
+              {isLoading ? 'Guardando...' : 'Guardar API Key'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
