@@ -16,6 +16,10 @@ import { GenerateForecastDialog } from "@/components/cash-flow/GenerateForecastD
 import { ForecastItemDialog } from "@/components/cash-flow/ForecastItemDialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { ForecastItem, ForecastWeek } from "@/types/cashFlow";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/lib/supabase";
 
 const CashFlowForecast = () => {
   const [selectedForecastId, setSelectedForecastId] = useState<string | undefined>();
@@ -24,6 +28,9 @@ const CashFlowForecast = () => {
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ForecastItem | undefined>();
+  const [isOpenAIDialogOpen, setIsOpenAIDialogOpen] = useState(false);
+  const [openaiApiKey, setOpenaiApiKey] = useState("");
+  const [isSavingApiKey, setIsSavingApiKey] = useState(false);
   
   const { 
     forecasts, 
@@ -110,6 +117,53 @@ const CashFlowForecast = () => {
   const handleForecastChange = (forecastId: string) => {
     setSelectedForecastId(forecastId);
     setSelectedWeek(undefined);
+  };
+  
+  const handleOpenAISetup = () => {
+    setIsOpenAIDialogOpen(true);
+  };
+  
+  const handleSaveOpenAIKey = async () => {
+    if (!openaiApiKey.trim()) {
+      toast.error('Por favor ingrese una clave API válida');
+      return;
+    }
+    
+    setIsSavingApiKey(true);
+    
+    try {
+      // Save the API key to Supabase edge function secrets
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/set-api-key`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          key: 'OPENAI_API_KEY',
+          value: openaiApiKey
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al guardar la clave API');
+      }
+      
+      toast.success('Clave API guardada correctamente');
+      setIsOpenAIDialogOpen(false);
+      setOpenaiApiKey("");
+      
+      // If we have a selected forecast with insights, try regenerating the forecast
+      if (selectedForecastId && forecast) {
+        await generateAIForecast(historicalData, {});
+        toast.success('Análisis de IA actualizado');
+      }
+    } catch (error) {
+      console.error('Error saving API key:', error);
+      toast.error('Error al guardar la clave API');
+    } finally {
+      setIsSavingApiKey(false);
+    }
   };
   
   const historicalDataCount = {
@@ -219,6 +273,7 @@ const CashFlowForecast = () => {
             <AIInsightCard 
               insights={forecast?.ai_insights || ''}
               isLoading={isGenerating}
+              onRequestAPIKey={handleOpenAISetup}
             />
           </div>
         </>
@@ -287,6 +342,38 @@ const CashFlowForecast = () => {
         selectedWeek={selectedWeek}
         item={editingItem}
       />
+      
+      {/* OpenAI API Key Dialog */}
+      <Dialog open={isOpenAIDialogOpen} onOpenChange={setIsOpenAIDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Configurar API Key de OpenAI</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="apiKey">API Key de OpenAI</Label>
+              <Input
+                id="apiKey"
+                type="password"
+                placeholder="sk-..."
+                value={openaiApiKey}
+                onChange={(e) => setOpenaiApiKey(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                La clave API se guardará de forma segura en los secretos de la función edge.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsOpenAIDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveOpenAIKey} disabled={isSavingApiKey}>
+              {isSavingApiKey ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

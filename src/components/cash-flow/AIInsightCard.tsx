@@ -1,14 +1,20 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Info } from "lucide-react";
+import { Info, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface AIInsightCardProps {
   insights: string;
   isLoading?: boolean;
+  onRequestAPIKey?: () => void;
 }
 
-export function AIInsightCard({ insights, isLoading }: AIInsightCardProps) {
+export function AIInsightCard({ insights, isLoading, onRequestAPIKey }: AIInsightCardProps) {
+  // Check if insights contain an API key error message
+  const isApiKeyMissing = insights?.includes("No se pudieron generar insights debido a un error") || 
+                          insights?.includes("API key");
+  
   // Split insights by sections
   const formatInsights = (insightsText: string) => {
     if (!insightsText) return null;
@@ -54,6 +60,16 @@ export function AIInsightCard({ insights, isLoading }: AIInsightCardProps) {
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+          </div>
+        ) : isApiKeyMissing && onRequestAPIKey ? (
+          <div className="flex flex-col items-center justify-center h-32 gap-3">
+            <div className="flex items-center text-amber-500 gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              <span>Se requiere una clave API de OpenAI para generar análisis.</span>
+            </div>
+            <Button onClick={onRequestAPIKey} variant="outline">
+              Configurar API Key de OpenAI
+            </Button>
           </div>
         ) : insights ? (
           <div className="text-sm text-muted-foreground">
