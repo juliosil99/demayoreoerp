@@ -2,6 +2,7 @@
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { ForecastItem } from "@/types/cashFlow";
+import { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
 
 export function useForecastOperations(
   forecastId: string | undefined,
@@ -10,7 +11,7 @@ export function useForecastOperations(
 ) {
   const handleCreateForecast = async (
     createForecastMutation: any,
-    refetchForecasts: () => Promise<void>,
+    refetchForecasts: (options?: RefetchOptions) => Promise<QueryObserverResult<any, Error>>,
     setSelectedForecastId: (id: string) => void,
     name: string, 
     startDate: Date

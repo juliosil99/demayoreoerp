@@ -8,6 +8,7 @@ import { useForecastSelection } from "@/hooks/cash-flow/useForecastSelection";
 import { useForecastOperations } from "@/hooks/cash-flow/useForecastOperations";
 import { ForecastPageContainer } from "@/components/cash-flow/ForecastPageContainer";
 import { ForecastDialogs } from "@/components/cash-flow/ForecastDialogs";
+import { ForecastItem } from "@/types/cashFlow";
 
 const CashFlowForecast = () => {
   const { 
