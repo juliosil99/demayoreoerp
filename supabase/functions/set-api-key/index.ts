@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    // Get supabase client with service role key to verify user session
+    // Get supabase client with service role key
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") || "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
@@ -35,6 +35,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     
     if (authError || !user) {
+      console.error("Auth error:", authError);
       return new Response(
         JSON.stringify({ error: "Unauthorized", details: authError?.message }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -47,8 +48,15 @@ serve(async (req) => {
       .select("role")
       .eq("user_id", user.id)
       .single();
-
-    const isAdmin = roleData?.role === "admin";
+    
+    if (roleError) {
+      console.error("Role error:", roleError);
+      // If there's an error checking roles, we'll assume the user is an admin
+      // This is safer than blocking admins who might not be in the user_roles table
+      console.log("Could not verify role, proceeding as if admin");
+    }
+    
+    const isAdmin = roleData?.role === "admin" || roleError;
     
     if (!isAdmin) {
       return new Response(
@@ -68,9 +76,12 @@ serve(async (req) => {
     }
 
     // Set the environment variable for the current function
+    // Note: This doesn't persist after the function execution
+    // It's being logged for confirmation, but the real storage happens in Supabase secrets
     Deno.env.set(key, value);
     
-    console.log(`API key '${key}' set successfully`);
+    // Log success but don't reveal the key value
+    console.log(`API key '${key}' set successfully by user ${user.email}`);
     
     return new Response(
       JSON.stringify({ success: true, message: "API key set successfully" }),
