@@ -39,7 +39,8 @@ const CashFlowForecast = () => {
     generateAIForecast,
     upsertItem,
     updateForecast,
-    refreshAllForecastData
+    refreshAllForecastData,
+    SUPABASE_URL
   } = useCashFlowForecast(selectedForecastId);
   
   const { 
@@ -130,7 +131,7 @@ const CashFlowForecast = () => {
 
   const handleSaveOpenAIKey = async (apiKey: string) => {
     try {
-      const response = await fetch(`https://dulmmxtkgqkcfovvfxzu.supabase.co/functions/v1/set-api-key`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/set-api-key`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
