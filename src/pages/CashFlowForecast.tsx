@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, PlusCircle, Database, LineChart, Key } from "lucide-react";
@@ -161,15 +162,17 @@ const CashFlowForecast = () => {
         throw new Error('No hay una sesión activa');
       }
       
-      console.log("Using Supabase URL:", supabase.url);
+      // Get the Supabase URL from the environment or config
+      const supabaseUrl = "https://dulmmxtkgqkcfovvfxzu.supabase.co";
+      console.log("Using Supabase URL:", supabaseUrl);
       
-      if (!supabase.url) {
-        throw new Error('SUPABASE_URL environment variable not set');
+      if (!supabaseUrl) {
+        throw new Error('No se pudo determinar la URL de Supabase');
       }
       
-      console.log("Calling edge function at:", `${supabase.url}/functions/v1/set-api-key`);
+      console.log("Calling edge function at:", `${supabaseUrl}/functions/v1/set-api-key`);
       
-      const response = await fetch(`${supabase.url}/functions/v1/set-api-key`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/set-api-key`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
