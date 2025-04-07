@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, PlusCircle, Database, LineChart, Key } from "lucide-react";
@@ -106,6 +107,7 @@ const CashFlowForecast = () => {
   const handleSaveItem = async (item: Partial<ForecastItem>) => {
     try {
       await upsertItem.mutateAsync(item);
+      setIsItemDialogOpen(false);
       toast.success('Elemento guardado correctamente');
     } catch (error) {
       console.error('Error saving item:', error);
@@ -160,7 +162,8 @@ const CashFlowForecast = () => {
         throw new Error('No hay una sesión activa');
       }
       
-      const supabaseUrl = "https://dulmmxtkgqkcfovvfxzu.supabase.co";
+      // Get the base URL from the supabase client
+      const supabaseUrl = supabase.supabaseUrl;
       console.log("Using Supabase URL:", supabaseUrl);
       
       console.log("Calling edge function at:", `${supabaseUrl}/functions/v1/set-api-key`);
@@ -202,10 +205,7 @@ const CashFlowForecast = () => {
       setOpenaiApiKey("");
       setApiKeyError(null);
       
-      if (selectedForecastId && forecast) {
-        await generateAIForecast(historicalData, {});
-        toast.success('Análisis de IA actualizado');
-      }
+      // Don't try to call the forecast function here - we'll let user do that explicitly
     } catch (error) {
       console.error('Error saving API key:', error);
       toast.error(error instanceof Error ? error.message : 'Error al guardar la clave API');
