@@ -215,6 +215,10 @@ enable_telemetry = true
 [functions.set-api-key]
 verify_jwt = true
 
+# Configure the get-api-key function
+[functions.get-api-key]
+verify_jwt = true
+
 [vector]
 # Port to use for Vector.
 port = 54329

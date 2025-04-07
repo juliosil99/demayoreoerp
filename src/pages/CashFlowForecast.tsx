@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, PlusCircle, Database, LineChart, Key } from "lucide-react";
@@ -78,7 +77,6 @@ const CashFlowForecast = () => {
     try {
       await generateAIForecast(historicalData, options);
       
-      // Update forecast status
       await updateForecast.mutateAsync({
         status: 'active'
       });
@@ -162,13 +160,8 @@ const CashFlowForecast = () => {
         throw new Error('No hay una sesión activa');
       }
       
-      // Get the Supabase URL from the environment or config
       const supabaseUrl = "https://dulmmxtkgqkcfovvfxzu.supabase.co";
       console.log("Using Supabase URL:", supabaseUrl);
-      
-      if (!supabaseUrl) {
-        throw new Error('No se pudo determinar la URL de Supabase');
-      }
       
       console.log("Calling edge function at:", `${supabaseUrl}/functions/v1/set-api-key`);
       
@@ -184,11 +177,24 @@ const CashFlowForecast = () => {
         })
       });
       
+      console.log("Response status:", response.status);
+      
       if (!response.ok) {
+        const responseBody = await response.text();
         console.error('Error response:', response.status);
-        const responseText = await response.text();
-        console.error('Response body:', responseText);
-        throw new Error('Error al guardar la clave API');
+        console.error('Response body:', responseBody);
+        
+        let errorMessage = 'Error al guardar la clave API';
+        try {
+          const errorJson = JSON.parse(responseBody);
+          if (errorJson.error) {
+            errorMessage = errorJson.error;
+          }
+        } catch (e) {
+          console.error('Error parsing response:', e);
+        }
+        
+        throw new Error(errorMessage);
       }
       
       toast.success('Clave API guardada correctamente');
@@ -202,7 +208,7 @@ const CashFlowForecast = () => {
       }
     } catch (error) {
       console.error('Error saving API key:', error);
-      toast.error('Error al guardar la clave API');
+      toast.error(error instanceof Error ? error.message : 'Error al guardar la clave API');
     } finally {
       setIsSavingApiKey(false);
     }
@@ -429,7 +435,7 @@ const CashFlowForecast = () => {
                 <p className="text-xs text-red-500">{apiKeyError}</p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  La clave API debe comenzar con "sk-". Se guardará de forma segura en los secretos de la función edge.
+                  La clave API debe comenzar con "sk-". Se guardará de forma segura en la base de datos.
                 </p>
               )}
             </div>

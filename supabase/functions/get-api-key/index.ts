@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log("Set API Key function called");
+  console.log("Get API Key function called");
 
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -18,10 +18,6 @@ serve(async (req) => {
   }
 
   try {
-    // Log environment variables (without revealing secrets)
-    console.log("SUPABASE_URL available:", !!Deno.env.get("SUPABASE_URL"));
-    console.log("SUPABASE_SERVICE_ROLE_KEY available:", !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"));
-    
     // Get supabase client with service role key
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") || "",
@@ -56,69 +52,46 @@ serve(async (req) => {
 
     console.log("User authenticated:", user.id);
     
-    // Parse request body
-    let requestBody;
-    try {
-      requestBody = await req.json();
-      console.log("Request body parsed successfully");
-    } catch (parseError) {
-      console.error("Error parsing request body:", parseError);
+    // Parse request to get the key name
+    const url = new URL(req.url);
+    const keyName = url.searchParams.get("key");
+    
+    if (!keyName) {
       return new Response(
-        JSON.stringify({ error: "Invalid JSON in request body" }),
+        JSON.stringify({ error: "Missing key parameter" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    const { key, value } = requestBody;
-    
-    // Validate input
-    if (!key || !value) {
-      console.error("Missing key or value in request body:", { key: !!key, value: !!value });
-      return new Response(
-        JSON.stringify({ error: "Missing key or value" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log(`Attempting to store API key '${key}'`);
-    
-    // Check if value starts with the expected prefix for OpenAI keys
-    if (key === "OPENAI_API_KEY" && !value.startsWith("sk-")) {
-      console.error("Invalid OpenAI API key format");
-      return new Response(
-        JSON.stringify({ error: "Invalid OpenAI API key format. Keys should start with 'sk-'" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Store the API key in a secure table instead of environment variable
-    const { error: insertError } = await supabaseClient
+    // Retrieve the API key from the database
+    const { data: keyData, error: keyError } = await supabaseClient
       .from('api_keys')
-      .upsert({ 
-        key_name: key, 
-        key_value: value, 
-        created_by: user.id,
-        updated_at: new Date().toISOString()
-      }, 
-      { onConflict: 'key_name' });
+      .select('key_value')
+      .eq('key_name', keyName)
+      .single();
     
-    if (insertError) {
-      console.error("Error storing API key:", insertError);
+    if (keyError) {
+      console.error("Error retrieving API key:", keyError);
       return new Response(
-        JSON.stringify({ error: "Failed to store API key", details: insertError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "API key not found", details: keyError.message }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    // Log success but don't reveal the key value
-    console.log(`API key '${key}' stored successfully by user ${user.email}`);
+    if (!keyData) {
+      return new Response(
+        JSON.stringify({ error: "API key not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
+    // Return the API key value
     return new Response(
-      JSON.stringify({ success: true, message: "API key saved successfully" }),
+      JSON.stringify({ success: true, value: keyData.key_value }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error setting API key:", error);
+    console.error("Error getting API key:", error);
     
     return new Response(
       JSON.stringify({ error: error.message || "An unexpected error occurred" }),
