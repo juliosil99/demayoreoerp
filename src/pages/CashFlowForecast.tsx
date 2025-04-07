@@ -1,27 +1,38 @@
-import React, { useState, useEffect } from "react";
-import { toast } from "sonner";
+
+import React, { useEffect } from "react";
 import { useCashFlowForecast } from "@/hooks/cash-flow/useCashFlowForecast";
 import { useCashFlowForecasts } from "@/hooks/cash-flow/useCashFlowForecasts";
 import { useHistoricalData } from "@/hooks/cash-flow/useHistoricalData";
-import { ForecastHeader } from "@/components/cash-flow/ForecastHeader";
-import { ForecastSelector } from "@/components/cash-flow/ForecastSelector";
-import { EmptyForecastState } from "@/components/cash-flow/EmptyForecastState";
-import { ForecastContent } from "@/components/cash-flow/ForecastContent";
-import { CreateForecastDialog } from "@/components/cash-flow/CreateForecastDialog";
-import { GenerateForecastDialog } from "@/components/cash-flow/GenerateForecastDialog";
-import { ForecastItemDialog } from "@/components/cash-flow/ForecastItemDialog";
-import { OpenAIKeyDialog } from "@/components/cash-flow/OpenAIKeyDialog";
-import { ForecastItem, ForecastWeek } from "@/types/cashFlow";
-import { supabase } from "@/lib/supabase";
+import { useDialogState } from "@/hooks/cash-flow/useDialogState";
+import { useForecastSelection } from "@/hooks/cash-flow/useForecastSelection";
+import { useForecastOperations } from "@/hooks/cash-flow/useForecastOperations";
+import { ForecastPageContainer } from "@/components/cash-flow/ForecastPageContainer";
+import { ForecastDialogs } from "@/components/cash-flow/ForecastDialogs";
 
 const CashFlowForecast = () => {
-  const [selectedForecastId, setSelectedForecastId] = useState<string | undefined>();
-  const [selectedWeek, setSelectedWeek] = useState<ForecastWeek | undefined>();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
-  const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<ForecastItem | undefined>();
-  const [isOpenAIDialogOpen, setIsOpenAIDialogOpen] = useState(false);
+  const { 
+    selectedForecastId, 
+    setSelectedForecastId, 
+    handleForecastChange 
+  } = useForecastSelection();
+  
+  const {
+    isCreateDialogOpen,
+    isGenerateDialogOpen,
+    isItemDialogOpen,
+    isOpenAIDialogOpen,
+    editingItem,
+    selectedWeek,
+    openCreateDialog,
+    closeCreateDialog,
+    openGenerateDialog,
+    closeGenerateDialog,
+    openItemDialog,
+    closeItemDialog,
+    openOpenAIDialog,
+    closeOpenAIDialog,
+    handleSelectWeek
+  } = useDialogState();
   
   const { 
     forecasts, 
@@ -48,121 +59,60 @@ const CashFlowForecast = () => {
     isLoading: isLoadingHistoricalData 
   } = useHistoricalData();
   
+  const {
+    handleCreateForecast,
+    handleGenerateForecast,
+    handleSaveItem,
+    handleSaveOpenAIKey
+  } = useForecastOperations(selectedForecastId, refreshAllForecastData, SUPABASE_URL);
+  
   useEffect(() => {
     if (selectedForecastId) {
       refreshAllForecastData();
     }
-  }, [selectedForecastId]);
+  }, [selectedForecastId, refreshAllForecastData]);
   
-  const handleCreateForecast = async (name: string, startDate: Date) => {
+  // Handlers
+  const onCreateForecast = async (name: string, startDate: Date) => {
     try {
-      const result = await createForecastMutation.mutateAsync({
-        name,
-        start_date: startDate.toISOString().split('T')[0],
-        status: 'draft'
-      });
-      
-      setSelectedForecastId(result.id);
-      setIsCreateDialogOpen(false);
-      toast.success('Pronóstico creado correctamente');
-      
-      await refetchForecasts();
+      const result = await handleCreateForecast(
+        createForecastMutation, 
+        refetchForecasts, 
+        setSelectedForecastId,
+        name, 
+        startDate
+      );
+      closeCreateDialog();
     } catch (error) {
-      console.error('Error creating forecast:', error);
-      toast.error('Error al crear el pronóstico');
+      // Error already handled in the hook
     }
   };
   
-  const handleGenerateForecast = async (options: Record<string, any>) => {
-    if (!selectedForecastId) return;
-    
-    try {
-      await generateAIForecast(historicalData, options);
-      
-      await updateForecast.mutateAsync({
-        status: 'active'
-      });
-      
-      setIsGenerateDialogOpen(false);
-      toast.success('Pronóstico generado correctamente');
-      
-      await refreshAllForecastData();
-    } catch (error) {
-      console.error('Error generating forecast:', error);
-      toast.error('Error al generar el pronóstico');
+  const onGenerateForecast = async (options: Record<string, any>) => {
+    await handleGenerateForecast(generateAIForecast, updateForecast, historicalData, options);
+    closeGenerateDialog();
+  };
+  
+  const onSaveItem = async (item: Partial<ForecastItem>) => {
+    const success = await handleSaveItem(upsertItem, item);
+    if (success) {
+      closeItemDialog();
     }
   };
   
-  const handleSelectWeek = (week: ForecastWeek) => {
-    setSelectedWeek(week);
-  };
-  
-  const handleAddItem = () => {
-    setEditingItem(undefined);
-    setIsItemDialogOpen(true);
-  };
-  
-  const handleEditItem = (item: ForecastItem) => {
-    setEditingItem(item);
-    setIsItemDialogOpen(true);
-  };
-  
-  const handleSaveItem = async (item: Partial<ForecastItem>) => {
-    try {
-      await upsertItem.mutateAsync(item);
-      setIsItemDialogOpen(false);
-      toast.success('Elemento guardado correctamente');
-      
-      await refreshAllForecastData();
-    } catch (error) {
-      console.error('Error saving item:', error);
-      toast.error('Error al guardar el elemento');
-    }
-  };
-  
-  const handleForecastChange = (forecastId: string) => {
-    setSelectedForecastId(forecastId);
-    setSelectedWeek(undefined);
-  };
-  
-  const handleOpenAISetup = () => {
-    setIsOpenAIDialogOpen(true);
-  };
-
-  const handleSaveOpenAIKey = async (apiKey: string) => {
-    try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/set-api-key`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        body: JSON.stringify({ apiKey })
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to save API key: ${errorText}`);
-      }
-      
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Unknown error saving API key');
-      }
-      
-      setIsOpenAIDialogOpen(false);
-      toast.success('API Key guardada correctamente');
-      
+  const onSaveOpenAIKey = async (apiKey: string) => {
+    const success = await handleSaveOpenAIKey(apiKey);
+    if (success) {
+      closeOpenAIDialog();
       if (selectedForecastId) {
         await generateAIForecast(historicalData);
         await refreshAllForecastData();
       }
-    } catch (error) {
-      console.error('Error saving API key:', error);
-      toast.error(`Error al guardar API key: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   };
+  
+  const onAddItem = () => openItemDialog();
+  const onEditItem = (item: ForecastItem) => openItemDialog(item);
   
   const historicalDataCount = {
     payables: historicalData.payables.length,
@@ -173,86 +123,49 @@ const CashFlowForecast = () => {
   };
   
   const isDataLoading = isLoading || isLoadingForecasts || isLoadingHistoricalData;
-  const hasWeeks = weeks && weeks.length > 0;
   
   return (
-    <div className="container p-6 space-y-6">
-      <ForecastHeader 
+    <>
+      <ForecastPageContainer
         forecast={forecast}
-        isGenerating={isGenerating}
-        onCreateForecastClick={() => setIsCreateDialogOpen(true)}
-        onGenerateForecastClick={() => setIsGenerateDialogOpen(true)}
+        forecasts={forecasts}
+        weeks={weeks}
+        items={items}
         selectedForecastId={selectedForecastId}
-      />
-      
-      {(forecasts?.length > 0 || isLoadingForecasts) && (
-        <ForecastSelector 
-          forecasts={forecasts}
-          selectedForecastId={selectedForecastId}
-          forecast={forecast}
-          isLoading={isDataLoading}
-          isGenerating={isGenerating}
-          onForecastChange={handleForecastChange}
-          onGenerateClick={() => setIsGenerateDialogOpen(true)}
-        />
-      )}
-      
-      {selectedForecastId && hasWeeks ? (
-        <ForecastContent 
-          weeks={weeks}
-          items={items || []}
-          selectedWeek={selectedWeek}
-          insights={forecast?.ai_insights}
-          isGenerating={isGenerating}
-          onSelectWeek={handleSelectWeek}
-          onAddItem={handleAddItem}
-          onEditItem={handleEditItem}
-          onRequestAPIKey={handleOpenAISetup}
-        />
-      ) : (
-        <div className="mt-20 text-center">
-          <EmptyForecastState 
-            isLoading={isDataLoading}
-            forecastsCount={forecasts?.length || 0}
-            selectedForecastId={selectedForecastId}
-            hasWeeks={hasWeeks}
-            onCreateClick={() => setIsCreateDialogOpen(true)}
-            onConfigureAPIKeyClick={handleOpenAISetup}
-            onGenerateClick={() => setIsGenerateDialogOpen(true)}
-            isGenerating={isGenerating}
-          />
-        </div>
-      )}
-      
-      <CreateForecastDialog 
-        isOpen={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
-        onCreateForecast={handleCreateForecast}
-        isCreating={createForecastMutation.isPending}
-      />
-      
-      <GenerateForecastDialog 
-        isOpen={isGenerateDialogOpen}
-        onClose={() => setIsGenerateDialogOpen(false)}
-        onGenerate={handleGenerateForecast}
-        isLoading={isGenerating}
-        historicalDataCount={historicalDataCount}
-      />
-      
-      <ForecastItemDialog 
-        isOpen={isItemDialogOpen}
-        onClose={() => setIsItemDialogOpen(false)}
-        onSave={handleSaveItem}
         selectedWeek={selectedWeek}
-        item={editingItem}
+        insights={forecast?.ai_insights}
+        isLoading={isDataLoading}
+        isLoadingForecasts={isLoadingForecasts}
+        isGenerating={isGenerating}
+        onForecastChange={handleForecastChange}
+        onCreateForecastClick={openCreateDialog}
+        onGenerateForecastClick={openGenerateDialog}
+        onSelectWeek={handleSelectWeek}
+        onAddItem={onAddItem}
+        onEditItem={onEditItem}
+        onRequestAPIKey={openOpenAIDialog}
       />
       
-      <OpenAIKeyDialog 
-        isOpen={isOpenAIDialogOpen}
-        onClose={() => setIsOpenAIDialogOpen(false)}
-        onSave={handleSaveOpenAIKey}
+      <ForecastDialogs
+        isCreateDialogOpen={isCreateDialogOpen}
+        isGenerateDialogOpen={isGenerateDialogOpen}
+        isItemDialogOpen={isItemDialogOpen}
+        isOpenAIDialogOpen={isOpenAIDialogOpen}
+        selectedWeek={selectedWeek}
+        editingItem={editingItem}
+        historicalDataCount={historicalDataCount}
+        isCreating={createForecastMutation.isPending}
+        isGenerating={isGenerating}
+        onCloseCreateDialog={closeCreateDialog}
+        onCloseGenerateDialog={closeGenerateDialog}
+        onCloseItemDialog={closeItemDialog}
+        onCloseOpenAIDialog={closeOpenAIDialog}
+        onCreateForecast={onCreateForecast}
+        onGenerateForecast={onGenerateForecast}
+        onSaveItem={onSaveItem}
+        onSaveOpenAIKey={onSaveOpenAIKey}
       />
-    </div>
+    </>
   );
 };
 
