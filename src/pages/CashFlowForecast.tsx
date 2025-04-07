@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, PlusCircle, Database, LineChart, Key } from "lucide-react";
@@ -20,6 +19,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
+
+const SUPABASE_URL = "https://dulmmxtkgqkcfovvfxzu.supabase.co";
 
 const CashFlowForecast = () => {
   const [selectedForecastId, setSelectedForecastId] = useState<string | undefined>();
@@ -162,13 +163,9 @@ const CashFlowForecast = () => {
         throw new Error('No hay una sesión activa');
       }
       
-      // Get the base URL from the supabase client
-      const supabaseUrl = supabase.supabaseUrl;
-      console.log("Using Supabase URL:", supabaseUrl);
+      console.log("Calling edge function at:", `${SUPABASE_URL}/functions/v1/set-api-key`);
       
-      console.log("Calling edge function at:", `${supabaseUrl}/functions/v1/set-api-key`);
-      
-      const response = await fetch(`${supabaseUrl}/functions/v1/set-api-key`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/set-api-key`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -204,8 +201,6 @@ const CashFlowForecast = () => {
       setIsOpenAIDialogOpen(false);
       setOpenaiApiKey("");
       setApiKeyError(null);
-      
-      // Don't try to call the forecast function here - we'll let user do that explicitly
     } catch (error) {
       console.error('Error saving API key:', error);
       toast.error(error instanceof Error ? error.message : 'Error al guardar la clave API');

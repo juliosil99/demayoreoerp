@@ -5,6 +5,9 @@ import { supabase } from "@/lib/supabase";
 import { CashFlowForecast, ForecastWeek, ForecastItem, ForecastHistoricalData, ForecastResponse } from "@/types/cashFlow";
 import { format, addDays } from "date-fns";
 
+// Get the Supabase URL from the environment or use a fallback
+const SUPABASE_URL = "https://dulmmxtkgqkcfovvfxzu.supabase.co";
+
 export function useCashFlowForecast(forecastId?: string) {
   const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -151,11 +154,8 @@ export function useCashFlowForecast(forecastId?: string) {
         
       if (forecastError) throw forecastError;
       
-      // Get the supabase URL from the client
-      const supabaseUrl = supabase.supabaseUrl;
-      
       // Call the Edge Function to generate the forecast
-      const response = await fetch(`${supabaseUrl}/functions/v1/cash-flow-forecast`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/cash-flow-forecast`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
