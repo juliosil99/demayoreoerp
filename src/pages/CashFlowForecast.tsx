@@ -30,6 +30,7 @@ const CashFlowForecast = () => {
   const [isOpenAIDialogOpen, setIsOpenAIDialogOpen] = useState(false);
   const [openaiApiKey, setOpenaiApiKey] = useState("");
   const [isSavingApiKey, setIsSavingApiKey] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   
   const { 
     forecasts, 
@@ -119,12 +120,35 @@ const CashFlowForecast = () => {
   };
   
   const handleOpenAISetup = () => {
+    setOpenaiApiKey("");
+    setApiKeyError(null);
     setIsOpenAIDialogOpen(true);
   };
   
+  const validateApiKey = (key: string) => {
+    if (!key.trim()) {
+      setApiKeyError("La clave API es requerida");
+      return false;
+    }
+    
+    if (!key.startsWith("sk-")) {
+      setApiKeyError("La clave API de OpenAI debe comenzar con 'sk-'");
+      return false;
+    }
+    
+    setApiKeyError(null);
+    return true;
+  };
+
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOpenaiApiKey(e.target.value);
+    if (apiKeyError) {
+      validateApiKey(e.target.value);
+    }
+  };
+  
   const handleSaveOpenAIKey = async () => {
-    if (!openaiApiKey.trim()) {
-      toast.error('Por favor ingrese una clave API válida');
+    if (!validateApiKey(openaiApiKey)) {
       return;
     }
     
@@ -137,16 +161,15 @@ const CashFlowForecast = () => {
         throw new Error('No hay una sesión activa');
       }
       
-      const supabaseUrl = supabase.supabaseUrl;
-      console.log("Using Supabase URL:", supabaseUrl);
+      console.log("Using Supabase URL:", supabase.url);
       
-      if (!supabaseUrl) {
-        throw new Error('No se pudo determinar la URL de Supabase');
+      if (!supabase.url) {
+        throw new Error('SUPABASE_URL environment variable not set');
       }
       
-      console.log("Calling edge function at:", `${supabaseUrl}/functions/v1/set-api-key`);
+      console.log("Calling edge function at:", `${supabase.url}/functions/v1/set-api-key`);
       
-      const response = await fetch(`${supabaseUrl}/functions/v1/set-api-key`, {
+      const response = await fetch(`${supabase.url}/functions/v1/set-api-key`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -159,7 +182,7 @@ const CashFlowForecast = () => {
       });
       
       if (!response.ok) {
-        console.error('Error response:', response.status, response.statusText);
+        console.error('Error response:', response.status);
         const responseText = await response.text();
         console.error('Response body:', responseText);
         throw new Error('Error al guardar la clave API');
@@ -168,6 +191,7 @@ const CashFlowForecast = () => {
       toast.success('Clave API guardada correctamente');
       setIsOpenAIDialogOpen(false);
       setOpenaiApiKey("");
+      setApiKeyError(null);
       
       if (selectedForecastId && forecast) {
         await generateAIForecast(historicalData, {});
@@ -395,11 +419,16 @@ const CashFlowForecast = () => {
                 type="password"
                 placeholder="sk-..."
                 value={openaiApiKey}
-                onChange={(e) => setOpenaiApiKey(e.target.value)}
+                onChange={handleApiKeyChange}
+                className={apiKeyError ? "border-red-500" : ""}
               />
-              <p className="text-xs text-muted-foreground">
-                La clave API se guardará de forma segura en los secretos de la función edge.
-              </p>
+              {apiKeyError ? (
+                <p className="text-xs text-red-500">{apiKeyError}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  La clave API debe comenzar con "sk-". Se guardará de forma segura en los secretos de la función edge.
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
