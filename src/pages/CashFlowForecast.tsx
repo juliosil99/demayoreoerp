@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, PlusCircle, Database, LineChart, Key } from "lucide-react";
@@ -15,7 +16,7 @@ import { GenerateForecastDialog } from "@/components/cash-flow/GenerateForecastD
 import { ForecastItemDialog } from "@/components/cash-flow/ForecastItemDialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { ForecastItem, ForecastWeek } from "@/types/cashFlow";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
@@ -137,7 +138,15 @@ const CashFlowForecast = () => {
         throw new Error('No hay una sesión activa');
       }
       
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/set-api-key`, {
+      // Use the complete URL format with the project ID
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) {
+        throw new Error('SUPABASE_URL environment variable not set');
+      }
+      
+      console.log("Calling edge function at:", `${supabaseUrl}/functions/v1/set-api-key`);
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/set-api-key`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -150,6 +159,9 @@ const CashFlowForecast = () => {
       });
       
       if (!response.ok) {
+        console.error('Error response:', response.status, response.statusText);
+        const responseText = await response.text();
+        console.error('Response body:', responseText);
         throw new Error('Error al guardar la clave API');
       }
       
@@ -371,6 +383,9 @@ const CashFlowForecast = () => {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Configurar API Key de OpenAI</DialogTitle>
+            <DialogDescription>
+              Ingrese su clave API de OpenAI para habilitar el análisis de IA en sus pronósticos de flujo de efectivo.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
