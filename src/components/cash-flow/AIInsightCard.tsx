@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Info, AlertTriangle } from "lucide-react";
+import { Info, AlertTriangle, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface AIInsightCardProps {
@@ -13,7 +13,8 @@ interface AIInsightCardProps {
 export function AIInsightCard({ insights, isLoading, onRequestAPIKey }: AIInsightCardProps) {
   // Check if insights contain an API key error message
   const isApiKeyMissing = insights?.includes("No se pudieron generar insights debido a un error") || 
-                          insights?.includes("API key");
+                          insights?.includes("API key") ||
+                          !insights;
   
   // Split insights by sections
   const formatInsights = (insightsText: string) => {
@@ -62,12 +63,20 @@ export function AIInsightCard({ insights, isLoading, onRequestAPIKey }: AIInsigh
             <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
           </div>
         ) : isApiKeyMissing && onRequestAPIKey ? (
-          <div className="flex flex-col items-center justify-center h-32 gap-3">
+          <div className="flex flex-col items-center justify-center h-48 gap-4 p-4 border border-dashed border-amber-300 rounded-lg bg-amber-50">
             <div className="flex items-center text-amber-500 gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              <span>Se requiere una clave API de OpenAI para generar análisis.</span>
+              <AlertTriangle className="h-6 w-6" />
+              <span className="font-medium">Se requiere una clave API de OpenAI para generar análisis.</span>
             </div>
-            <Button onClick={onRequestAPIKey} variant="outline">
+            <p className="text-center text-sm text-muted-foreground mb-2">
+              Para activar el análisis de IA para su flujo de efectivo, necesita configurar una clave API de OpenAI.
+            </p>
+            <Button 
+              onClick={onRequestAPIKey} 
+              variant="default"
+              className="flex items-center gap-2"
+            >
+              <Key className="h-4 w-4" />
               Configurar API Key de OpenAI
             </Button>
           </div>
@@ -76,9 +85,22 @@ export function AIInsightCard({ insights, isLoading, onRequestAPIKey }: AIInsigh
             {formatInsights(insights)}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            Genere un pronóstico para obtener análisis de IA sobre su flujo de efectivo.
-          </p>
+          <div className="flex flex-col items-center justify-center h-32 gap-3">
+            <p className="text-sm text-muted-foreground">
+              Genere un pronóstico para obtener análisis de IA sobre su flujo de efectivo.
+            </p>
+            {onRequestAPIKey && (
+              <Button 
+                onClick={onRequestAPIKey} 
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Key className="h-4 w-4" />
+                Configurar API Key de OpenAI
+              </Button>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
