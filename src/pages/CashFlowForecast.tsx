@@ -1,7 +1,6 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw, PlusCircle, Database, LineChart } from "lucide-react";
+import { Plus, RefreshCw, PlusCircle, Database, LineChart, Key } from "lucide-react";
 import { toast } from "sonner";
 import { useCashFlowForecast } from "@/hooks/cash-flow/useCashFlowForecast";
 import { useCashFlowForecasts } from "@/hooks/cash-flow/useCashFlowForecasts";
@@ -132,12 +131,17 @@ const CashFlowForecast = () => {
     setIsSavingApiKey(true);
     
     try {
-      // Save the API key to Supabase edge function secrets
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No hay una sesión activa');
+      }
+      
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/set-api-key`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           key: 'OPENAI_API_KEY',
@@ -153,7 +157,6 @@ const CashFlowForecast = () => {
       setIsOpenAIDialogOpen(false);
       setOpenaiApiKey("");
       
-      // If we have a selected forecast with insights, try regenerating the forecast
       if (selectedForecastId && forecast) {
         await generateAIForecast(historicalData, {});
         toast.success('Análisis de IA actualizado');
@@ -293,10 +296,21 @@ const CashFlowForecast = () => {
               <p className="text-muted-foreground mb-6">
                 Cree un nuevo pronóstico para comenzar a planificar su flujo de efectivo
               </p>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Crear Pronóstico
-              </Button>
+              <div className="flex flex-col space-y-4 items-center">
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Crear Pronóstico
+                </Button>
+                
+                <Button
+                  onClick={handleOpenAISetup}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Key className="h-4 w-4" />
+                  Configurar API Key de OpenAI
+                </Button>
+              </div>
             </div>
           ) : selectedForecastId && (!weeks || weeks.length === 0) ? (
             <div className="flex flex-col items-center justify-center h-64">
@@ -307,19 +321,29 @@ const CashFlowForecast = () => {
               <p className="text-muted-foreground mb-6">
                 Genere el pronóstico para ver proyecciones de flujo de efectivo
               </p>
-              <Button 
-                onClick={() => setIsGenerateDialogOpen(true)}
-                disabled={isGenerating}
-              >
-                <LineChart className="mr-2 h-4 w-4" />
-                Generar Pronóstico
-              </Button>
+              <div className="flex flex-col space-y-4 items-center">
+                <Button 
+                  onClick={() => setIsGenerateDialogOpen(true)}
+                  disabled={isGenerating}
+                >
+                  <LineChart className="mr-2 h-4 w-4" />
+                  Generar Pronóstico
+                </Button>
+                
+                <Button
+                  onClick={handleOpenAISetup}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Key className="h-4 w-4" />
+                  Configurar API Key de OpenAI
+                </Button>
+              </div>
             </div>
           ) : null}
         </div>
       )}
       
-      {/* Dialogs */}
       <CreateForecastDialog 
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
@@ -343,7 +367,6 @@ const CashFlowForecast = () => {
         item={editingItem}
       />
       
-      {/* OpenAI API Key Dialog */}
       <Dialog open={isOpenAIDialogOpen} onOpenChange={setIsOpenAIDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

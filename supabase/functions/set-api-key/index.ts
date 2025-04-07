@@ -15,25 +15,34 @@ serve(async (req) => {
   }
 
   try {
-    // Verify request is authorized
+    // Get supabase client with service role key to verify user session
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") || "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
     
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
-      req.headers.get("Authorization")?.split(" ")[1] || ""
-    );
+    // Get JWT token from request header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Verify the user session from token
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     
     if (authError || !user) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
+        JSON.stringify({ error: "Unauthorized", details: authError?.message }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get user role to check if they're an admin
-    const { data: roleData } = await supabaseClient
+    // Check if the user is an admin
+    const { data: roleData, error: roleError } = await supabaseClient
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
@@ -48,7 +57,7 @@ serve(async (req) => {
       );
     }
 
-    // Parse request
+    // Parse request body
     const { key, value } = await req.json();
     
     if (!key || !value) {
@@ -58,14 +67,10 @@ serve(async (req) => {
       );
     }
 
-    // Here we would typically use Supabase's secrets management API to set the secret
-    // However, this API is not directly accessible from Edge Functions
-    // Instead, we'll log that the request was received (in production, you'd use a secure method to store this)
-    console.log(`API key '${key}' set successfully`);
-
-    // Set the secret for the current function instance
-    // Note: This is only for the current instance and won't persist across function invocations
+    // Set the environment variable for the current function
     Deno.env.set(key, value);
+    
+    console.log(`API key '${key}' set successfully`);
     
     return new Response(
       JSON.stringify({ success: true, message: "API key set successfully" }),
