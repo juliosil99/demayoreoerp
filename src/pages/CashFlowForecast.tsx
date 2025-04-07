@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, PlusCircle, Database, LineChart, Key } from "lucide-react";
@@ -138,10 +137,11 @@ const CashFlowForecast = () => {
         throw new Error('No hay una sesión activa');
       }
       
-      // Use the complete URL format with the project ID
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = supabase.supabaseUrl;
+      console.log("Using Supabase URL:", supabaseUrl);
+      
       if (!supabaseUrl) {
-        throw new Error('SUPABASE_URL environment variable not set');
+        throw new Error('No se pudo determinar la URL de Supabase');
       }
       
       console.log("Calling edge function at:", `${supabaseUrl}/functions/v1/set-api-key`);
