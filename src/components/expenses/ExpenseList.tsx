@@ -3,7 +3,7 @@ import { ExpenseTable } from "./components/ExpenseTable";
 import { useState, useCallback } from "react";
 import { useExpenseDelete } from "./hooks/useExpenseDelete";
 import { ExpensePagination } from "./components/ExpensePagination";
-import { ExpenseEditDialog } from "./components/ExpenseEditDialog";
+import { StableExpenseEditDialog } from "./components/StableExpenseEditDialog";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -49,20 +49,14 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
     setIsDialogOpen(true);
   }, []);
 
-  // Handle dialog state change
-  const handleDialogOpenChange = useCallback((open: boolean) => {
-    setIsDialogOpen(open);
+  // Handle dialog close
+  const handleDialogClose = useCallback(() => {
+    setIsDialogOpen(false);
   }, []);
 
-  // Handle successful edit - this closes the dialog and triggers refetch
+  // Handle successful edit
   const handleEditSuccess = useCallback(() => {
-    // Close the dialog first
     setIsDialogOpen(false);
-    
-    // Clean up selection after animation completes
-    setTimeout(() => {
-      setSelectedExpense(null);
-    }, 300); // Dialog animation duration is approximately 300ms
   }, []);
 
   // Handle page change
@@ -90,10 +84,10 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
       />
 
       {selectedExpense && (
-        <ExpenseEditDialog
+        <StableExpenseEditDialog
           isOpen={isDialogOpen}
           expense={selectedExpense}
-          onOpenChange={handleDialogOpenChange}
+          onClose={handleDialogClose}
           onSuccess={handleEditSuccess}
         />
       )}
