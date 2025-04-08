@@ -12,6 +12,7 @@ import { PayableFormData } from "../types/payableTypes";
 import { AccountPayable } from "@/types/payables";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { dialogLogger } from "@/utils/dialogLogger";
 
 interface PayableEditDialogProps {
   payable: AccountPayable | null;
@@ -25,10 +26,16 @@ export function PayableEditDialog({ payable, onClose, onSubmit, isSubmitting }: 
   const [updateSeries, setUpdateSeries] = useState(false);
 
   useEffect(() => {
-    setDialogOpen(!!payable);
+    const newDialogState = !!payable;
+    setDialogOpen(newDialogState);
+    
+    if (newDialogState && payable) {
+      dialogLogger.logOpen("PayableEditDialog", { payableId: payable.id });
+    }
   }, [payable]);
 
   const handleClose = () => {
+    dialogLogger.logClose("PayableEditDialog", { payableId: payable?.id, status: "cancelled" });
     setDialogOpen(false);
     onClose();
   };
@@ -38,8 +45,11 @@ export function PayableEditDialog({ payable, onClose, onSubmit, isSubmitting }: 
     
     const success = await onSubmit(payable.id, data, updateSeries);
     if (success) {
+      dialogLogger.logClose("PayableEditDialog", { payableId: payable.id, status: "success" });
       setDialogOpen(false);
       onClose();
+    } else {
+      dialogLogger.logClose("PayableEditDialog", { payableId: payable.id, status: "error" });
     }
   };
 
@@ -90,7 +100,10 @@ export function PayableEditDialog({ payable, onClose, onSubmit, isSubmitting }: 
     (payable.series_number === 0 || payable.series_number === null);
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={dialogOpen} onOpenChange={(open) => {
+      if (!open) handleClose();
+      setDialogOpen(open);
+    }}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Editar Cuenta por Pagar</DialogTitle>

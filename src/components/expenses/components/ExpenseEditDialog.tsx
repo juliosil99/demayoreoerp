@@ -7,6 +7,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
+import { dialogLogger } from "@/utils/dialogLogger";
+import { useEffect } from "react";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -32,10 +34,27 @@ interface ExpenseEditDialogProps {
 }
 
 export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: ExpenseEditDialogProps) {
+  useEffect(() => {
+    if (isOpen && expense) {
+      dialogLogger.logOpen("ExpenseEditDialog", { expenseId: expense.id });
+    }
+    return () => {
+      if (isOpen && expense) {
+        dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense?.id });
+      }
+    };
+  }, [isOpen, expense]);
+
   if (!expense) return null;
   
   const handleFormSuccess = () => {
+    dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "success" });
     onSuccess();
+    onClose();
+  };
+
+  const handleDialogClose = () => {
+    dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "cancelled" });
     onClose();
   };
   
@@ -43,7 +62,7 @@ export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: Expen
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) handleDialogClose();
       }}
     >
       <DialogContent className="max-w-2xl">
@@ -56,7 +75,7 @@ export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: Expen
         <ExpenseForm 
           initialData={expense} 
           onSuccess={handleFormSuccess}
-          onClose={onClose}
+          onClose={handleDialogClose}
         />
       </DialogContent>
     </Dialog>

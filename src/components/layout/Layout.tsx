@@ -1,75 +1,23 @@
 
-import { Header } from "./Header";
-import { Sidebar } from "./Sidebar";
-import { Outlet } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Sidebar } from './Sidebar';
+import { Header } from './Header';
+import { Toaster } from "@/components/ui/toaster";
+import { DialogEventLogger } from '@/components/debug/DialogEventLogger';
 
-const Layout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+interface LayoutProps {
+  children: React.ReactNode;
+}
 
-  // Add ResizeObserver cleanup
-  useEffect(() => {
-    const resizeCallback = () => {
-      // Debounce resize events
-      window.requestAnimationFrame(() => {
-        window.dispatchEvent(new Event('resize'));
-      });
-    };
-
-    const resizeObserver = new ResizeObserver(resizeCallback);
-    const element = document.documentElement;
-    
-    if (element) {
-      resizeObserver.observe(element);
-    }
-
-    return () => {
-      if (element) {
-        resizeObserver.unobserve(element);
-      }
-      resizeObserver.disconnect();
-    };
-  }, []);
-
+export function Layout({ children }: LayoutProps) {
   return (
-    <div className="flex min-h-screen max-h-screen bg-background overflow-hidden">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-      
-      {/* Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-background transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <div className="flex flex-grow">
         <Sidebar />
+        <main className="flex-grow overflow-auto">{children}</main>
       </div>
-
-      {/* Main content */}
-      <div className="flex flex-1 flex-col w-full overflow-hidden">
-        <Header>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
-        </Header>
-        <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6">
-          <Outlet />
-        </main>
-      </div>
+      <Toaster />
+      <DialogEventLogger />
     </div>
   );
-};
-
-export default Layout;
+}
