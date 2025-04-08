@@ -1,6 +1,6 @@
 
 import { ExpenseTable } from "./components/ExpenseTable";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useExpenseDelete } from "./hooks/useExpenseDelete";
 import { ExpensePagination } from "./components/ExpensePagination";
 import { ExpenseEditDialog } from "./components/ExpenseEditDialog";
@@ -43,18 +43,35 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedExpenses = expenses.slice(startIndex, startIndex + itemsPerPage);
 
+  // Handle edit expense - set the expense and open the dialog
   const handleEditExpense = useCallback((expense: Expense) => {
     setSelectedExpense(expense);
     setIsDialogOpen(true);
   }, []);
 
-  const handleCloseDialog = useCallback(() => {
-    setIsDialogOpen(false);
-    // Don't clear selectedExpense here to prevent UI flicker during animation
+  // Clean up selectedExpense after dialog animation completes
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    if (!isDialogOpen && selectedExpense) {
+      // Wait for dialog close animation to complete before clearing the expense
+      timeoutId = setTimeout(() => {
+        setSelectedExpense(null);
+      }, 300); // Dialog animation duration is approximately 200ms
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isDialogOpen, selectedExpense]);
+
+  // Single point of control for dialog state
+  const handleDialogOpenChange = useCallback((open: boolean) => {
+    setIsDialogOpen(open);
   }, []);
 
+  // Handle successful edit
   const handleEditSuccess = useCallback(() => {
-    // This will be called after successful edit
     setIsDialogOpen(false);
   }, []);
 
@@ -86,7 +103,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
         <ExpenseEditDialog
           isOpen={isDialogOpen}
           expense={selectedExpense}
-          onClose={handleCloseDialog}
+          onOpenChange={handleDialogOpenChange}
           onSuccess={handleEditSuccess}
         />
       )}

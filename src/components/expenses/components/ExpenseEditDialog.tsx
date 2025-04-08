@@ -28,35 +28,41 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
 
 interface ExpenseEditDialogProps {
   isOpen: boolean;
-  expense: Expense | null;
-  onClose: () => void;
+  expense: Expense;
+  onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
 
-export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: ExpenseEditDialogProps) {
-  // Only log when opening the dialog
+export function ExpenseEditDialog({ 
+  isOpen, 
+  expense, 
+  onOpenChange, 
+  onSuccess 
+}: ExpenseEditDialogProps) {
+  // Log dialog events
   useEffect(() => {
-    if (isOpen && expense) {
+    if (isOpen) {
       dialogLogger.logOpen("ExpenseEditDialog", { expenseId: expense.id });
     }
   }, [isOpen, expense]);
-
-  if (!expense) return null;
   
   const handleFormSuccess = () => {
+    dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "success" });
     onSuccess();
-    // Don't call onClose here - let the dialog handle it
   };
 
   return (
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => {
+        if (!isOpen && !open) return; // Prevent duplicate close events
+        
         if (!open) {
-          // Single point of dialog closing logic
+          // Only log when actually closing
           dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "cancelled" });
-          onClose();
         }
+        
+        onOpenChange(open);
       }}
     >
       <DialogContent className="max-w-2xl">
