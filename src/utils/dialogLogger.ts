@@ -28,7 +28,6 @@ class DialogLogger {
       details
     };
     this.events.push(event);
-    console.log(`Dialog opened: ${dialogName}`, event);
     return event;
   }
 
@@ -40,7 +39,6 @@ class DialogLogger {
       details
     };
     this.events.push(event);
-    console.log(`Dialog closed: ${dialogName}`, event);
     return event;
   }
 

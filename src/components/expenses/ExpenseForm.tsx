@@ -49,7 +49,6 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
   // Handle supplier selection with default chart account
   const handleSupplierSelect = (supplierId: string, defaultChartAccountId?: string) => {
     if (defaultChartAccountId) {
-      console.log("Setting default chart account from supplier:", defaultChartAccountId);
       setChartAccountId(defaultChartAccountId);
     }
   };

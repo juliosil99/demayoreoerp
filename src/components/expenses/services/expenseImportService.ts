@@ -8,16 +8,12 @@ export const importExpenses = async (
   fileName: string,
   onProgress?: (successCount: number) => void
 ) => {
-  console.log("Starting import process with", expenses.length, "expenses");
-  console.log("Sample expense data:", expenses[0]);
-  
   let successCount = 0;
   let errorCount = 0;
   let errors: string[] = [];
 
   try {
     // Create import record
-    console.log("Creating import record for file:", fileName);
     const { data: importRecord, error: importError } = await supabase
       .from('expense_imports')
       .insert({
@@ -29,23 +25,13 @@ export const importExpenses = async (
       .single();
 
     if (importError) {
-      console.error('Error creating import record:', importError);
       toast.error('Error al registrar la importación');
       return { successCount: 0, errorCount: 0, errors: [importError.message] };
     }
 
-    console.log("Import record created:", importRecord);
-
     for (let i = 0; i < expenses.length; i++) {
       const expenseData = expenses[i];
       try {
-        console.log(`Processing expense ${i+1}/${expenses.length}:`, {
-          description: expenseData.description,
-          amount: expenseData.amount,
-          date: expenseData.date,
-          account_id: expenseData.account_id
-        });
-        
         // Validate required fields
         if (!expenseData.date || !expenseData.description || !expenseData.amount || !expenseData.account_id || !expenseData.chart_account_id) {
           const missingFields = [];
@@ -56,7 +42,6 @@ export const importExpenses = async (
           if (!expenseData.chart_account_id) missingFields.push('ID cuenta contable');
           
           const errorMsg = `Fila ${i+1}: Campos requeridos faltantes: ${missingFields.join(', ')}`;
-          console.error(errorMsg);
           errors.push(errorMsg);
           errorCount++;
           continue;
@@ -66,7 +51,6 @@ export const importExpenses = async (
         const datePattern = /^\d{4}-\d{2}-\d{2}$/;
         if (typeof expenseData.date === 'string' && !datePattern.test(expenseData.date)) {
           const errorMsg = `Fila ${i+1}: Formato de fecha inválido. Debe ser YYYY-MM-DD, recibido: ${expenseData.date}`;
-          console.error(errorMsg);
           errors.push(errorMsg);
           errorCount++;
           continue;
@@ -80,19 +64,15 @@ export const importExpenses = async (
           account_id: parseInt(expenseData.account_id.toString()),
         };
 
-        console.log("Formatted expense data:", formattedExpense);
-
         const { error } = await supabase
           .from('expenses')
           .insert(formattedExpense);
 
         if (error) {
-          console.error(`Error importing expense ${i+1}:`, error);
           errors.push(`Fila ${i+1}: ${error.message}`);
           errorCount++;
         } else {
           successCount++;
-          console.log(`Expense ${i+1} imported successfully`);
           
           // Update import record progress
           await supabase
@@ -106,7 +86,6 @@ export const importExpenses = async (
           onProgress?.(successCount);
         }
       } catch (error: any) {
-        console.error(`Error processing expense ${i+1}:`, error);
         errors.push(`Fila ${i+1}: ${error.message || 'Error desconocido'}`);
         errorCount++;
       }
@@ -125,15 +104,11 @@ export const importExpenses = async (
           error_message: errorMessage
         })
         .eq('id', importRecord.id);
-      
-      console.log("Import completed with status:", finalStatus);
     }
   } catch (error: any) {
-    console.error('Unexpected error during import process:', error);
     errors.push(`Error general: ${error.message || 'Error desconocido'}`);
     errorCount++;
   }
 
-  console.log("Import summary:", { successCount, errorCount, errors });
   return { successCount, errorCount, errors };
 };

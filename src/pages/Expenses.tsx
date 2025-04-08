@@ -74,7 +74,6 @@ export default function Expenses() {
 
       // Add supplier filter
       if (filters.supplier_id && filters.supplier_id !== "all") {
-        console.log("Applying supplier filter with ID:", filters.supplier_id);
         query = query.eq('supplier_id', filters.supplier_id);
       }
       
@@ -102,7 +101,6 @@ export default function Expenses() {
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error fetching expenses:", error);
         throw error;
       }
       

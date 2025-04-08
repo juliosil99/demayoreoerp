@@ -37,7 +37,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
-  const { deleteError, handleDelete, deleteLog } = useExpenseDelete();
+  const { deleteError, handleDelete } = useExpenseDelete();
 
   // Get paginated expenses
   const startIndex = (currentPage - 1) * itemsPerPage;

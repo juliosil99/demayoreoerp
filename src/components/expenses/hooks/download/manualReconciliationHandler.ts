@@ -20,7 +20,6 @@ export const handleManualReconciliation = async (
     
   if (manualRecError) {
     onLog(`Error fetching manual reconciliation: ${manualRecError.message}`);
-    console.error("Error fetching manual reconciliation:", manualRecError);
     toast.error("Error al buscar información de conciliación manual");
     return false;
   }
@@ -40,7 +39,6 @@ export const handleManualReconciliation = async (
       
     if (fileError) {
       onLog(`Error fetching file data: ${fileError.message}`);
-      console.error("Error fetching file data:", fileError);
       toast.error("Error al buscar el archivo de factura manual");
       return false;
     }

@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
-import { dialogLogger } from "@/utils/dialogLogger";
 import { X } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types/base";
 
@@ -59,23 +58,14 @@ export function StableExpenseEditDialog({
       return () => clearTimeout(timer);
     }
   }, [isOpen, mounted]);
-  
-  // Log dialog events
-  useEffect(() => {
-    if (isOpen) {
-      dialogLogger.logOpen("StableExpenseEditDialog", { expenseId: expense.id });
-    }
-  }, [isOpen, expense.id]);
 
   // Handle close request
   const handleClose = () => {
-    dialogLogger.logClose("StableExpenseEditDialog", { expenseId: expense.id, status: "cancelled" });
     onClose();
   };
   
   // Handle form success
   const handleFormSuccess = () => {
-    dialogLogger.logClose("StableExpenseEditDialog", { expenseId: expense.id, status: "success" });
     onSuccess();
   };
 

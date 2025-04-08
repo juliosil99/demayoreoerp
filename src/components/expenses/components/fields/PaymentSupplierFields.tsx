@@ -38,24 +38,21 @@ export function PaymentSupplierFields({ formData, setFormData, suppliers, onSupp
         .single();
       
       if (error) {
-        console.error("Error fetching supplier default chart account:", error);
         return;
       }
       
       if (data && data.default_chart_account_id && onSupplierSelect) {
-        console.log("Found default chart account for supplier:", data.default_chart_account_id);
         onSupplierSelect(supplierId, data.default_chart_account_id);
       } else if (onSupplierSelect) {
         onSupplierSelect(supplierId);
       }
     } catch (error) {
-      console.error("Error in fetchSupplierDefaultChartAccount:", error);
+      // Silent error handling
     }
   };
 
   // Handle supplier selection
   const handleSupplierChange = (value: string) => {
-    console.log("Selected supplier ID:", value);
     const newValue = value === "none" ? undefined : value;
     setFormData({ ...formData, supplier_id: newValue });
     
