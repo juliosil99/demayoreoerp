@@ -39,23 +39,24 @@ export function ExpenseEditDialog({
   onOpenChange, 
   onSuccess 
 }: ExpenseEditDialogProps) {
-  // Log dialog events
+  // Log dialog events - only when opening
   useEffect(() => {
     if (isOpen) {
       dialogLogger.logOpen("ExpenseEditDialog", { expenseId: expense.id });
     }
   }, [isOpen, expense]);
   
-  // Handle form success separately from dialog closing
-  const handleFormSuccess = () => {
-    // Log the successful submission but don't close dialog here
-    dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "success" });
-    // Call the parent success handler which will handle closing
-    onSuccess();
+  // We need to handle dialog closing separately from form success
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      // Log closing event through normal dialog close (X button or escape key)
+      dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "cancelled" });
+    }
+    onOpenChange(open);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Editar Gasto</DialogTitle>
@@ -65,7 +66,11 @@ export function ExpenseEditDialog({
         </DialogHeader>
         <ExpenseForm 
           initialData={expense} 
-          onSuccess={handleFormSuccess}
+          onSuccess={() => {
+            // Log success and then notify parent
+            dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "success" });
+            onSuccess();
+          }}
         />
       </DialogContent>
     </Dialog>

@@ -49,20 +49,20 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
     setIsDialogOpen(true);
   }, []);
 
-  // Simple dialog state management
+  // Handle dialog state change
   const handleDialogOpenChange = useCallback((open: boolean) => {
     setIsDialogOpen(open);
-    // Only clear selection when dialog is closed
-    if (!open) {
-      // We don't need a timeout here - we can clear it immediately
-      // because the dialog stays mounted until animation completes
-      setSelectedExpense(null);
-    }
   }, []);
 
-  // Handle successful edit
+  // Handle successful edit - this closes the dialog and triggers refetch
   const handleEditSuccess = useCallback(() => {
+    // Close the dialog first
     setIsDialogOpen(false);
+    
+    // Clean up selection after animation completes
+    setTimeout(() => {
+      setSelectedExpense(null);
+    }, 300); // Dialog animation duration is approximately 300ms
   }, []);
 
   // Handle page change
