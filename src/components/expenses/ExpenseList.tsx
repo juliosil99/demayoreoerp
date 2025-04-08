@@ -1,6 +1,6 @@
 
 import { ExpenseTable } from "./components/ExpenseTable";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useExpenseDelete } from "./hooks/useExpenseDelete";
 import { ExpensePagination } from "./components/ExpensePagination";
 import { ExpenseEditDialog } from "./components/ExpenseEditDialog";
@@ -49,25 +49,15 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
     setIsDialogOpen(true);
   }, []);
 
-  // Clean up selectedExpense after dialog animation completes
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout | null = null;
-    
-    if (!isDialogOpen && selectedExpense) {
-      // Wait for dialog close animation to complete before clearing the expense
-      timeoutId = setTimeout(() => {
-        setSelectedExpense(null);
-      }, 300); // Dialog animation duration is approximately 200ms
-    }
-    
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [isDialogOpen, selectedExpense]);
-
-  // Single point of control for dialog state
+  // Simple dialog state management
   const handleDialogOpenChange = useCallback((open: boolean) => {
     setIsDialogOpen(open);
+    // Only clear selection when dialog is closed
+    if (!open) {
+      // We don't need a timeout here - we can clear it immediately
+      // because the dialog stays mounted until animation completes
+      setSelectedExpense(null);
+    }
   }, []);
 
   // Handle successful edit

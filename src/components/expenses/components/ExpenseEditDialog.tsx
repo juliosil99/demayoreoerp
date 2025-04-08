@@ -46,25 +46,16 @@ export function ExpenseEditDialog({
     }
   }, [isOpen, expense]);
   
+  // Handle form success separately from dialog closing
   const handleFormSuccess = () => {
+    // Log the successful submission but don't close dialog here
     dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "success" });
+    // Call the parent success handler which will handle closing
     onSuccess();
   };
 
   return (
-    <Dialog 
-      open={isOpen} 
-      onOpenChange={(open) => {
-        if (!isOpen && !open) return; // Prevent duplicate close events
-        
-        if (!open) {
-          // Only log when actually closing
-          dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "cancelled" });
-        }
-        
-        onOpenChange(open);
-      }}
-    >
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Editar Gasto</DialogTitle>
