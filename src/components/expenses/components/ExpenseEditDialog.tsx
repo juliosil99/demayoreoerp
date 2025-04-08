@@ -38,11 +38,6 @@ export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: Expen
     if (isOpen && expense) {
       dialogLogger.logOpen("ExpenseEditDialog", { expenseId: expense.id });
     }
-    return () => {
-      if (isOpen && expense) {
-        dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense?.id });
-      }
-    };
   }, [isOpen, expense]);
 
   if (!expense) return null;
@@ -54,8 +49,11 @@ export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: Expen
   };
 
   const handleDialogClose = () => {
-    dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "cancelled" });
-    onClose();
+    // Only log and call onClose if the dialog is actually open
+    if (isOpen) {
+      dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "cancelled" });
+      onClose();
+    }
   };
   
   return (
