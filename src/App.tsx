@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout"; // Changed from default import to named import
@@ -32,6 +32,15 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return user ? children : <Navigate to="/login" />;
 }
 
+// Layout wrapper component that includes the children
+function LayoutWrapper() {
+  return (
+    <Layout>
+      <Outlet />
+    </Layout>
+  );
+}
+
 function App() {
   return (
     <>
@@ -51,7 +60,7 @@ function App() {
             path="/"
             element={
               <PrivateRoute>
-                <Layout />
+                <LayoutWrapper />
               </PrivateRoute>
             }
           >
