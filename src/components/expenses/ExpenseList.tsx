@@ -50,10 +50,12 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
 
   const handleCloseDialog = useCallback(() => {
     setIsDialogOpen(false);
+    // Don't clear selectedExpense here to prevent UI flicker during animation
   }, []);
 
   const handleEditSuccess = useCallback(() => {
-    // Just trigger a refetch - actual dialog closing is handled by handleCloseDialog
+    // This will be called after successful edit
+    setIsDialogOpen(false);
   }, []);
 
   // Handle page change

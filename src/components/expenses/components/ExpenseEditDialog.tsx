@@ -34,7 +34,7 @@ interface ExpenseEditDialogProps {
 }
 
 export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: ExpenseEditDialogProps) {
-  // Log dialog open when the component mounts and isOpen is true
+  // Only log when opening the dialog
   useEffect(() => {
     if (isOpen && expense) {
       dialogLogger.logOpen("ExpenseEditDialog", { expenseId: expense.id });
@@ -44,9 +44,8 @@ export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: Expen
   if (!expense) return null;
   
   const handleFormSuccess = () => {
-    dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "success" });
     onSuccess();
-    onClose();
+    // Don't call onClose here - let the dialog handle it
   };
 
   return (
@@ -54,7 +53,7 @@ export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: Expen
       open={isOpen} 
       onOpenChange={(open) => {
         if (!open) {
-          // Only log and call onClose when dialog is closing (open becomes false)
+          // Single point of dialog closing logic
           dialogLogger.logClose("ExpenseEditDialog", { expenseId: expense.id, status: "cancelled" });
           onClose();
         }
@@ -70,8 +69,6 @@ export function ExpenseEditDialog({ isOpen, expense, onClose, onSuccess }: Expen
         <ExpenseForm 
           initialData={expense} 
           onSuccess={handleFormSuccess}
-          // Remove the onClose prop from ExpenseForm to prevent duplicate closing
-          // The Dialog onOpenChange will handle closing
         />
       </DialogContent>
     </Dialog>
