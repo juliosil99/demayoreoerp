@@ -64,7 +64,12 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
         onSupplierSelect={handleSupplierSelect}
       />
 
-      <div className="flex justify-end">
+      <div className="flex justify-end space-x-2">
+        {onClose && (
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+        )}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Guardando..." : dataToUse ? "Actualizar Gasto" : "Crear Gasto"}
         </Button>
