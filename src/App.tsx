@@ -3,7 +3,7 @@ import * as React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import Layout from "@/components/layout/Layout";
+import { Layout } from "@/components/layout/Layout"; // Changed from default import to named import
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import CompanySetup from "@/pages/CompanySetup";
