@@ -1,5 +1,4 @@
 
-import { BankStatementsTable } from "@/integrations/supabase/types/bank-statements";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -8,51 +7,41 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { BankStatementsTable } from "@/integrations/supabase/types/bank-statements";
 
-type BankStatement = BankStatementsTable['Row'];
+type BankStatement = BankStatementsTable['Row'] | null;
 
 interface DeleteConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  statement: BankStatement | null;
+  statement: BankStatement;
   onConfirm: () => void;
 }
-
-// Get month name from month number
-const getMonthName = (month: number): string => {
-  const monthNames = [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-  ];
-  return monthNames[month - 1] || "";
-};
 
 export function DeleteConfirmationDialog({
   open,
   onOpenChange,
   statement,
-  onConfirm
+  onConfirm,
 }: DeleteConfirmationDialogProps) {
+  if (!statement) return null;
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+          <AlertDialogTitle>¿Eliminar estado de cuenta?</AlertDialogTitle>
           <AlertDialogDescription>
-            Esta acción eliminará permanentemente el estado de cuenta 
-            {statement && (
-              <span className="font-medium">
-                {" "}{getMonthName(statement.month)} {statement.year}
-              </span>
-            )}
-            .
+            Esta acción no se puede deshacer. El estado de cuenta{" "}
+            <span className="font-semibold">{statement.filename}</span> será
+            eliminado permanentemente.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground">
+          <AlertDialogAction onClick={onConfirm} className="bg-red-500 hover:bg-red-600">
             Eliminar
           </AlertDialogAction>
         </AlertDialogFooter>

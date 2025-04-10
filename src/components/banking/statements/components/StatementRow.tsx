@@ -45,35 +45,41 @@ const getFileIcon = (contentType: string) => {
 
 export function StatementRow({ statement, onDelete, onDownload }: StatementRowProps) {
   return (
-    <TableRow key={statement.id}>
-      <TableCell className="font-medium flex items-center gap-2">
-        {getFileIcon(statement.content_type)}
-        <span className="truncate max-w-[200px]" title={statement.filename}>
-          {statement.filename}
-        </span>
+    <TableRow>
+      <TableCell className="font-medium">
+        <div className="flex items-center gap-2">
+          {getFileIcon(statement.content_type)}
+          <span className="truncate max-w-[200px]" title={statement.filename}>
+            {statement.filename}
+          </span>
+        </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="text-center">
         {getMonthName(statement.month)} {statement.year}
       </TableCell>
-      <TableCell>{formatDate(statement.upload_date)}</TableCell>
-      <TableCell>{formatFileSize(statement.size)}</TableCell>
-      <TableCell className="space-x-2">
-        <Button 
-          variant="outline" 
-          size="icon" 
-          onClick={() => onDownload(statement)}
-          title="Descargar"
-        >
-          <Download className="h-4 w-4" />
-        </Button>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          onClick={() => onDelete(statement)}
-          title="Eliminar"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+      <TableCell className="text-center">{formatDate(statement.upload_date)}</TableCell>
+      <TableCell className="text-center">{formatFileSize(statement.size)}</TableCell>
+      <TableCell>
+        <div className="flex justify-end items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => onDownload(statement)}
+            title="Descargar"
+            className="h-8 w-8 p-0"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => onDelete(statement)}
+            title="Eliminar"
+            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-100"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );

@@ -32,8 +32,8 @@ export function BankStatementsList({ accountId, refreshTrigger = 0 }: BankStatem
 
   if (statements.length === 0) {
     return (
-      <div className="text-center py-8 border rounded-md bg-muted/10">
-        <p>No hay estados de cuenta registrados para esta cuenta bancaria</p>
+      <div className="text-center py-10 border rounded-md bg-gray-50">
+        <p className="text-gray-500">No hay estados de cuenta registrados para esta cuenta bancaria</p>
       </div>
     );
   }

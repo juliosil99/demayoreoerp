@@ -10,8 +10,8 @@ interface DescriptionFieldProps {
 
 export function DescriptionField({ value, onChange, disabled = false }: DescriptionFieldProps) {
   return (
-    <div>
-      <Label htmlFor="description">Descripción (opcional)</Label>
+    <div className="space-y-2">
+      <Label htmlFor="description" className="font-medium">Descripción (opcional)</Label>
       <Textarea
         id="description"
         value={value}
@@ -19,6 +19,7 @@ export function DescriptionField({ value, onChange, disabled = false }: Descript
         placeholder="Agrega una descripción opcional para este estado de cuenta"
         rows={3}
         disabled={disabled}
+        className="resize-none"
       />
     </div>
   );

@@ -28,15 +28,15 @@ export function BankStatementsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Estados de Cuenta - {accountName}</DialogTitle>
+          <DialogTitle className="text-xl">Estados de Cuenta - {accountName}</DialogTitle>
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="list">Estados de Cuenta</TabsTrigger>
-            <TabsTrigger value="upload">Subir Estado de Cuenta</TabsTrigger>
+            <TabsTrigger value="list" className="font-medium">Estados de Cuenta</TabsTrigger>
+            <TabsTrigger value="upload" className="font-medium">Subir Estado de Cuenta</TabsTrigger>
           </TabsList>
           
           <TabsContent value="list" className="space-y-4">
