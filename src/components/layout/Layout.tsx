@@ -2,7 +2,6 @@
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Toaster } from "@/components/ui/toaster";
-import { DialogEventLogger } from '@/components/debug/DialogEventLogger';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,7 +16,6 @@ export function Layout({ children }: LayoutProps) {
         <main className="flex-grow overflow-auto">{children}</main>
       </div>
       <Toaster />
-      <DialogEventLogger />
     </div>
   );
 }
