@@ -18,7 +18,7 @@ export function useBankAccounts() {
     currency: "MXN"
   });
 
-  // Fetch bank accounts
+  // Fetch bank accounts - modified to sort by type first, then by name
   const { 
     data: accounts = [], 
     isLoading: isLoadingAccounts,
@@ -30,7 +30,8 @@ export function useBankAccounts() {
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*")
-        .order("name");
+        .order('type')
+        .order('name');
       if (error) throw error;
       
       // Log the fetched accounts for debugging
