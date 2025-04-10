@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
+import { BankStatementsTable } from "@/integrations/supabase/types";
 
 interface BankStatementUploaderProps {
   accountId: number;
@@ -84,7 +86,7 @@ export function BankStatementUploader({ accountId, onSuccess }: BankStatementUpl
 
       // Create metadata record in the database
       const { error: dbError } = await supabase
-        .from('bank_statements')
+        .from("bank_statements")
         .insert({
           user_id: user.id,
           account_id: accountId,
@@ -95,7 +97,7 @@ export function BankStatementUploader({ accountId, onSuccess }: BankStatementUpl
           month: parseInt(month),
           year: parseInt(year),
           description: description || null
-        });
+        } as BankStatementsTable['Insert']);
 
       if (dbError) {
         // Clean up the uploaded file if the database record fails

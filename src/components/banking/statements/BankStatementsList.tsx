@@ -24,19 +24,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import { BankStatementsTable } from "@/integrations/supabase/types";
 
-interface BankStatement {
-  id: string;
-  account_id: number;
-  filename: string;
-  file_path: string;
-  content_type: string;
-  size: number;
-  month: number;
-  year: number;
-  upload_date: string;
-  description: string | null;
-}
+// Define the BankStatement type based on the table row type
+type BankStatement = BankStatementsTable['Row'];
 
 interface BankStatementsListProps {
   accountId: number;
@@ -96,7 +87,7 @@ export function BankStatementsList({ accountId, refreshTrigger = 0 }: BankStatem
           .order("month", { ascending: false });
         
         if (error) throw error;
-        setStatements(data || []);
+        setStatements(data as BankStatement[] || []);
       } catch (error) {
         toast.error("Error al cargar los estados de cuenta");
         setStatements([]);
