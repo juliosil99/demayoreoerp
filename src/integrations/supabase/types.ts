@@ -388,6 +388,56 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_statements: {
+        Row: {
+          account_id: number
+          content_type: string
+          description: string | null
+          file_path: string
+          filename: string
+          id: string
+          month: number
+          size: number
+          upload_date: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          account_id: number
+          content_type: string
+          description?: string | null
+          file_path: string
+          filename: string
+          id?: string
+          month: number
+          size: number
+          upload_date?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          account_id?: number
+          content_type?: string
+          description?: string | null
+          file_path?: string
+          filename?: string
+          id?: string
+          month?: number
+          size?: number
+          upload_date?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statements_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cash_flow_forecasts: {
         Row: {
           ai_insights: string | null

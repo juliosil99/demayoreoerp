@@ -1,23 +1,25 @@
 
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, FileText } from "lucide-react";
 import { useAccountDetails } from "@/components/banking/hooks/useAccountDetails";
 import { useAccountTransactions } from "@/components/banking/hooks/useAccountTransactions";
 import { AccountHeader } from "@/components/banking/AccountHeader";
 import { TransactionsTable } from "@/components/banking/TransactionsTable";
 import { AccountSkeleton } from "@/components/banking/AccountSkeleton";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSyncAccountBalance } from "@/components/banking/hooks/useSyncAccountBalance";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
+import { BankStatementsDialog } from "@/components/banking/statements/BankStatementsDialog";
 
 export default function BankAccountMovements() {
   const { accountId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const id = accountId ? parseInt(accountId) : null;
+  const [statementsDialogOpen, setStatementsDialogOpen] = useState(false);
 
   // Force refresh data when the component mounts
   useEffect(() => {
@@ -118,10 +120,20 @@ export default function BankAccountMovements() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <Button variant="outline" onClick={handleBack} className="mb-4">
-        <ArrowLeftIcon className="mr-2 h-4 w-4" />
-        Volver a Cuentas Bancarias
-      </Button>
+      <div className="flex justify-between items-center">
+        <Button variant="outline" onClick={handleBack}>
+          <ArrowLeftIcon className="mr-2 h-4 w-4" />
+          Volver a Cuentas Bancarias
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          onClick={() => setStatementsDialogOpen(true)}
+        >
+          <FileText className="mr-2 h-4 w-4" />
+          Estados de Cuenta
+        </Button>
+      </div>
 
       <AccountHeader account={account} />
 
@@ -135,6 +147,13 @@ export default function BankAccountMovements() {
           transactions={transactions || []} 
         />
       )}
+      
+      <BankStatementsDialog
+        open={statementsDialogOpen}
+        onOpenChange={setStatementsDialogOpen}
+        accountId={account.id}
+        accountName={account.name}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 
-import { BanknoteIcon, CreditCard, Pencil, Trash2, FileBarChart } from "lucide-react";
+import { BanknoteIcon, CreditCard, Pencil, Trash2, FileBarChart, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -13,6 +13,8 @@ import { formatCurrency } from "@/utils/formatters";
 import { formatDate } from "@/utils/formatters";
 import type { BankAccount } from "./types";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { BankStatementsDialog } from "./statements/BankStatementsDialog";
 
 interface BankAccountsTableProps {
   accounts: BankAccount[];
@@ -22,9 +24,16 @@ interface BankAccountsTableProps {
 
 export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTableProps) {
   const navigate = useNavigate();
+  const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
+  const [statementsDialogOpen, setStatementsDialogOpen] = useState(false);
 
   const handleViewMovements = (accountId: number) => {
     navigate(`/accounting/banking/account/${accountId}`);
+  };
+
+  const handleManageStatements = (account: BankAccount) => {
+    setSelectedAccount(account);
+    setStatementsDialogOpen(true);
   };
 
   return (
@@ -79,6 +88,14 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                   <Button
                     variant="ghost"
                     size="icon"
+                    onClick={() => handleManageStatements(account)}
+                    title="Estados de cuenta"
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => onEdit(account)}
                     title="Editar cuenta"
                   >
@@ -98,6 +115,15 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
           ))}
         </TableBody>
       </Table>
+
+      {selectedAccount && (
+        <BankStatementsDialog
+          open={statementsDialogOpen}
+          onOpenChange={setStatementsDialogOpen}
+          accountId={selectedAccount.id}
+          accountName={selectedAccount.name}
+        />
+      )}
     </div>
   );
 }

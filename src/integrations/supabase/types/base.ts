@@ -1,3 +1,4 @@
+
 import type { InvoiceProductsTable } from './invoice-products'
 import type { InvoicesTable } from './invoice'
 import type { SalesTable } from './sales'
@@ -6,6 +7,7 @@ import type { ExpensesTable } from './expenses'
 import type { SalesChannelsTable } from './sales-channels'
 import type { ManualReconciliationsTable, ManualInvoiceFilesTable } from './manual-reconciliations'
 import type { CashFlowForecastsTable, ForecastWeeksTable, ForecastItemsTable } from './cash-flow'
+import type { BankStatementsTable } from './bank-statements'
 
 export type Json =
   | string
@@ -61,6 +63,7 @@ export type Database = {
       cash_flow_forecasts: CashFlowForecastsTable
       forecast_weeks: ForecastWeeksTable
       forecast_items: ForecastItemsTable
+      bank_statements: BankStatementsTable
     }
     Views: {
       [_ in never]: never
