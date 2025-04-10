@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -15,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
-import { BankStatementsTable } from "@/integrations/supabase/types";
+import { BankStatementsTable } from "@/integrations/supabase/types/bank-statements";
 
 interface BankStatementUploaderProps {
   accountId: number;
@@ -30,11 +29,9 @@ export function BankStatementUploader({ accountId, onSuccess }: BankStatementUpl
   const [description, setDescription] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  // Generate years from current year - 5 to current year
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => currentYear - 5 + i).map(y => y.toString());
 
-  // Generate months
   const months = [
     { value: "1", label: "Enero" },
     { value: "2", label: "Febrero" },
@@ -67,12 +64,10 @@ export function BankStatementUploader({ accountId, onSuccess }: BankStatementUpl
     setUploading(true);
 
     try {
-      // Define the file path with better uniqueness
       const timestamp = Date.now();
       const uniqueFilename = `${timestamp}_${file.name}`;
       const filePath = `${user.id}/${accountId}/${uniqueFilename}`;
       
-      // Upload the file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('bank_statements')
         .upload(filePath, file, {
@@ -84,7 +79,6 @@ export function BankStatementUploader({ accountId, onSuccess }: BankStatementUpl
         throw new Error(`Error al subir el archivo: ${uploadError.message}`);
       }
 
-      // Create metadata record in the database
       const { error: dbError } = await supabase
         .from("bank_statements")
         .insert({
@@ -100,7 +94,6 @@ export function BankStatementUploader({ accountId, onSuccess }: BankStatementUpl
         } as BankStatementsTable['Insert']);
 
       if (dbError) {
-        // Clean up the uploaded file if the database record fails
         await supabase.storage
           .from('bank_statements')
           .remove([filePath]);
@@ -112,7 +105,6 @@ export function BankStatementUploader({ accountId, onSuccess }: BankStatementUpl
       setFile(null);
       setDescription("");
       
-      // Reset form inputs (in controlled components like Select we need to keep the values)
       if (onSuccess) {
         onSuccess();
       }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -24,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { BankStatementsTable } from "@/integrations/supabase/types";
+import { BankStatementsTable } from "@/integrations/supabase/types/bank-statements";
 
 // Define the BankStatement type based on the table row type
 type BankStatement = BankStatementsTable['Row'];
