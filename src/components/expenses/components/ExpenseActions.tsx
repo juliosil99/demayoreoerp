@@ -36,6 +36,7 @@ export function ExpenseActions({
   const [deletionLog, setDeletionLog] = useState<string[]>([]);
   const [isLogOpen, setIsLogOpen] = useState(false);
 
+  // Pre-bind the expense to the delete handler
   const handleDeleteClick = async () => {
     try {
       const result = await onDelete(expense);
