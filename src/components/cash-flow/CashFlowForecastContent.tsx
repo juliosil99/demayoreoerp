@@ -164,7 +164,9 @@ export const CashFlowForecastContent = () => {
     expenses: historicalData.expenses.length,
     sales: historicalData.sales.length,
     bankAccounts: historicalData.bankAccounts.length,
-    totalBankBalance: historicalData.totalBankBalance
+    availableCashBalance: historicalData.availableCashBalance,
+    creditLiabilities: historicalData.creditLiabilities,
+    netPosition: historicalData.netPosition
   };
   
   const isDataLoading = isLoading || isLoadingForecasts || isLoadingHistoricalData;
