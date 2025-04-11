@@ -32,4 +32,3 @@ Please provide the following in JSON format:
 Your response should be valid JSON with "insights" and "weeklyForecasts" keys.
 `;
 }
-

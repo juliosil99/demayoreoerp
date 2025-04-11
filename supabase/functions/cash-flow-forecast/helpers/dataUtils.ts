@@ -50,4 +50,3 @@ export function calculateAverageAmount(data: any[]) {
   
   return count > 0 ? total / count : 0;
 }
-
