@@ -1,11 +1,9 @@
 
 import React from "react";
 import { ForecastWeek, ForecastItem, CashFlowForecast } from "@/types/cashFlow";
-import { ForecastSummaryCards } from "@/components/cash-flow/ForecastSummaryCards";
-import { CashFlowChart } from "@/components/cash-flow/CashFlowChart";
-import { WeeklyForecastTable } from "@/components/cash-flow/WeeklyForecastTable";
-import { ForecastItemsCard } from "@/components/cash-flow/ForecastItemsCard";
-import { AIInsightCard } from "@/components/cash-flow/AIInsightCard";
+import { ForecastSummarySection } from "@/components/cash-flow/content/ForecastSummarySection";
+import { ForecastChartSection } from "@/components/cash-flow/content/ForecastChartSection";
+import { ForecastDetailsSection } from "@/components/cash-flow/content/ForecastDetailsSection";
 
 interface ForecastContentProps {
   weeks: ForecastWeek[];
@@ -34,32 +32,21 @@ export function ForecastContent({
 }: ForecastContentProps) {
   return (
     <>
-      <div className="grid grid-cols-4 gap-4">
-        <ForecastSummaryCards weeks={weeks} forecast={forecast} />
-      </div>
+      <ForecastSummarySection weeks={weeks} forecast={forecast} />
       
-      <CashFlowChart weeks={weeks} />
+      <ForecastChartSection weeks={weeks} />
       
-      <div className="grid grid-cols-3 gap-6">
-        <WeeklyForecastTable 
-          weeks={weeks} 
-          onSelectWeek={onSelectWeek}
-          selectedWeekId={selectedWeek?.id}
-        />
-        
-        <ForecastItemsCard 
-          selectedWeek={selectedWeek} 
-          items={items}
-          onAddItem={onAddItem}
-          onEditItem={onEditItem}
-        />
-        
-        <AIInsightCard 
-          insights={insights || ''}
-          isLoading={isGenerating}
-          onRequestAPIKey={onRequestAPIKey}
-        />
-      </div>
+      <ForecastDetailsSection
+        weeks={weeks}
+        items={items}
+        selectedWeek={selectedWeek}
+        insights={insights}
+        isGenerating={isGenerating}
+        onSelectWeek={onSelectWeek}
+        onAddItem={onAddItem}
+        onEditItem={onEditItem}
+        onRequestAPIKey={onRequestAPIKey}
+      />
     </>
   );
 }
