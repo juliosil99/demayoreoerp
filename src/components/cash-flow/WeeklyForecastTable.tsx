@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { ForecastWeek } from "@/types/cashFlow";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatCurrency } from "@/lib/utils";
 
 interface WeeklyForecastTableProps {
   weeks: ForecastWeek[];
@@ -30,10 +31,11 @@ export function WeeklyForecastTable({
               <TableRow>
                 <TableHead>Semana</TableHead>
                 <TableHead>Período</TableHead>
+                <TableHead className="text-right">Saldo Inicial</TableHead>
                 <TableHead className="text-right">Entradas</TableHead>
                 <TableHead className="text-right">Salidas</TableHead>
                 <TableHead className="text-right">Flujo Neto</TableHead>
-                <TableHead className="text-right">Acumulado</TableHead>
+                <TableHead className="text-right">Saldo Final</TableHead>
                 <TableHead className="text-center">Gráfico</TableHead>
               </TableRow>
             </TableHeader>
@@ -67,17 +69,20 @@ export function WeeklyForecastTable({
                     <TableCell>
                       {format(startDate, "dd MMM", { locale: es })} - {format(endDate, "dd MMM", { locale: es })}
                     </TableCell>
+                    <TableCell className={`text-right ${(week.starting_balance || 0) >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+                      {formatCurrency(week.starting_balance || 0)}
+                    </TableCell>
                     <TableCell className="text-right text-green-500">
-                      ${(week.predicted_inflows || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                      {formatCurrency(week.predicted_inflows || 0)}
                     </TableCell>
                     <TableCell className="text-right text-red-500">
-                      ${(week.predicted_outflows || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                      {formatCurrency(week.predicted_outflows || 0)}
                     </TableCell>
                     <TableCell className={`text-right ${netCashFlow >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      ${netCashFlow.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                      {formatCurrency(netCashFlow)}
                     </TableCell>
-                    <TableCell className={`text-right ${(week.cumulative_cash_flow || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      ${(week.cumulative_cash_flow || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                    <TableCell className={`text-right ${(week.ending_balance || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {formatCurrency(week.ending_balance || 0)}
                     </TableCell>
                     <TableCell>
                       <div className="h-10 w-24 mx-auto">
@@ -87,7 +92,7 @@ export function WeeklyForecastTable({
                             <XAxis type="number" hide />
                             <YAxis type="category" dataKey="name" hide />
                             <Tooltip 
-                              formatter={(value: number) => [`$${value.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`, ""]}
+                              formatter={(value: number) => [formatCurrency(value), ""]}
                               labelFormatter={(_) => ""}
                             />
                             <Bar dataKey="value" barSize={10}>

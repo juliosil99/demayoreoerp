@@ -74,6 +74,7 @@ export function ForecastPageContainer({
         <ForecastContent 
           weeks={weeks}
           items={items}
+          forecast={forecast}
           selectedWeek={selectedWeek}
           insights={insights || ''}
           isGenerating={isGenerating}

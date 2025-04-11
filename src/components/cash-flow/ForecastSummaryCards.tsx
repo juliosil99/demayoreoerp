@@ -1,18 +1,21 @@
 
 import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ForecastWeek } from "@/types/cashFlow";
-import { ArrowUpRight, ArrowDownRight, ArrowRight, AlertCircle } from "lucide-react";
+import { ForecastWeek, CashFlowForecast } from "@/types/cashFlow";
+import { ArrowUpRight, ArrowDownRight, ArrowRight, AlertCircle, Wallet } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface ForecastSummaryCardsProps {
   weeks: ForecastWeek[];
+  forecast?: CashFlowForecast | null;
 }
 
-export function ForecastSummaryCards({ weeks }: ForecastSummaryCardsProps) {
+export function ForecastSummaryCards({ weeks, forecast }: ForecastSummaryCardsProps) {
   // Calculate summary metrics
   const totalInflows = weeks.reduce((sum, week) => sum + (week.predicted_inflows || 0), 0);
   const totalOutflows = weeks.reduce((sum, week) => sum + (week.predicted_outflows || 0), 0);
   const netCashFlow = totalInflows - totalOutflows;
+  const initialBalance = forecast?.initial_balance || 0;
   
   // Find weeks with negative cash flow
   const weeksWithNegativeCashFlow = weeks.filter(week => {
@@ -30,13 +33,36 @@ export function ForecastSummaryCards({ weeks }: ForecastSummaryCardsProps) {
     });
   }
 
+  // Final projected balance (initial + net cash flow)
+  const finalProjectedBalance = initialBalance + netCashFlow;
+
   return (
     <>
       <Card>
         <CardHeader className="pb-2">
+          <CardDescription>Saldo Inicial</CardDescription>
+          <CardTitle className={`text-2xl ${initialBalance >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+            {formatCurrency(initialBalance)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xs text-muted-foreground">
+            Basado en cuentas bancarias
+          </div>
+        </CardContent>
+        <CardFooter className="pt-0">
+          <div className="flex items-center text-xs text-blue-500">
+            <Wallet className="mr-1 h-4 w-4" />
+            Saldo Actual
+          </div>
+        </CardFooter>
+      </Card>
+      
+      <Card>
+        <CardHeader className="pb-2">
           <CardDescription>Entradas Totales</CardDescription>
           <CardTitle className="text-green-500 text-2xl">
-            ${totalInflows.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+            {formatCurrency(totalInflows)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -56,7 +82,7 @@ export function ForecastSummaryCards({ weeks }: ForecastSummaryCardsProps) {
         <CardHeader className="pb-2">
           <CardDescription>Salidas Totales</CardDescription>
           <CardTitle className="text-red-500 text-2xl">
-            ${totalOutflows.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+            {formatCurrency(totalOutflows)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -74,46 +100,22 @@ export function ForecastSummaryCards({ weeks }: ForecastSummaryCardsProps) {
       
       <Card>
         <CardHeader className="pb-2">
-          <CardDescription>Flujo Neto</CardDescription>
-          <CardTitle className={`text-2xl ${netCashFlow >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            ${netCashFlow.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+          <CardDescription>Saldo Proyectado Final</CardDescription>
+          <CardTitle className={`text-2xl ${finalProjectedBalance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            {formatCurrency(finalProjectedBalance)}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-xs text-muted-foreground">
-            Resultado proyectado
+            Saldo Inicial + Flujo Neto
           </div>
         </CardContent>
         <CardFooter className="pt-0">
           <div className="flex items-center text-xs">
             <ArrowRight className="mr-1 h-4 w-4" />
-            {netCashFlow >= 0 ? 'Flujo positivo' : 'Flujo negativo'}
-          </div>
-        </CardFooter>
-      </Card>
-      
-      <Card>
-        <CardHeader className="pb-2">
-          <CardDescription>Semanas con Riesgo</CardDescription>
-          <CardTitle className="text-2xl">
-            {weeksWithNegativeCashFlow.length} de 13
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-xs text-muted-foreground">
-            {mostCriticalWeek 
-              ? `Semana ${mostCriticalWeek.week_number} es la más crítica` 
-              : 'Sin semanas críticas'
-            }
-          </div>
-        </CardContent>
-        <CardFooter className="pt-0">
-          <div className="flex items-center text-xs text-amber-500">
-            <AlertCircle className="mr-1 h-4 w-4" />
             {weeksWithNegativeCashFlow.length > 0 
-              ? 'Requiere atención' 
-              : 'Sin alertas de liquidez'
-            }
+              ? `${weeksWithNegativeCashFlow.length} semanas con riesgo` 
+              : 'Sin semanas con riesgo'}
           </div>
         </CardFooter>
       </Card>
