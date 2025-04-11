@@ -30,8 +30,8 @@ export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
     defaultValue: form.formState.defaultValues?.type || "client"
   });
 
-  // Only show the default chart account field for suppliers
-  const isSupplier = contactType === "supplier";
+  // Show the default chart account field for suppliers and employees
+  const showChartAccount = contactType === "supplier" || contactType === "employee";
 
   return (
     <>
@@ -100,7 +100,7 @@ export const ContactFormFields = ({ form }: ContactFormFieldsProps) => {
         )}
       />
 
-      <DefaultChartAccountField form={form} visible={isSupplier} />
+      <DefaultChartAccountField form={form} visible={showChartAccount} />
 
       <FormField
         control={form.control}
