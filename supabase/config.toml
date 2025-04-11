@@ -1,16 +1,18 @@
 
 project_id = "dulmmxtkgqkcfovvfxzu"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
+[functions.cash-flow-forecast]
+verify_jwt = true
 
-[db]
-port = 54322
-shadow_port = 54320
-major_version = 15
+[functions.set-api-key]
+verify_jwt = true
 
-[studio]
-enabled = true
-port = 54323
+[functions.send-invitation]
+verify_jwt = true
+
+[functions.create-invited-user]
+verify_jwt = false
+
+[functions.get-api-key]
+verify_jwt = true
+
