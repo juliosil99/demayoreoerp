@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
+import { addDays, format } from "https://esm.sh/date-fns@4.1.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -78,7 +79,7 @@ serve(async (req) => {
     console.log("[DEBUG - Edge Function] Verifying forecast exists:", forecastId);
     const { data: forecastData, error: forecastError } = await supabaseClient
       .from("cash_flow_forecasts")
-      .select("id")
+      .select("id, start_date")
       .eq("id", forecastId)
       .single();
     
@@ -114,7 +115,7 @@ serve(async (req) => {
       );
     }
 
-    // Generate some simple forecast data for the weeks
+    // Check if forecast weeks exist already
     console.log("[DEBUG - Edge Function] Retrieving forecast weeks");
     const { data: existingWeeks, error: weeksError } = await supabaseClient
       .from("forecast_weeks")
@@ -132,6 +133,80 @@ serve(async (req) => {
 
     console.log("[DEBUG - Edge Function] Retrieved weeks:", existingWeeks.length);
     
+    // If no weeks exist, create them
+    if (existingWeeks.length === 0) {
+      console.log("[DEBUG - Edge Function] No forecast weeks found. Creating 13 weeks...");
+      
+      // Parse the start date from the forecast
+      const forecastStartDate = new Date(startDate || forecastData.start_date);
+      
+      // Create 13 weeks
+      const weeksToCreate = Array.from({ length: 13 }, (_, i) => {
+        const weekStart = addDays(forecastStartDate, i * 7);
+        const weekEnd = addDays(weekStart, 6);
+        
+        // Add some variation for the forecast
+        const growthFactor = 1 + (i * 0.01); // Small growth each week
+        const randomVariation = 0.9 + (Math.random() * 0.2); // +/- 10% random variation
+        const baseInflow = 10000; // Base weekly inflow
+        const baseOutflow = 8000;  // Base weekly outflow
+        
+        return {
+          forecast_id: forecastId,
+          week_number: i + 1,
+          week_start_date: format(weekStart, 'yyyy-MM-dd'),
+          week_end_date: format(weekEnd, 'yyyy-MM-dd'),
+          predicted_inflows: Math.round(baseInflow * growthFactor * randomVariation),
+          predicted_outflows: Math.round(baseOutflow * (1 + (i * 0.005)) * randomVariation),
+          confidence_score: Math.round((0.8 - (i * 0.02)) * 100) / 100 // Confidence decreases with time
+        };
+      });
+      
+      console.log("[DEBUG - Edge Function] Inserting weeks:", weeksToCreate.length);
+      
+      const { error: insertError } = await supabaseClient
+        .from("forecast_weeks")
+        .insert(weeksToCreate);
+        
+      if (insertError) {
+        console.error("[DEBUG - Edge Function] Error creating forecast weeks:", insertError);
+        return new Response(
+          JSON.stringify({ success: false, error: "Failed to create forecast weeks" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      console.log("[DEBUG - Edge Function] Successfully created forecast weeks");
+      
+      // Fetch the newly created weeks to update them with forecast data
+      const { data: newWeeks, error: newWeeksError } = await supabaseClient
+        .from("forecast_weeks")
+        .select("id, week_number")
+        .eq("forecast_id", forecastId)
+        .order("week_number", { ascending: true });
+        
+      if (newWeeksError || !newWeeks) {
+        console.error("[DEBUG - Edge Function] Error fetching new weeks:", newWeeksError);
+        return new Response(
+          JSON.stringify({ success: false, error: "Failed to fetch newly created weeks" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Use the newly created weeks for the following updates
+      console.log("[DEBUG - Edge Function] Using newly created weeks for forecast data");
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Forecast generated successfully",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // If weeks already exist, update them with forecast data
+    console.log("[DEBUG - Edge Function] Updating weeks with forecast data");
+    
     // Update each week with some forecast data
     const baseInflow = 10000; // Base weekly inflow
     const baseOutflow = 8000;  // Base weekly outflow
@@ -147,8 +222,6 @@ serve(async (req) => {
         confidence_score: 0.8 - (index * 0.02)  // Confidence decreases with time
       };
     });
-
-    console.log("[DEBUG - Edge Function] Updating weeks with forecast data");
     
     // Update all weeks with transaction
     for (const weekUpdate of weekUpdates) {
