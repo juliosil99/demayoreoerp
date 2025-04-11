@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useExpenseDelete } from "./hooks/useExpenseDelete";
 import { ExpensePagination } from "./components/ExpensePagination";
 import { StableExpenseEditDialog } from "./components/StableExpenseEditDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -36,7 +37,8 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 30;
+  const isMobile = useIsMobile();
+  const itemsPerPage = isMobile ? 10 : 30;
   const { deleteError, handleDelete } = useExpenseDelete();
 
   // Get paginated expenses
@@ -65,7 +67,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   }, []);
 
   if (isLoading) {
-    return <div>Cargando gastos...</div>;
+    return <div className="p-4">Cargando gastos...</div>;
   }
 
   return (

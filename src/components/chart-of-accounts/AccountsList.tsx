@@ -1,6 +1,13 @@
 
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Trash2, MoreHorizontal } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Account {
   id: string;
@@ -30,6 +37,8 @@ export function AccountsList({
   onEditAccount,
   onDeleteAccount,
 }: AccountsListProps) {
+  const isMobile = useIsMobile();
+
   const renderAccount = (account: Account, depth: number = 0) => {
     const hasChildren = accounts?.some(a => a.parent_id === account.id);
     const isExpanded = expandedAccounts.has(account.id);
@@ -37,41 +46,65 @@ export function AccountsList({
     return (
       <div key={account.id}>
         <div 
-          className={`flex items-center gap-2 p-2 hover:bg-accent rounded-lg cursor-pointer`}
-          style={{ paddingLeft: `${depth * 24 + 8}px` }}
+          className={`flex items-center gap-1 md:gap-2 p-1 md:p-2 hover:bg-accent rounded-lg cursor-pointer`}
+          style={{ paddingLeft: `${depth * (isMobile ? 16 : 24) + 8}px` }}
         >
           {hasChildren && (
             <button
               onClick={() => onToggleExpand(account.id)}
               className="p-1 hover:bg-accent rounded"
+              aria-label={isExpanded ? "Collapse" : "Expand"}
             >
               {isExpanded ? (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
               ) : (
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
               )}
             </button>
           )}
-          {!hasChildren && <div className="w-6" />}
-          <span className="flex-1">
-            <span className="font-medium">{account.code}</span> - {account.name}
+          {!hasChildren && <div className="w-5 md:w-6" />}
+          <span className="flex-1 truncate text-sm">
+            <span className="font-medium">{account.code}</span> - <span className="hidden sm:inline">{account.name}</span><span className="sm:hidden">{account.name.length > 15 ? account.name.substring(0, 15) + '...' : account.name}</span>
           </span>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEditAccount(account)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDeleteAccount(account)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+          
+          {isMobile ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEditAccount(account)}>
+                  <Pencil className="h-3.5 w-3.5 mr-2" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDeleteAccount(account)} className="text-red-600">
+                  <Trash2 className="h-3.5 w-3.5 mr-2" />
+                  Eliminar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex gap-1 md:gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => onEditAccount(account)}
+              >
+                <Pencil className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => onDeleteAccount(account)}
+              >
+                <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              </Button>
+            </div>
+          )}
         </div>
         {isExpanded &&
           accounts
@@ -91,7 +124,7 @@ export function AccountsList({
         </div>
       ) : (
         <div className="p-4">
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             No hay cuentas registradas. Comience agregando una nueva cuenta.
           </p>
         </div>

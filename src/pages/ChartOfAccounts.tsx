@@ -105,13 +105,13 @@ export default function ChartOfAccounts() {
   }
 
   if (isLoading) {
-    return <div className="p-6">Loading...</div>;
+    return <div className="p-3 md:p-6">Loading...</div>;
   }
 
   const parentAccounts = accounts?.map(({ id, code, name }) => ({ id, code, name })) || [];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 md:space-y-6 p-3 md:p-6">
       <AccountsToolbar
         onAddAccount={handleAddAccount}
         onExportTemplate={csvService.exportTemplate}
@@ -146,8 +146,8 @@ export default function ChartOfAccounts() {
               {accountToDelete && ` "${accountToDelete.code} - ${accountToDelete.name}"`}.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+            <AlertDialogCancel className="mt-0">Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteAccount}>
               Eliminar
             </AlertDialogAction>

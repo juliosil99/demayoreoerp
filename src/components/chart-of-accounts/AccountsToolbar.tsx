@@ -1,7 +1,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Upload, Plus } from "lucide-react";
+import { Download, Upload, Plus, Menu } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AccountsToolbarProps {
   onAddAccount: () => void;
@@ -16,6 +23,54 @@ export function AccountsToolbar({
   onExportAccounts,
   onFileUpload,
 }: AccountsToolbarProps) {
+  const isMobile = useIsMobile();
+
+  // For mobile devices use dropdown menu
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl font-bold">Catálogo de Cuentas</h1>
+          <div className="flex gap-2">
+            <Input
+              type="file"
+              accept=".csv"
+              onChange={onFileUpload}
+              className="hidden"
+              id="csv-upload"
+            />
+            <Button onClick={onAddAccount} size="sm">
+              <Plus className="h-4 w-4 mr-1" />
+              Nueva
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onExportTemplate}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Descargar Plantilla
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => document.getElementById('csv-upload')?.click()}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Importar CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onExportAccounts}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <div className="flex justify-between items-center">
       <h1 className="text-2xl font-bold">Catálogo de Cuentas</h1>
