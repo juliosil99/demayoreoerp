@@ -1,8 +1,8 @@
-
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Receipt, Wallet, Building2, FileText, BanknoteIcon, ArrowLeftRight, DollarSign, CreditCard, FileX, Users, BookOpen, UserCog, ChevronRight, LineChart } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
+
 const menuItems = [{
   icon: LayoutDashboard,
   label: "Panel de Control",
@@ -15,10 +15,6 @@ const menuItems = [{
     icon: CreditCard,
     label: "Pagos Recibidos",
     to: "/sales/payments"
-  }, {
-    icon: FileX,
-    label: "Facturas",
-    to: "/sales/invoices"
   }, {
     icon: Receipt,
     label: "Cuentas por Cobrar",
@@ -54,6 +50,10 @@ const menuItems = [{
     label: "Bancos",
     to: "/accounting/banking"
   }, {
+    icon: FileX,
+    label: "Facturas",
+    to: "/sales/invoices"
+  }, {
     icon: FileText,
     label: "Reportes",
     to: "/accounting/reports"
@@ -67,6 +67,7 @@ const menuItems = [{
   label: "Administrar Usuarios",
   to: "/users"
 }];
+
 export function Sidebar() {
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
   const toggleSubmenu = (path: string) => {
