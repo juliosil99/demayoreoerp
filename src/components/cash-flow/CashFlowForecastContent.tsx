@@ -163,7 +163,8 @@ export const CashFlowForecastContent = () => {
     receivables: historicalData.receivables.length,
     expenses: historicalData.expenses.length,
     sales: historicalData.sales.length,
-    bankAccounts: historicalData.bankAccounts.length
+    bankAccounts: historicalData.bankAccounts.length,
+    totalBankBalance: historicalData.totalBankBalance
   };
   
   const isDataLoading = isLoading || isLoadingForecasts || isLoadingHistoricalData;

@@ -2,6 +2,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Banknote, Calendar, BarChart, CircleAlert, CircleCheck } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface DataSourcesPanelProps {
   historicalDataCount: {
@@ -10,6 +11,7 @@ interface DataSourcesPanelProps {
     expenses: number;
     sales: number;
     bankAccountsCount: number;
+    totalBankBalance?: number;
   };
 }
 
@@ -31,6 +33,9 @@ export function DataSourcesPanel({ historicalDataCount }: DataSourcesPanelProps)
           <CardContent className="p-0 flex flex-col items-center">
             <Banknote className={`h-8 w-8 mb-1 ${historicalDataCount.bankAccountsCount > 0 ? 'text-green-500' : 'text-red-500'}`} />
             <span className="text-xs font-medium">{historicalDataCount.bankAccountsCount} Cuentas</span>
+            {historicalDataCount.totalBankBalance !== undefined && (
+              <span className="text-xs mt-1">{formatCurrency(historicalDataCount.totalBankBalance)}</span>
+            )}
           </CardContent>
         </Card>
         

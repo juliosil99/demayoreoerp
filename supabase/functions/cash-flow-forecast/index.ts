@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
 import { addDays, format } from "https://esm.sh/date-fns@4.1.0";
@@ -56,6 +55,7 @@ serve(async (req) => {
         hasStartDate: !!requestBody.startDate,
         hasHistoricalData: !!requestBody.historicalData,
         hasConfig: !!requestBody.config,
+        totalBankBalance: requestBody.historicalData?.totalBankBalance
       }));
     } catch (e) {
       console.error("[DEBUG - Edge Function] Error parsing JSON:", e);
@@ -93,6 +93,10 @@ serve(async (req) => {
 
     console.log("[DEBUG - Edge Function] Forecast verified:", forecastData.id);
     
+    // Get initial bank balance
+    const initialBankBalance = historicalData.totalBankBalance || 0;
+    console.log("[DEBUG - Edge Function] Initial bank balance:", initialBankBalance);
+    
     // Generate AI insights based on historical data
     let insights = "";
     let forecastPredictions = [];
@@ -110,7 +114,8 @@ serve(async (req) => {
           name: acc.name,
           balance: acc.balance,
           currency: acc.currency
-        }))
+        })),
+        totalBankBalance: initialBankBalance
       };
       
       // Create prompt for OpenAI with configuration options
@@ -171,14 +176,15 @@ serve(async (req) => {
       insights = "AI-powered insights were not enabled for this forecast.";
     }
     
-    // Update the forecast with AI insights
-    console.log("[DEBUG - Edge Function] Updating forecast with AI insights");
+    // Update the forecast with AI insights and initial balance
+    console.log("[DEBUG - Edge Function] Updating forecast with AI insights and initial balance");
     const { error: updateError } = await supabaseClient
       .from("cash_flow_forecasts")
       .update({ 
         ai_insights: insights,
         status: "active",
-        config: config || {}
+        config: config || {},
+        initial_balance: initialBankBalance
       })
       .eq("id", forecastId);
 
@@ -223,7 +229,8 @@ serve(async (req) => {
         forecastHorizonWeeks,
         forecastPredictions,
         historicalData,
-        config
+        config,
+        initialBankBalance
       );
       
       console.log("[DEBUG - Edge Function] Inserting weeks:", weeksToCreate.length);
@@ -252,7 +259,8 @@ serve(async (req) => {
         existingWeeks.length,
         forecastPredictions,
         historicalData,
-        config
+        config,
+        initialBankBalance
       );
       
       // Update all weeks
@@ -269,7 +277,9 @@ serve(async (req) => {
             predicted_outflows: weekUpdate.predicted_outflows,
             confidence_score: weekUpdate.confidence_score,
             week_start_date: weekUpdate.week_start_date,
-            week_end_date: weekUpdate.week_end_date
+            week_end_date: weekUpdate.week_end_date,
+            starting_balance: weekUpdate.starting_balance,
+            ending_balance: weekUpdate.ending_balance
           })
           .eq("id", existingWeek.id);
 
@@ -309,7 +319,9 @@ serve(async (req) => {
 // Helper function to create AI prompt based on historical data and configuration
 function createAIPrompt(historicalData, config) {
   return `
-Please analyze the following financial data and provide a 13-week cash flow forecast with insights.
+Please analyze the following financial data and provide a ${config.forecastHorizonWeeks || 13}-week cash flow forecast with insights.
+
+INITIAL BANK BALANCE: ${historicalData.totalBankBalance}
 
 HISTORICAL FINANCIAL DATA SUMMARY:
 ${JSON.stringify(historicalData, null, 2)}
@@ -319,14 +331,17 @@ CONFIGURATION OPTIONS:
 - Include Seasonality: ${config.includeSeasonality ? 'Yes' : 'No'}
 - Include Pending Payables: ${config.includePendingPayables ? 'Yes' : 'No'}
 - Include Recurring Expenses: ${config.includeRecurringExpenses ? 'Yes' : 'No'}
+- Start with Current Bank Balance: ${config.startWithCurrentBalance ? 'Yes' : 'No'}
 - Forecast Horizon Weeks: ${config.forecastHorizonWeeks || 13}
 
 Please provide the following in JSON format:
 1. "insights": A detailed analysis of the cash flow forecast, with key observations and recommendations.
 2. "weeklyForecasts": An array of weekly forecasts with the following structure for each week:
-   - weekNumber: The week number (1-13)
+   - weekNumber: The week number (1-${config.forecastHorizonWeeks || 13})
    - predictedInflows: Predicted cash inflows for the week
    - predictedOutflows: Predicted cash outflows for the week
+   - startingBalance: Starting balance for the week (considering previous week's ending balance)
+   - endingBalance: Ending balance for the week (starting balance + inflows - outflows)
    - confidenceScore: A confidence score between 0-1 for the prediction
 
 Your response should be valid JSON with "insights" and "weeklyForecasts" keys.
@@ -361,8 +376,8 @@ function summarizeFinancialData(data) {
   };
 }
 
-// Helper function to generate forecast weeks
-function generateForecastWeeks(forecastId, startDate, numWeeks, aiPredictions, historicalData, config) {
+// Helper function to generate forecast weeks with bank balance tracking
+function generateForecastWeeks(forecastId, startDate, numWeeks, aiPredictions, historicalData, config, initialBankBalance = 0) {
   const weeks = [];
   
   // Calculate base values from historical data
@@ -379,11 +394,17 @@ function generateForecastWeeks(forecastId, startDate, numWeeks, aiPredictions, h
   const baseOutflow = historicalPayables + historicalExpenses > 0
     ? historicalPayables + historicalExpenses
     : 8000;  // Fallback if no historical data
+  
+  // Track running balance
+  let runningBalance = config?.startWithCurrentBalance ? initialBankBalance : 0;
 
   for (let i = 0; i < numWeeks; i++) {
     const weekNumber = i + 1;
     const weekStart = addDays(startDate, i * 7);
     const weekEnd = addDays(weekStart, 6);
+    
+    // Starting balance for this week is the running balance
+    const startingBalance = runningBalance;
     
     // Check if we have AI prediction for this week
     const aiPrediction = aiPredictions.find(p => p.weekNumber === weekNumber);
@@ -395,6 +416,17 @@ function generateForecastWeeks(forecastId, startDate, numWeeks, aiPredictions, h
       predictedInflows = aiPrediction.predictedInflows;
       predictedOutflows = aiPrediction.predictedOutflows;
       confidenceScore = aiPrediction.confidenceScore;
+      
+      // If AI also provided balance calculations
+      if (aiPrediction.startingBalance !== undefined && aiPrediction.endingBalance !== undefined) {
+        // If this is the first week, and we're using current balance, ensure AI starting balance matches
+        if (i === 0 && config?.startWithCurrentBalance) {
+          runningBalance = initialBankBalance;
+        } else if (aiPrediction.startingBalance !== undefined) {
+          // Otherwise use AI's starting balance
+          runningBalance = aiPrediction.startingBalance;
+        }
+      }
     } else {
       // Fall back to statistical model
       
@@ -430,6 +462,13 @@ function generateForecastWeeks(forecastId, startDate, numWeeks, aiPredictions, h
       confidenceScore = Math.round((0.9 - (i * 0.02)) * dataFactor * 100) / 100;
     }
     
+    // Calculate ending balance
+    const netCashFlow = predictedInflows - predictedOutflows;
+    const endingBalance = startingBalance + netCashFlow;
+    
+    // Update running balance for next week
+    runningBalance = endingBalance;
+    
     weeks.push({
       forecast_id: forecastId,
       week_number: weekNumber,
@@ -437,7 +476,9 @@ function generateForecastWeeks(forecastId, startDate, numWeeks, aiPredictions, h
       week_end_date: format(weekEnd, 'yyyy-MM-dd'),
       predicted_inflows: predictedInflows,
       predicted_outflows: predictedOutflows,
-      confidence_score: confidenceScore
+      confidence_score: confidenceScore,
+      starting_balance: startingBalance,
+      ending_balance: endingBalance
     });
   }
   

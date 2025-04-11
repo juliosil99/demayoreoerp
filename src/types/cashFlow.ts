@@ -9,6 +9,7 @@ export interface CashFlowForecast {
   ai_insights?: string;
   config?: Record<string, any>;
   user_id: string;
+  initial_balance?: number;
 }
 
 export interface ForecastWeek {
@@ -25,6 +26,8 @@ export interface ForecastWeek {
   confidence_score?: number;
   net_cash_flow?: number; // Calculated field
   cumulative_cash_flow?: number; // Calculated field
+  starting_balance?: number; // Starting balance for the week
+  ending_balance?: number; // Ending balance for the week
 }
 
 export interface ForecastItem {
@@ -46,6 +49,7 @@ export interface ForecastHistoricalData {
   expenses: any[];
   sales: any[];
   bankAccounts: any[];
+  totalBankBalance?: number;
 }
 
 export interface ForecastRequest {
@@ -68,4 +72,5 @@ export interface ChartData {
   outflows: number;
   netCashFlow: number;
   cumulativeCashFlow: number;
+  balance?: number; // Added for bank balance tracking
 }

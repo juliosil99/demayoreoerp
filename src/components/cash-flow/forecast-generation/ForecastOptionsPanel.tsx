@@ -2,7 +2,7 @@
 import React from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Brain, BarChart, SparklesIcon, Calendar, Banknote, TrendingUp, Gauge } from "lucide-react";
+import { Brain, BarChart, SparklesIcon, Calendar, Banknote, TrendingUp, Gauge, DollarSign } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { ForecastOptions } from "./types";
 
@@ -33,6 +33,14 @@ export function ForecastOptionsPanel({ options, onOptionChange }: ForecastOption
       type: "switch",
       value: options.useAI,
       description: "Utiliza modelos de IA para mejorar las predicciones"
+    },
+    {
+      id: "startWithCurrentBalance",
+      label: "Iniciar con Saldo Actual",
+      icon: <DollarSign className="h-5 w-5 text-blue-500" />,
+      type: "switch",
+      value: options.startWithCurrentBalance,
+      description: "Utiliza el saldo bancario actual como punto de partida"
     },
     {
       id: "includeHistoricalTrends",

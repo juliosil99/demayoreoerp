@@ -17,6 +17,7 @@ interface GenerateForecastDialogProps {
     expenses: number;
     sales: number;
     bankAccounts: number;
+    totalBankBalance?: number;
   };
 }
 
@@ -40,7 +41,8 @@ export function GenerateForecastDialog({
     includePendingPayables: true,
     includeRecurringExpenses: true,
     forecastHorizonWeeks: 13,
-    confidenceLevel: 0.8
+    confidenceLevel: 0.8,
+    startWithCurrentBalance: true
   });
 
   const handleOptionChange = <K extends keyof ForecastOptions>(option: K, value: ForecastOptions[K]) => {

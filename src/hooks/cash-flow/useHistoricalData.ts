@@ -2,112 +2,80 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { ForecastHistoricalData } from "@/types/cashFlow";
-import { subMonths } from "date-fns";
+import { BankAccount } from "@/components/banking/types";
 
 export function useHistoricalData() {
-  // Get the date 3 months ago for historical data
-  const threeMonthsAgo = subMonths(new Date(), 3).toISOString().split('T')[0];
-  
-  // Fetch historical payables data
-  const { 
-    data: payables, 
-    isLoading: isLoadingPayables 
-  } = useQuery({
-    queryKey: ['historical-payables'],
+  // Fetch payables data
+  const { data: payables = [] } = useQuery({
+    queryKey: ["accounts-payable"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('accounts_payable')
-        .select('*')
-        .gte('due_date', threeMonthsAgo);
-        
+      const { data, error } = await supabase.from("accounts_payable").select("*");
       if (error) throw error;
       return data;
-    }
+    },
   });
-  
-  // Fetch historical receivables data
-  const { 
-    data: receivables, 
-    isLoading: isLoadingReceivables 
-  } = useQuery({
-    queryKey: ['historical-receivables'],
+
+  // Fetch receivables data
+  const { data: receivables = [] } = useQuery({
+    queryKey: ["accounts-receivable"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('accounts_receivable')
-        .select('*');
-        
+      const { data, error } = await supabase.from("accounts_receivable").select("*");
       if (error) throw error;
       return data;
-    }
+    },
   });
-  
-  // Fetch historical expenses data
-  const { 
-    data: expenses, 
-    isLoading: isLoadingExpenses 
-  } = useQuery({
-    queryKey: ['historical-expenses'],
+
+  // Fetch expenses data
+  const { data: expenses = [] } = useQuery({
+    queryKey: ["expenses"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('expenses')
-        .select('*')
-        .gte('date', threeMonthsAgo);
-        
+      const { data, error } = await supabase.from("expenses").select("*");
       if (error) throw error;
       return data;
-    }
+    },
   });
-  
-  // Fetch historical sales data
-  const { 
-    data: sales, 
-    isLoading: isLoadingSales 
-  } = useQuery({
-    queryKey: ['historical-sales'],
+
+  // Fetch sales data
+  const { data: sales = [] } = useQuery({
+    queryKey: ["sales"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('Sales')
-        .select('*')
-        .gte('date', threeMonthsAgo);
-        
+      const { data, error } = await supabase.from("Sales").select("*");
       if (error) throw error;
       return data;
-    }
+    },
   });
-  
+
   // Fetch bank accounts data
-  const { 
-    data: bankAccounts, 
-    isLoading: isLoadingBankAccounts 
-  } = useQuery({
-    queryKey: ['bank-accounts'],
+  const { data: bankAccounts = [], isLoading: isLoadingBankAccounts } = useQuery({
+    queryKey: ["bank-accounts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('bank_accounts')
-        .select('*');
-        
+      const { data, error } = await supabase.from("bank_accounts").select("*");
       if (error) throw error;
-      return data;
-    }
+      return data as BankAccount[];
+    },
   });
   
+  // Calculate total bank balance
+  const totalBankBalance = bankAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+
+  // Combined historical data
   const historicalData: ForecastHistoricalData = {
-    payables: payables || [],
-    receivables: receivables || [],
-    expenses: expenses || [],
-    sales: sales || [],
-    bankAccounts: bankAccounts || []
+    payables,
+    receivables,
+    expenses,
+    sales,
+    bankAccounts,
+    totalBankBalance
   };
-  
-  const isLoading = 
-    isLoadingPayables || 
-    isLoadingReceivables || 
-    isLoadingExpenses || 
-    isLoadingSales || 
-    isLoadingBankAccounts;
-  
+
   return {
     historicalData,
-    isLoading
+    isLoading: isLoadingBankAccounts, // Use bankAccounts loading state as indicator
+    payables,
+    receivables,
+    expenses,
+    sales,
+    bankAccounts,
+    totalBankBalance
   };
 }
