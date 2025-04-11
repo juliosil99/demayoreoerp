@@ -4,11 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from "@/components/ui/button";
 import { DataSourcesPanel } from "./forecast-generation/DataSourcesPanel";
 import { ForecastOptionsPanel } from "./forecast-generation/ForecastOptionsPanel";
+import { ForecastOptions } from "./forecast-generation/types";
 
 interface GenerateForecastDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onGenerate: (options: Record<string, any>) => void;
+  onGenerate: (options: ForecastOptions) => void;
   isLoading: boolean;
   historicalDataCount: {
     payables: number;
@@ -32,15 +33,17 @@ export function GenerateForecastDialog({
     historicalDataCount 
   });
   
-  const [options, setOptions] = useState({
+  const [options, setOptions] = useState<ForecastOptions>({
     useAI: true,
     includeHistoricalTrends: true,
     includeSeasonality: true,
     includePendingPayables: true,
     includeRecurringExpenses: true,
+    forecastHorizonWeeks: 13,
+    confidenceLevel: 0.8
   });
 
-  const handleOptionChange = (option: string, value: boolean) => {
+  const handleOptionChange = <K extends keyof ForecastOptions>(option: K, value: ForecastOptions[K]) => {
     console.log("[DEBUG] GenerateForecastDialog - Option changed:", { option, value });
     setOptions(prev => ({
       ...prev,
@@ -66,7 +69,7 @@ export function GenerateForecastDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4 py-4">
+        <div className="space-y-6 py-4">
           <DataSourcesPanel historicalDataCount={{
             ...historicalDataCount,
             bankAccountsCount: historicalDataCount.bankAccounts

@@ -14,4 +14,6 @@ export interface ForecastOptions {
   includeSeasonality: boolean;
   includePendingPayables: boolean;
   includeRecurringExpenses: boolean;
+  forecastHorizonWeeks?: number; // Number of weeks to forecast
+  confidenceLevel?: number; // Confidence level for predictions (0-1)
 }
