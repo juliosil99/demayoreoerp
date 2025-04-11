@@ -1,3 +1,4 @@
+
 import { format } from "https://esm.sh/date-fns@4.1.0";
 import { addDays } from "https://esm.sh/date-fns@4.1.0";
 import { calculateAverageAmount } from "./dataUtils.ts";
@@ -12,7 +13,7 @@ export function generateForecastWeeks(
   aiPredictions: any[],
   historicalData: any,
   config: any,
-  initialBankBalance: number = 0
+  initialAvailableCashBalance: number = 0
 ) {
   const weeks = [];
   
@@ -32,7 +33,36 @@ export function generateForecastWeeks(
     : 8000;  // Fallback if no historical data
   
   // Track running balance
-  let runningBalance = config?.startWithCurrentBalance ? initialBankBalance : 0;
+  let runningBalance = config?.startWithCurrentBalance ? initialAvailableCashBalance : 0;
+  
+  // Process upcoming credit payments if available
+  const upcomingCreditPayments = historicalData.upcomingCreditPayments || [];
+  
+  // Create a map of credit payments by week
+  const creditPaymentsByWeek = new Map();
+  
+  if (upcomingCreditPayments.length > 0 && config?.includeCreditPayments) {
+    upcomingCreditPayments.forEach(payment => {
+      const paymentDate = new Date(payment.dueDate);
+      // Find the week this payment should be included in
+      for (let i = 0; i < numWeeks; i++) {
+        const weekStart = addDays(startDate, i * 7);
+        const weekEnd = addDays(weekStart, 6);
+        
+        if (paymentDate >= weekStart && paymentDate <= weekEnd) {
+          const weekNumber = i + 1;
+          if (!creditPaymentsByWeek.has(weekNumber)) {
+            creditPaymentsByWeek.set(weekNumber, 0);
+          }
+          creditPaymentsByWeek.set(
+            weekNumber, 
+            creditPaymentsByWeek.get(weekNumber) + payment.amount
+          );
+          break;
+        }
+      }
+    });
+  }
 
   for (let i = 0; i < numWeeks; i++) {
     const weekNumber = i + 1;
@@ -57,11 +87,16 @@ export function generateForecastWeeks(
       if (aiPrediction.startingBalance !== undefined && aiPrediction.endingBalance !== undefined) {
         // If this is the first week, and we're using current balance, ensure AI starting balance matches
         if (i === 0 && config?.startWithCurrentBalance) {
-          runningBalance = initialBankBalance;
+          runningBalance = initialAvailableCashBalance;
         } else if (aiPrediction.startingBalance !== undefined) {
           // Otherwise use AI's starting balance
           runningBalance = aiPrediction.startingBalance;
         }
+      }
+      
+      // Add credit payment to outflows if this week has credit payments
+      if (creditPaymentsByWeek.has(weekNumber) && config?.includeCreditPayments) {
+        predictedOutflows += creditPaymentsByWeek.get(weekNumber);
       }
     } else {
       // Fall back to statistical model
@@ -91,6 +126,11 @@ export function generateForecastWeeks(
       }
       
       predictedOutflows = Math.round(baseOutflow * (1 + (i * 0.005)) * seasonalFactor * randomVariation * outflowAdjustment);
+      
+      // Add credit payment to outflows if this week has credit payments
+      if (creditPaymentsByWeek.has(weekNumber) && config?.includeCreditPayments) {
+        predictedOutflows += creditPaymentsByWeek.get(weekNumber);
+      }
       
       // Confidence decreases with time and is higher with more historical data
       const dataFactor = Math.min(1, (historicalData.payables.length + historicalData.receivables.length + 

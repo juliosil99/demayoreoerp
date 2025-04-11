@@ -7,6 +7,9 @@ export interface ForecastDataCount {
   bankAccounts: number;
   bankAccountsCount?: number; // For compatibility with older code
   totalBankBalance?: number;  // Added to store total bank balance
+  availableCashBalance?: number; // Available cash (Bank + Cash accounts)
+  creditLiabilities?: number;  // Credit liabilities (Credit Card + Credit Simple accounts)
+  netPosition?: number;         // Net position (availableCashBalance + creditLiabilities)
 }
 
 export interface ForecastOptions {
@@ -15,6 +18,7 @@ export interface ForecastOptions {
   includeSeasonality: boolean;
   includePendingPayables: boolean;
   includeRecurringExpenses: boolean;
+  includeCreditPayments?: boolean; // Whether to include credit card payments in the forecast
   forecastHorizonWeeks?: number; // Number of weeks to forecast
   confidenceLevel?: number; // Confidence level for predictions (0-1)
   startWithCurrentBalance?: boolean; // Whether to start forecast with current bank balances

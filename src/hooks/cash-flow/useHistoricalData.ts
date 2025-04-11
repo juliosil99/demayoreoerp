@@ -55,8 +55,28 @@ export function useHistoricalData() {
     },
   });
   
-  // Calculate total bank balance
-  const totalBankBalance = bankAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+  // Calculate different types of balances
+  const availableCashBalance = bankAccounts
+    .filter(account => account.type === "Bank" || account.type === "Cash")
+    .reduce((sum, account) => sum + (account.balance || 0), 0);
+  
+  const creditLiabilities = bankAccounts
+    .filter(account => account.type === "Credit Card" || account.type === "Credit Simple")
+    .reduce((sum, account) => sum + (account.balance || 0), 0);
+  
+  // Calculate net position (Available Cash - Credit Liabilities)
+  const netPosition = availableCashBalance + creditLiabilities; // Credit liabilities are typically negative
+
+  // Get upcoming credit payments (simplified approach - will need to be enhanced)
+  const upcomingCreditPayments = bankAccounts
+    .filter(account => account.type === "Credit Card" || account.type === "Credit Simple")
+    .map(account => ({
+      accountId: account.id,
+      accountName: account.name,
+      amount: Math.abs(account.balance || 0), // Convert negative balance to positive amount for payment
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default to 30 days from now
+      type: account.type
+    }));
 
   // Combined historical data
   const historicalData: ForecastHistoricalData = {
@@ -65,7 +85,10 @@ export function useHistoricalData() {
     expenses,
     sales,
     bankAccounts,
-    totalBankBalance
+    availableCashBalance,
+    creditLiabilities,
+    netPosition,
+    upcomingCreditPayments
   };
 
   return {
@@ -76,6 +99,9 @@ export function useHistoricalData() {
     expenses,
     sales,
     bankAccounts,
-    totalBankBalance
+    availableCashBalance,
+    creditLiabilities,
+    netPosition,
+    upcomingCreditPayments
   };
 }

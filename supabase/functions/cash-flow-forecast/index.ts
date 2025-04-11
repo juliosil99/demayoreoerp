@@ -54,7 +54,9 @@ serve(async (req) => {
         hasStartDate: !!requestBody.startDate,
         hasHistoricalData: !!requestBody.historicalData,
         hasConfig: !!requestBody.config,
-        totalBankBalance: requestBody.historicalData?.totalBankBalance
+        availableCashBalance: requestBody.historicalData?.availableCashBalance,
+        creditLiabilities: requestBody.historicalData?.creditLiabilities,
+        netPosition: requestBody.historicalData?.netPosition
       }));
     } catch (e) {
       console.error("[DEBUG - Edge Function] Error parsing JSON:", e);
@@ -92,9 +94,18 @@ serve(async (req) => {
 
     console.log("[DEBUG - Edge Function] Forecast verified:", forecastData.id);
     
-    // Get initial bank balance
-    const initialBankBalance = historicalData.totalBankBalance || 0;
-    console.log("[DEBUG - Edge Function] Initial bank balance:", initialBankBalance);
+    // Get available cash balance, credit liabilities, and net position
+    const availableCashBalance = historicalData.availableCashBalance || 0;
+    const creditLiabilities = historicalData.creditLiabilities || 0;
+    const netPosition = historicalData.netPosition || 0;
+    const upcomingCreditPayments = historicalData.upcomingCreditPayments || [];
+    
+    console.log("[DEBUG - Edge Function] Financial balances:", {
+      availableCashBalance,
+      creditLiabilities,
+      netPosition,
+      upcomingCreditPaymentsCount: upcomingCreditPayments.length
+    });
     
     // Generate AI insights based on historical data
     let insights = "";
@@ -112,9 +123,13 @@ serve(async (req) => {
         bankAccounts: historicalData.bankAccounts.map(acc => ({
           name: acc.name,
           balance: acc.balance,
-          currency: acc.currency
+          currency: acc.currency,
+          type: acc.type
         })),
-        totalBankBalance: initialBankBalance
+        availableCashBalance,
+        creditLiabilities,
+        netPosition,
+        upcomingCreditPayments
       };
       
       // Create prompt for OpenAI with configuration options
@@ -175,15 +190,18 @@ serve(async (req) => {
       insights = "AI-powered insights were not enabled for this forecast.";
     }
     
-    // Update the forecast with AI insights and initial balance
-    console.log("[DEBUG - Edge Function] Updating forecast with AI insights and initial balance");
+    // Update the forecast with AI insights and financial balances
+    console.log("[DEBUG - Edge Function] Updating forecast with AI insights and financial balances");
     const { error: updateError } = await supabaseClient
       .from("cash_flow_forecasts")
       .update({ 
         ai_insights: insights,
         status: "active",
         config: config || {},
-        initial_balance: initialBankBalance
+        initial_balance: availableCashBalance, // For backward compatibility
+        available_cash_balance: availableCashBalance,
+        credit_liabilities: creditLiabilities,
+        net_position: netPosition
       })
       .eq("id", forecastId);
 
@@ -229,7 +247,7 @@ serve(async (req) => {
         forecastPredictions,
         historicalData,
         config,
-        initialBankBalance
+        availableCashBalance
       );
       
       console.log("[DEBUG - Edge Function] Inserting weeks:", weeksToCreate.length);
@@ -259,7 +277,7 @@ serve(async (req) => {
         forecastPredictions,
         historicalData,
         config,
-        initialBankBalance
+        availableCashBalance
       );
       
       // Update all weeks
@@ -314,4 +332,3 @@ serve(async (req) => {
     );
   }
 });
-

@@ -18,6 +18,9 @@ interface GenerateForecastDialogProps {
     sales: number;
     bankAccounts: number;
     totalBankBalance?: number;
+    availableCashBalance?: number;
+    creditLiabilities?: number;
+    netPosition?: number;
   };
 }
 
@@ -40,6 +43,7 @@ export function GenerateForecastDialog({
     includeSeasonality: true,
     includePendingPayables: true,
     includeRecurringExpenses: true,
+    includeCreditPayments: true,
     forecastHorizonWeeks: 13,
     confidenceLevel: 0.8,
     startWithCurrentBalance: true

@@ -10,6 +10,18 @@ export interface CashFlowForecast {
   config?: Record<string, any>;
   user_id: string;
   initial_balance?: number;
+  available_cash_balance?: number;
+  credit_liabilities?: number;
+  net_position?: number;
+  upcoming_credit_payments?: CreditPayment[];
+}
+
+export interface CreditPayment {
+  accountId: number;
+  accountName: string;
+  amount: number;
+  dueDate: string;
+  type: string;
 }
 
 export interface ForecastWeek {
@@ -49,7 +61,10 @@ export interface ForecastHistoricalData {
   expenses: any[];
   sales: any[];
   bankAccounts: any[];
-  totalBankBalance?: number;
+  availableCashBalance?: number;
+  creditLiabilities?: number;
+  netPosition?: number;
+  upcomingCreditPayments?: CreditPayment[];
 }
 
 export interface ForecastRequest {
