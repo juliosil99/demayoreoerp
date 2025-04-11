@@ -1,19 +1,17 @@
 
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 interface APIKeyHandlerProps {
   SUPABASE_URL: string;
 }
 
-export function useAPIKeyHandler({
-  SUPABASE_URL
-}: APIKeyHandlerProps) {
+export function useAPIKeyHandler({ SUPABASE_URL }: APIKeyHandlerProps) {
   
   const handleSaveOpenAIKey = async (apiKey: string) => {
     console.log("[DEBUG] useForecastOperations - Saving OpenAI API Key");
     try {
       // Get auth session for API call
-      const { supabase } = await import("@/lib/supabase");
       const session = await supabase.auth.getSession();
       const accessToken = session.data.session?.access_token;
       
