@@ -10,4 +10,5 @@ export interface SelectOption {
   id: string | number;
   name: string;
   code?: string;
+  type?: string;  // Added this property
 }

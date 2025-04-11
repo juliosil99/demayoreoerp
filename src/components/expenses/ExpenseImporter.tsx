@@ -31,7 +31,7 @@ export function ExpenseImporter({ onSuccess, children }: ExpenseImporterProps) {
   const [errors, setErrors] = useState<string[]>([]);
   const [showErrors, setShowErrors] = useState(false);
   const { user } = useAuth();
-  const { bankAccounts, chartAccounts, suppliers } = useExpenseQueries();
+  const { bankAccounts, chartAccounts, recipients } = useExpenseQueries();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -121,7 +121,7 @@ export function ExpenseImporter({ onSuccess, children }: ExpenseImporterProps) {
             <TemplateDownloader 
               bankAccounts={bankAccounts} 
               chartAccounts={chartAccounts} 
-              suppliers={suppliers}
+              suppliers={recipients}
             />
           </div>
           <ul className="list-disc list-inside text-sm text-muted-foreground">

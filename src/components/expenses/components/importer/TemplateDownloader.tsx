@@ -4,11 +4,12 @@ import { Download } from "lucide-react";
 import { createExcelTemplate } from "../../utils/templateUtils";
 import { toast } from "sonner";
 import type { BankAccountsTable } from "@/integrations/supabase/types/bank-accounts";
+import type { SelectOption } from "../types";
 
 interface TemplateDownloaderProps {
   bankAccounts: BankAccountsTable["Row"][] | any[];
   chartAccounts: any[];
-  suppliers: any[];
+  suppliers: any[];  // We'll keep this name for backwards compatibility 
 }
 
 export function TemplateDownloader({ bankAccounts, chartAccounts, suppliers }: TemplateDownloaderProps) {
