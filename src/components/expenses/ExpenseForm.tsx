@@ -27,7 +27,7 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
     // Call onSuccess callback if provided - this handles dialog closing
     if (onSuccess) onSuccess();
   });
-  const { bankAccounts, chartAccounts, suppliers, isLoading } = useExpenseQueries();
+  const { bankAccounts, chartAccounts, recipients, isLoading } = useExpenseQueries();
 
   if (isLoading) {
     return (
@@ -46,8 +46,8 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
     return <div className="text-center p-4">No se encontraron las cuentas necesarias.</div>;
   }
 
-  // Handle supplier selection with default chart account
-  const handleSupplierSelect = (supplierId: string, defaultChartAccountId?: string) => {
+  // Handle recipient selection with default chart account
+  const handleRecipientSelect = (recipientId: string, defaultChartAccountId?: string) => {
     if (defaultChartAccountId) {
       setChartAccountId(defaultChartAccountId);
     }
@@ -60,8 +60,8 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
         setFormData={setFormData}
         bankAccounts={bankAccounts}
         chartAccounts={chartAccounts}
-        suppliers={Array.isArray(suppliers) ? suppliers : []}
-        onSupplierSelect={handleSupplierSelect}
+        recipients={Array.isArray(recipients) ? recipients : []}
+        onRecipientSelect={handleRecipientSelect}
       />
 
       <div className="flex justify-end space-x-2">

@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { DateAmountFields } from "./fields/DateAmountFields";
 import { DescriptionAccountFields } from "./fields/DescriptionAccountFields";
-import { PaymentSupplierFields } from "./fields/PaymentSupplierFields";
+import { PaymentRecipientFields } from "./fields/PaymentRecipientFields";
 import type { ExpenseFormData } from "../hooks/useExpenseForm";
 
 interface ExpenseFormFieldsProps {
@@ -11,8 +11,8 @@ interface ExpenseFormFieldsProps {
   setFormData: (data: ExpenseFormData) => void;
   bankAccounts: any[];
   chartAccounts: any[];
-  suppliers: any[];
-  onSupplierSelect?: (supplierId: string, defaultChartAccountId?: string) => void;
+  recipients: any[];
+  onRecipientSelect?: (recipientId: string, defaultChartAccountId?: string) => void;
 }
 
 export function ExpenseFormFields({
@@ -20,8 +20,8 @@ export function ExpenseFormFields({
   setFormData,
   bankAccounts,
   chartAccounts,
-  suppliers,
-  onSupplierSelect,
+  recipients,
+  onRecipientSelect,
 }: ExpenseFormFieldsProps) {
   return (
     <div className="space-y-6">
@@ -33,11 +33,11 @@ export function ExpenseFormFields({
           bankAccounts={bankAccounts}
           chartAccounts={chartAccounts}
         />
-        <PaymentSupplierFields 
+        <PaymentRecipientFields 
           formData={formData} 
           setFormData={setFormData}
-          suppliers={suppliers}
-          onSupplierSelect={onSupplierSelect}
+          recipients={recipients}
+          onRecipientSelect={onRecipientSelect}
         />
       </div>
 

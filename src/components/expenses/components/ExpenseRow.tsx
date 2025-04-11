@@ -8,7 +8,7 @@ import type { Database } from "@/integrations/supabase/types/base";
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
   bank_accounts: { name: string };
   chart_of_accounts: { name: string; code: string };
-  contacts: { name: string } | null;
+  contacts: { name: string; type?: string } | null;
   expense_invoice_relations?: {
     invoice: {
       uuid: string;
@@ -48,6 +48,30 @@ export function ExpenseRow({
 
   // Check if the expense comes from a payable
   const isFromPayable = !!expense.accounts_payable;
+  
+  // Get recipient type if available
+  const recipientType = expense.contacts?.type || 'supplier';
+  
+  // Format recipient display
+  const getRecipientDisplay = () => {
+    if (isFromPayable && expense.accounts_payable?.client?.name) {
+      return expense.accounts_payable.client.name;
+    }
+    
+    if (expense.contacts?.name) {
+      const name = expense.contacts.name;
+      if (recipientType === 'employee') {
+        return (
+          <>
+            {name} <Badge variant="outline" className="ml-1 text-xs">Empleado</Badge>
+          </>
+        );
+      }
+      return name;
+    }
+    
+    return '-';
+  };
 
   return (
     <TableRow key={expense.id} className={isFromPayable ? "bg-gray-300" : "odd:bg-gray-300 even:bg-gray-300"}>
@@ -72,7 +96,7 @@ export function ExpenseRow({
         </span>
       </TableCell>
       <TableCell>
-        {expense.contacts?.name || (isFromPayable && expense.accounts_payable?.client?.name) || '-'}
+        {getRecipientDisplay()}
       </TableCell>
       <TableCell className="capitalize whitespace-nowrap">
         {expense.payment_method === 'cash' ? 'Efectivo' :

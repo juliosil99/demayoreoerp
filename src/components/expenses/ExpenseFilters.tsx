@@ -7,6 +7,7 @@ type Filters = {
   supplier_id?: string;
   account_id?: number;
   unreconciled?: boolean;
+  from_payable?: boolean;
 };
 
 interface ExpenseFiltersProps {
@@ -15,9 +16,9 @@ interface ExpenseFiltersProps {
 }
 
 export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps) {
-  const { suppliers, bankAccounts, isLoading } = useExpenseQueries();
+  const { recipients, bankAccounts, isLoading } = useExpenseQueries();
 
-  const handleSupplierChange = (value: string) => {
+  const handleRecipientChange = (value: string) => {
     onFiltersChange({ ...filters, supplier_id: value === "all" ? undefined : value });
   };
 
@@ -29,22 +30,53 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
     return <div>Cargando filtros...</div>;
   }
 
+  // Group recipients by type
+  const groupedRecipients: { [key: string]: any[] } = {
+    supplier: [],
+    employee: []
+  };
+  
+  if (Array.isArray(recipients)) {
+    recipients.forEach(recipient => {
+      if (recipient.type === 'supplier' || recipient.type === 'employee') {
+        groupedRecipients[recipient.type].push(recipient);
+      }
+    });
+  }
+
   return (
     <div className="flex gap-4">
       <Select
         value={filters.supplier_id || "all"}
-        onValueChange={handleSupplierChange}
+        onValueChange={handleRecipientChange}
       >
         <SelectTrigger className="w-[250px] bg-black text-white border-none rounded-md">
-          <SelectValue placeholder="Todos los proveedores" />
+          <SelectValue placeholder="Todos los destinatarios" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todos los proveedores</SelectItem>
-          {suppliers.map((supplier) => (
-            <SelectItem key={supplier.id} value={supplier.id}>
-              {supplier.name}
-            </SelectItem>
-          ))}
+          <SelectItem value="all">Todos los destinatarios</SelectItem>
+          
+          {groupedRecipients.supplier.length > 0 && (
+            <>
+              <SelectItem value="supplier_group" disabled className="font-semibold">Proveedores</SelectItem>
+              {groupedRecipients.supplier.map((supplier) => (
+                <SelectItem key={supplier.id} value={supplier.id}>
+                  {supplier.name}
+                </SelectItem>
+              ))}
+            </>
+          )}
+          
+          {groupedRecipients.employee.length > 0 && (
+            <>
+              <SelectItem value="employee_group" disabled className="font-semibold">Empleados</SelectItem>
+              {groupedRecipients.employee.map((employee) => (
+                <SelectItem key={employee.id} value={employee.id}>
+                  {employee.name}
+                </SelectItem>
+              ))}
+            </>
+          )}
         </SelectContent>
       </Select>
 

@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BankAccount as BankAccountType } from "@/components/banking/types";
@@ -11,7 +12,7 @@ export interface ChartAccount {
   account_type: string;
 }
 
-export interface Supplier {
+export interface Recipient {
   id: string;
   name: string;
   type: string;
@@ -45,35 +46,35 @@ export function useExpenseQueries() {
     initialData: [],
   });
 
-  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useQuery<Supplier[], Error>({
-    queryKey: ["suppliers"],
+  const { data: recipients = [], isLoading: isLoadingRecipients } = useQuery<Recipient[], Error>({
+    queryKey: ["expenseRecipients"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contacts")
         .select("id, name, type, rfc")
-        .eq("type", "supplier")
+        .in("type", ["supplier", "employee"])
         .order('name');
         
       if (error) {
-        console.error("Error fetching suppliers:", error);
+        console.error("Error fetching recipients:", error);
         throw error;
       }
       
-      console.log("Fetched suppliers count:", data?.length);
-      return data ? data.map(supplier => ({
-        ...supplier,
-        id: String(supplier.id)
+      console.log("Fetched recipients count:", data?.length);
+      return data ? data.map(recipient => ({
+        ...recipient,
+        id: String(recipient.id)
       })) : [];
     },
     initialData: [],
   });
 
-  const isLoading = isLoadingBankAccounts || isLoadingChartAccounts || isLoadingSuppliers;
+  const isLoading = isLoadingBankAccounts || isLoadingChartAccounts || isLoadingRecipients;
 
   return {
     bankAccounts,
     chartAccounts,
-    suppliers,
+    recipients,
     isLoading,
   };
 }
