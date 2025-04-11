@@ -19,6 +19,15 @@ export function ForecastHeader({
   onGenerateForecastClick,
   selectedForecastId
 }: ForecastHeaderProps) {
+  console.log("[DEBUG] ForecastHeader - Render with props:", {
+    forecastId: selectedForecastId,
+    forecastStatus: forecast?.status,
+    isGenerating
+  });
+  
+  const showGenerateButton = selectedForecastId && forecast?.status !== 'draft';
+  console.log("[DEBUG] ForecastHeader - Should show Generate button:", showGenerateButton);
+  
   return (
     <div className="flex justify-between items-center">
       <div>
@@ -29,10 +38,13 @@ export function ForecastHeader({
       </div>
       
       <div className="flex items-center space-x-3">
-        {selectedForecastId && forecast?.status !== 'draft' && (
+        {showGenerateButton && (
           <Button 
             variant="outline" 
-            onClick={onGenerateForecastClick}
+            onClick={() => {
+              console.log("[DEBUG] ForecastHeader - Update forecast button clicked");
+              onGenerateForecastClick();
+            }}
             disabled={isGenerating}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
@@ -40,7 +52,10 @@ export function ForecastHeader({
           </Button>
         )}
         
-        <Button onClick={onCreateForecastClick}>
+        <Button onClick={() => {
+          console.log("[DEBUG] ForecastHeader - New forecast button clicked");
+          onCreateForecastClick();
+        }}>
           <Plus className="mr-2 h-4 w-4" />
           Nuevo Pronóstico
         </Button>

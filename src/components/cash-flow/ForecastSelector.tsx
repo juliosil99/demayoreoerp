@@ -24,13 +24,28 @@ export function ForecastSelector({
   onForecastChange,
   onGenerateClick
 }: ForecastSelectorProps) {
+  console.log("[DEBUG] ForecastSelector - Render with props:", {
+    forecastsCount: forecasts?.length,
+    selectedForecastId,
+    forecastStatus: forecast?.status,
+    isLoading,
+    isGenerating
+  });
+  
+  // Check conditions for showing the generate button
+  const showGenerateButton = selectedForecastId && forecast?.status === 'draft';
+  console.log("[DEBUG] ForecastSelector - Should show Generate button:", showGenerateButton);
+  
   return (
     <div className="flex justify-between items-center">
       <div className="flex items-center space-x-3">
         <div className="w-64">
           <Select
             value={selectedForecastId}
-            onValueChange={onForecastChange}
+            onValueChange={(id) => {
+              console.log("[DEBUG] ForecastSelector - Forecast selection changed to:", id);
+              onForecastChange(id);
+            }}
             disabled={isLoading}
           >
             <SelectTrigger>
@@ -46,9 +61,12 @@ export function ForecastSelector({
           </Select>
         </div>
         
-        {selectedForecastId && forecast?.status === 'draft' && (
+        {showGenerateButton && (
           <Button 
-            onClick={onGenerateClick}
+            onClick={() => {
+              console.log("[DEBUG] ForecastSelector - Generate button clicked");
+              onGenerateClick();
+            }}
             disabled={isGenerating}
           >
             <LineChart className="mr-2 h-4 w-4" />

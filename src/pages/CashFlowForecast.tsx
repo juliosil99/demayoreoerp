@@ -17,6 +17,8 @@ const CashFlowForecast = () => {
     handleForecastChange 
   } = useForecastSelection();
   
+  console.log("[DEBUG] CashFlowForecast - selectedForecastId:", selectedForecastId);
+  
   const {
     isCreateDialogOpen,
     isGenerateDialogOpen,
@@ -35,12 +37,21 @@ const CashFlowForecast = () => {
     handleSelectWeek
   } = useDialogState();
   
+  console.log("[DEBUG] CashFlowForecast - Dialog States:", { 
+    isCreateDialogOpen, 
+    isGenerateDialogOpen,
+    isItemDialogOpen,
+    isOpenAIDialogOpen
+  });
+  
   const { 
     forecasts, 
     isLoading: isLoadingForecasts,
     createForecast: createForecastMutation,
     refetch: refetchForecasts
   } = useCashFlowForecasts();
+  
+  console.log("[DEBUG] CashFlowForecast - forecasts:", forecasts);
   
   const { 
     forecast, 
@@ -55,10 +66,27 @@ const CashFlowForecast = () => {
     SUPABASE_URL
   } = useCashFlowForecast(selectedForecastId);
   
+  console.log("[DEBUG] CashFlowForecast - forecast data:", { 
+    forecast, 
+    weeksCount: weeks?.length,
+    itemsCount: items?.length,
+    isLoading,
+    isGenerating,
+    status: forecast?.status
+  });
+  
   const { 
     historicalData, 
     isLoading: isLoadingHistoricalData 
   } = useHistoricalData();
+  
+  console.log("[DEBUG] CashFlowForecast - historicalData counts:", {
+    payablesCount: historicalData?.payables?.length,
+    receivablesCount: historicalData?.receivables?.length,
+    expensesCount: historicalData?.expenses?.length,
+    salesCount: historicalData?.sales?.length,
+    bankAccountsCount: historicalData?.bankAccounts?.length
+  });
   
   const {
     handleCreateForecast,
@@ -69,12 +97,14 @@ const CashFlowForecast = () => {
   
   useEffect(() => {
     if (selectedForecastId) {
+      console.log("[DEBUG] CashFlowForecast - Refreshing data for forecast:", selectedForecastId);
       refreshAllForecastData();
     }
   }, [selectedForecastId, refreshAllForecastData]);
   
   // Handlers
   const onCreateForecast = async (name: string, startDate: Date) => {
+    console.log("[DEBUG] CashFlowForecast - Creating forecast:", { name, startDate });
     try {
       const result = await handleCreateForecast(
         createForecastMutation, 
@@ -83,29 +113,38 @@ const CashFlowForecast = () => {
         name, 
         startDate
       );
+      console.log("[DEBUG] CashFlowForecast - Forecast created:", result);
       closeCreateDialog();
     } catch (error) {
+      console.error("[DEBUG] CashFlowForecast - Error creating forecast:", error);
       // Error already handled in the hook
     }
   };
   
   const onGenerateForecast = async (options: Record<string, any>) => {
+    console.log("[DEBUG] CashFlowForecast - Generating forecast with options:", options);
     await handleGenerateForecast(generateAIForecast, updateForecast, historicalData, options);
+    console.log("[DEBUG] CashFlowForecast - Forecast generation completed");
     closeGenerateDialog();
   };
   
   const onSaveItem = async (item: Partial<ForecastItem>) => {
+    console.log("[DEBUG] CashFlowForecast - Saving item:", item);
     const success = await handleSaveItem(upsertItem, item);
+    console.log("[DEBUG] CashFlowForecast - Item saved:", success);
     if (success) {
       closeItemDialog();
     }
   };
   
   const onSaveOpenAIKey = async (apiKey: string) => {
+    console.log("[DEBUG] CashFlowForecast - Saving OpenAI key");
     const success = await handleSaveOpenAIKey(apiKey);
+    console.log("[DEBUG] CashFlowForecast - OpenAI key saved:", success);
     if (success) {
       closeOpenAIDialog();
       if (selectedForecastId) {
+        console.log("[DEBUG] CashFlowForecast - Generating forecast with new API key");
         await generateAIForecast(historicalData);
         await refreshAllForecastData();
       }

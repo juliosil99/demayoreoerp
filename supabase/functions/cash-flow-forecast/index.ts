@@ -10,16 +10,21 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
+    console.log("[DEBUG - Edge Function] Handling CORS preflight request");
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log("[DEBUG - Edge Function] Starting cash-flow-forecast processing");
+  
   try {
+    console.log("[DEBUG - Edge Function] Creating Supabase client");
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") || "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
 
     // Get OpenAI API key from our secure storage
+    console.log("[DEBUG - Edge Function] Retrieving OpenAI API key");
     const { data: keyData, error: keyError } = await supabaseClient
       .from('api_keys')
       .select('key_value')
@@ -27,7 +32,7 @@ serve(async (req) => {
       .single();
 
     if (keyError || !keyData?.key_value) {
-      console.error("Error retrieving OpenAI API key:", keyError);
+      console.error("[DEBUG - Edge Function] Error retrieving OpenAI API key:", keyError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -37,12 +42,32 @@ serve(async (req) => {
       );
     }
 
+    console.log("[DEBUG - Edge Function] OpenAI API key retrieved successfully");
     const openaiApiKey = keyData.key_value;
 
     // Parse request body
-    const { forecastId, startDate, historicalData, config } = await req.json();
+    console.log("[DEBUG - Edge Function] Parsing request body");
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log("[DEBUG - Edge Function] Request body parsed:", JSON.stringify({
+        forecastId: requestBody.forecastId,
+        hasStartDate: !!requestBody.startDate,
+        hasHistoricalData: !!requestBody.historicalData,
+        hasConfig: !!requestBody.config,
+      }));
+    } catch (e) {
+      console.error("[DEBUG - Edge Function] Error parsing JSON:", e);
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid JSON in request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const { forecastId, startDate, historicalData, config } = requestBody;
     
     if (!forecastId) {
+      console.error("[DEBUG - Edge Function] Missing forecastId parameter");
       return new Response(
         JSON.stringify({ success: false, error: "Missing forecastId parameter" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -50,6 +75,7 @@ serve(async (req) => {
     }
 
     // Verify the forecast exists
+    console.log("[DEBUG - Edge Function] Verifying forecast exists:", forecastId);
     const { data: forecastData, error: forecastError } = await supabaseClient
       .from("cash_flow_forecasts")
       .select("id")
@@ -57,17 +83,21 @@ serve(async (req) => {
       .single();
     
     if (forecastError || !forecastData) {
-      console.error("Error retrieving forecast:", forecastError);
+      console.error("[DEBUG - Edge Function] Error retrieving forecast:", forecastError);
       return new Response(
         JSON.stringify({ success: false, error: "Forecast not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log("[DEBUG - Edge Function] Forecast verified:", forecastData.id);
+    
     // Generate a simple mock forecast for now (this would be replaced with actual OpenAI integration)
+    console.log("[DEBUG - Edge Function] Generating mock insights");
     const mockInsights = "Based on your historical data, your cash flow is projected to increase by approximately 5% over the next quarter. Consider reserving funds in week 7 for expected seasonal expenses.";
     
     // Update the forecast with AI insights
+    console.log("[DEBUG - Edge Function] Updating forecast with AI insights");
     const { error: updateError } = await supabaseClient
       .from("cash_flow_forecasts")
       .update({ 
@@ -77,7 +107,7 @@ serve(async (req) => {
       .eq("id", forecastId);
 
     if (updateError) {
-      console.error("Error updating forecast with AI insights:", updateError);
+      console.error("[DEBUG - Edge Function] Error updating forecast with AI insights:", updateError);
       return new Response(
         JSON.stringify({ success: false, error: "Failed to update forecast with AI insights" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -85,6 +115,7 @@ serve(async (req) => {
     }
 
     // Generate some simple forecast data for the weeks
+    console.log("[DEBUG - Edge Function] Retrieving forecast weeks");
     const { data: existingWeeks, error: weeksError } = await supabaseClient
       .from("forecast_weeks")
       .select("id, week_number")
@@ -92,13 +123,15 @@ serve(async (req) => {
       .order("week_number", { ascending: true });
 
     if (weeksError) {
-      console.error("Error retrieving forecast weeks:", weeksError);
+      console.error("[DEBUG - Edge Function] Error retrieving forecast weeks:", weeksError);
       return new Response(
         JSON.stringify({ success: false, error: "Failed to retrieve forecast weeks" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log("[DEBUG - Edge Function] Retrieved weeks:", existingWeeks.length);
+    
     // Update each week with some forecast data
     const baseInflow = 10000; // Base weekly inflow
     const baseOutflow = 8000;  // Base weekly outflow
@@ -115,8 +148,11 @@ serve(async (req) => {
       };
     });
 
+    console.log("[DEBUG - Edge Function] Updating weeks with forecast data");
+    
     // Update all weeks with transaction
     for (const weekUpdate of weekUpdates) {
+      console.log("[DEBUG - Edge Function] Updating week:", weekUpdate.id);
       const { error } = await supabaseClient
         .from("forecast_weeks")
         .update({
@@ -127,7 +163,7 @@ serve(async (req) => {
         .eq("id", weekUpdate.id);
 
       if (error) {
-        console.error(`Error updating week ${weekUpdate.id}:`, error);
+        console.error(`[DEBUG - Edge Function] Error updating week ${weekUpdate.id}:`, error);
         return new Response(
           JSON.stringify({ success: false, error: "Failed to update forecast weeks" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -135,6 +171,8 @@ serve(async (req) => {
       }
     }
 
+    console.log("[DEBUG - Edge Function] Successfully updated all weeks");
+    
     // Return success response
     return new Response(
       JSON.stringify({
@@ -144,7 +182,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error generating forecast:", error);
+    console.error("[DEBUG - Edge Function] Error generating forecast:", error);
     
     return new Response(
       JSON.stringify({ 

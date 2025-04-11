@@ -28,6 +28,12 @@ export function GenerateForecastDialog({
   isLoading,
   historicalDataCount
 }: GenerateForecastDialogProps) {
+  console.log("[DEBUG] GenerateForecastDialog - Render with props:", { 
+    isOpen, 
+    isLoading, 
+    historicalDataCount 
+  });
+  
   const [options, setOptions] = useState({
     useAI: true,
     includeHistoricalTrends: true,
@@ -37,6 +43,7 @@ export function GenerateForecastDialog({
   });
 
   const handleOptionChange = (option: string, value: boolean) => {
+    console.log("[DEBUG] GenerateForecastDialog - Option changed:", { option, value });
     setOptions(prev => ({
       ...prev,
       [option]: value
@@ -44,6 +51,7 @@ export function GenerateForecastDialog({
   };
 
   const handleGenerate = () => {
+    console.log("[DEBUG] GenerateForecastDialog - Generate button clicked with options:", options);
     onGenerate(options);
   };
   
@@ -56,7 +64,10 @@ export function GenerateForecastDialog({
      historicalDataCount.sales > 0);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      console.log("[DEBUG] GenerateForecastDialog - Dialog state changed:", open);
+      if (!open) onClose();
+    }}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle>Generar Pronóstico con IA</DialogTitle>
