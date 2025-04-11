@@ -1,9 +1,9 @@
 
 import { useState } from "react";
 import { ExpenseActionMenu } from "./ExpenseActionMenu";
+import { ExpenseDeleteDialog } from "./ExpenseDeleteDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { StableExpenseDeleteDialog } from "./StableExpenseDeleteDialog";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -23,8 +23,8 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
 
 interface ExpenseActionsProps {
   expense: Expense;
-  onDelete: (expense: Expense) => Promise<{ success: boolean; log: string[] } | void>;
-  onEdit: (expense: Expense) => void;
+  onDelete: () => Promise<{ success: boolean; log: string[] } | void>;
+  onEdit: () => void;
 }
 
 export function ExpenseActions({
@@ -36,10 +36,9 @@ export function ExpenseActions({
   const [deletionLog, setDeletionLog] = useState<string[]>([]);
   const [isLogOpen, setIsLogOpen] = useState(false);
 
-  // Define a handler that pre-binds the expense to the delete handler
-  const handleDelete = async () => {
+  const handleDeleteClick = async () => {
     try {
-      const result = await onDelete(expense);
+      const result = await onDelete();
       if (result && 'success' in result && !result.success) {
         setDeletionLog(result.log);
         setIsLogOpen(true);
@@ -61,11 +60,10 @@ export function ExpenseActions({
         onDelete={() => setConfirmOpen(true)}
       />
 
-      <StableExpenseDeleteDialog 
+      <ExpenseDeleteDialog 
         isOpen={confirmOpen}
-        expense={expense}
-        onClose={() => setConfirmOpen(false)}
-        onDelete={handleDelete}
+        onOpenChange={setConfirmOpen}
+        onDelete={handleDeleteClick}
       />
 
       <Dialog open={isLogOpen} onOpenChange={setIsLogOpen}>
