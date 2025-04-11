@@ -36,8 +36,8 @@ export function ExpenseActions({
   const [deletionLog, setDeletionLog] = useState<string[]>([]);
   const [isLogOpen, setIsLogOpen] = useState(false);
 
-  // Pre-bind the expense to the delete handler
-  const handleDeleteClick = async () => {
+  // Pre-bind the expense to the delete handler to create a function with no parameters
+  const handleDelete = async () => {
     try {
       const result = await onDelete(expense);
       if (result && 'success' in result && !result.success) {
@@ -65,7 +65,7 @@ export function ExpenseActions({
         isOpen={confirmOpen}
         expense={expense}
         onClose={() => setConfirmOpen(false)}
-        onDelete={handleDeleteClick}
+        onDelete={handleDelete}
       />
 
       <Dialog open={isLogOpen} onOpenChange={setIsLogOpen}>
