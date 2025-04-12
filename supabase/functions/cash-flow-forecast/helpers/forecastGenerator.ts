@@ -15,6 +15,21 @@ export function generateForecastWeeks(
   config: any,
   initialAvailableCashBalance: number = 0
 ) {
+  console.log("[DEBUG - Edge Function - Balance Tracking] generateForecastWeeks called with:", {
+    forecastId,
+    startDate: startDate.toISOString(),
+    numWeeks,
+    aiPredictionsCount: aiPredictions?.length || 0,
+    config,
+    initialAvailableCashBalance
+  });
+  
+  console.log("[DEBUG - Edge Function - Balance Tracking] Historical data balances:", {
+    availableCashBalance: historicalData?.availableCashBalance,
+    creditLiabilities: historicalData?.creditLiabilities,
+    netPosition: historicalData?.netPosition
+  });
+  
   const weeks = [];
   
   // Calculate base values from historical data
@@ -34,6 +49,12 @@ export function generateForecastWeeks(
   
   // Track running balance
   let runningBalance = config?.startWithCurrentBalance ? initialAvailableCashBalance : 0;
+  
+  console.log("[DEBUG - Edge Function - Balance Tracking] Initial running balance calculation:", {
+    startWithCurrentBalance: config?.startWithCurrentBalance,
+    initialAvailableCashBalance,
+    runningBalance
+  });
   
   // Process upcoming credit payments if available
   const upcomingCreditPayments = historicalData.upcomingCreditPayments || [];
@@ -88,6 +109,7 @@ export function generateForecastWeeks(
         // If this is the first week, and we're using current balance, ensure AI starting balance matches
         if (i === 0 && config?.startWithCurrentBalance) {
           runningBalance = initialAvailableCashBalance;
+          console.log("[DEBUG - Edge Function - Balance Tracking] Using initial balance for first week:", runningBalance);
         } else if (aiPrediction.startingBalance !== undefined) {
           // Otherwise use AI's starting balance
           runningBalance = aiPrediction.startingBalance;
@@ -145,6 +167,17 @@ export function generateForecastWeeks(
     // Update running balance for next week
     runningBalance = endingBalance;
     
+    if (i === 0) {
+      console.log("[DEBUG - Edge Function - Balance Tracking] First week calculation:", {
+        weekNumber,
+        startingBalance,
+        predictedInflows,
+        predictedOutflows,
+        netCashFlow,
+        endingBalance
+      });
+    }
+    
     weeks.push({
       forecast_id: forecastId,
       week_number: weekNumber,
@@ -157,6 +190,14 @@ export function generateForecastWeeks(
       ending_balance: endingBalance
     });
   }
+  
+  console.log("[DEBUG - Edge Function - Balance Tracking] Generated weeks summary:", {
+    weeksCount: weeks.length,
+    firstWeekStartingBalance: weeks[0]?.starting_balance,
+    firstWeekEndingBalance: weeks[0]?.ending_balance,
+    lastWeekStartingBalance: weeks[weeks.length - 1]?.starting_balance,
+    lastWeekEndingBalance: weeks[weeks.length - 1]?.ending_balance
+  });
   
   return weeks;
 }

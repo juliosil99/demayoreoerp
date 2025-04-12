@@ -19,7 +19,12 @@ export function useForecastGenerationHandler({
   
   const handleGenerateForecast = async (options: Record<string, any>) => {
     console.log("[DEBUG] useForecastOperations - Generating forecast with ID:", selectedForecastId);
-    console.log("[DEBUG] useForecastOperations - Options:", options);
+    console.log("[DEBUG - Balance Tracking] useForecastGenerationHandler - options:", options);
+    console.log("[DEBUG - Balance Tracking] useForecastGenerationHandler - historicalData balances:", {
+      availableCashBalance: historicalData?.availableCashBalance,
+      creditLiabilities: historicalData?.creditLiabilities,
+      netPosition: historicalData?.netPosition
+    });
     
     if (!selectedForecastId) {
       console.error("[DEBUG] useForecastOperations - No forecastId provided");

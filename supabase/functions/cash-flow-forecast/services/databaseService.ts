@@ -10,7 +10,13 @@ export async function updateForecastWithInsights(
   creditLiabilities: number,
   netPosition: number
 ) {
-  console.log("[DEBUG - Edge Function] Updating forecast with AI insights and financial balances");
+  console.log("[DEBUG - Edge Function - Balance Tracking] Updating forecast with financial balances:", {
+    forecastId,
+    availableCashBalance,
+    creditLiabilities,
+    netPosition
+  });
+
   const { error: updateError } = await supabaseClient
     .from("cash_flow_forecasts")
     .update({ 
@@ -42,6 +48,14 @@ export async function createOrUpdateForecastWeeks(
   config: any,
   availableCashBalance: number
 ) {
+  console.log("[DEBUG - Edge Function - Balance Tracking] Creating/updating forecast weeks with:", {
+    forecastId,
+    startDate: forecastStartDate.toISOString(),
+    horizonWeeks: forecastHorizonWeeks,
+    availableCashBalance,
+    configStartWithCurrentBalance: config?.startWithCurrentBalance
+  });
+
   // Check if forecast weeks exist already
   console.log("[DEBUG - Edge Function] Retrieving forecast weeks");
   const { data: existingWeeks, error: weeksError } = await supabaseClient
@@ -59,7 +73,7 @@ export async function createOrUpdateForecastWeeks(
   
   // If no weeks exist, create them
   if (existingWeeks.length === 0) {
-    console.log("[DEBUG - Edge Function] No forecast weeks found. Creating weeks...");
+    console.log("[DEBUG - Edge Function - Balance Tracking] No forecast weeks found. Creating weeks with initial balance:", availableCashBalance);
     
     // Use AI predictions if available, otherwise use statistical model
     const weeksToCreate = generateForecastWeeks(
@@ -86,7 +100,7 @@ export async function createOrUpdateForecastWeeks(
     console.log("[DEBUG - Edge Function] Successfully created forecast weeks");
   } else {
     // If weeks already exist, update them with new forecast data
-    console.log("[DEBUG - Edge Function] Updating weeks with forecast data");
+    console.log("[DEBUG - Edge Function - Balance Tracking] Updating weeks with forecast data, initial balance:", availableCashBalance);
     
     // Generate updated forecast data
     const weekUpdates = generateForecastWeeks(
@@ -104,7 +118,9 @@ export async function createOrUpdateForecastWeeks(
       const weekUpdate = weekUpdates[i];
       const existingWeek = existingWeeks[i];
       
-      console.log(`[DEBUG - Edge Function] Updating week ${existingWeek.week_number}`);
+      if (i === 0) {
+        console.log(`[DEBUG - Edge Function - Balance Tracking] Updating first week with starting_balance:`, weekUpdate.starting_balance);
+      }
       
       const { error } = await supabaseClient
         .from("forecast_weeks")

@@ -17,9 +17,21 @@ export function useAIForecastGeneration(
 
     try {
       setIsGenerating(true);
+      
+      const defaultConfig = {
+        useAI: true,
+        includeHistoricalTrends: true,
+        includeSeasonality: true,
+        includePendingPayables: true,
+        includeRecurringExpenses: true,
+        includeCreditPayments: true,
+        startWithCurrentBalance: true
+      };
+      
+      const effectiveOptions = options || defaultConfig;
 
       // For debugging
-      console.log("[DEBUG] Generating forecast with data:", { 
+      console.log("[DEBUG - Balance Tracking] Generating forecast with data:", { 
         forecastId,
         historicalDataCounts: {
           payables: historicalData.payables?.length,
@@ -31,7 +43,8 @@ export function useAIForecastGeneration(
           creditLiabilities: historicalData.creditLiabilities,
           netPosition: historicalData.netPosition,
         },
-        options
+        options: effectiveOptions,
+        startWithCurrentBalance: effectiveOptions.startWithCurrentBalance
       });
 
       const response = await fetch("/api/cash-flow-forecast", {
@@ -42,15 +55,7 @@ export function useAIForecastGeneration(
         body: JSON.stringify({
           forecastId,
           historicalData,
-          config: options || {
-            useAI: true,
-            includeHistoricalTrends: true,
-            includeSeasonality: true,
-            includePendingPayables: true,
-            includeRecurringExpenses: true,
-            includeCreditPayments: true,
-            startWithCurrentBalance: true
-          }
+          config: effectiveOptions
         }),
       });
 

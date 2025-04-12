@@ -42,7 +42,9 @@ export function useForecastData() {
     itemsCount: items?.length,
     isLoading,
     isGenerating,
-    status: forecast?.status
+    status: forecast?.status,
+    initialBalance: forecast?.initial_balance,
+    availableCashBalance: forecast?.available_cash_balance
   });
   
   const { 
@@ -50,12 +52,10 @@ export function useForecastData() {
     isLoading: isLoadingHistoricalData 
   } = useHistoricalData();
   
-  console.log("[DEBUG] CashFlowForecast - historicalData counts:", {
-    payablesCount: historicalData?.payables?.length,
-    receivablesCount: historicalData?.receivables?.length,
-    expensesCount: historicalData?.expenses?.length,
-    salesCount: historicalData?.sales?.length,
-    bankAccountsCount: historicalData?.bankAccounts?.length
+  console.log("[DEBUG - Balance Tracking] useForecastData - historicalData balances:", {
+    availableCashBalance: historicalData?.availableCashBalance,
+    creditLiabilities: historicalData?.creditLiabilities,
+    netPosition: historicalData?.netPosition
   });
   
   useEffect(() => {

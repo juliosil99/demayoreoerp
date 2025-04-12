@@ -20,6 +20,10 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
       creditLiabilities: requestBody.historicalData?.creditLiabilities,
       netPosition: requestBody.historicalData?.netPosition
     }));
+    
+    console.log("[DEBUG - Edge Function - Balance Tracking] Detailed config:", 
+      JSON.stringify(requestBody.config, null, 2)
+    );
   } catch (e) {
     console.error("[DEBUG - Edge Function] Error parsing JSON:", e);
     return new Response(
@@ -56,7 +60,7 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
   const netPosition = historicalData.netPosition || 0;
   const upcomingCreditPayments = historicalData.upcomingCreditPayments || [];
   
-  console.log("[DEBUG - Edge Function] Financial balances:", {
+  console.log("[DEBUG - Edge Function - Balance Tracking] Financial balances:", {
     availableCashBalance,
     creditLiabilities,
     netPosition,
@@ -120,6 +124,12 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
   // Create or update forecast weeks
   const forecastStartDate = new Date(startDate || forecastData.start_date);
   const forecastHorizonWeeks = config?.forecastHorizonWeeks || 13; // Default to 13 weeks if not specified
+  
+  console.log("[DEBUG - Edge Function - Balance Tracking] Before creating forecast weeks:", {
+    startDate: forecastStartDate.toISOString(),
+    availableCashBalance,
+    startWithCurrentBalance: config?.startWithCurrentBalance
+  });
   
   const weeksResult = await createOrUpdateForecastWeeks(
     supabaseClient,

@@ -51,6 +51,7 @@ export function useHistoricalData() {
     queryFn: async () => {
       const { data, error } = await supabase.from("bank_accounts").select("*");
       if (error) throw error;
+      console.log("[DEBUG - Balance Tracking] Raw bank accounts data:", data);
       return data as BankAccount[];
     },
   });
@@ -66,6 +67,18 @@ export function useHistoricalData() {
   
   // Calculate net position (Available Cash - Credit Liabilities)
   const netPosition = availableCashBalance + creditLiabilities; // Credit liabilities are typically negative
+
+  // Detailed logging for balance calculation
+  console.log("[DEBUG - Balance Tracking] Bank accounts count:", bankAccounts.length);
+  console.log("[DEBUG - Balance Tracking] Bank accounts by type:", bankAccounts.map(account => ({
+    id: account.id,
+    name: account.name,
+    type: account.type,
+    balance: account.balance
+  })));
+  console.log("[DEBUG - Balance Tracking] Available Cash Balance:", availableCashBalance);
+  console.log("[DEBUG - Balance Tracking] Credit Liabilities:", creditLiabilities);
+  console.log("[DEBUG - Balance Tracking] Net Position (Initial Balance):", netPosition);
 
   // Get upcoming credit payments (simplified approach - will need to be enhanced)
   const upcomingCreditPayments = bankAccounts
