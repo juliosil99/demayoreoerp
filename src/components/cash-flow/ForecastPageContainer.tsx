@@ -5,6 +5,7 @@ import { ForecastSelector } from "@/components/cash-flow/ForecastSelector";
 import { EmptyForecastState } from "@/components/cash-flow/EmptyForecastState";
 import { ForecastContent } from "@/components/cash-flow/ForecastContent";
 import { CashFlowForecast, ForecastWeek, ForecastItem } from "@/types/cashFlow";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ForecastPageContainerProps {
   forecast?: CashFlowForecast | null;
@@ -47,15 +48,17 @@ export function ForecastPageContainer({
 }: ForecastPageContainerProps) {
   const isDataLoading = isLoading || isLoadingForecasts;
   const hasWeeks = weeks && weeks.length > 0;
+  const isMobile = useIsMobile();
   
   return (
-    <div className="container p-6 space-y-6">
+    <div className={`container ${isMobile ? 'p-3' : 'p-6'} space-y-6`}>
       <ForecastHeader 
         forecast={forecast}
         isGenerating={isGenerating}
         onCreateForecastClick={onCreateForecastClick}
         onGenerateForecastClick={onGenerateForecastClick}
         selectedForecastId={selectedForecastId}
+        isMobile={isMobile}
       />
       
       {(forecasts?.length > 0 || isLoadingForecasts) && (
@@ -67,6 +70,7 @@ export function ForecastPageContainer({
           isGenerating={isGenerating}
           onForecastChange={onForecastChange}
           onGenerateClick={onGenerateForecastClick}
+          isMobile={isMobile}
         />
       )}
       

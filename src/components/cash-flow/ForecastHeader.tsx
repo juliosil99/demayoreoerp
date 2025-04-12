@@ -10,6 +10,7 @@ interface ForecastHeaderProps {
   onCreateForecastClick: () => void;
   onGenerateForecastClick: () => void;
   selectedForecastId?: string;
+  isMobile?: boolean;
 }
 
 export function ForecastHeader({
@@ -17,7 +18,8 @@ export function ForecastHeader({
   isGenerating,
   onCreateForecastClick,
   onGenerateForecastClick,
-  selectedForecastId
+  selectedForecastId,
+  isMobile = false
 }: ForecastHeaderProps) {
   console.log("[DEBUG] ForecastHeader - Render with props:", {
     forecastId: selectedForecastId,
@@ -29,15 +31,17 @@ export function ForecastHeader({
   console.log("[DEBUG] ForecastHeader - Should show Generate button:", showGenerateButton);
   
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex flex-col sm:flex-row justify-between sm:items-center space-y-4 sm:space-y-0">
       <div>
-        <h1 className="text-3xl font-bold">Pronóstico de Flujo de Efectivo</h1>
-        <p className="text-muted-foreground mt-1">
-          Proyección de flujo de efectivo para las próximas 13 semanas
-        </p>
+        <h1 className={isMobile ? "text-xl font-bold" : "text-3xl font-bold"}>Pronóstico de Flujo de Efectivo</h1>
+        {!isMobile && (
+          <p className="text-muted-foreground mt-1">
+            Proyección de flujo de efectivo para las próximas 13 semanas
+          </p>
+        )}
       </div>
       
-      <div className="flex items-center space-x-3">
+      <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'space-x-3'}`}>
         {showGenerateButton && (
           <Button 
             variant="outline" 
@@ -46,18 +50,24 @@ export function ForecastHeader({
               onGenerateForecastClick();
             }}
             disabled={isGenerating}
+            className={isMobile ? "text-xs px-2 py-1" : ""}
+            size={isMobile ? "sm" : "default"}
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Actualizar Pronóstico
+            <RefreshCw className={`${isMobile ? 'mr-1 h-3 w-3' : 'mr-2 h-4 w-4'}`} />
+            {isMobile ? "Actualizar" : "Actualizar Pronóstico"}
           </Button>
         )}
         
-        <Button onClick={() => {
-          console.log("[DEBUG] ForecastHeader - New forecast button clicked");
-          onCreateForecastClick();
-        }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nuevo Pronóstico
+        <Button 
+          onClick={() => {
+            console.log("[DEBUG] ForecastHeader - New forecast button clicked");
+            onCreateForecastClick();
+          }}
+          className={isMobile ? "text-xs px-2 py-1" : ""}
+          size={isMobile ? "sm" : "default"}
+        >
+          <Plus className={`${isMobile ? 'mr-1 h-3 w-3' : 'mr-2 h-4 w-4'}`} />
+          {isMobile ? "Nuevo" : "Nuevo Pronóstico"}
         </Button>
       </div>
     </div>
