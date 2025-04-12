@@ -47,7 +47,8 @@ export function useAIForecastGeneration(
         startWithCurrentBalance: effectiveOptions.startWithCurrentBalance
       });
 
-      const response = await fetch("/api/cash-flow-forecast", {
+      // Fix the API endpoint URL - use the correct Supabase function URL
+      const response = await fetch("/functions/v1/cash-flow-forecast", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -58,6 +59,16 @@ export function useAIForecastGeneration(
           config: effectiveOptions
         }),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[DEBUG - API Error]", {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
+        throw new Error(`API error: ${response.status} ${errorText || response.statusText}`);
+      }
 
       const result = await response.json();
 
