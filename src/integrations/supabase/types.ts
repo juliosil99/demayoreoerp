@@ -360,30 +360,60 @@ export type Database = {
           balance: number | null
           balance_date: string | null
           created_at: string | null
+          credit_limit: number | null
           currency: string
           id: number
           initial_balance: number | null
+          interest_rate: number | null
+          loan_start_date: string | null
+          minimum_payment_percentage: number | null
+          monthly_payment: number | null
           name: string
+          original_loan_amount: number | null
+          payment_due_day: number | null
+          remaining_months: number | null
+          statement_cut_day: number | null
+          total_term_months: number | null
           type: string
         }
         Insert: {
           balance?: number | null
           balance_date?: string | null
           created_at?: string | null
+          credit_limit?: number | null
           currency?: string
           id?: number
           initial_balance?: number | null
+          interest_rate?: number | null
+          loan_start_date?: string | null
+          minimum_payment_percentage?: number | null
+          monthly_payment?: number | null
           name: string
+          original_loan_amount?: number | null
+          payment_due_day?: number | null
+          remaining_months?: number | null
+          statement_cut_day?: number | null
+          total_term_months?: number | null
           type: string
         }
         Update: {
           balance?: number | null
           balance_date?: string | null
           created_at?: string | null
+          credit_limit?: number | null
           currency?: string
           id?: number
           initial_balance?: number | null
+          interest_rate?: number | null
+          loan_start_date?: string | null
+          minimum_payment_percentage?: number | null
+          monthly_payment?: number | null
           name?: string
+          original_loan_amount?: number | null
+          payment_due_day?: number | null
+          remaining_months?: number | null
+          statement_cut_day?: number | null
+          total_term_months?: number | null
           type?: string
         }
         Relationships: []
@@ -662,6 +692,54 @@ export type Database = {
             columns: ["default_chart_account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_payment_schedules: {
+        Row: {
+          account_id: number
+          amount: number
+          created_at: string | null
+          due_date: string
+          id: string
+          payment_id: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: number
+          amount: number
+          created_at?: string | null
+          due_date: string
+          id?: string
+          payment_id?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: number
+          amount?: number
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          payment_id?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_payment_schedules_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_payment_schedules_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "account_transfers"
             referencedColumns: ["id"]
           },
         ]

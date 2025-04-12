@@ -60,7 +60,20 @@ export function useBankAccounts() {
           balance: account.balance,
           initial_balance: account.initial_balance,
           balance_date: account.balance_date,
-          currency: account.currency
+          currency: account.currency,
+          // Credit card specific fields
+          payment_due_day: account.payment_due_day,
+          statement_cut_day: account.statement_cut_day,
+          credit_limit: account.credit_limit,
+          minimum_payment_percentage: account.minimum_payment_percentage,
+          // Loan specific fields
+          monthly_payment: account.monthly_payment,
+          total_term_months: account.total_term_months,
+          remaining_months: account.remaining_months,
+          original_loan_amount: account.original_loan_amount,
+          loan_start_date: account.loan_start_date,
+          // Common credit field
+          interest_rate: account.interest_rate
         });
       if (error) throw error;
     },
@@ -93,7 +106,20 @@ export function useBankAccounts() {
           balance: account.balance,
           initial_balance: account.initial_balance,
           balance_date: account.balance_date,
-          currency: account.currency
+          currency: account.currency,
+          // Credit card specific fields
+          payment_due_day: account.payment_due_day,
+          statement_cut_day: account.statement_cut_day,
+          credit_limit: account.credit_limit,
+          minimum_payment_percentage: account.minimum_payment_percentage,
+          // Loan specific fields
+          monthly_payment: account.monthly_payment,
+          total_term_months: account.total_term_months,
+          remaining_months: account.remaining_months,
+          original_loan_amount: account.original_loan_amount,
+          loan_start_date: account.loan_start_date,
+          // Common credit field
+          interest_rate: account.interest_rate
         })
         .eq("id", account.id);
       if (error) throw error;

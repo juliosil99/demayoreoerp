@@ -56,6 +56,21 @@ export function useHistoricalData() {
       return data as BankAccount[];
     },
   });
+
+  // Fetch credit payment schedules
+  const { data: creditPaymentSchedules = [], isLoading: isLoadingCreditPayments } = useQuery({
+    queryKey: ["credit-payment-schedules"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("credit_payment_schedules")
+        .select("*")
+        .eq("status", "pending")
+        .order("due_date", { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
   
   // Fetch balance history data (for the last 30 days)
   const { data: balanceHistory = [], isLoading: isLoadingBalanceHistory } = useQuery({
@@ -126,16 +141,18 @@ export function useHistoricalData() {
   console.log("[DEBUG - Balance Tracking] Net Position (Initial Balance):", netPosition);
   console.log("[DEBUG - Balance Tracking] Balance History Entries:", balanceHistory.length);
 
-  // Get upcoming credit payments (simplified approach - will need to be enhanced)
-  const upcomingCreditPayments = bankAccounts
-    .filter(account => account.type === "Credit Card" || account.type === "Credit Simple")
-    .map(account => ({
-      accountId: account.id,
-      accountName: account.name,
-      amount: Math.abs(account.balance || 0), // Convert negative balance to positive amount for payment
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default to 30 days from now
-      type: account.type
-    }));
+  // Get upcoming credit payments from payment schedules
+  const upcomingCreditPayments = creditPaymentSchedules.map(payment => {
+    // Find the associated account
+    const account = bankAccounts.find(acc => acc.id === payment.account_id);
+    return {
+      accountId: payment.account_id,
+      accountName: account?.name || 'Cuenta desconocida',
+      amount: payment.amount,
+      dueDate: payment.due_date,
+      type: account?.type || 'Unknown'
+    };
+  });
 
   // Combined historical data
   const historicalData: ForecastHistoricalData = {
@@ -153,7 +170,7 @@ export function useHistoricalData() {
 
   return {
     historicalData,
-    isLoading: isLoadingBankAccounts || isLoadingBalanceHistory,
+    isLoading: isLoadingBankAccounts || isLoadingBalanceHistory || isLoadingCreditPayments,
     payables,
     receivables,
     expenses,

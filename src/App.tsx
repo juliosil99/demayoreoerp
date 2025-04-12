@@ -1,9 +1,8 @@
-
 import * as React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Layout } from "@/components/layout/Layout"; // Changed from default import to named import
+import { Layout } from "@/components/layout/Layout";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import CompanySetup from "@/pages/CompanySetup";
@@ -26,13 +25,13 @@ import Profile from "@/pages/Profile";
 import SalesChannels from "@/pages/SalesChannels";
 import UserManagement from "@/pages/UserManagement";
 import CashFlowForecast from "@/pages/CashFlowForecast";
+import CreditPaymentSchedule from "./pages/CreditPaymentSchedule";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" />;
 }
 
-// Layout wrapper component that includes the children
 function LayoutWrapper() {
   return (
     <Layout>
@@ -78,7 +77,8 @@ function App() {
             <Route path="accounting" element={<Accounting />} />
             <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
             <Route path="accounting/banking" element={<Banking />} />
-            <Route path="accounting/banking/account/:accountId" element={<BankAccountMovements />} />
+            <Route path="/accounting/banking/account/:accountId" element={<BankAccountMovements />} />
+            <Route path="/accounting/banking/payment-schedule/:accountId" element={<CreditPaymentSchedule />} />
             <Route path="accounting/reports" element={<Reports />} />
             <Route path="accounting/transfers" element={<AccountTransfers />} />
             <Route path="accounting/cash-flow-forecast" element={<CashFlowForecast />} />

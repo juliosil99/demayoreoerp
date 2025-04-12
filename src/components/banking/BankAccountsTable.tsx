@@ -1,5 +1,5 @@
 
-import { BanknoteIcon, CreditCard, Pencil, Trash2, FileBarChart, FileText } from "lucide-react";
+import { BanknoteIcon, CreditCard, Pencil, Trash2, FileBarChart, FileText, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -15,6 +15,7 @@ import type { BankAccount } from "./types";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { BankStatementsDialog } from "./statements/BankStatementsDialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface BankAccountsTableProps {
   accounts: BankAccount[];
@@ -36,6 +37,45 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
     setStatementsDialogOpen(true);
   };
 
+  const renderCreditInfo = (account: BankAccount) => {
+    if (account.type === "Credit Card") {
+      return (
+        <div className="text-xs text-muted-foreground">
+          {account.payment_due_day && (
+            <div>
+              <span className="font-medium">Pago: </span>
+              <span>Día {account.payment_due_day}</span>
+            </div>
+          )}
+          {account.statement_cut_day && (
+            <div>
+              <span className="font-medium">Corte: </span>
+              <span>Día {account.statement_cut_day}</span>
+            </div>
+          )}
+        </div>
+      );
+    } else if (account.type === "Credit Simple") {
+      return (
+        <div className="text-xs text-muted-foreground">
+          {account.payment_due_day && account.monthly_payment && (
+            <div>
+              <span className="font-medium">Pago: </span>
+              <span>{formatCurrency(account.monthly_payment)} el día {account.payment_due_day}</span>
+            </div>
+          )}
+          {account.remaining_months !== undefined && (
+            <div>
+              <span className="font-medium">Restante: </span>
+              <span>{account.remaining_months} meses</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -46,6 +86,7 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
             <TableHead className="text-right">Saldo Inicial</TableHead>
             <TableHead className="text-right">Fecha Inicial</TableHead>
             <TableHead className="text-right">Saldo Actual</TableHead>
+            <TableHead className="text-right">Información de Pago</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -76,6 +117,9 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                 {formatCurrency(account.balance)}
               </TableCell>
               <TableCell className="text-right">
+                {renderCreditInfo(account)}
+              </TableCell>
+              <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="ghost"
@@ -85,6 +129,26 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                   >
                     <FileBarChart className="h-4 w-4" />
                   </Button>
+                  
+                  {(account.type === "Credit Card" || account.type === "Credit Simple") && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => navigate(`/accounting/banking/payment-schedule/${account.id}`)}
+                          >
+                            <Calendar className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Ver calendario de pagos</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  
                   <Button
                     variant="ghost"
                     size="icon"
