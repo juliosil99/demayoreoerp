@@ -26,7 +26,7 @@ const itemSchema = z.object({
   description: z.string().optional(),
   amount: z.coerce.number().positive("El monto debe ser mayor que cero"),
   type: z.enum(['inflow', 'outflow']),
-  source: z.enum(['historical', 'ai_predicted', 'manual', 'recurring']),
+  source: z.enum(['historical', 'ai_predicted', 'manual', 'recurring', 'reconciled']),
   is_recurring: z.boolean().default(false),
 });
 
@@ -183,6 +183,7 @@ export function ForecastItemDialog({
                         <SelectItem value="historical">Histórico</SelectItem>
                         <SelectItem value="ai_predicted">Predicción IA</SelectItem>
                         <SelectItem value="recurring">Recurrente</SelectItem>
+                        <SelectItem value="reconciled">Reconciliado</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

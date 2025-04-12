@@ -18,10 +18,10 @@ export interface ForecastOptions {
   includeSeasonality: boolean;
   includePendingPayables: boolean;
   includeRecurringExpenses: boolean;
-  includeCreditPayments?: boolean; // Whether to include credit card payments in the forecast
+  includeCreditPayments: boolean; // Whether to include credit card payments in the forecast
+  startWithCurrentBalance: boolean; // Whether to start forecast with current bank balances
   forecastHorizonWeeks?: number; // Number of weeks to forecast
   confidenceLevel?: number; // Confidence level for predictions (0-1)
-  startWithCurrentBalance?: boolean; // Whether to start forecast with current bank balances
 }
 
 // New interface to represent weekly cash balance

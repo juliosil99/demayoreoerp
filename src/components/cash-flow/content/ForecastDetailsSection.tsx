@@ -19,6 +19,7 @@ interface ForecastDetailsSectionProps {
   onAddItem: () => void;
   onEditItem: (item: ForecastItem) => void;
   onRequestAPIKey: () => void;
+  onUpdateForecast?: () => void; // Added the missing prop
 }
 
 export function ForecastDetailsSection({
@@ -30,7 +31,8 @@ export function ForecastDetailsSection({
   onSelectWeek,
   onAddItem,
   onEditItem,
-  onRequestAPIKey
+  onRequestAPIKey,
+  onUpdateForecast
 }: ForecastDetailsSectionProps) {
   const isMobile = useIsMobile();
   const [isMobileSheetOpen, setIsMobileSheetOpen] = React.useState(false);

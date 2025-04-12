@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { DataSourcesPanel } from "./forecast-generation/DataSourcesPanel";
 import { ForecastOptionsPanel } from "./forecast-generation/ForecastOptionsPanel";
-import { ForecastDataCount } from "./forecast-generation/types";
+import { ForecastDataCount, ForecastOptions } from "./forecast-generation/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { Switch } from "../ui/switch";
@@ -40,14 +40,23 @@ export function GenerateForecastDialog({
   const isMobile = useIsMobile();
   
   // State for forecast options
-  const [useAI, setUseAI] = React.useState(true);
-  const [includeHistoricalTrends, setIncludeHistoricalTrends] = React.useState(true);
-  const [includeSeasonality, setIncludeSeasonality] = React.useState(true);
-  const [includePendingPayables, setIncludePendingPayables] = React.useState(true);
-  const [includeRecurringExpenses, setIncludeRecurringExpenses] = React.useState(true);
-  const [includeCreditPayments, setIncludeCreditPayments] = React.useState(true);
-  const [startWithCurrentBalance, setStartWithCurrentBalance] = React.useState(true);
+  const [options, setOptions] = React.useState<ForecastOptions>({
+    useAI: true,
+    includeHistoricalTrends: true,
+    includeSeasonality: true,
+    includePendingPayables: true,
+    includeRecurringExpenses: true,
+    includeCreditPayments: true,
+    startWithCurrentBalance: true
+  });
+  
+  // State for reconciliation
   const [reconcileBalances, setReconcileBalances] = React.useState(false);
+  
+  // Function to handle option changes
+  const handleOptionChange = <K extends keyof ForecastOptions>(option: K, value: ForecastOptions[K]) => {
+    setOptions(prev => ({ ...prev, [option]: value }));
+  };
   
   // Determine if balances are out of date
   const needsBalanceReconciliation = React.useMemo(() => {
@@ -69,18 +78,11 @@ export function GenerateForecastDialog({
   }, [isOpen, needsBalanceReconciliation]);
   
   const handleGenerate = () => {
-    const options = {
-      useAI,
-      includeHistoricalTrends,
-      includeSeasonality,
-      includePendingPayables,
-      includeRecurringExpenses,
-      includeCreditPayments,
-      startWithCurrentBalance,
+    onGenerate({
+      ...options,
       reconcileBalances,
       useRollingForecast: true
-    };
-    onGenerate(options);
+    });
   };
 
   return (
@@ -144,20 +146,8 @@ export function GenerateForecastDialog({
             <DataSourcesPanel historicalDataCount={historicalDataCount} />
             
             <ForecastOptionsPanel 
-              useAI={useAI}
-              includeHistoricalTrends={includeHistoricalTrends}
-              includeSeasonality={includeSeasonality}
-              includePendingPayables={includePendingPayables}
-              includeRecurringExpenses={includeRecurringExpenses}
-              includeCreditPayments={includeCreditPayments}
-              startWithCurrentBalance={startWithCurrentBalance}
-              onUseAIChange={setUseAI}
-              onIncludeHistoricalTrendsChange={setIncludeHistoricalTrends}
-              onIncludeSeasonalityChange={setIncludeSeasonality}
-              onIncludePendingPayablesChange={setIncludePendingPayables}
-              onIncludeRecurringExpensesChange={setIncludeRecurringExpenses}
-              onIncludeCreditPaymentsChange={setIncludeCreditPayments}
-              onStartWithCurrentBalanceChange={setStartWithCurrentBalance}
+              options={options}
+              onOptionChange={handleOptionChange}
             />
           </div>
         </div>
