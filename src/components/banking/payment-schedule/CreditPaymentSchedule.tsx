@@ -80,7 +80,7 @@ export function CreditPaymentSchedule() {
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*")
-        .eq("id", accountId)
+        .eq("id", parseInt(accountId))
         .single();
         
       if (error) throw error;
@@ -176,7 +176,7 @@ export function CreditPaymentSchedule() {
         const paymentDate = addMonths(currentDate, i);
         
         payments.push({
-          account_id: Number(accountId),
+          account_id: parseInt(accountId as string),
           due_date: format(paymentDate, 'yyyy-MM-dd'),
           amount: amount,
           status: 'pending',
