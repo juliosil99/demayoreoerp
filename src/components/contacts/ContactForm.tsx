@@ -44,7 +44,7 @@ export default function ContactForm({ onSuccess, contactToEdit }: ContactFormPro
   };
 
   return (
-    <div className="bg-card p-6 rounded-lg shadow mb-6">
+    <div className="bg-card p-3 sm:p-6 rounded-lg shadow mb-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <ContactFormError error={formError} />

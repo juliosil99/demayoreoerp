@@ -24,22 +24,22 @@ export const ContactCard = ({ contact, onEdit, onDelete }: ContactCardProps) => 
   };
 
   return (
-    <div className="bg-card border border-border hover:border-primary/20 transition-colors p-4 rounded-lg shadow-sm flex justify-between items-center gap-4">
+    <div className="bg-card border border-border hover:border-primary/20 transition-colors p-3 sm:p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
       <div className="flex-1 min-w-0 text-left">
         <h3 className="font-semibold text-base truncate">{contact.name}</h3>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-muted-foreground">
-          <span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+          <span className="truncate">
             {getContactTypeLabel(contact.type)} • {contact.rfc}
           </span>
           {contact.phone && (
             <>
               <span className="hidden sm:inline">•</span>
-              <span>Tel: {contact.phone}</span>
+              <span className="truncate">Tel: {contact.phone}</span>
             </>
           )}
         </div>
       </div>
-      <div className="flex gap-1 shrink-0">
+      <div className="flex gap-1 shrink-0 w-full sm:w-auto justify-end">
         <Button
           variant="ghost"
           size="icon"

@@ -39,7 +39,7 @@ export const ContactFilters = ({
           value={typeFilter}
           onValueChange={(value: "all" | "client" | "supplier" | "employee") => setTypeFilter(value)}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Filtrar por tipo" />
           </SelectTrigger>
           <SelectContent>
