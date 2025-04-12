@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -103,7 +102,7 @@ export function CreditPaymentSchedule() {
       const { data, error } = await supabase
         .from("credit_payment_schedules")
         .select("*")
-        .eq("account_id", accountId)
+        .eq("account_id", parseInt(accountId))
         .order("due_date", { ascending: true });
         
       if (error) throw error;
@@ -118,7 +117,7 @@ export function CreditPaymentSchedule() {
       const { error } = await supabase
         .from("credit_payment_schedules")
         .insert({
-          account_id: Number(accountId),
+          account_id: parseInt(accountId as string),
           due_date: payment.due_date,
           amount: payment.amount,
           status: 'pending',
