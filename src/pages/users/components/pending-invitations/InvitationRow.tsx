@@ -30,7 +30,7 @@ export function InvitationRow({ invitation, resendInvitation, isResending }: Inv
   return (
     <React.Fragment>
       <TableRow>
-        <TableCell>{invitation.email}</TableCell>
+        <TableCell className="font-medium">{invitation.email}</TableCell>
         <TableCell>{invitation.role === 'admin' ? 'Administrador' : 'Usuario'}</TableCell>
         <TableCell>
           <div className="flex items-center gap-2">
@@ -51,7 +51,7 @@ export function InvitationRow({ invitation, resendInvitation, isResending }: Inv
             </TooltipProvider>
           </div>
         </TableCell>
-        <TableCell>
+        <TableCell className="whitespace-nowrap">
           {format(new Date(invitation.created_at), 'dd/MM/yyyy HH:mm')}
         </TableCell>
         <TableCell>
@@ -61,21 +61,25 @@ export function InvitationRow({ invitation, resendInvitation, isResending }: Inv
               size="sm"
               onClick={() => resendInvitation(invitation)}
               disabled={isResending}
+              className="whitespace-nowrap"
             >
               {isResending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Enviando...
+                  <span className="hidden sm:inline">Enviando...</span>
+                  <span className="sm:hidden">...</span>
                 </>
               ) : invitation.status === 'expired' ? (
                 <>
                   <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
-                  Reactivar y Reenviar
+                  <span className="hidden sm:inline">Reactivar y Reenviar</span>
+                  <span className="sm:hidden">Reactivar</span>
                 </>
               ) : (
                 <>
                   <Send className="h-4 w-4 mr-2" />
-                  Reenviar
+                  <span className="hidden sm:inline">Reenviar</span>
+                  <span className="sm:hidden">Enviar</span>
                 </>
               )}
             </Button>
@@ -86,6 +90,7 @@ export function InvitationRow({ invitation, resendInvitation, isResending }: Inv
             variant="ghost" 
             size="sm"
             onClick={toggleExpand}
+            className="whitespace-nowrap"
           >
             {isExpanded ? 'Ocultar' : 'Detalles'}
           </Button>

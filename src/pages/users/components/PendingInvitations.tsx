@@ -11,10 +11,10 @@ export function PendingInvitations() {
   if (isLoading) {
     return (
       <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Invitaciones</CardTitle>
+        <CardHeader className="py-3 sm:py-4">
+          <CardTitle className="text-base sm:text-lg">Invitaciones</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-4">
           <Skeleton className="h-[200px] w-full" />
         </CardContent>
       </Card>
@@ -25,10 +25,10 @@ export function PendingInvitations() {
 
   return (
     <Card className="mb-8">
-      <CardHeader>
-        <CardTitle>Invitaciones</CardTitle>
+      <CardHeader className="py-3 sm:py-4">
+        <CardTitle className="text-base sm:text-lg">Invitaciones</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-4">
         <InvitationsTable 
           invitations={invitations}
           resendInvitation={resendInvitation}

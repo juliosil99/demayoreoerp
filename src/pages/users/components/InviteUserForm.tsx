@@ -22,25 +22,26 @@ export function InviteUserForm() {
 
   return (
     <Card className="mb-6">
-      <CardHeader>
-        <CardTitle>Invitar Nuevo Usuario</CardTitle>
+      <CardHeader className="py-3 sm:py-4">
+        <CardTitle className="text-base sm:text-lg">Invitar Nuevo Usuario</CardTitle>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="flex gap-4 items-end">
+      <CardContent className="p-3 sm:p-4">
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
           <div className="flex-1">
-            <label className="block text-sm font-medium mb-1">Email del usuario</label>
+            <label className="block text-xs sm:text-sm font-medium mb-1">Email del usuario</label>
             <Input
               type="email"
               placeholder="usuario@ejemplo.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="text-sm"
             />
           </div>
-          <div className="w-48">
-            <label className="block text-sm font-medium mb-1">Rol</label>
+          <div className="w-full sm:w-48">
+            <label className="block text-xs sm:text-sm font-medium mb-1">Rol</label>
             <Select value={role} onValueChange={(value: "admin" | "user") => setRole(value)}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -49,7 +50,11 @@ export function InviteUserForm() {
               </SelectContent>
             </Select>
           </div>
-          <Button type="submit" disabled={isInviting}>
+          <Button 
+            type="submit" 
+            disabled={isInviting}
+            className="mt-2 sm:mt-0"
+          >
             {isInviting ? "Invitando..." : "Invitar Usuario"}
           </Button>
         </form>
