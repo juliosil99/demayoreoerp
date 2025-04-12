@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CashFlowProps {
   userId?: string;
@@ -27,6 +28,8 @@ interface CashFlowData {
 }
 
 export function CashFlow({ userId }: CashFlowProps) {
+  const isMobile = useIsMobile();
+  const [loading, setLoading] = React.useState(false);
   const [date, setDate] = React.useState<DateRange>({
     from: new Date(),
     to: new Date(),
@@ -91,6 +94,17 @@ export function CashFlow({ userId }: CashFlowProps) {
     enabled: false,
   });
 
+  const handleGenerateReport = async () => {
+    setLoading(true);
+    try {
+      await generateReport();
+    } catch (error) {
+      console.error("Error generating report:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
@@ -100,13 +114,20 @@ export function CashFlow({ userId }: CashFlowProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <DatePickerWithRange date={date} setDate={setDate} />
-        <Button onClick={() => generateReport()}>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+        <div className="w-full sm:w-auto">
+          <DatePickerWithRange date={date} setDate={setDate} />
+        </div>
+        <Button 
+          onClick={handleGenerateReport} 
+          disabled={loading}
+          className="w-full sm:w-auto"
+        >
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Generar Reporte
         </Button>
       </div>
-      <div className="min-h-[400px] p-4 border rounded-lg">
+      <div className="min-h-[400px] p-2 sm:p-4 border rounded-lg">
         {!reportData ? (
           <p className="text-center text-muted-foreground">
             Seleccione un rango de fechas y genere el reporte
@@ -114,53 +135,53 @@ export function CashFlow({ userId }: CashFlowProps) {
         ) : (
           <div className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Entradas de Efectivo</CardTitle>
+              <CardHeader className="py-3 sm:py-4">
+                <CardTitle className="text-sm sm:text-base">Entradas de Efectivo</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="py-2 px-3 sm:p-4">
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span>Ventas Cobradas</span>
-                    <span className="font-medium text-green-600">{formatAmount(reportData.inflows.sales)}</span>
+                    <span className="text-xs sm:text-sm">Ventas Cobradas</span>
+                    <span className="font-medium text-green-600 text-xs sm:text-sm">{formatAmount(reportData.inflows.sales)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Otros Pagos Recibidos</span>
-                    <span className="font-medium text-green-600">{formatAmount(reportData.inflows.payments)}</span>
+                    <span className="text-xs sm:text-sm">Otros Pagos Recibidos</span>
+                    <span className="font-medium text-green-600 text-xs sm:text-sm">{formatAmount(reportData.inflows.payments)}</span>
                   </div>
                   <div className="flex justify-between border-t pt-2">
-                    <span className="font-medium">Total Entradas</span>
-                    <span className="font-medium text-green-600">{formatAmount(reportData.inflows.total)}</span>
+                    <span className="font-medium text-xs sm:text-sm">Total Entradas</span>
+                    <span className="font-medium text-green-600 text-xs sm:text-sm">{formatAmount(reportData.inflows.total)}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Salidas de Efectivo</CardTitle>
+              <CardHeader className="py-3 sm:py-4">
+                <CardTitle className="text-sm sm:text-base">Salidas de Efectivo</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="py-2 px-3 sm:p-4">
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span>Gastos Pagados</span>
-                    <span className="font-medium text-red-500">({formatAmount(reportData.outflows.expenses)})</span>
+                    <span className="text-xs sm:text-sm">Gastos Pagados</span>
+                    <span className="font-medium text-red-500 text-xs sm:text-sm">({formatAmount(reportData.outflows.expenses)})</span>
                   </div>
                   <div className="flex justify-between border-t pt-2">
-                    <span className="font-medium">Total Salidas</span>
-                    <span className="font-medium text-red-500">({formatAmount(reportData.outflows.total)})</span>
+                    <span className="font-medium text-xs sm:text-sm">Total Salidas</span>
+                    <span className="font-medium text-red-500 text-xs sm:text-sm">({formatAmount(reportData.outflows.total)})</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Flujo Neto de Efectivo</CardTitle>
+              <CardHeader className="py-3 sm:py-4">
+                <CardTitle className="text-sm sm:text-base">Flujo Neto de Efectivo</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="py-2 px-3 sm:p-4">
                 <div className="flex justify-between">
-                  <span className="font-bold">Total</span>
-                  <span className={`font-bold ${reportData.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className="font-bold text-xs sm:text-sm">Total</span>
+                  <span className={`font-bold text-xs sm:text-sm ${reportData.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatAmount(reportData.netCashFlow)}
                   </span>
                 </div>

@@ -10,18 +10,18 @@ interface EquityCardProps {
 export function EquityCard({ netIncome, total, formatAmount }: EquityCardProps) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Capital</CardTitle>
+      <CardHeader className="py-3 sm:py-4">
+        <CardTitle className="text-sm sm:text-base">Capital</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="py-2 px-3 sm:p-4">
         <div className="space-y-2">
           <div className="flex justify-between">
-            <span>Resultado del Periodo</span>
-            <span className="font-medium">{formatAmount(netIncome)}</span>
+            <span className="text-xs sm:text-sm">Resultado del Periodo</span>
+            <span className="font-medium text-xs sm:text-sm">{formatAmount(netIncome)}</span>
           </div>
           <div className="flex justify-between border-t pt-2">
-            <span className="font-medium">Total Capital</span>
-            <span className="font-medium">{formatAmount(total)}</span>
+            <span className="font-medium text-xs sm:text-sm">Total Capital</span>
+            <span className="font-medium text-xs sm:text-sm">{formatAmount(total)}</span>
           </div>
         </div>
       </CardContent>

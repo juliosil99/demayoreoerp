@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ChannelIncomeStatementProps {
   userId?: string;
@@ -22,6 +23,7 @@ interface ChannelData {
 }
 
 export function ChannelIncomeStatement({ userId }: ChannelIncomeStatementProps) {
+  const isMobile = useIsMobile();
   const [loading, setLoading] = React.useState(false);
   const [date, setDate] = React.useState<DateRange>({
     from: new Date(),
@@ -100,14 +102,20 @@ export function ChannelIncomeStatement({ userId }: ChannelIncomeStatementProps) 
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <DatePickerWithRange date={date} setDate={setDate} />
-        <Button onClick={handleGenerateReport} disabled={loading}>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+        <div className="w-full sm:w-auto">
+          <DatePickerWithRange date={date} setDate={setDate} />
+        </div>
+        <Button 
+          onClick={handleGenerateReport} 
+          disabled={loading}
+          className="w-full sm:w-auto"
+        >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Generar Reporte
         </Button>
       </div>
-      <div className="min-h-[400px] p-4 border rounded-lg">
+      <div className="min-h-[400px] p-2 sm:p-4 border rounded-lg">
         {!channelData ? (
           <p className="text-center text-muted-foreground">
             Seleccione un rango de fechas y genere el reporte
@@ -115,22 +123,22 @@ export function ChannelIncomeStatement({ userId }: ChannelIncomeStatementProps) 
         ) : (
           <div className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Resumen Total</CardTitle>
+              <CardHeader className="py-3 sm:py-4">
+                <CardTitle className="text-sm sm:text-base">Resumen Total</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4">
+              <CardContent className="py-2 px-3 sm:p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Ventas Totales</p>
-                    <p className="text-2xl font-bold">{formatAmount(totalRevenue)}</p>
+                    <p className="text-xs text-muted-foreground">Ventas Totales</p>
+                    <p className="text-base sm:text-xl font-bold">{formatAmount(totalRevenue)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Ganancia Total</p>
-                    <p className="text-2xl font-bold">{formatAmount(totalProfit)}</p>
+                    <p className="text-xs text-muted-foreground">Ganancia Total</p>
+                    <p className="text-base sm:text-xl font-bold">{formatAmount(totalProfit)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Margen Promedio</p>
-                    <p className="text-2xl font-bold">{formatPercentage(averageMargin)}</p>
+                    <p className="text-xs text-muted-foreground">Margen Promedio</p>
+                    <p className="text-base sm:text-xl font-bold">{formatPercentage(averageMargin)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -138,32 +146,32 @@ export function ChannelIncomeStatement({ userId }: ChannelIncomeStatementProps) 
 
             {channelData.map((channel) => (
               <Card key={channel.Channel}>
-                <CardHeader>
-                  <CardTitle>{channel.Channel}</CardTitle>
+                <CardHeader className="py-2 sm:py-3">
+                  <CardTitle className="text-sm sm:text-base">{channel.Channel}</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-4 gap-4">
+                <CardContent className="py-2 px-3 sm:p-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Ventas</p>
-                      <p className="text-xl font-semibold">{formatAmount(channel.revenue)}</p>
+                      <p className="text-xs text-muted-foreground">Ventas</p>
+                      <p className="text-xs sm:text-base font-semibold">{formatAmount(channel.revenue)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Costo</p>
-                      <p className="text-xl font-semibold text-red-500">
+                      <p className="text-xs text-muted-foreground">Costo</p>
+                      <p className="text-xs sm:text-base font-semibold text-red-500">
                         ({formatAmount(channel.cost)})
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Ganancia</p>
-                      <p className={`text-xl font-semibold ${
+                      <p className="text-xs text-muted-foreground">Ganancia</p>
+                      <p className={`text-xs sm:text-base font-semibold ${
                         channel.profit >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                         {formatAmount(channel.profit)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Margen</p>
-                      <p className="text-xl font-semibold">
+                      <p className="text-xs text-muted-foreground">Margen</p>
+                      <p className="text-xs sm:text-base font-semibold">
                         {formatPercentage(channel.margin)}
                       </p>
                     </div>

@@ -8,12 +8,16 @@ import { fetchBalanceSheetData, type BalanceSheetData } from "./utils/balance-sh
 import { AssetsCard } from "./components/AssetsCard";
 import { LiabilitiesCard } from "./components/LiabilitiesCard";
 import { EquityCard } from "./components/EquityCard";
+import { Loader2 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface BalanceSheetProps {
   userId?: string;
 }
 
 export function BalanceSheet({ userId }: BalanceSheetProps) {
+  const isMobile = useIsMobile();
+  const [loading, setLoading] = React.useState(false);
   const [date, setDate] = React.useState<DateRange>({
     from: new Date(),
     to: new Date(),
@@ -28,6 +32,17 @@ export function BalanceSheet({ userId }: BalanceSheetProps) {
     enabled: false,
   });
 
+  const handleGenerateReport = async () => {
+    setLoading(true);
+    try {
+      await generateReport();
+    } catch (error) {
+      console.error("Error generating report:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
@@ -37,13 +52,20 @@ export function BalanceSheet({ userId }: BalanceSheetProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <DatePickerWithRange date={date} setDate={setDate} />
-        <Button onClick={() => generateReport()}>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+        <div className="w-full sm:w-auto">
+          <DatePickerWithRange date={date} setDate={setDate} />
+        </div>
+        <Button 
+          onClick={handleGenerateReport} 
+          disabled={loading}
+          className="w-full sm:w-auto"
+        >
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Generar Reporte
         </Button>
       </div>
-      <div className="min-h-[400px] p-4 border rounded-lg">
+      <div className="min-h-[400px] p-2 sm:p-4 border rounded-lg">
         {!reportData ? (
           <p className="text-center text-muted-foreground">
             Seleccione un rango de fechas y genere el reporte
