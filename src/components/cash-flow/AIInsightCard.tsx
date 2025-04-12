@@ -7,7 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface AIInsightCardProps {
   insights: string;
-  isLoading: boolean;
+  isLoading?: boolean;
+  isGenerating?: boolean; // Add this prop to support both naming conventions
   onRequestAPIKey: () => void;
   isMobile?: boolean;
 }
@@ -15,9 +16,13 @@ interface AIInsightCardProps {
 export function AIInsightCard({ 
   insights, 
   isLoading,
+  isGenerating, // Accept the new prop
   onRequestAPIKey,
   isMobile = false
 }: AIInsightCardProps) {
+  // Use either isLoading or isGenerating (prioritize isGenerating if both are provided)
+  const isLoadingState = isGenerating !== undefined ? isGenerating : isLoading;
+  
   // Parse insights if available
   let parsedInsights: any = null;
   try {
@@ -28,13 +33,13 @@ export function AIInsightCard({
     console.error("Failed to parse AI insights:", e);
   }
   
-  const needsApiKey = !insights && !isLoading;
+  const needsApiKey = !insights && !isLoadingState;
   
   // Different layouts for mobile vs desktop
   if (isMobile) {
     return (
       <div>
-        {isLoading && (
+        {isLoadingState && (
           <div className="space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
@@ -84,7 +89,7 @@ export function AIInsightCard({
         <CardTitle>Insights de IA</CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading && (
+        {isLoadingState && (
           <div className="space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
