@@ -5,7 +5,6 @@ import { ReconciliationSection } from "./ReconciliationSection";
 import { DataSourcesPanel } from "./DataSourcesPanel";
 import { ForecastOptionsPanel } from "./ForecastOptionsPanel";
 import { ForecastDataCount, ForecastOptions } from "./types";
-import { CashFlowForecast } from "@/types/cashFlow";
 
 interface ForecastDialogContentProps {
   options: ForecastOptions;
@@ -24,6 +23,13 @@ export function ForecastDialogContent({
   needsBalanceReconciliation,
   historicalDataCount
 }: ForecastDialogContentProps) {
+  // Log balance information for debugging
+  console.log("[DEBUG] ForecastDialogContent - Received balances:", {
+    availableCashBalance: historicalDataCount.availableCashBalance,
+    creditLiabilities: historicalDataCount.creditLiabilities,
+    netPosition: historicalDataCount.netPosition
+  });
+
   return (
     <div className="space-y-6 my-4">
       {/* Reconciliation Section */}

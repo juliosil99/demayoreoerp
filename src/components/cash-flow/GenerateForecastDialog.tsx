@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "../ui/button";
 import { Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { format, parseISO, differenceInDays } from "date-fns";
 import { ForecastOptions, ForecastDataCount } from "./forecast-generation/types";
 import { CashFlowForecast } from "@/types/cashFlow";
 import { ForecastDialogContent } from "./forecast-generation/ForecastDialogContent";
@@ -26,10 +25,12 @@ export function GenerateForecastDialog({
   onClose,
   onGenerate
 }: GenerateForecastDialogProps) {
-  console.log("[DEBUG] GenerateForecastDialog - Render with props:", {
+  console.log("[DEBUG] GenerateForecastDialog - Render with balances:", {
     isOpen,
     isLoading,
-    historicalDataCount,
+    availableCashBalance: historicalDataCount.availableCashBalance,
+    creditLiabilities: historicalDataCount.creditLiabilities,
+    netPosition: historicalDataCount.netPosition,
     forecast
   });
   
@@ -58,9 +59,9 @@ export function GenerateForecastDialog({
   const needsBalanceReconciliation = React.useMemo(() => {
     if (!forecast || !forecast.last_reconciled_date) return true;
     
-    const lastReconciled = parseISO(forecast.last_reconciled_date);
+    const lastReconciled = new Date(forecast.last_reconciled_date);
     const today = new Date();
-    const daysSinceUpdate = differenceInDays(today, lastReconciled);
+    const daysSinceUpdate = Math.floor((today.getTime() - lastReconciled.getTime()) / (1000 * 60 * 60 * 24));
     
     // If it's been more than 7 days since the last reconciliation
     return daysSinceUpdate > 7;
@@ -74,6 +75,12 @@ export function GenerateForecastDialog({
   }, [isOpen, needsBalanceReconciliation]);
   
   const handleGenerate = () => {
+    console.log("[DEBUG] GenerateForecastDialog - Generating forecast with options:", {
+      ...options,
+      reconcileBalances,
+      availableCashBalance: historicalDataCount.availableCashBalance
+    });
+    
     onGenerate({
       ...options,
       reconcileBalances,

@@ -441,33 +441,57 @@ export type Database = {
       cash_flow_forecasts: {
         Row: {
           ai_insights: string | null
+          available_cash_balance: number | null
           config: Json | null
           created_at: string
+          credit_liabilities: number | null
           description: string | null
           id: string
+          initial_balance: number | null
+          is_balance_confirmed: boolean | null
+          is_rolling: boolean | null
+          last_reconciled_date: string | null
+          last_updated: string | null
           name: string
+          net_position: number | null
           start_date: string
           status: string
           user_id: string
         }
         Insert: {
           ai_insights?: string | null
+          available_cash_balance?: number | null
           config?: Json | null
           created_at?: string
+          credit_liabilities?: number | null
           description?: string | null
           id?: string
+          initial_balance?: number | null
+          is_balance_confirmed?: boolean | null
+          is_rolling?: boolean | null
+          last_reconciled_date?: string | null
+          last_updated?: string | null
           name: string
+          net_position?: number | null
           start_date: string
           status?: string
           user_id: string
         }
         Update: {
           ai_insights?: string | null
+          available_cash_balance?: number | null
           config?: Json | null
           created_at?: string
+          credit_liabilities?: number | null
           description?: string | null
           id?: string
+          initial_balance?: number | null
+          is_balance_confirmed?: boolean | null
+          is_rolling?: boolean | null
+          last_reconciled_date?: string | null
+          last_updated?: string | null
           name?: string
+          net_position?: number | null
           start_date?: string
           status?: string
           user_id?: string
@@ -955,12 +979,16 @@ export type Database = {
         Row: {
           actual_inflows: number | null
           actual_outflows: number | null
+          balance_confidence: string | null
           confidence_score: number | null
+          ending_balance: number | null
           forecast_id: string
           id: string
+          is_reconciled: boolean | null
           notes: string | null
           predicted_inflows: number | null
           predicted_outflows: number | null
+          starting_balance: number | null
           week_end_date: string
           week_number: number
           week_start_date: string
@@ -968,12 +996,16 @@ export type Database = {
         Insert: {
           actual_inflows?: number | null
           actual_outflows?: number | null
+          balance_confidence?: string | null
           confidence_score?: number | null
+          ending_balance?: number | null
           forecast_id: string
           id?: string
+          is_reconciled?: boolean | null
           notes?: string | null
           predicted_inflows?: number | null
           predicted_outflows?: number | null
+          starting_balance?: number | null
           week_end_date: string
           week_number: number
           week_start_date: string
@@ -981,12 +1013,16 @@ export type Database = {
         Update: {
           actual_inflows?: number | null
           actual_outflows?: number | null
+          balance_confidence?: string | null
           confidence_score?: number | null
+          ending_balance?: number | null
           forecast_id?: string
           id?: string
+          is_reconciled?: boolean | null
           notes?: string | null
           predicted_inflows?: number | null
           predicted_outflows?: number | null
+          starting_balance?: number | null
           week_end_date?: string
           week_number?: number
           week_start_date?: string
