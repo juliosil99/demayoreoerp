@@ -19,7 +19,7 @@ interface ForecastDetailsSectionProps {
   onAddItem: () => void;
   onEditItem: (item: ForecastItem) => void;
   onRequestAPIKey: () => void;
-  onUpdateForecast?: () => void; // Added the missing prop
+  onUpdateForecast?: () => void; // Making sure this is properly defined in the interface
 }
 
 export function ForecastDetailsSection({
