@@ -1,12 +1,13 @@
 
-import React, { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import React from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WeeklyForecastTable } from "@/components/cash-flow/WeeklyForecastTable";
 import { ForecastItemsCard } from "@/components/cash-flow/ForecastItemsCard";
 import { AIInsightCard } from "@/components/cash-flow/AIInsightCard";
 import { ForecastWeek, ForecastItem } from "@/types/cashFlow";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileForecastSheet } from "@/components/cash-flow/MobileForecastSheet";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
 
 interface ForecastDetailsSectionProps {
   weeks: ForecastWeek[];
@@ -32,84 +33,76 @@ export function ForecastDetailsSection({
   onRequestAPIKey
 }: ForecastDetailsSectionProps) {
   const isMobile = useIsMobile();
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isMobileSheetOpen, setIsMobileSheetOpen] = React.useState(false);
   
-  const handleWeekSelect = (week: ForecastWeek) => {
-    onSelectWeek(week);
-    if (isMobile) {
-      setIsSheetOpen(true);
+  // Open the mobile sheet when a week is selected on mobile
+  React.useEffect(() => {
+    if (isMobile && selectedWeek) {
+      setIsMobileSheetOpen(true);
     }
-  };
+  }, [isMobile, selectedWeek]);
   
-  const handleCloseSheet = () => {
-    setIsSheetOpen(false);
-  };
-  
-  const filteredItems = selectedWeek 
-    ? items.filter(item => item.week_id === selectedWeek.id)
-    : [];
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        <WeeklyForecastTable 
+          weeks={weeks} 
+          selectedWeek={selectedWeek}
+          onSelectWeek={onSelectWeek} 
+        />
+        
+        <AIInsightCard 
+          insights={insights || ""} 
+          isGenerating={isGenerating}
+          onRequestAPIKey={onRequestAPIKey}
+        />
+        
+        <MobileForecastSheet 
+          isOpen={isMobileSheetOpen}
+          onClose={() => setIsMobileSheetOpen(false)}
+          selectedWeek={selectedWeek}
+          items={items}
+          onAddItem={onAddItem}
+          onEditItem={onEditItem}
+        />
+      </div>
+    );
+  }
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card className="md:col-span-2">
-        <CardHeader>
-          <CardTitle>Detalles del Pronóstico</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <WeeklyForecastTable 
-              weeks={weeks} 
-              selectedWeek={selectedWeek} 
-              onSelectWeek={handleWeekSelect} 
-            />
-          </div>
-        </CardContent>
-      </Card>
-      
-      {!isMobile && selectedWeek && (
-        <div className="space-y-6">
-          <ForecastItemsCard
-            items={filteredItems}
-            weekId={selectedWeek.id}
-            forecastId={selectedWeek.forecast_id}
-            onAddItem={onAddItem}
-            onEditItem={onEditItem}
+    <div className="space-y-4">
+      <Tabs defaultValue="table" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="table">Proyección Semanal</TabsTrigger>
+          <TabsTrigger value="insights">Insights AI</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="table" className="space-y-4">
+          <WeeklyForecastTable 
+            weeks={weeks} 
+            selectedWeek={selectedWeek}
+            onSelectWeek={onSelectWeek} 
           />
           
+          {selectedWeek && (
+            <ForecastItemsCard 
+              items={items.filter(item => item.week_id === selectedWeek.id)}
+              weekId={selectedWeek.id}
+              forecastId={selectedWeek.forecast_id}
+              onAddItem={onAddItem}
+              onEditItem={onEditItem}
+            />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="insights">
           <AIInsightCard 
-            insights={insights || ''} 
-            isLoading={isGenerating}
+            insights={insights || ""} 
+            isGenerating={isGenerating}
             onRequestAPIKey={onRequestAPIKey}
           />
-        </div>
-      )}
-      
-      {isMobile && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Insights de IA</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AIInsightCard 
-                insights={insights || ''} 
-                isLoading={isGenerating}
-                onRequestAPIKey={onRequestAPIKey}
-                isMobile={true}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      
-      <MobileForecastSheet
-        isOpen={isSheetOpen && !!isMobile}
-        onClose={handleCloseSheet}
-        selectedWeek={selectedWeek}
-        items={items}
-        onAddItem={onAddItem}
-        onEditItem={onEditItem}
-      />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

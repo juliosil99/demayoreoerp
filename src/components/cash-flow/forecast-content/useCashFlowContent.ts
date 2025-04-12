@@ -1,22 +1,32 @@
 
-import { useForecastSelection } from "@/hooks/cash-flow/useForecastSelection";
-import { useDialogState } from "@/hooks/cash-flow/useDialogState";
-import { useCashFlowForecasts } from "@/hooks/cash-flow/useCashFlowForecasts";
-import { useCashFlowForecast } from "@/hooks/cash-flow/useCashFlowForecast";
-import { useHistoricalData } from "@/hooks/cash-flow/useHistoricalData";
-import { useForecastEventHandlers } from "@/hooks/cash-flow/useForecastEventHandlers";
+import { useForecastData, useForecastHandlers, useForecastViewState } from "@/hooks/cash-flow/content";
 import { ForecastItem } from "@/types/cashFlow";
-import { useEffect } from "react";
 
 export function useCashFlowContent() {
-  const { 
-    selectedForecastId, 
-    setSelectedForecastId, 
-    handleForecastChange 
-  } = useForecastSelection();
+  // Get data and selection state
+  const {
+    forecast,
+    forecasts,
+    weeks,
+    items,
+    selectedForecastId,
+    handleForecastChange,
+    historicalData,
+    historicalDataCount,
+    isDataLoading,
+    isLoadingForecasts,
+    isGenerating,
+    generateAIForecast,
+    refreshAllForecastData,
+    SUPABASE_URL,
+    createForecastMutation,
+    refetchForecasts,
+    updateForecast,
+    upsertItem,
+    setSelectedForecastId
+  } = useForecastData();
   
-  console.log("[DEBUG] CashFlowForecast - selectedForecastId:", selectedForecastId);
-  
+  // Get UI state management
   const {
     isCreateDialogOpen,
     isGenerateDialogOpen,
@@ -32,70 +42,22 @@ export function useCashFlowContent() {
     closeItemDialog,
     openOpenAIDialog,
     closeOpenAIDialog,
-    handleSelectWeek
-  } = useDialogState();
+    handleSelectWeek,
+    onAddItem,
+    onEditItem
+  } = useForecastViewState();
   
-  console.log("[DEBUG] CashFlowForecast - Dialog States:", { 
-    isCreateDialogOpen, 
-    isGenerateDialogOpen,
-    isItemDialogOpen,
-    isOpenAIDialogOpen
-  });
-  
-  const { 
-    forecasts, 
-    isLoading: isLoadingForecasts,
-    createForecast: createForecastMutation,
-    refetch: refetchForecasts
-  } = useCashFlowForecasts();
-  
-  console.log("[DEBUG] CashFlowForecast - forecasts:", forecasts);
-  
-  const { 
-    forecast, 
-    weeks, 
-    items,
-    isLoading,
-    isGenerating,
-    generateAIForecast,
-    upsertItem,
-    updateForecast,
-    refreshAllForecastData,
-    SUPABASE_URL
-  } = useCashFlowForecast(selectedForecastId);
-  
-  console.log("[DEBUG] CashFlowForecast - forecast data:", { 
-    forecast, 
-    weeksCount: weeks?.length,
-    itemsCount: items?.length,
-    isLoading,
-    isGenerating,
-    status: forecast?.status
-  });
-  
-  const { 
-    historicalData, 
-    isLoading: isLoadingHistoricalData 
-  } = useHistoricalData();
-  
-  console.log("[DEBUG] CashFlowForecast - historicalData counts:", {
-    payablesCount: historicalData?.payables?.length,
-    receivablesCount: historicalData?.receivables?.length,
-    expensesCount: historicalData?.expenses?.length,
-    salesCount: historicalData?.sales?.length,
-    bankAccountsCount: historicalData?.bankAccounts?.length
-  });
-
+  // Get event handlers
   const {
-    handleCreateForecast,
-    handleGenerateForecast,
-    handleSaveItem,
-    handleSaveOpenAIKey
-  } = useForecastEventHandlers({
+    onCreateForecast,
+    onGenerateForecast,
+    onSaveItem,
+    onSaveOpenAIKey
+  } = useForecastHandlers({
     selectedForecastId,
     refreshAllForecastData,
     SUPABASE_URL,
-    createForecastMutation, 
+    createForecastMutation,
     refetchForecasts,
     setSelectedForecastId,
     generateAIForecast,
@@ -104,105 +66,79 @@ export function useCashFlowContent() {
     historicalData
   });
   
-  useEffect(() => {
-    if (selectedForecastId) {
-      console.log("[DEBUG] CashFlowForecast - Refreshing data for forecast:", selectedForecastId);
-      refreshAllForecastData();
-    }
-  }, [selectedForecastId, refreshAllForecastData]);
-  
-  // Handlers
-  const onCreateForecast = async (name: string, startDate: Date) => {
-    console.log("[DEBUG] CashFlowForecast - Creating forecast:", { name, startDate });
-    try {
-      const result = await handleCreateForecast(name, startDate);
-      console.log("[DEBUG] CashFlowForecast - Forecast created:", result);
+  // Refactored version of onCreateForecast that also closes the dialog
+  const handleCreateForecast = async (name: string, startDate: Date) => {
+    const result = await onCreateForecast(name, startDate);
+    if (result.success) {
       closeCreateDialog();
-    } catch (error) {
-      console.error("[DEBUG] CashFlowForecast - Error creating forecast:", error);
     }
+    return result;
   };
   
-  const onGenerateForecast = async (options: Record<string, any>) => {
-    console.log("[DEBUG] CashFlowForecast - Generating forecast with options:", options);
-    await handleGenerateForecast(options);
-    console.log("[DEBUG] CashFlowForecast - Forecast generation completed");
-    closeGenerateDialog();
+  // Refactored version of onGenerateForecast that also closes the dialog
+  const handleGenerateForecast = async (options: Record<string, any>) => {
+    const success = await onGenerateForecast(options);
+    if (success) {
+      closeGenerateDialog();
+    }
+    return success;
   };
   
-  const onSaveItem = async (item: Partial<ForecastItem>) => {
-    console.log("[DEBUG] CashFlowForecast - Saving item:", item);
-    const success = await handleSaveItem(item);
-    console.log("[DEBUG] CashFlowForecast - Item saved:", success);
+  // Refactored version of onSaveItem that also closes the dialog
+  const handleSaveItem = async (item: Partial<ForecastItem>) => {
+    const success = await onSaveItem(item);
     if (success) {
       closeItemDialog();
     }
+    return success;
   };
   
-  const onSaveOpenAIKey = async (apiKey: string) => {
-    console.log("[DEBUG] CashFlowForecast - Saving OpenAI key");
-    const success = await handleSaveOpenAIKey(apiKey);
-    console.log("[DEBUG] CashFlowForecast - OpenAI key saved:", success);
+  // Refactored version of onSaveOpenAIKey that also closes the dialog
+  const handleSaveOpenAIKey = async (apiKey: string) => {
+    const success = await onSaveOpenAIKey(apiKey);
     if (success) {
       closeOpenAIDialog();
-      if (selectedForecastId) {
-        console.log("[DEBUG] CashFlowForecast - Generating forecast with new API key");
-        await generateAIForecast(historicalData);
-        await refreshAllForecastData();
-      }
     }
+    return success;
   };
-  
-  const onAddItem = () => openItemDialog();
-  const onEditItem = (item: ForecastItem) => openItemDialog(item);
-  
-  const historicalDataCount = {
-    payables: historicalData.payables.length,
-    receivables: historicalData.receivables.length,
-    expenses: historicalData.expenses.length,
-    sales: historicalData.sales.length,
-    bankAccounts: historicalData.bankAccounts.length,
-    availableCashBalance: historicalData.availableCashBalance,
-    creditLiabilities: historicalData.creditLiabilities,
-    netPosition: historicalData.netPosition
-  };
-  
-  const isDataLoading = isLoading || isLoadingForecasts || isLoadingHistoricalData;
   
   return {
-    // State values
+    // Data
     forecast,
     forecasts,
     weeks,
     items,
     selectedForecastId,
     selectedWeek,
+    isDataLoading,
+    isLoadingForecasts,
+    isGenerating,
+    editingItem,
+    historicalDataCount,
+    
+    // States
     isCreateDialogOpen,
     isGenerateDialogOpen,
     isItemDialogOpen,
     isOpenAIDialogOpen,
-    editingItem,
-    historicalDataCount,
-    isDataLoading,
-    isLoadingForecasts,
-    isGenerating,
     
-    // Actions & Handlers
+    // Actions
     handleForecastChange,
-    onCreateForecast,
-    onGenerateForecast,
-    onSaveItem,
-    onSaveOpenAIKey,
+    onCreateForecast: handleCreateForecast,
+    onGenerateForecast: handleGenerateForecast,
+    onSaveItem: handleSaveItem,
+    onSaveOpenAIKey: handleSaveOpenAIKey,
     onAddItem,
     onEditItem,
     handleSelectWeek,
+    
+    // Dialog actions
     openCreateDialog,
     closeCreateDialog,
     openGenerateDialog,
     closeGenerateDialog,
-    openItemDialog,
     closeItemDialog,
-    openOpenAIDialog,
     closeOpenAIDialog,
+    openOpenAIDialog
   };
 }

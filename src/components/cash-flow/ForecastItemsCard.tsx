@@ -1,158 +1,111 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, TrendingDown, TrendingUp } from "lucide-react";
-import { ForecastItem, ForecastWeek } from "@/types/cashFlow";
+import { Plus } from "lucide-react";
+import { ForecastItem } from "@/types/cashFlow";
 
-interface ForecastItemsCardProps {
-  selectedWeek?: ForecastWeek;
+export interface ForecastItemsCardProps {
   items: ForecastItem[];
-  onAddItem?: () => void;
-  onEditItem?: (item: ForecastItem) => void;
+  weekId: string;
+  forecastId: string;
+  onAddItem: () => void;
+  onEditItem: (item: ForecastItem) => void;
 }
 
-export function ForecastItemsCard({ 
-  selectedWeek, 
+export function ForecastItemsCard({
   items,
+  weekId,
+  forecastId,
   onAddItem,
   onEditItem
 }: ForecastItemsCardProps) {
-  // Filter items for the selected week
-  const weekItems = selectedWeek 
-    ? items.filter(item => item.week_id === selectedWeek.id)
-    : [];
+  // Group items by type
+  const inflows = items.filter(item => item.type === 'inflow');
+  const outflows = items.filter(item => item.type === 'outflow');
   
-  // Group items by type (inflow/outflow)
-  const inflowItems = weekItems.filter(item => item.type === 'inflow');
-  const outflowItems = weekItems.filter(item => item.type === 'outflow');
-  
-  // Source label mapping
-  const sourceLabels: Record<string, string> = {
-    'historical': 'Histórico',
-    'ai_predicted': 'Predicción IA',
-    'manual': 'Manual',
-    'recurring': 'Recurrente'
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
   };
-
+  
   return (
-    <Card className="col-span-3">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>
-          {selectedWeek 
-            ? `Detalle de Semana ${selectedWeek.week_number}` 
-            : 'Seleccione una semana para ver detalles'
-          }
-        </CardTitle>
-        {selectedWeek && (
-          <Button variant="outline" size="sm" onClick={onAddItem}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Agregar Elemento
+    <Card className="w-full">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg flex justify-between items-center">
+          <span>Detalles del Pronóstico</span>
+          <Button size="sm" variant="outline" onClick={onAddItem}>
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            <span>Agregar</span>
           </Button>
-        )}
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        {selectedWeek ? (
-          <div className="space-y-4">
-            {inflowItems.length > 0 && (
-              <div>
-                <h3 className="flex items-center text-sm font-medium mb-2 text-green-500">
-                  <TrendingUp className="mr-1 h-4 w-4" />
-                  Entradas
-                </h3>
-                <Table>
-                  <TableHeader className="bg-gray-900 text-white">
-                    <TableRow>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Origen</TableHead>
-                      <TableHead className="text-right">Monto</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {inflowItems.map(item => (
-                      <TableRow 
-                        key={item.id} 
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => onEditItem?.(item)}
-                      >
-                        <TableCell className="font-medium">{item.category}</TableCell>
-                        <TableCell>{item.description || '-'}</TableCell>
-                        <TableCell>{sourceLabels[item.source] || item.source}</TableCell>
-                        <TableCell className="text-right">
-                          ${item.amount.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {/* Total row */}
-                    <TableRow className="font-bold">
-                      <TableCell colSpan={3} className="text-right">Total Entradas</TableCell>
-                      <TableCell className="text-right text-green-500">
-                        ${inflowItems.reduce((sum, item) => sum + (item.amount || 0), 0)
-                          .toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-            
-            {outflowItems.length > 0 && (
-              <div>
-                <h3 className="flex items-center text-sm font-medium mb-2 text-red-500">
-                  <TrendingDown className="mr-1 h-4 w-4" />
-                  Salidas
-                </h3>
-                <Table>
-                  <TableHeader className="bg-gray-900 text-white">
-                    <TableRow>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Origen</TableHead>
-                      <TableHead className="text-right">Monto</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {outflowItems.map(item => (
-                      <TableRow 
-                        key={item.id} 
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => onEditItem?.(item)}
-                      >
-                        <TableCell className="font-medium">{item.category}</TableCell>
-                        <TableCell>{item.description || '-'}</TableCell>
-                        <TableCell>{sourceLabels[item.source] || item.source}</TableCell>
-                        <TableCell className="text-right">
-                          ${item.amount.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {/* Total row */}
-                    <TableRow className="font-bold">
-                      <TableCell colSpan={3} className="text-right">Total Salidas</TableCell>
-                      <TableCell className="text-right text-red-500">
-                        ${outflowItems.reduce((sum, item) => sum + (item.amount || 0), 0)
-                          .toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-            
-            {inflowItems.length === 0 && outflowItems.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No hay elementos para esta semana. Haga clic en "Agregar Elemento" para comenzar.
-              </div>
-            )}
+      <CardContent className="pb-2">
+        {inflows.length === 0 && outflows.length === 0 ? (
+          <div className="text-muted-foreground text-center py-6">
+            No hay elementos para esta semana. 
+            Haga clic en "Agregar" para crear uno nuevo.
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            Seleccione una semana de la tabla para ver los detalles.
+          <div className="space-y-4">
+            {inflows.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-2">Ingresos</h3>
+                <div className="space-y-2">
+                  {inflows.map(item => (
+                    <div
+                      key={item.id}
+                      onClick={() => onEditItem(item)} 
+                      className="p-2 border rounded-lg cursor-pointer hover:bg-gray-50 flex justify-between"
+                    >
+                      <div>
+                        <div className="font-medium">{item.category}</div>
+                        {item.description && <div className="text-sm text-muted-foreground">{item.description}</div>}
+                      </div>
+                      <div className="font-medium text-green-600">
+                        {formatCurrency(item.amount)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {outflows.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-2">Egresos</h3>
+                <div className="space-y-2">
+                  {outflows.map(item => (
+                    <div
+                      key={item.id}
+                      onClick={() => onEditItem(item)}
+                      className="p-2 border rounded-lg cursor-pointer hover:bg-gray-50 flex justify-between"
+                    >
+                      <div>
+                        <div className="font-medium">{item.category}</div>
+                        {item.description && <div className="text-sm text-muted-foreground">{item.description}</div>}
+                      </div>
+                      <div className="font-medium text-red-600">
+                        {formatCurrency(item.amount)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
+      {(inflows.length > 0 || outflows.length > 0) && (
+        <CardFooter className="pt-2">
+          <Button variant="ghost" className="w-full" onClick={onAddItem}>
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            <span>Agregar nuevo elemento</span>
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }

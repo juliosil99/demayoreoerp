@@ -53,13 +53,15 @@ export function MobileForecastSheet({
         </SheetHeader>
         
         <div className="px-4 pb-16 overflow-y-auto h-full">
-          <ForecastItemsCard
-            items={weekItems}
-            weekId={selectedWeek?.id || ''}
-            forecastId={selectedWeek?.forecast_id || ''}
-            onAddItem={onAddItem}
-            onEditItem={onEditItem}
-          />
+          {selectedWeek && (
+            <ForecastItemsCard
+              items={weekItems}
+              weekId={selectedWeek.id}
+              forecastId={selectedWeek.forecast_id}
+              onAddItem={onAddItem}
+              onEditItem={onEditItem}
+            />
+          )}
         </div>
       </SheetContent>
     </Sheet>
