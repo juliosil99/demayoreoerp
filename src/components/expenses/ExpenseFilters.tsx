@@ -2,6 +2,7 @@
 import React from "react";
 import { useExpenseQueries } from "./hooks/useExpenseQueries";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Filters = {
   supplier_id?: string;
@@ -17,6 +18,7 @@ interface ExpenseFiltersProps {
 
 export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps) {
   const { recipients, bankAccounts, isLoading } = useExpenseQueries();
+  const isMobile = useIsMobile();
 
   const handleRecipientChange = (value: string) => {
     onFiltersChange({ ...filters, supplier_id: value === "all" ? undefined : value });
@@ -45,15 +47,15 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
   }
 
   return (
-    <div className="flex gap-4">
+    <div className="flex flex-col sm:flex-row gap-4">
       <Select
         value={filters.supplier_id || "all"}
         onValueChange={handleRecipientChange}
       >
-        <SelectTrigger className="w-[250px] bg-black text-white border-none rounded-md">
+        <SelectTrigger className="w-full sm:w-[250px] bg-black text-white border-none rounded-md">
           <SelectValue placeholder="Todos los destinatarios" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-80">
           <SelectItem value="all">Todos los destinatarios</SelectItem>
           
           {groupedRecipients.supplier.length > 0 && (
@@ -84,10 +86,10 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
         value={filters.account_id?.toString() || "all"}
         onValueChange={handleAccountChange}
       >
-        <SelectTrigger className="w-[250px] bg-black text-white border-none rounded-md">
+        <SelectTrigger className="w-full sm:w-[250px] bg-black text-white border-none rounded-md">
           <SelectValue placeholder="Todas las cuentas" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-80">
           <SelectItem value="all">Todas las cuentas</SelectItem>
           {bankAccounts.map((account) => (
             <SelectItem key={account.id} value={account.id.toString()}>

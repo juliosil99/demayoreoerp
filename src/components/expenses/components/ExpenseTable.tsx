@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/table";
 import { ExpenseRow } from "./ExpenseRow";
 import { ExpenseTableHeader } from "./ExpenseTableHeader";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -33,21 +34,25 @@ export function ExpenseTable({
   onDelete,
   onEdit,
 }: ExpenseTableProps) {
+  const isMobile = useIsMobile();
+
   return (
-    <div className="overflow-hidden rounded-md">
-      <Table>
-        <ExpenseTableHeader />
-        <TableBody>
-          {expenses.map((expense) => (
-            <ExpenseRow
-              key={expense.id}
-              expense={expense}
-              onDelete={onDelete}
-              onEdit={onEdit}
-            />
-          ))}
-        </TableBody>
-      </Table>
+    <div className="overflow-x-auto">
+      <div className={`rounded-md ${isMobile ? "min-w-[800px]" : ""}`}>
+        <Table>
+          <ExpenseTableHeader />
+          <TableBody>
+            {expenses.map((expense) => (
+              <ExpenseRow
+                key={expense.id}
+                expense={expense}
+                onDelete={onDelete}
+                onEdit={onEdit}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

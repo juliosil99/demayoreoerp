@@ -4,6 +4,7 @@ import { ExpenseActionMenu } from "./ExpenseActionMenu";
 import { ExpenseDeleteDialog } from "./ExpenseDeleteDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -35,6 +36,7 @@ export function ExpenseActions({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deletionLog, setDeletionLog] = useState<string[]>([]);
   const [isLogOpen, setIsLogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleDeleteClick = async () => {
     try {
@@ -67,7 +69,7 @@ export function ExpenseActions({
       />
 
       <Dialog open={isLogOpen} onOpenChange={setIsLogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className={`${isMobile ? "w-[95vw]" : "max-w-2xl"} max-h-[80vh] overflow-y-auto`}>
           <DialogHeader>
             <DialogTitle>Log de eliminación del gasto</DialogTitle>
           </DialogHeader>

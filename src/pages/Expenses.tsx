@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,8 +14,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PlusIcon, ImportIcon } from "lucide-react";
-import { useState, useCallback, useEffect } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useState, useCallback } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
@@ -51,6 +50,7 @@ export default function Expenses() {
   const { user } = useAuth();
   const [filters, setFilters] = useState<Filters>({});
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data: expenses, isLoading, refetch } = useQuery({
     queryKey: ["expenses", user?.id, filters],
@@ -72,27 +72,20 @@ export default function Expenses() {
         `)
         .eq('user_id', user!.id);
 
-      // Add supplier filter
       if (filters.supplier_id && filters.supplier_id !== "all") {
         query = query.eq('supplier_id', filters.supplier_id);
       }
       
-      // Add account filter
       if (filters.account_id) {
         query = query.eq('account_id', filters.account_id);
       }
       
       if (filters.unreconciled) {
-        // Modified filter logic: 
-        // We want expenses that BOTH:
-        // 1. Have no expense_invoice_relations
-        // 2. AND are either not reconciled or have reconciled set to false
         query = query.is('expense_invoice_relations', null);
         query = query.or('reconciled.is.null,reconciled.eq.false');
       }
       
       if (filters.from_payable) {
-        // Filter for expenses that are associated with payables
         query = query.not('accounts_payable', 'is', null);
       }
 
@@ -115,25 +108,25 @@ export default function Expenses() {
   }, [refetch]);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Gastos</h1>
-        <div className="flex gap-2">
+    <div className="container mx-auto py-4 md:py-6 px-2 md:px-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-xl md:text-2xl font-bold">Gastos</h1>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <ExpenseImporter onSuccess={refetch}>
-            <Button variant="default" className="bg-black text-white hover:bg-gray-800">
+            <Button variant="default" className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
               <ImportIcon className="w-4 h-4 mr-2" />
-              Importar Gastos
+              <span className="whitespace-nowrap">Importar Gastos</span>
             </Button>
           </ExpenseImporter>
 
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button variant="default" className="bg-white text-black border border-gray-300 hover:bg-gray-100">
+              <Button variant="default" className="bg-white text-black border border-gray-300 hover:bg-gray-100 w-full sm:w-auto">
                 <PlusIcon className="w-4 h-4 mr-2" />
-                Agregar Gasto
+                <span className="whitespace-nowrap">Agregar Gasto</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Agregar Nuevo Gasto</DialogTitle>
               </DialogHeader>
@@ -147,7 +140,7 @@ export default function Expenses() {
       </div>
 
       <div className="space-y-4">
-        <div className="p-4 bg-white rounded-md">
+        <div className="p-2 md:p-4 bg-white rounded-md overflow-x-auto">
           <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
         </div>
         
