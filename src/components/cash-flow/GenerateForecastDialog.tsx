@@ -1,103 +1,174 @@
 
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
+import { Button } from "../ui/button";
+import { Loader2 } from "lucide-react";
+import { Separator } from "../ui/separator";
 import { DataSourcesPanel } from "./forecast-generation/DataSourcesPanel";
 import { ForecastOptionsPanel } from "./forecast-generation/ForecastOptionsPanel";
-import { ForecastOptions } from "./forecast-generation/types";
+import { ForecastDataCount } from "./forecast-generation/types";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { format, parseISO, differenceInDays } from "date-fns";
+import { Switch } from "../ui/switch";
+import { Label } from "../ui/label";
+import { CashFlowForecast } from "@/types/cashFlow";
 
 interface GenerateForecastDialogProps {
   isOpen: boolean;
-  onClose: () => void;
-  onGenerate: (options: ForecastOptions) => void;
   isLoading: boolean;
-  historicalDataCount: {
-    payables: number;
-    receivables: number;
-    expenses: number;
-    sales: number;
-    bankAccounts: number;
-    totalBankBalance?: number;
-    availableCashBalance?: number;
-    creditLiabilities?: number;
-    netPosition?: number;
-  };
+  forecast?: CashFlowForecast | null;
+  historicalDataCount: ForecastDataCount;
+  onClose: () => void;
+  onGenerate: (options: Record<string, any>) => void;
 }
 
 export function GenerateForecastDialog({
   isOpen,
-  onClose,
-  onGenerate,
   isLoading,
-  historicalDataCount
+  forecast,
+  historicalDataCount,
+  onClose,
+  onGenerate
 }: GenerateForecastDialogProps) {
-  console.log("[DEBUG] GenerateForecastDialog - Render with props:", { 
-    isOpen, 
-    isLoading, 
-    historicalDataCount 
+  console.log("[DEBUG] GenerateForecastDialog - Render with props:", {
+    isOpen,
+    isLoading,
+    historicalDataCount,
+    forecast
   });
   
-  const [options, setOptions] = useState<ForecastOptions>({
-    useAI: true,
-    includeHistoricalTrends: true,
-    includeSeasonality: true,
-    includePendingPayables: true,
-    includeRecurringExpenses: true,
-    includeCreditPayments: true,
-    forecastHorizonWeeks: 13,
-    confidenceLevel: 0.8,
-    startWithCurrentBalance: true
-  });
-
-  const handleOptionChange = <K extends keyof ForecastOptions>(option: K, value: ForecastOptions[K]) => {
-    console.log("[DEBUG] GenerateForecastDialog - Option changed:", { option, value });
-    setOptions(prev => ({
-      ...prev,
-      [option]: value
-    }));
-  };
-
+  const isMobile = useIsMobile();
+  
+  // State for forecast options
+  const [useAI, setUseAI] = React.useState(true);
+  const [includeHistoricalTrends, setIncludeHistoricalTrends] = React.useState(true);
+  const [includeSeasonality, setIncludeSeasonality] = React.useState(true);
+  const [includePendingPayables, setIncludePendingPayables] = React.useState(true);
+  const [includeRecurringExpenses, setIncludeRecurringExpenses] = React.useState(true);
+  const [includeCreditPayments, setIncludeCreditPayments] = React.useState(true);
+  const [startWithCurrentBalance, setStartWithCurrentBalance] = React.useState(true);
+  const [reconcileBalances, setReconcileBalances] = React.useState(false);
+  
+  // Determine if balances are out of date
+  const needsBalanceReconciliation = React.useMemo(() => {
+    if (!forecast || !forecast.last_reconciled_date) return true;
+    
+    const lastReconciled = parseISO(forecast.last_reconciled_date);
+    const today = new Date();
+    const daysSinceUpdate = differenceInDays(today, lastReconciled);
+    
+    // If it's been more than 7 days since the last reconciliation
+    return daysSinceUpdate > 7;
+  }, [forecast]);
+  
+  // Reset options when the dialog opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setReconcileBalances(needsBalanceReconciliation);
+    }
+  }, [isOpen, needsBalanceReconciliation]);
+  
   const handleGenerate = () => {
-    console.log("[DEBUG] GenerateForecastDialog - Generate button clicked with options:", options);
+    const options = {
+      useAI,
+      includeHistoricalTrends,
+      includeSeasonality,
+      includePendingPayables,
+      includeRecurringExpenses,
+      includeCreditPayments,
+      startWithCurrentBalance,
+      reconcileBalances,
+      useRollingForecast: true
+    };
     onGenerate(options);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      console.log("[DEBUG] GenerateForecastDialog - Dialog state changed:", open);
-      if (!open) onClose();
-    }}>
-      <DialogContent className="sm:max-w-[550px]">
+    <Dialog open={isOpen} onOpenChange={isLoading ? undefined : onClose}>
+      <DialogContent className={`max-w-3xl ${isMobile ? 'p-4 h-[90vh] overflow-y-auto' : ''}`}>
         <DialogHeader>
-          <DialogTitle>Generar Pronóstico con IA</DialogTitle>
-          <DialogDescription>
-            Configure las opciones para generar su pronóstico de flujo de caja.
-          </DialogDescription>
+          <DialogTitle>Actualizar Pronóstico de Flujo de Efectivo</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6 py-4">
-          <DataSourcesPanel historicalDataCount={{
-            ...historicalDataCount,
-            bankAccountsCount: historicalDataCount.bankAccounts
-          }} />
+
+        <div className="space-y-6 my-4">
+          {/* Reconciliation Option */}
+          <div className="bg-muted/40 rounded-lg p-4 space-y-3">
+            <h3 className="text-lg font-medium">Reconciliación de Saldos</h3>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="reconcile-balances" className="font-medium">
+                    Confirmar saldos actuales
+                  </Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {needsBalanceReconciliation 
+                    ? "Los saldos no han sido confirmados recientemente" 
+                    : "Saldos confirmados recientemente"}
+                </p>
+              </div>
+              <Switch 
+                id="reconcile-balances" 
+                checked={reconcileBalances}
+                onCheckedChange={setReconcileBalances}
+              />
+            </div>
+            
+            {reconcileBalances && (
+              <div className="rounded-md bg-blue-50 p-3 mt-2">
+                <div className="flex">
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium">Saldos que serán confirmados:</p>
+                    <ul className="mt-1 list-disc list-inside">
+                      <li>Disponible en cuentas de banco y efectivo: {new Intl.NumberFormat('es-MX', {
+                        style: 'currency', currency: 'MXN'
+                      }).format(historicalDataCount.availableCashBalance || 0)}</li>
+                      <li>Pasivos en tarjetas de crédito: {new Intl.NumberFormat('es-MX', {
+                        style: 'currency', currency: 'MXN'
+                      }).format(historicalDataCount.creditLiabilities || 0)}</li>
+                      <li>Posición neta: {new Intl.NumberFormat('es-MX', {
+                        style: 'currency', currency: 'MXN'
+                      }).format(historicalDataCount.netPosition || 0)}</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           
-          <ForecastOptionsPanel 
-            options={options}
-            onOptionChange={handleOptionChange}
-          />
+          <Separator />
+
+          {/* Data Sources and Settings Panels */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DataSourcesPanel historicalDataCount={historicalDataCount} />
+            
+            <ForecastOptionsPanel 
+              useAI={useAI}
+              includeHistoricalTrends={includeHistoricalTrends}
+              includeSeasonality={includeSeasonality}
+              includePendingPayables={includePendingPayables}
+              includeRecurringExpenses={includeRecurringExpenses}
+              includeCreditPayments={includeCreditPayments}
+              startWithCurrentBalance={startWithCurrentBalance}
+              onUseAIChange={setUseAI}
+              onIncludeHistoricalTrendsChange={setIncludeHistoricalTrends}
+              onIncludeSeasonalityChange={setIncludeSeasonality}
+              onIncludePendingPayablesChange={setIncludePendingPayables}
+              onIncludeRecurringExpensesChange={setIncludeRecurringExpenses}
+              onIncludeCreditPaymentsChange={setIncludeCreditPayments}
+              onStartWithCurrentBalanceChange={setStartWithCurrentBalance}
+            />
+          </div>
         </div>
-        
+
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button
-            type="button"
-            onClick={handleGenerate}
-            disabled={isLoading}
-            className={isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-          >
-            {isLoading ? 'Generando...' : 'Generar Pronóstico'}
+          <Button onClick={handleGenerate} disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {reconcileBalances ? 'Actualizar y Confirmar Saldos' : 'Actualizar Pronóstico'}
           </Button>
         </DialogFooter>
       </DialogContent>

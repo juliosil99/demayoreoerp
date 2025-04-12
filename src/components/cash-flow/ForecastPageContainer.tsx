@@ -1,7 +1,6 @@
 
 import React from "react";
 import { ForecastHeader } from "@/components/cash-flow/ForecastHeader";
-import { ForecastSelector } from "@/components/cash-flow/ForecastSelector";
 import { EmptyForecastState } from "@/components/cash-flow/EmptyForecastState";
 import { ForecastContent } from "@/components/cash-flow/ForecastContent";
 import { CashFlowForecast, ForecastWeek, ForecastItem } from "@/types/cashFlow";
@@ -18,7 +17,7 @@ interface ForecastPageContainerProps {
   isLoading: boolean;
   isLoadingForecasts: boolean;
   isGenerating: boolean;
-  onForecastChange: (id: string) => void;
+  onForecastChange?: (id: string) => void;
   onCreateForecastClick: () => void;
   onGenerateForecastClick: () => void;
   onSelectWeek: (week: ForecastWeek) => void;
@@ -61,19 +60,6 @@ export function ForecastPageContainer({
         isMobile={isMobile}
       />
       
-      {(forecasts?.length > 0 || isLoadingForecasts) && (
-        <ForecastSelector 
-          forecasts={forecasts}
-          selectedForecastId={selectedForecastId}
-          forecast={forecast}
-          isLoading={isDataLoading}
-          isGenerating={isGenerating}
-          onForecastChange={onForecastChange}
-          onGenerateClick={onGenerateForecastClick}
-          isMobile={isMobile}
-        />
-      )}
-      
       {selectedForecastId && hasWeeks ? (
         <ForecastContent 
           weeks={weeks}
@@ -86,6 +72,7 @@ export function ForecastPageContainer({
           onAddItem={onAddItem}
           onEditItem={onEditItem}
           onRequestAPIKey={onRequestAPIKey}
+          onUpdateForecast={onGenerateForecastClick}
         />
       ) : (
         <div className="mt-20 text-center">

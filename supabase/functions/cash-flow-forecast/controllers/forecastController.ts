@@ -4,6 +4,7 @@ import { getOpenAIApiKey } from "../services/apiKeyService.ts";
 import { verifyForecast } from "../services/forecastService.ts";
 import { generateAIInsights } from "../services/aiService.ts";
 import { updateForecastWithInsights, createOrUpdateForecastWeeks } from "../services/databaseService.ts";
+import { format } from "https://esm.sh/date-fns@4.1.0";
 
 export async function handleForecastGeneration(req: Request, supabaseClient: any) {
   // Parse request body
@@ -18,7 +19,8 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
       hasConfig: !!requestBody.config,
       availableCashBalance: requestBody.historicalData?.availableCashBalance,
       creditLiabilities: requestBody.historicalData?.creditLiabilities,
-      netPosition: requestBody.historicalData?.netPosition
+      netPosition: requestBody.historicalData?.netPosition,
+      balanceHistoryEntries: requestBody.historicalData?.balance_history?.length
     }));
     
     console.log("[DEBUG - Edge Function - Balance Tracking] Detailed config:", 
@@ -59,12 +61,14 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
   const creditLiabilities = historicalData.creditLiabilities || 0;
   const netPosition = historicalData.netPosition || 0;
   const upcomingCreditPayments = historicalData.upcomingCreditPayments || [];
+  const balanceHistory = historicalData.balance_history || [];
   
-  console.log("[DEBUG - Edge Function - Balance Tracking] Financial balances:", {
+  console.log("[DEBUG - Edge Function - Rolling Forecast] Financial balances:", {
     availableCashBalance,
     creditLiabilities,
     netPosition,
-    upcomingCreditPaymentsCount: upcomingCreditPayments.length
+    upcomingCreditPaymentsCount: upcomingCreditPayments.length,
+    balanceHistoryEntries: balanceHistory.length
   });
   
   // Generate AI insights based on historical data
@@ -103,6 +107,11 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
     insights = "AI-powered insights were not enabled for this forecast.";
   }
   
+  // Prepare additional data for rolling forecast
+  const now = new Date();
+  const lastReconciledDate = config?.reconcileBalances ? format(now, 'yyyy-MM-dd') : undefined;
+  const isBalanceConfirmed = config?.reconcileBalances || false;
+  
   // Update the forecast with AI insights and financial balances
   const updateError = await updateForecastWithInsights(
     supabaseClient,
@@ -111,7 +120,9 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
     config,
     availableCashBalance,
     creditLiabilities,
-    netPosition
+    netPosition,
+    lastReconciledDate,
+    isBalanceConfirmed
   );
   
   if (updateError) {
@@ -128,7 +139,8 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
   console.log("[DEBUG - Edge Function - Balance Tracking] Before creating forecast weeks:", {
     startDate: forecastStartDate.toISOString(),
     availableCashBalance,
-    startWithCurrentBalance: config?.startWithCurrentBalance
+    startWithCurrentBalance: config?.startWithCurrentBalance,
+    useRollingForecast: config?.useRollingForecast
   });
   
   const weeksResult = await createOrUpdateForecastWeeks(

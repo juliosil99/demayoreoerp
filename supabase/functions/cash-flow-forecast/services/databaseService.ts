@@ -8,26 +8,41 @@ export async function updateForecastWithInsights(
   config: any,
   availableCashBalance: number,
   creditLiabilities: number,
-  netPosition: number
+  netPosition: number,
+  lastReconciledDate?: string,
+  isBalanceConfirmed?: boolean
 ) {
-  console.log("[DEBUG - Edge Function - Balance Tracking] Updating forecast with financial balances:", {
+  console.log("[DEBUG - Edge Function - Rolling Forecast] Updating forecast with financial balances:", {
     forecastId,
     availableCashBalance,
     creditLiabilities,
-    netPosition
+    netPosition,
+    lastReconciledDate,
+    isBalanceConfirmed
   });
+
+  const updateData: any = { 
+    ai_insights: insights,
+    status: "active",
+    config: config || {},
+    initial_balance: availableCashBalance, // For backward compatibility
+    available_cash_balance: availableCashBalance,
+    credit_liabilities: creditLiabilities,
+    net_position: netPosition
+  };
+  
+  // Add reconciliation data if available (for rolling forecasts)
+  if (lastReconciledDate) {
+    updateData.last_reconciled_date = lastReconciledDate;
+  }
+  
+  if (isBalanceConfirmed !== undefined) {
+    updateData.is_balance_confirmed = isBalanceConfirmed;
+  }
 
   const { error: updateError } = await supabaseClient
     .from("cash_flow_forecasts")
-    .update({ 
-      ai_insights: insights,
-      status: "active",
-      config: config || {},
-      initial_balance: availableCashBalance, // For backward compatibility
-      available_cash_balance: availableCashBalance,
-      credit_liabilities: creditLiabilities,
-      net_position: netPosition
-    })
+    .update(updateData)
     .eq("id", forecastId);
 
   if (updateError) {
@@ -48,12 +63,13 @@ export async function createOrUpdateForecastWeeks(
   config: any,
   availableCashBalance: number
 ) {
-  console.log("[DEBUG - Edge Function - Balance Tracking] Creating/updating forecast weeks with:", {
+  console.log("[DEBUG - Edge Function - Rolling Forecast] Creating/updating forecast weeks with:", {
     forecastId,
     startDate: forecastStartDate.toISOString(),
     horizonWeeks: forecastHorizonWeeks,
     availableCashBalance,
-    configStartWithCurrentBalance: config?.startWithCurrentBalance
+    configStartWithCurrentBalance: config?.startWithCurrentBalance,
+    useRollingForecast: config?.useRollingForecast
   });
 
   // Check if forecast weeks exist already
@@ -71,6 +87,52 @@ export async function createOrUpdateForecastWeeks(
 
   console.log("[DEBUG - Edge Function] Retrieved weeks:", existingWeeks.length);
   
+  // For rolling forecasts, we always recreate the weeks from the current date
+  if (config?.useRollingForecast) {
+    console.log("[DEBUG - Edge Function - Rolling Forecast] Handling rolling forecast");
+    
+    // First delete existing weeks
+    if (existingWeeks.length > 0) {
+      console.log("[DEBUG - Edge Function] Deleting existing weeks for rolling forecast");
+      const { error: deleteError } = await supabaseClient
+        .from("forecast_weeks")
+        .delete()
+        .eq("forecast_id", forecastId);
+        
+      if (deleteError) {
+        console.error("[DEBUG - Edge Function] Error deleting existing weeks:", deleteError);
+        return { success: false, error: "Failed to delete existing weeks" };
+      }
+    }
+    
+    // Generate new weeks based on current date
+    console.log("[DEBUG - Edge Function] Generating new rolling forecast weeks");
+    const weeksToCreate = generateForecastWeeks(
+      forecastId,
+      forecastStartDate,
+      forecastHorizonWeeks,
+      forecastPredictions,
+      historicalData,
+      config,
+      availableCashBalance
+    );
+    
+    console.log("[DEBUG - Edge Function] Inserting new rolling forecast weeks:", weeksToCreate.length);
+    
+    const { error: insertError } = await supabaseClient
+      .from("forecast_weeks")
+      .insert(weeksToCreate);
+      
+    if (insertError) {
+      console.error("[DEBUG - Edge Function] Error creating rolling forecast weeks:", insertError);
+      return { success: false, error: "Failed to create rolling forecast weeks" };
+    }
+    
+    console.log("[DEBUG - Edge Function] Successfully created rolling forecast weeks");
+    return { success: true };
+  }
+  
+  // Standard forecasts (non-rolling)
   // If no weeks exist, create them
   if (existingWeeks.length === 0) {
     console.log("[DEBUG - Edge Function - Balance Tracking] No forecast weeks found. Creating weeks with initial balance:", availableCashBalance);
@@ -131,7 +193,9 @@ export async function createOrUpdateForecastWeeks(
           week_start_date: weekUpdate.week_start_date,
           week_end_date: weekUpdate.week_end_date,
           starting_balance: weekUpdate.starting_balance,
-          ending_balance: weekUpdate.ending_balance
+          ending_balance: weekUpdate.ending_balance,
+          balance_confidence: weekUpdate.balance_confidence,
+          is_reconciled: weekUpdate.is_reconciled
         })
         .eq("id", existingWeek.id);
 

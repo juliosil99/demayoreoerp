@@ -3,7 +3,7 @@ import { useForecastSelection } from "@/hooks/cash-flow/useForecastSelection";
 import { useCashFlowForecasts } from "@/hooks/cash-flow/useCashFlowForecasts";
 import { useCashFlowForecast } from "@/hooks/cash-flow/useCashFlowForecast";
 import { useHistoricalData } from "@/hooks/cash-flow/useHistoricalData";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export function useForecastData() {
   const { 
@@ -22,6 +22,13 @@ export function useForecastData() {
   } = useCashFlowForecasts();
   
   console.log("[DEBUG] CashFlowForecast - forecasts:", forecasts);
+  
+  // Auto-select the first forecast if none is selected (for rolling forecast)
+  useEffect(() => {
+    if (!selectedForecastId && forecasts && forecasts.length > 0) {
+      setSelectedForecastId(forecasts[0].id);
+    }
+  }, [forecasts, selectedForecastId, setSelectedForecastId]);
   
   const { 
     forecast, 

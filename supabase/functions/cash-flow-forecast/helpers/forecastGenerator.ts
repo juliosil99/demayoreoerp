@@ -1,6 +1,6 @@
 
 import { format } from "https://esm.sh/date-fns@4.1.0";
-import { addDays } from "https://esm.sh/date-fns@4.1.0";
+import { addDays, parseISO, differenceInDays } from "https://esm.sh/date-fns@4.1.0";
 import { calculateAverageAmount } from "./dataUtils.ts";
 
 /**
@@ -21,7 +21,8 @@ export function generateForecastWeeks(
     numWeeks,
     aiPredictionsCount: aiPredictions?.length || 0,
     config,
-    initialAvailableCashBalance
+    initialAvailableCashBalance,
+    balanceHistoryCount: historicalData?.balance_history?.length || 0
   });
   
   console.log("[DEBUG - Edge Function - Balance Tracking] Historical data balances:", {
@@ -85,6 +86,24 @@ export function generateForecastWeeks(
     });
   }
 
+  // For rolling forecasts, determine balance confidence based on data age
+  const determineBalanceConfidence = (weekIndex: number) => {
+    // For rolling forecasts with history data
+    if (config?.useRollingForecast && historicalData?.balance_history?.length > 0) {
+      // First week is based on current confirmed data
+      if (weekIndex === 0) return 'high';
+      // Next few weeks are medium confidence
+      if (weekIndex < 4) return 'medium';
+      // Rest are low confidence
+      return 'low';
+    }
+    
+    // Default confidence levels based on week number
+    if (weekIndex < 4) return 'high';
+    if (weekIndex < 8) return 'medium';
+    return 'low';
+  };
+
   for (let i = 0; i < numWeeks; i++) {
     const weekNumber = i + 1;
     const weekStart = addDays(startDate, i * 7);
@@ -133,8 +152,9 @@ export function generateForecastWeeks(
         ? 1 + (0.1 * Math.sin(i * Math.PI / 6)) // Sine wave over approximately 3 months
         : 1;
         
-      // Add random variation
-      const randomVariation = 0.9 + (Math.random() * 0.2); // +/- 10% random variation
+      // Add random variation - reduce randomness for rolling forecasts
+      const randomVariationRange = config?.useRollingForecast ? 0.1 : 0.2; // +/- 5% for rolling, 10% for normal
+      const randomVariation = 1 - (randomVariationRange/2) + (Math.random() * randomVariationRange);
       
       predictedInflows = Math.round(baseInflow * growthFactor * seasonalFactor * randomVariation);
       
@@ -174,9 +194,13 @@ export function generateForecastWeeks(
         predictedInflows,
         predictedOutflows,
         netCashFlow,
-        endingBalance
+        endingBalance,
+        balanceConfidence: determineBalanceConfidence(i)
       });
     }
+    
+    // For rolling forecasts, mark if this week is reconciled with actual data
+    const isReconciled = config?.useRollingForecast && i === 0 && config?.reconcileBalances;
     
     weeks.push({
       forecast_id: forecastId,
@@ -187,7 +211,9 @@ export function generateForecastWeeks(
       predicted_outflows: predictedOutflows,
       confidence_score: confidenceScore,
       starting_balance: startingBalance,
-      ending_balance: endingBalance
+      ending_balance: endingBalance,
+      balance_confidence: determineBalanceConfidence(i),
+      is_reconciled: isReconciled
     });
   }
   

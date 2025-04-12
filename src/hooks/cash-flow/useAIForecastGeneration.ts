@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { ForecastHistoricalData } from "@/types/cashFlow";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 export function useAIForecastGeneration(
   forecastId?: string,
@@ -25,13 +26,15 @@ export function useAIForecastGeneration(
         includePendingPayables: true,
         includeRecurringExpenses: true,
         includeCreditPayments: true,
-        startWithCurrentBalance: true
+        startWithCurrentBalance: true,
+        useRollingForecast: true, // New option for rolling forecast
+        forecastHorizonWeeks: 13 // Default to 13 weeks
       };
       
       const effectiveOptions = options || defaultConfig;
 
       // For debugging
-      console.log("[DEBUG - Balance Tracking] Generating forecast with data:", { 
+      console.log("[DEBUG - Rolling Forecast] Generating forecast with data:", { 
         forecastId,
         historicalDataCounts: {
           payables: historicalData.payables?.length,
@@ -42,38 +45,70 @@ export function useAIForecastGeneration(
           availableCashBalance: historicalData.availableCashBalance,
           creditLiabilities: historicalData.creditLiabilities,
           netPosition: historicalData.netPosition,
+          balanceHistoryEntries: historicalData.balance_history?.length
         },
         options: effectiveOptions,
-        startWithCurrentBalance: effectiveOptions.startWithCurrentBalance
+        startWithCurrentBalance: effectiveOptions.startWithCurrentBalance,
+        useRollingForecast: effectiveOptions.useRollingForecast
       });
 
-      // Fix the API endpoint URL - use the correct Supabase function URL
-      const response = await fetch("/functions/v1/cash-flow-forecast", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      // Try to use Supabase Edge Function directly
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('cash-flow-forecast', {
+        body: {
           forecastId,
           historicalData,
           config: effectiveOptions
-        }),
+        }
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("[DEBUG - API Error]", {
-          status: response.status,
-          statusText: response.statusText,
-          errorText
-        });
-        throw new Error(`API error: ${response.status} ${errorText || response.statusText}`);
+      
+      if (functionError) {
+        console.error("[DEBUG - API Error] Function error:", functionError);
+        
+        // Fall back to using the REST endpoint if function invoke fails
+        try {
+          const response = await fetch("/functions/v1/cash-flow-forecast", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              forecastId,
+              historicalData,
+              config: effectiveOptions
+            }),
+          });
+    
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("[DEBUG - API Error]", {
+              status: response.status,
+              statusText: response.statusText,
+              errorText
+            });
+            throw new Error(`API error: ${response.status} ${errorText || response.statusText}`);
+          }
+    
+          const result = await response.json();
+    
+          if (!result.success) {
+            throw new Error(result.error || "Error generating forecast");
+          }
+          
+          toast.success("Pronóstico generado con éxito.");
+          
+          if (onForecastGenerated) {
+            onForecastGenerated();
+          }
+          
+          return true;
+        } catch (fetchError) {
+          console.error("[ERROR] Fetch fallback failed:", fetchError);
+          throw fetchError;
+        }
       }
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || "Error generating forecast");
+      
+      if (!functionData.success) {
+        throw new Error(functionData.error || "Error generating forecast");
       }
 
       toast.success("Pronóstico generado con éxito.");
@@ -83,7 +118,6 @@ export function useAIForecastGeneration(
       }
       
       return true;
-
     } catch (error) {
       console.error("[ERROR] Failed to generate AI forecast:", error);
       toast.error("Error al generar el pronóstico: " + (error as Error).message);

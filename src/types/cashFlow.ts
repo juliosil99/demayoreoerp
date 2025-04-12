@@ -14,6 +14,8 @@ export interface CashFlowForecast {
   credit_liabilities?: number;
   net_position?: number;
   upcoming_credit_payments?: CreditPayment[];
+  last_reconciled_date?: string;
+  is_balance_confirmed?: boolean;
 }
 
 export interface CreditPayment {
@@ -40,6 +42,8 @@ export interface ForecastWeek {
   cumulative_cash_flow?: number; // Calculated field
   starting_balance?: number; // Starting balance for the week
   ending_balance?: number; // Ending balance for the week
+  balance_confidence?: 'high' | 'medium' | 'low'; // Confidence in the balance data
+  is_reconciled?: boolean; // Whether this week has been reconciled with actual data
 }
 
 export interface ForecastItem {
@@ -52,7 +56,9 @@ export interface ForecastItem {
   is_recurring?: boolean;
   confidence_score?: number;
   type: 'inflow' | 'outflow';
-  source: 'historical' | 'ai_predicted' | 'manual' | 'recurring';
+  source: 'historical' | 'ai_predicted' | 'manual' | 'recurring' | 'reconciled';
+  transaction_date?: string;
+  is_confirmed?: boolean;
 }
 
 export interface ForecastHistoricalData {
@@ -65,6 +71,15 @@ export interface ForecastHistoricalData {
   creditLiabilities?: number;
   netPosition?: number;
   upcomingCreditPayments?: CreditPayment[];
+  balance_history?: BalanceHistoryEntry[];
+}
+
+export interface BalanceHistoryEntry {
+  date: string;
+  availableCashBalance: number;
+  creditLiabilities: number;
+  netPosition: number;
+  is_confirmed: boolean;
 }
 
 export interface ForecastRequest {
@@ -88,4 +103,5 @@ export interface ChartData {
   netCashFlow: number;
   cumulativeCashFlow: number;
   balance?: number; // Added for bank balance tracking
+  confidence?: 'high' | 'medium' | 'low'; // Added for data confidence
 }
