@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -26,6 +27,7 @@ import SalesChannels from "@/pages/SalesChannels";
 import UserManagement from "@/pages/UserManagement";
 import CashFlowForecast from "@/pages/CashFlowForecast";
 import CreditPaymentSchedule from "./pages/CreditPaymentSchedule";
+import { CaptchaResolver } from "./components/invoices/sat-automation/CaptchaResolver";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -69,6 +71,7 @@ function App() {
             <Route path="sales" element={<Sales />} />
             <Route path="sales/payments" element={<Payments />} />
             <Route path="sales/invoices" element={<Invoices />} />
+            <Route path="sales/invoices/captcha/:sessionId" element={<CaptchaResolver />} />
             <Route path="expenses" element={<Expenses />} />
             <Route path="expenses/reconciliation" element={<Reconciliation />} />
             <Route path="expenses/receivables" element={<Receivables />} />

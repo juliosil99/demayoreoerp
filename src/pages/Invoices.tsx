@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUploader } from "@/components/invoices/FileUploader";
 import { InvoiceTable } from "@/components/invoices/InvoiceTable";
+import { SatButton } from "@/components/invoices/sat-automation/SatButton";
+import { SatJobsList } from "@/components/invoices/sat-automation/SatJobsList";
 
 const Invoices = () => {
   const { data: invoices, refetch } = useQuery({
@@ -30,8 +32,13 @@ const Invoices = () => {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Facturas</h1>
-        <FileUploader onUploadSuccess={refetch} />
+        <div className="flex gap-2">
+          <FileUploader onUploadSuccess={refetch} />
+          <SatButton />
+        </div>
       </div>
+
+      <SatJobsList />
 
       <Card>
         <CardHeader>

@@ -1795,6 +1795,89 @@ export type Database = {
         }
         Relationships: []
       }
+      sat_automation_jobs: {
+        Row: {
+          captcha_required: boolean | null
+          created_at: string | null
+          downloaded_files: number | null
+          end_date: string
+          error_message: string | null
+          id: string
+          rfc: string
+          start_date: string
+          status: string
+          total_files: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          captcha_required?: boolean | null
+          created_at?: string | null
+          downloaded_files?: number | null
+          end_date: string
+          error_message?: string | null
+          id?: string
+          rfc: string
+          start_date: string
+          status?: string
+          total_files?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          captcha_required?: boolean | null
+          created_at?: string | null
+          downloaded_files?: number | null
+          end_date?: string
+          error_message?: string | null
+          id?: string
+          rfc?: string
+          start_date?: string
+          status?: string
+          total_files?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sat_captcha_sessions: {
+        Row: {
+          captcha_image: string | null
+          captcha_solution: string | null
+          created_at: string | null
+          id: string
+          job_id: string
+          resolved: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          captcha_image?: string | null
+          captcha_solution?: string | null
+          created_at?: string | null
+          id?: string
+          job_id: string
+          resolved?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          captcha_image?: string | null
+          captcha_solution?: string | null
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          resolved?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sat_captcha_sessions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "sat_automation_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sat_report_configurations: {
         Row: {
           created_at: string | null
