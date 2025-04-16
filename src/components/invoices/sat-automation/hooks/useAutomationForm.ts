@@ -50,12 +50,13 @@ export function useAutomationForm({ onClose }: { onClose: () => void }) {
           start_date: format(data.startDate, "yyyy-MM-dd"),
           end_date: format(data.endDate, "yyyy-MM-dd"),
           status: "pending",
-          user_id: authData.user.id  // Add the user_id from auth data
+          user_id: authData.user.id
         })
         .select()
         .single();
 
       if (jobError) {
+        console.error("Job Creation Error:", jobError);
         throw jobError;
       }
 
@@ -74,6 +75,7 @@ export function useAutomationForm({ onClose }: { onClose: () => void }) {
       );
 
       if (automationError) {
+        console.error("Automation Invocation Error:", automationError);
         throw automationError;
       }
 
@@ -86,7 +88,7 @@ export function useAutomationForm({ onClose }: { onClose: () => void }) {
       toast.success("Proceso de automatización iniciado correctamente");
       onClose();
     } catch (error) {
-      console.error("Error starting automation:", error);
+      console.error("Error al iniciar la automatización:", error);
       toast.error("Error al iniciar la automatización");
     } finally {
       setIsLoading(false);
