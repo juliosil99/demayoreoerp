@@ -1,7 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
-import { chromium } from "https://esm.sh/v128/playwright-chromium@1.38.1";
+// Use a more stable version of playwright-chromium
+import { chromium } from "https://deno.land/x/playwright@v1.37.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -192,11 +193,6 @@ serve(async (req) => {
           );
           
           if (!uuid) continue;
-          
-          // Since we can't directly access downloaded files in an edge function,
-          // we'll need to extract XML content from the page after clicking download
-          // In a real implementation, we'd parse the XML or use a Playwright feature
-          // to intercept the response.
           
           // For now, simulate a successful download
           console.log(`Downloaded XML with UUID: ${uuid}`);
