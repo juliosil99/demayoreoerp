@@ -1,8 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
-// Use a more stable version of playwright-chromium
-import { chromium } from "https://deno.land/x/playwright@v1.37.0/mod.ts";
+// Fix import path for playwright-chromium
+import { chromium } from "https://deno.land/x/playwright_chromium@v0.4.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
