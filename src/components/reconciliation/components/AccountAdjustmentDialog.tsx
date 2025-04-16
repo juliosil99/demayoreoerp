@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { ADJUSTMENT_ACCOUNTS } from "../constants";
 
 interface AccountAdjustmentDialogProps {
   open: boolean;
@@ -27,6 +28,7 @@ export function AccountAdjustmentDialog({
   const [selectedAccount, setSelectedAccount] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Query chart accounts
   const { data: chartAccounts } = useQuery({
     queryKey: ["chart-accounts"],
     queryFn: async () => {
@@ -39,6 +41,23 @@ export function AccountAdjustmentDialog({
       return data;
     }
   });
+
+  // Pre-select the appropriate account based on adjustment type
+  useEffect(() => {
+    if (chartAccounts && type) {
+      const accountToFind = ADJUSTMENT_ACCOUNTS[type];
+      const account = chartAccounts.find(acc => acc.code === accountToFind.code);
+      if (account) {
+        setSelectedAccount(account.id);
+      }
+    }
+  }, [chartAccounts, type]);
+
+  // Auto-generate notes based on type
+  useEffect(() => {
+    const adjustmentType = ADJUSTMENT_ACCOUNTS[type];
+    setNotes(adjustmentType.description);
+  }, [type]);
 
   const handleConfirm = () => {
     if (!selectedAccount) {
@@ -55,17 +74,17 @@ export function AccountAdjustmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ajuste Contable</DialogTitle>
+          <DialogTitle>Ajuste por {type === "expense_excess" ? "Excedente de Pago" : "Excedente de Factura"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
             <Label>Monto del Ajuste</Label>
-            <Input value={amount.toFixed(2)} disabled />
+            <Input value={`$${amount.toFixed(2)}`} disabled />
           </div>
           <div>
             <Label>Tipo de Ajuste</Label>
             <Input 
-              value={type === "expense_excess" ? "Excedente de Gasto" : "Excedente de Factura"} 
+              value={type === "expense_excess" ? "Excedente de Pago" : "Excedente de Factura"} 
               disabled 
             />
           </div>
@@ -77,7 +96,11 @@ export function AccountAdjustmentDialog({
               </SelectTrigger>
               <SelectContent>
                 {chartAccounts?.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
+                  <SelectItem 
+                    key={account.id} 
+                    value={account.id}
+                    className={account.code === ADJUSTMENT_ACCOUNTS[type].code ? "font-bold" : ""}
+                  >
                     {account.code} - {account.name}
                   </SelectItem>
                 ))}
