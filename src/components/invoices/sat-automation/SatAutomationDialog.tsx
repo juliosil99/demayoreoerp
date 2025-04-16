@@ -69,6 +69,12 @@ export function SatAutomationDialog({ isOpen, onClose }: SatAutomationDialogProp
   async function onSubmit(data: AutomationFormValues) {
     setIsLoading(true);
     try {
+      // Get current user to use for user_id
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData.user) {
+        throw new Error("User not authenticated");
+      }
+
       // Create the automation job record
       const { data: jobData, error: jobError } = await supabase
         .from("sat_automation_jobs")
@@ -77,7 +83,7 @@ export function SatAutomationDialog({ isOpen, onClose }: SatAutomationDialogProp
           start_date: format(data.startDate, "yyyy-MM-dd"),
           end_date: format(data.endDate, "yyyy-MM-dd"),
           status: "pending",
-          // We don't need to explicitly add user_id as RLS will add it automatically via the auth.uid() function
+          user_id: authData.user.id, // Explicitly add user_id even though RLS would handle it
         })
         .select()
         .single();
