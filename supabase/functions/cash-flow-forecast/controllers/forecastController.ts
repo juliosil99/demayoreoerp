@@ -23,14 +23,15 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
       balanceHistoryEntries: requestBody.historicalData?.balance_history?.length
     }));
     
-    console.log("[DEBUG - Edge Function] Detailed payables count:", 
-      requestBody.historicalData?.payables?.length || 0
-    );
-    console.log("[DEBUG - Edge Function] Detailed credit payments count:", 
-      requestBody.historicalData?.upcomingCreditPayments?.length || 0
-    );
+    console.log("[DEBUG - Edge Function] Detailed data counts:", {
+      payables: requestBody.historicalData?.payables?.length || 0,
+      receivables: requestBody.historicalData?.receivables?.length || 0,
+      expenses: requestBody.historicalData?.expenses?.length || 0,
+      sales: requestBody.historicalData?.sales?.length || 0,
+      creditPayments: requestBody.historicalData?.upcomingCreditPayments?.length || 0,
+    });
     
-    console.log("[DEBUG - Edge Function - Balance Tracking] Detailed config:", 
+    console.log("[DEBUG - Edge Function - AI Config]", 
       JSON.stringify(requestBody.config, null, 2)
     );
   } catch (e) {
@@ -70,7 +71,7 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
   const upcomingCreditPayments = historicalData.upcomingCreditPayments || [];
   const balanceHistory = historicalData.balance_history || [];
   
-  console.log("[DEBUG - Edge Function - Rolling Forecast] Financial balances:", {
+  console.log("[DEBUG - Edge Function - Financial Data] Financial balances:", {
     availableCashBalance,
     creditLiabilities,
     netPosition,
@@ -154,11 +155,12 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
   const forecastStartDate = new Date(startDate || forecastData.start_date);
   const forecastHorizonWeeks = config?.forecastHorizonWeeks || 13; // Default to 13 weeks if not specified
   
-  console.log("[DEBUG - Edge Function - Balance Tracking] Before creating forecast weeks:", {
+  console.log("[DEBUG - Edge Function - Forecast Weeks] Before creating forecast weeks:", {
     startDate: forecastStartDate.toISOString(),
     availableCashBalance,
     startWithCurrentBalance: config?.startWithCurrentBalance,
-    useRollingForecast: config?.useRollingForecast
+    useRollingForecast: config?.useRollingForecast,
+    forecastPredictionsCount: forecastPredictions.length
   });
   
   const weeksResult = await createOrUpdateForecastWeeks(

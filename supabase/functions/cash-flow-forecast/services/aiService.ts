@@ -1,3 +1,4 @@
+
 import { summarizeFinancialData } from "../helpers/dataUtils.ts";
 import { createAIPrompt } from "../helpers/aiUtils.ts";
 
@@ -49,6 +50,13 @@ export async function generateAIInsights(
   const prompt = createAIPrompt(historicalSummary, config);
   
   try {
+    console.log("[DEBUG - AI Request] Sending request to OpenAI with configuration:", {
+      model: "gpt-4o-mini",
+      messageCount: 2,
+      promptLength: prompt.length,
+      responseFormat: "json_object"
+    });
+    
     // Call OpenAI API
     const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -83,7 +91,32 @@ export async function generateAIInsights(
     
     // Parse the AI response
     try {
+      console.log("[DEBUG - AI Raw Response]", aiData.choices[0].message.content);
+      
       const parsedResponse = JSON.parse(aiData.choices[0].message.content);
+      
+      // Log the parsed weekly forecasts to check for variations
+      if (parsedResponse.weeklyForecasts && parsedResponse.weeklyForecasts.length > 0) {
+        console.log("[DEBUG - AI Parsed Response] First 3 weeks of forecasts:", 
+          JSON.stringify(parsedResponse.weeklyForecasts.slice(0, 3), null, 2)
+        );
+        
+        // Check if all weekly amounts are identical
+        const allOutflows = parsedResponse.weeklyForecasts.map((week: any) => week.predictedOutflows);
+        const allInflows = parsedResponse.weeklyForecasts.map((week: any) => week.predictedInflows);
+        
+        const uniqueOutflows = new Set(allOutflows).size;
+        const uniqueInflows = new Set(allInflows).size;
+        
+        console.log("[DEBUG - AI Response Analysis] Uniqueness check:", {
+          totalWeeks: parsedResponse.weeklyForecasts.length,
+          uniqueOutflowValues: uniqueOutflows,
+          uniqueInflowValues: uniqueInflows,
+          allOutflowsIdentical: uniqueOutflows === 1,
+          allInflowsIdentical: uniqueInflows === 1
+        });
+      }
+      
       return {
         insights: parsedResponse.insights || "AI analysis completed, but no specific insights were provided.",
         weeklyForecasts: parsedResponse.weeklyForecasts || []

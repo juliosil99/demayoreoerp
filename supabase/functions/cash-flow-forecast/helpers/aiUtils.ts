@@ -3,7 +3,8 @@
  * Helper function to create AI prompt based on historical data and configuration
  */
 export function createAIPrompt(historicalData: any, config: any) {
-  return `
+  // Create a more detailed prompt with enhanced instructions for variable values
+  const prompt = `
 Please analyze the following financial data and generate a detailed ${config.forecastHorizonWeeks || 13}-week **cash flow forecast**. Your forecast must consider actual and forecasted cash inflows and outflows, while also identifying key financial risks and opportunities.
 
 ### INPUTS:
@@ -31,6 +32,9 @@ ${JSON.stringify(historicalData.weeklyScheduledCreditPayments || [], null, 2)}
 3. Expected Receivables by Week:
 ${JSON.stringify(historicalData.weeklyScheduledReceivables || [], null, 2)}
 
+4. Expense Patterns:
+${JSON.stringify(historicalData.expensePatterns || {}, null, 2)}
+
 **Configuration Settings:**
 - Use Historical Trends: ${config.includeHistoricalTrends ? 'Yes' : 'No'}
 - Consider Seasonality: ${config.includeSeasonality ? 'Yes' : 'No'}
@@ -43,7 +47,7 @@ ${JSON.stringify(historicalData.weeklyScheduledReceivables || [], null, 2)}
 ### TASKS:
 
 **1. Forecast Logic Requirements:**
-- Each week MUST have DIFFERENT inflow/outflow amounts based on:
+- IMPORTANT: Each week MUST have DIFFERENT inflow/outflow amounts based on:
   * Actual scheduled payments due that specific week
   * Credit/loan payments due that specific week
   * Recurring expense patterns identified for that week
@@ -93,11 +97,17 @@ Return valid JSON with:
   ]
 }
 
-IMPORTANT REQUIREMENTS:
+CRITICAL REQUIREMENTS:
 1. Each week MUST have different amounts based on actual scheduled payments and receivables
 2. DO NOT copy-paste values between weeks
 3. Generate specific insights about cash flow risks and opportunities
 4. Assign realistic confidence scores (0-1) based on data quality and predictability
+5. If no data is available for a specific component, use reasonable estimates based on trends
 `;
+
+  // Log the generated prompt for debugging
+  console.log("[DEBUG - AI Prompt] Generated prompt:", prompt);
+  
+  return prompt;
 }
 
