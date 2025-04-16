@@ -1,11 +1,8 @@
 
 import { format } from "https://esm.sh/date-fns@4.1.0";
 import { addDays, parseISO, differenceInDays } from "https://esm.sh/date-fns@4.1.0";
-import { calculateAverageAmount } from "./dataUtils.ts";
+import { getScheduledPayments, analyzeExpensePatterns } from "./dataUtils.ts";
 
-/**
- * Helper function to generate forecast weeks with bank balance tracking
- */
 export function generateForecastWeeks(
   forecastId: string,
   startDate: Date,
@@ -22,185 +19,76 @@ export function generateForecastWeeks(
     aiPredictionsCount: aiPredictions?.length || 0,
     config,
     initialAvailableCashBalance,
-    balanceHistoryCount: historicalData?.balance_history?.length || 0
-  });
-  
-  console.log("[DEBUG - Edge Function - Balance Tracking] Historical data balances:", {
-    availableCashBalance: historicalData?.availableCashBalance,
-    creditLiabilities: historicalData?.creditLiabilities,
-    netPosition: historicalData?.netPosition
+    balanceHistoryEntries: historicalData?.balance_history?.length || 0
   });
   
   const weeks = [];
-  
-  // Calculate base values from historical data
-  const historicalPayables = calculateAverageAmount(historicalData.payables);
-  const historicalReceivables = calculateAverageAmount(historicalData.receivables);
-  const historicalExpenses = calculateAverageAmount(historicalData.expenses);
-  const historicalSales = calculateAverageAmount(historicalData.sales);
-  
-  // Base weekly values
-  const baseInflow = historicalReceivables + historicalSales > 0 
-    ? historicalReceivables + historicalSales 
-    : 10000; // Fallback if no historical data
-    
-  const baseOutflow = historicalPayables + historicalExpenses > 0
-    ? historicalPayables + historicalExpenses
-    : 8000;  // Fallback if no historical data
-  
-  // Track running balance
   let runningBalance = config?.startWithCurrentBalance ? initialAvailableCashBalance : 0;
   
-  console.log("[DEBUG - Edge Function - Balance Tracking] Initial running balance calculation:", {
-    startWithCurrentBalance: config?.startWithCurrentBalance,
-    initialAvailableCashBalance,
-    runningBalance
-  });
+  // Analyze historical expense patterns
+  const expensePatterns = analyzeExpensePatterns(historicalData.expenses || []);
   
-  // Process upcoming credit payments if available
-  const upcomingCreditPayments = historicalData.upcomingCreditPayments || [];
-  
-  // Create a map of credit payments by week
-  const creditPaymentsByWeek = new Map();
-  
-  if (upcomingCreditPayments.length > 0 && config?.includeCreditPayments) {
-    upcomingCreditPayments.forEach(payment => {
-      const paymentDate = new Date(payment.dueDate);
-      // Find the week this payment should be included in
-      for (let i = 0; i < numWeeks; i++) {
-        const weekStart = addDays(startDate, i * 7);
-        const weekEnd = addDays(weekStart, 6);
-        
-        if (paymentDate >= weekStart && paymentDate <= weekEnd) {
-          const weekNumber = i + 1;
-          if (!creditPaymentsByWeek.has(weekNumber)) {
-            creditPaymentsByWeek.set(weekNumber, 0);
-          }
-          creditPaymentsByWeek.set(
-            weekNumber, 
-            creditPaymentsByWeek.get(weekNumber) + payment.amount
-          );
-          break;
-        }
-      }
-    });
-  }
-
-  // For rolling forecasts, determine balance confidence based on data age
-  const determineBalanceConfidence = (weekIndex: number) => {
-    // For rolling forecasts with history data
-    if (config?.useRollingForecast && historicalData?.balance_history?.length > 0) {
-      // First week is based on current confirmed data
-      if (weekIndex === 0) return 'high';
-      // Next few weeks are medium confidence
-      if (weekIndex < 4) return 'medium';
-      // Rest are low confidence
-      return 'low';
-    }
-    
-    // Default confidence levels based on week number
-    if (weekIndex < 4) return 'high';
-    if (weekIndex < 8) return 'medium';
-    return 'low';
-  };
-
+  // Process each week
   for (let i = 0; i < numWeeks; i++) {
     const weekNumber = i + 1;
     const weekStart = addDays(startDate, i * 7);
     const weekEnd = addDays(weekStart, 6);
     
-    // Starting balance for this week is the running balance
-    const startingBalance = runningBalance;
+    // Get scheduled payments for this week
+    const scheduledPayments = getScheduledPayments(
+      historicalData.payables,
+      historicalData.upcomingCreditPayments,
+      weekStart,
+      weekEnd
+    );
     
-    // Check if we have AI prediction for this week
+    // Calculate scheduled outflows
+    const scheduledOutflows = scheduledPayments.reduce((sum, payment) => sum + payment.amount, 0);
+    
+    // Start with AI predictions if available
     const aiPrediction = aiPredictions.find(p => p.weekNumber === weekNumber);
+    let predictedInflows = aiPrediction?.predictedInflows;
+    let predictedOutflows = aiPrediction?.predictedOutflows;
+    let confidenceScore = aiPrediction?.confidenceScore;
     
-    let predictedInflows, predictedOutflows, confidenceScore;
-    
-    if (aiPrediction) {
-      // Use AI predictions if available
-      predictedInflows = aiPrediction.predictedInflows;
-      predictedOutflows = aiPrediction.predictedOutflows;
-      confidenceScore = aiPrediction.confidenceScore;
+    if (!aiPrediction) {
+      // Calculate predicted outflows using scheduled payments and patterns
+      predictedOutflows = scheduledOutflows;
       
-      // If AI also provided balance calculations
-      if (aiPrediction.startingBalance !== undefined && aiPrediction.endingBalance !== undefined) {
-        // If this is the first week, and we're using current balance, ensure AI starting balance matches
-        if (i === 0 && config?.startWithCurrentBalance) {
-          runningBalance = initialAvailableCashBalance;
-          console.log("[DEBUG - Edge Function - Balance Tracking] Using initial balance for first week:", runningBalance);
-        } else if (aiPrediction.startingBalance !== undefined) {
-          // Otherwise use AI's starting balance
-          runningBalance = aiPrediction.startingBalance;
+      // Add predicted regular expenses based on patterns
+      Object.entries(expensePatterns).forEach(([category, pattern]: [string, any]) => {
+        if (pattern.isRecurring || pattern.confidence > 0.7) {
+          predictedOutflows += pattern.weeklyAverage;
         }
-      }
-      
-      // Add credit payment to outflows if this week has credit payments
-      if (creditPaymentsByWeek.has(weekNumber) && config?.includeCreditPayments) {
-        predictedOutflows += creditPaymentsByWeek.get(weekNumber);
-      }
-    } else {
-      // Fall back to statistical model
-      
-      // Add some variation and trends
-      const growthFactor = config?.includeHistoricalTrends 
-        ? 1 + (i * 0.01) // Small growth each week
-        : 1;
-        
-      // Add seasonal variation if configured
-      const seasonalFactor = config?.includeSeasonality 
-        ? 1 + (0.1 * Math.sin(i * Math.PI / 6)) // Sine wave over approximately 3 months
-        : 1;
-        
-      // Add random variation - reduce randomness for rolling forecasts
-      const randomVariationRange = config?.useRollingForecast ? 0.1 : 0.2; // +/- 5% for rolling, 10% for normal
-      const randomVariation = 1 - (randomVariationRange/2) + (Math.random() * randomVariationRange);
-      
-      predictedInflows = Math.round(baseInflow * growthFactor * seasonalFactor * randomVariation);
-      
-      // Adjust outflows based on configuration
-      let outflowAdjustment = 1;
-      if (config?.includePendingPayables && historicalData.payables.length > 0) {
-        outflowAdjustment *= 1.05; // Increase outflows by 5% if including pending payables
-      }
-      if (config?.includeRecurringExpenses && historicalData.expenses.length > 0) {
-        outflowAdjustment *= 1.03; // Increase outflows by 3% if including recurring expenses
-      }
-      
-      predictedOutflows = Math.round(baseOutflow * (1 + (i * 0.005)) * seasonalFactor * randomVariation * outflowAdjustment);
-      
-      // Add credit payment to outflows if this week has credit payments
-      if (creditPaymentsByWeek.has(weekNumber) && config?.includeCreditPayments) {
-        predictedOutflows += creditPaymentsByWeek.get(weekNumber);
-      }
-      
-      // Confidence decreases with time and is higher with more historical data
-      const dataFactor = Math.min(1, (historicalData.payables.length + historicalData.receivables.length + 
-                                    historicalData.expenses.length + historicalData.sales.length) / 40);
-      confidenceScore = Math.round((0.9 - (i * 0.02)) * dataFactor * 100) / 100;
-    }
-    
-    // Calculate ending balance
-    const netCashFlow = predictedInflows - predictedOutflows;
-    const endingBalance = startingBalance + netCashFlow;
-    
-    // Update running balance for next week
-    runningBalance = endingBalance;
-    
-    if (i === 0) {
-      console.log("[DEBUG - Edge Function - Balance Tracking] First week calculation:", {
-        weekNumber,
-        startingBalance,
-        predictedInflows,
-        predictedOutflows,
-        netCashFlow,
-        endingBalance,
-        balanceConfidence: determineBalanceConfidence(i)
       });
+      
+      // Calculate inflows using historical data and trends
+      const baseInflow = historicalData.receivables?.reduce((sum: number, rec: any) => {
+        const dueDate = new Date(rec.due_date);
+        return dueDate >= weekStart && dueDate <= weekEnd ? sum + rec.amount : sum;
+      }, 0) || 0;
+      
+      predictedInflows = baseInflow;
+      
+      // Add historical sales average with trend analysis
+      const salesTrend = calculateSalesTrend(historicalData.sales || []);
+      predictedInflows += salesTrend.weeklyAverage * (1 + (salesTrend.growthRate * i));
+      
+      // Calculate confidence score based on data quality
+      confidenceScore = Math.min(
+        1,
+        (scheduledOutflows / predictedOutflows) * 0.7 + // Higher confidence for scheduled payments
+        (baseInflow / predictedInflows) * 0.3 // Lower weight for predicted inflows
+      );
     }
     
-    // For rolling forecasts, mark if this week is reconciled with actual data
-    const isReconciled = config?.useRollingForecast && i === 0 && config?.reconcileBalances;
+    // Calculate balances
+    const netCashFlow = predictedInflows - predictedOutflows;
+    const startingBalance = runningBalance;
+    runningBalance += netCashFlow;
+    
+    // For rolling forecasts, determine balance confidence
+    const balanceConfidence = determineBalanceConfidence(i, config, historicalData);
     
     weeks.push({
       forecast_id: forecastId,
@@ -211,19 +99,51 @@ export function generateForecastWeeks(
       predicted_outflows: predictedOutflows,
       confidence_score: confidenceScore,
       starting_balance: startingBalance,
-      ending_balance: endingBalance,
-      balance_confidence: determineBalanceConfidence(i),
-      is_reconciled: isReconciled
+      ending_balance: runningBalance,
+      balance_confidence: balanceConfidence,
+      is_reconciled: config?.useRollingForecast && i === 0 && config?.reconcileBalances
     });
   }
   
-  console.log("[DEBUG - Edge Function - Balance Tracking] Generated weeks summary:", {
-    weeksCount: weeks.length,
-    firstWeekStartingBalance: weeks[0]?.starting_balance,
-    firstWeekEndingBalance: weeks[0]?.ending_balance,
-    lastWeekStartingBalance: weeks[weeks.length - 1]?.starting_balance,
-    lastWeekEndingBalance: weeks[weeks.length - 1]?.ending_balance
-  });
-  
   return weeks;
+}
+
+function calculateSalesTrend(sales: any[]) {
+  if (!sales?.length) {
+    return { weeklyAverage: 0, growthRate: 0 };
+  }
+  
+  // Sort sales by date
+  const sortedSales = [...sales].sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  
+  // Calculate weekly averages for the first and second half of the period
+  const midPoint = Math.floor(sortedSales.length / 2);
+  const firstHalf = sortedSales.slice(0, midPoint);
+  const secondHalf = sortedSales.slice(midPoint);
+  
+  const firstHalfAvg = firstHalf.reduce((sum, sale) => sum + (sale.amount || 0), 0) / firstHalf.length;
+  const secondHalfAvg = secondHalf.reduce((sum, sale) => sum + (sale.amount || 0), 0) / secondHalf.length;
+  
+  const weeklyAverage = sales.reduce((sum, sale) => sum + (sale.amount || 0), 0) / sales.length;
+  const growthRate = firstHalfAvg > 0 ? (secondHalfAvg - firstHalfAvg) / firstHalfAvg : 0;
+  
+  return { weeklyAverage, growthRate };
+}
+
+function determineBalanceConfidence(
+  weekIndex: number,
+  config: any,
+  historicalData: any
+): 'high' | 'medium' | 'low' {
+  if (config?.useRollingForecast && historicalData?.balance_history?.length > 0) {
+    if (weekIndex === 0) return 'high';
+    if (weekIndex < 4) return 'medium';
+    return 'low';
+  }
+  
+  if (weekIndex < 4) return 'high';
+  if (weekIndex < 8) return 'medium';
+  return 'low';
 }
