@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
-import { chromium } from "https://deno.land/x/playwright@v1.38.0/mod.ts";
+import { chromium } from "https://esm.sh/playwright@1.35.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

@@ -77,6 +77,7 @@ export function SatAutomationDialog({ isOpen, onClose }: SatAutomationDialogProp
           start_date: format(data.startDate, "yyyy-MM-dd"),
           end_date: format(data.endDate, "yyyy-MM-dd"),
           status: "pending",
+          // We don't need to explicitly add user_id as RLS will add it automatically via the auth.uid() function
         })
         .select()
         .single();
