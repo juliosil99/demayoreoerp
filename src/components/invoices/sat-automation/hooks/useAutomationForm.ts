@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,7 +21,7 @@ const automationFormSchema = z.object({
 export type AutomationFormValues = z.infer<typeof automationFormSchema>;
 
 export function useAutomationForm({ onClose }: { onClose: () => void }) {
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<AutomationFormValues>({
     resolver: zodResolver(automationFormSchema),
@@ -49,6 +50,7 @@ export function useAutomationForm({ onClose }: { onClose: () => void }) {
           start_date: format(data.startDate, "yyyy-MM-dd"),
           end_date: format(data.endDate, "yyyy-MM-dd"),
           status: "pending",
+          user_id: authData.user.id  // Add the user_id from auth data
         })
         .select()
         .single();
