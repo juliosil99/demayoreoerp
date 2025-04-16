@@ -6,15 +6,23 @@ import { chromium } from "https://esm.sh/v128/playwright-chromium@1.38.1";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 serve(async (req) => {
+  console.log("SAT automation edge function called");
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    console.log("Handling OPTIONS preflight request");
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   try {
+    console.log("Processing SAT automation request");
     const { rfc, password, startDate, endDate, jobId } = await req.json();
     
     // Create Supabase client
@@ -26,6 +34,7 @@ serve(async (req) => {
     // Get user ID from authorization header
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
+      console.error("Missing authorization header");
       return new Response(
         JSON.stringify({ success: false, error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -36,6 +45,7 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     
     if (userError || !user) {
+      console.error("Authentication failed:", userError);
       return new Response(
         JSON.stringify({ success: false, error: "Authentication failed" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -95,11 +105,13 @@ serve(async (req) => {
           // Close browser and return early
           await browser.close();
           
+          console.log("CAPTCHA detected, returning session ID:", captchaSession?.id);
+          
           return new Response(
             JSON.stringify({ 
               success: false, 
               requiresCaptcha: true, 
-              captchaSessionId: captchaSession.id,
+              captchaSessionId: captchaSession?.id,
               message: "CAPTCHA resolution required"
             }),
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -6,17 +6,21 @@ import { chromium } from "https://esm.sh/v128/playwright-chromium@1.38.1";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 200, 
+      headers: corsHeaders 
+    });
   }
 
   try {
     const { captchaSessionId, captchaSolution, rfc, password, jobId } = await req.json();
-    
+
     // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") || "",
@@ -42,30 +46,52 @@ serve(async (req) => {
       );
     }
 
-    // Update captcha session with solution
-    await supabaseClient
+    // Get the CAPTCHA session
+    const { data: captchaSession, error: sessionError } = await supabaseClient
       .from('sat_captcha_sessions')
-      .update({ 
-        resolved: true,
-        captcha_solution: captchaSolution,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', captchaSessionId);
-
+      .select('*')
+      .eq('id', captchaSessionId)
+      .single();
+      
+    if (sessionError || !captchaSession) {
+      return new Response(
+        JSON.stringify({ success: false, error: "CAPTCHA session not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Get the job details
+    const { data: job, error: jobError } = await supabaseClient
+      .from('sat_automation_jobs')
+      .select('*')
+      .eq('id', jobId)
+      .eq('user_id', user.id)
+      .single();
+      
+    if (jobError || !job) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Job not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     // Update job status to resuming
     await supabaseClient
       .from('sat_automation_jobs')
-      .update({ 
-        status: 'resuming',
-        updated_at: new Date().toISOString()
-      })
+      .update({ status: 'resuming' })
       .eq('id', jobId);
-
-    // Launch browser
+      
+    // Update captcha session to resolved
+    await supabaseClient
+      .from('sat_captcha_sessions')
+      .update({ resolved: true, solution: captchaSolution })
+      .eq('id', captchaSessionId);
+    
+    // Launch browser and continue the process
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
     const page = await context.newPage();
-
+    
     try {
       // Navigate to SAT login page
       await page.goto('https://portalcfdi.facturaelectronica.sat.gob.mx');
@@ -74,12 +100,12 @@ serve(async (req) => {
       await page.fill('#rfc', rfc);
       await page.fill('#password', password);
       
-      // Fill CAPTCHA solution
-      const captchaInput = await page.$('#captchaText');
+      // Fill CAPTCHA solution if needed
+      const captchaInput = await page.$('#captcha');
       if (captchaInput) {
         await captchaInput.fill(captchaSolution);
       } else {
-        throw new Error("CAPTCHA input field not found");
+        throw new Error("CAPTCHA field not found");
       }
       
       // Submit the login form
@@ -89,37 +115,18 @@ serve(async (req) => {
       try {
         await page.waitForSelector('#selFiltro', { timeout: 10000 });
       } catch (e) {
-        // Take screenshot of error state
-        const screenshot = await page.screenshot({ fullPage: true });
-        const screenshotPath = `${user.id}/${jobId}/captcha-error.png`;
-        
-        // Upload screenshot to storage
-        await supabaseClient.storage
-          .from('sat_automation')
-          .upload(screenshotPath, screenshot);
-          
-        throw new Error("CAPTCHA solution was incorrect or login failed");
+        // Check for error messages
+        const errorText = await page.textContent('.errorcl') || '';
+        throw new Error(`Login failed: ${errorText.trim() || 'Invalid CAPTCHA solution or credentials'}`);
       }
       
-      // Get job details to retrieve date range
-      const { data: job } = await supabaseClient
-        .from('sat_automation_jobs')
-        .select('start_date, end_date')
-        .eq('id', jobId)
-        .single();
-        
-      if (!job) {
-        throw new Error("Job not found");
-      }
-      
-      const { start_date, end_date } = job;
-      
+      // Continue with the process similar to the main function...
       // Navigate to "Consultar Facturas Recibidas"
       await page.click('a:has-text("Consultar Facturas Recibidas")');
       
       // Set date range for invoice search
-      await page.fill('input[name="fechaInicial"]', start_date);
-      await page.fill('input[name="fechaFinal"]', end_date);
+      await page.fill('input[name="fechaInicial"]', job.start_date);
+      await page.fill('input[name="fechaFinal"]', job.end_date);
       
       // Submit search form
       await page.click('#btnBusqueda');
@@ -127,15 +134,60 @@ serve(async (req) => {
       // Wait for search results
       await page.waitForSelector('table.detalleTable', { timeout: 30000 });
       
-      // The rest of the function continues similar to sat-automation endpoint
-      // ... (download process)
+      // Check if there are any results
+      const noResults = await page.$$eval('.noResultados', elements => elements.length > 0);
+      if (noResults) {
+        await browser.close();
+        
+        // Update job status
+        await supabaseClient
+          .from('sat_automation_jobs')
+          .update({ 
+            status: 'completed',
+            error_message: 'No invoices found for the specified date range'
+          })
+          .eq('id', jobId);
+          
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: "No invoices found for the specified date range" 
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       
-      // Update job status
+      // Get total number of results
+      const totalResults = await page.$$eval('table.detalleTable tbody tr', rows => rows.length);
+      
+      // Update job status with total files
+      await supabaseClient
+        .from('sat_automation_jobs')
+        .update({ total_files: totalResults })
+        .eq('id', jobId);
+      
+      // Process each invoice XML - similar to main function
+      for (let i = 0; i < totalResults; i++) {
+        try {
+          await page.click(`table.detalleTable tbody tr:nth-child(${i + 1}) td:last-child a[id^="BtnDescarga"]`);
+          await page.waitForTimeout(2000);
+          
+          // Update download counter
+          await supabaseClient
+            .from('sat_automation_jobs')
+            .update({ downloaded_files: i + 1 })
+            .eq('id', jobId);
+        } catch (downloadError) {
+          console.error(`Error downloading invoice ${i + 1}:`, downloadError);
+        }
+      }
+      
+      // Complete the job
       await supabaseClient
         .from('sat_automation_jobs')
         .update({ 
           status: 'completed',
-          updated_at: new Date().toISOString()
+          error_message: null
         })
         .eq('id', jobId);
         
@@ -145,21 +197,29 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: "Successfully resumed job with CAPTCHA solution" 
+          message: `Successfully downloaded ${totalResults} invoices` 
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
       
     } catch (error) {
-      console.error("Error during SAT CAPTCHA handling:", error);
+      console.error("Error during SAT captcha resolution:", error);
       
+      // Take screenshot of error state
+      const screenshot = await page.screenshot({ fullPage: true });
+      const screenshotPath = `${user.id}/${jobId}/captcha-error-screenshot.png`;
+      
+      // Upload screenshot to storage
+      await supabaseClient.storage
+        .from('sat_automation')
+        .upload(screenshotPath, screenshot);
+        
       // Update job with error
       await supabaseClient
         .from('sat_automation_jobs')
         .update({ 
           status: 'failed',
-          error_message: error.message || "Unknown error occurred",
-          updated_at: new Date().toISOString()
+          error_message: error.message || "Unknown error occurred"
         })
         .eq('id', jobId);
         
@@ -169,7 +229,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: error.message || "Unknown error occurred"
+          error: error.message || "Unknown error occurred during CAPTCHA resolution",
+          screenshotPath
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
