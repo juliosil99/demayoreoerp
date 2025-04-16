@@ -1,4 +1,3 @@
-
 import { summarizeFinancialData } from "../helpers/dataUtils.ts";
 import { createAIPrompt } from "../helpers/aiUtils.ts";
 
@@ -39,13 +38,14 @@ export async function generateAIInsights(
       dueDate: payment.dueDate,
       type: payment.type
     })),
-    // Add weekly breakdown of scheduled payments
+    // Weekly breakdowns for the AI to use
     weeklyScheduledPayables: groupByWeek(historicalData.payables, 'due_date', 'amount'),
     weeklyScheduledCreditPayments: groupByWeek(upcomingCreditPayments, 'dueDate', 'amount'),
-    weeklyScheduledReceivables: groupByWeek(historicalData.receivables, 'due_date', 'amount')
+    weeklyScheduledReceivables: groupByWeek(historicalData.receivables, 'due_date', 'amount'),
+    expensePatterns: analyzeExpensePatterns(historicalData.expenses || [])
   };
   
-  // Create prompt for OpenAI with configuration options
+  // Create prompt for OpenAI
   const prompt = createAIPrompt(historicalSummary, config);
   
   try {
@@ -61,7 +61,7 @@ export async function generateAIInsights(
         messages: [
           {
             role: "system",
-            content: "You are a financial forecasting AI assistant specialized in creating variable and accurate weekly cash flow forecasts. You analyze the timing of scheduled payments and historical patterns to project different cash flows for each week."
+            content: "You are a financial forecasting AI assistant specialized in creating accurate and variable weekly cash flow forecasts. You analyze scheduled payments, historical patterns, and financial trends to project different cash flows for each week."
           },
           {
             role: "user",
@@ -133,4 +133,10 @@ function groupByWeek(items: any[], dateField: string, amountField: string) {
     weekNumber: parseInt(week) + 1, // Make week numbers 1-based
     totalAmount: total
   }));
+}
+
+// Helper function to analyze expense patterns
+function analyzeExpensePatterns(expenses: any[]): any[] {
+  // Implement logic to analyze expense patterns
+  return [];
 }

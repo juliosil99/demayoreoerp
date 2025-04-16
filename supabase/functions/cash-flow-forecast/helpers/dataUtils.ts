@@ -1,4 +1,3 @@
-
 interface ScheduledPayment {
   amount: number;
   dueDate: string;
@@ -60,13 +59,16 @@ export function analyzeExpensePatterns(expenses: any[]) {
   const patterns: Record<string, any> = {};
   
   for (const [category, categoryExpenses] of Object.entries(expensesByCategory)) {
-    const weeklyTotal = (categoryExpenses as any[]).reduce((sum, exp) => sum + exp.amount, 0) / 13; // Average over 13 weeks
-    const hasRecurringPattern = detectRecurringPattern(categoryExpenses as any[]);
+    const expenses = categoryExpenses as any[];
+    const weeklyTotal = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0) / 13;
+    const hasRecurringPattern = detectRecurringPattern(expenses);
+    const confidenceScore = calculateConfidence(expenses);
     
     patterns[category] = {
       weeklyAverage: weeklyTotal,
       isRecurring: hasRecurringPattern,
-      confidence: calculateConfidence(categoryExpenses as any[])
+      confidence: confidenceScore,
+      byWeek: groupByWeek(expenses, 'date', 'amount')
     };
   }
   
@@ -146,24 +148,27 @@ export function summarizeFinancialData(items: any[], dateField: string = 'date',
     .sort((a, b) => new Date(b[dateField]).getTime() - new Date(a[dateField]).getTime())
     .slice(0, 10);
   
-  // Get items grouped by month (for trend analysis)
-  const byMonth: Record<string, number> = {};
+  // Group items by week
+  const byWeek: Record<number, number> = {};
   items.forEach(item => {
     const date = new Date(item[dateField]);
     if (!date || isNaN(date.getTime())) return;
     
-    const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
-    if (!byMonth[monthKey]) byMonth[monthKey] = 0;
-    byMonth[monthKey] += Number(item[amountField]) || 0;
+    const weekNumber = Math.floor((date.getTime() - new Date().getTime()) / (7 * 24 * 60 * 60 * 1000));
+    if (weekNumber >= 0 && weekNumber < 13) { // Only include next 13 weeks
+      if (!byWeek[weekNumber]) byWeek[weekNumber] = 0;
+      byWeek[weekNumber] += Number(item[amountField]) || 0;
+    }
   });
   
   // Calculate trend
-  const monthKeys = Object.keys(byMonth).sort();
   let trend = 0;
-  if (monthKeys.length > 1) {
-    const firstMonth = byMonth[monthKeys[0]];
-    const lastMonth = byMonth[monthKeys[monthKeys.length - 1]];
-    trend = firstMonth > 0 ? (lastMonth - firstMonth) / firstMonth : 0;
+  if (items.length > 1) {
+    const firstHalf = items.slice(0, Math.floor(items.length / 2));
+    const secondHalf = items.slice(Math.floor(items.length / 2));
+    const firstHalfAvg = firstHalf.reduce((sum, item) => sum + (Number(item[amountField]) || 0), 0) / firstHalf.length;
+    const secondHalfAvg = secondHalf.reduce((sum, item) => sum + (Number(item[amountField]) || 0), 0) / secondHalf.length;
+    trend = firstHalfAvg > 0 ? (secondHalfAvg - firstHalfAvg) / firstHalfAvg : 0;
   }
   
   return {
@@ -171,7 +176,7 @@ export function summarizeFinancialData(items: any[], dateField: string = 'date',
     total,
     average,
     trend,
-    byMonth,
+    byWeek,
     recentItems: sortedItems.map(item => ({
       date: item[dateField],
       amount: Number(item[amountField]) || 0,
@@ -183,7 +188,60 @@ export function summarizeFinancialData(items: any[], dateField: string = 'date',
   };
 }
 
-// For backward compatibility
+export function analyzeExpensePatterns(expenses: any[]) {
+  // Group expenses by category
+  const expensesByCategory = expenses.reduce((acc: any, expense: any) => {
+    const category = expense.category || 'uncategorized';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(expense);
+    return acc;
+  }, {});
+  
+  // Calculate weekly averages and patterns by category
+  const patterns: Record<string, any> = {};
+  
+  for (const [category, categoryExpenses] of Object.entries(expensesByCategory)) {
+    const expenses = categoryExpenses as any[];
+    const weeklyTotal = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0) / 13;
+    const hasRecurringPattern = detectRecurringPattern(expenses);
+    const confidenceScore = calculateConfidence(expenses);
+    
+    patterns[category] = {
+      weeklyAverage: weeklyTotal,
+      isRecurring: hasRecurringPattern,
+      confidence: confidenceScore,
+      byWeek: groupByWeek(expenses, 'date', 'amount')
+    };
+  }
+  
+  return patterns;
+}
+
+function groupByWeek(items: any[], dateField: string, amountField: string) {
+  const today = new Date();
+  const weeklyData: Record<number, number> = {};
+  
+  items.forEach(item => {
+    const date = new Date(item[dateField]);
+    if (!date || isNaN(date.getTime())) return;
+    
+    const weekNumber = Math.floor((date.getTime() - today.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    if (weekNumber >= 0 && weekNumber < 13) {
+      if (!weeklyData[weekNumber]) {
+        weeklyData[weekNumber] = 0;
+      }
+      weeklyData[weekNumber] += Number(item[amountField]) || 0;
+    }
+  });
+  
+  return Object.entries(weeklyData).map(([week, total]) => ({
+    weekNumber: parseInt(week) + 1,
+    totalAmount: total
+  }));
+}
+
 export function calculateAverageAmount(items: any[]) {
   if (!items?.length) return 0;
   return items.reduce((sum, item) => sum + (item.amount || 0), 0) / items.length;
