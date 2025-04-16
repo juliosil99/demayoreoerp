@@ -20,10 +20,10 @@ export async function generateAIInsights(
   
   // Prepare historical data summary for OpenAI
   const historicalSummary = {
-    payables: summarizeFinancialData(historicalData.payables),
-    receivables: summarizeFinancialData(historicalData.receivables),
-    expenses: summarizeFinancialData(historicalData.expenses),
-    sales: summarizeFinancialData(historicalData.sales),
+    payables: summarizeFinancialData(historicalData.payables, 'due_date', 'amount'),
+    receivables: summarizeFinancialData(historicalData.receivables, 'due_date', 'amount'),
+    expenses: summarizeFinancialData(historicalData.expenses, 'date', 'amount'),
+    sales: summarizeFinancialData(historicalData.sales, 'date', 'price'),
     bankAccounts: historicalData.bankAccounts.map((acc: any) => ({
       name: acc.name,
       balance: acc.balance,
@@ -33,7 +33,16 @@ export async function generateAIInsights(
     availableCashBalance,
     creditLiabilities,
     netPosition,
-    upcomingCreditPayments
+    upcomingCreditPayments: upcomingCreditPayments.map((payment: any) => ({
+      accountName: payment.accountName,
+      amount: payment.amount,
+      dueDate: payment.dueDate,
+      type: payment.type
+    })),
+    // Add weekly breakdown of scheduled payments
+    weeklyScheduledPayables: groupByWeek(historicalData.payables, 'due_date', 'amount'),
+    weeklyScheduledCreditPayments: groupByWeek(upcomingCreditPayments, 'dueDate', 'amount'),
+    weeklyScheduledReceivables: groupByWeek(historicalData.receivables, 'due_date', 'amount')
   };
   
   // Create prompt for OpenAI with configuration options
@@ -52,7 +61,7 @@ export async function generateAIInsights(
         messages: [
           {
             role: "system",
-            content: "You are a financial forecasting AI assistant. Your task is to analyze financial data and provide cash flow forecasts and insights."
+            content: "You are a financial forecasting AI assistant specialized in creating variable and accurate weekly cash flow forecasts. You analyze the timing of scheduled payments and historical patterns to project different cash flows for each week."
           },
           {
             role: "user",
@@ -91,4 +100,37 @@ export async function generateAIInsights(
       insights: "Unable to generate AI-powered insights. Falling back to statistical forecasting."
     };
   }
+}
+
+// Helper function to group financial data by week
+function groupByWeek(items: any[], dateField: string, amountField: string) {
+  if (!items?.length) return [];
+  
+  const today = new Date();
+  const weeklyData: Record<number, number> = {};
+  
+  items.forEach(item => {
+    const date = new Date(item[dateField]);
+    if (!date) return;
+    
+    // Calculate which week this falls into (0 = current week, 1 = next week, etc.)
+    const diffTime = Math.abs(date.getTime() - today.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const weekNumber = Math.floor(diffDays / 7);
+    
+    // Only include items for the next 13 weeks
+    if (weekNumber < 0 || weekNumber >= 13) return;
+    
+    if (!weeklyData[weekNumber]) {
+      weeklyData[weekNumber] = 0;
+    }
+    
+    weeklyData[weekNumber] += Number(item[amountField]) || 0;
+  });
+  
+  // Convert to array format expected by AI
+  return Object.entries(weeklyData).map(([week, total]) => ({
+    weekNumber: parseInt(week) + 1, // Make week numbers 1-based
+    totalAmount: total
+  }));
 }

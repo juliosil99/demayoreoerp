@@ -23,6 +23,13 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
       balanceHistoryEntries: requestBody.historicalData?.balance_history?.length
     }));
     
+    console.log("[DEBUG - Edge Function] Detailed payables count:", 
+      requestBody.historicalData?.payables?.length || 0
+    );
+    console.log("[DEBUG - Edge Function] Detailed credit payments count:", 
+      requestBody.historicalData?.upcomingCreditPayments?.length || 0
+    );
+    
     console.log("[DEBUG - Edge Function - Balance Tracking] Detailed config:", 
       JSON.stringify(requestBody.config, null, 2)
     );
@@ -102,6 +109,17 @@ export async function handleForecastGeneration(req: Request, supabaseClient: any
     
     insights = aiResponse.insights;
     forecastPredictions = aiResponse.weeklyForecasts || [];
+    
+    console.log("[DEBUG - Edge Function] AI insights generated, forecast predictions count:", 
+      forecastPredictions.length
+    );
+    
+    // Print a sample of the predictions (first 2 weeks)
+    if (forecastPredictions.length > 0) {
+      console.log("[DEBUG - Edge Function] Sample predictions:", 
+        JSON.stringify(forecastPredictions.slice(0, 2), null, 2)
+      );
+    }
   } else {
     console.log("[DEBUG - Edge Function] Skipping AI insights generation - AI disabled or no API key");
     insights = "AI-powered insights were not enabled for this forecast.";

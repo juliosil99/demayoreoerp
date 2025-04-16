@@ -134,6 +134,55 @@ function calculateConfidence(expenses: any[]): number {
   return Math.min(1, dataPointFactor + patternFactor + recencyFactor + consistencyFactor);
 }
 
+// Summarize financial data with improved structure
+export function summarizeFinancialData(items: any[], dateField: string = 'date', amountField: string = 'amount') {
+  if (!items?.length) return { count: 0, total: 0, average: 0, items: [] };
+  
+  const total = items.reduce((sum, item) => sum + (Number(item[amountField]) || 0), 0);
+  const average = total / items.length;
+  
+  // Get most recent items (up to 10)
+  const sortedItems = [...items]
+    .sort((a, b) => new Date(b[dateField]).getTime() - new Date(a[dateField]).getTime())
+    .slice(0, 10);
+  
+  // Get items grouped by month (for trend analysis)
+  const byMonth: Record<string, number> = {};
+  items.forEach(item => {
+    const date = new Date(item[dateField]);
+    if (!date || isNaN(date.getTime())) return;
+    
+    const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    if (!byMonth[monthKey]) byMonth[monthKey] = 0;
+    byMonth[monthKey] += Number(item[amountField]) || 0;
+  });
+  
+  // Calculate trend
+  const monthKeys = Object.keys(byMonth).sort();
+  let trend = 0;
+  if (monthKeys.length > 1) {
+    const firstMonth = byMonth[monthKeys[0]];
+    const lastMonth = byMonth[monthKeys[monthKeys.length - 1]];
+    trend = firstMonth > 0 ? (lastMonth - firstMonth) / firstMonth : 0;
+  }
+  
+  return {
+    count: items.length,
+    total,
+    average,
+    trend,
+    byMonth,
+    recentItems: sortedItems.map(item => ({
+      date: item[dateField],
+      amount: Number(item[amountField]) || 0,
+      ...(item.category ? { category: item.category } : {}),
+      ...(item.description ? { description: item.description } : {}),
+      ...(item.name ? { name: item.name } : {}),
+      ...(item.client?.name ? { client: item.client.name } : {})
+    }))
+  };
+}
+
 // For backward compatibility
 export function calculateAverageAmount(items: any[]) {
   if (!items?.length) return 0;
