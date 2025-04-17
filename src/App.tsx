@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -6,14 +7,15 @@ import { Layout } from "@/components/layout/Layout";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import CompanySetup from "@/pages/CompanySetup";
-import Dashboard from "@/features/dashboard/ui/Dashboard";
-import Expenses from "@/features/expenses/ui/Expenses";
-import Banking from "@/features/banking/ui/Banking";
-import Sales from "@/features/sales/ui/Sales";
+import Dashboard from "@/pages/Dashboard";
+import Sales from "@/pages/Sales";
 import Payments from "@/pages/sales/Payments";
 import Invoices from "@/pages/Invoices";
+import Banking from "@/pages/Banking";
+import BankAccountMovements from "@/pages/BankAccountMovements";
 import Contacts from "@/pages/Contacts";
 import ChartOfAccounts from "@/pages/ChartOfAccounts";
+import Expenses from "@/pages/Expenses";
 import Reconciliation from "@/pages/Reconciliation";
 import Reports from "@/pages/Reports";
 import Accounting from "@/pages/Accounting";
