@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 
 /**
@@ -38,7 +37,6 @@ export function formatDateValue(dateValue: any): string {
   
   // Handle string date formats or return today's date if undefined
   if (typeof dateValue === 'string') {
-    // Ensure we're using UTC date parsing to avoid timezone issues
     try {
       const parts = dateValue.split('T')[0].split('-');
       const year = parseInt(parts[0], 10);

@@ -39,11 +39,11 @@ export function DatePickerWithRange({
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(new Date(date.from), "dd/MM/yyyy")} -{" "}
-                  {format(new Date(date.to), "dd/MM/yyyy")}
+                  {format(date.from, "dd/MM/yyyy")} -{" "}
+                  {format(date.to, "dd/MM/yyyy")}
                 </>
               ) : (
-                format(new Date(date.from), "dd/MM/yyyy")
+                format(date.from, "dd/MM/yyyy")
               )
             ) : (
               <span>Seleccione un rango de fechas</span>
@@ -54,10 +54,11 @@ export function DatePickerWithRange({
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={date?.from ? new Date(date.from) : undefined}
+            defaultMonth={date?.from}
             selected={date}
             onSelect={setDate}
             numberOfMonths={2}
+            className="pointer-events-auto"
           />
         </PopoverContent>
       </Popover>
