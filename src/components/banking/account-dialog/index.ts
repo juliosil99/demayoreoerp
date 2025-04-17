@@ -1,2 +1,0 @@
-
-export { BankAccountDialog } from './BankAccountDialog';
