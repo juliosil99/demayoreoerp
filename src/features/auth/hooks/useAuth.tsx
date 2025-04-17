@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
@@ -5,8 +6,9 @@ import { User } from "@supabase/supabase-js";
 interface AuthContextProps {
   user: User | null;
   isLoading: boolean;
-  signIn: (email: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps>({
@@ -14,6 +16,7 @@ const AuthContext = createContext<AuthContextProps>({
   isLoading: true,
   signIn: async () => {},
   signOut: async () => {},
+  signUp: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -36,14 +39,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
   }, []);
 
-  const signIn = async (email: string) => {
+  const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      await supabase.auth.signInWithOtp({ email });
-      alert("Check your email for the magic link to sign in.");
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
     } catch (error) {
       console.error("Error signing in:", error);
-      alert("An error occurred while signing in.");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signUp = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      alert("Check your email for the confirmation link.");
+    } catch (error) {
+      console.error("Error signing up:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -55,13 +72,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await supabase.auth.signOut();
     } catch (error) {
       console.error("Error signing out:", error);
-      alert("An error occurred while signing out.");
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const value: AuthContextProps = { user, isLoading, signIn, signOut };
+  const value: AuthContextProps = { user, isLoading, signIn, signOut, signUp };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
