@@ -1,4 +1,3 @@
-
 import { BanknoteIcon, CreditCard, Pencil, Trash2, FileBarChart, FileText, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,6 +95,38 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
           {accounts?.map((account) => {
             console.log('Rendering account row:', { id: account.id, type: account.type, name: account.name });
             
+            // Define ease-of-use booleans
+            const isCredit = account.type === "Credit Card" || account.type === "Credit Simple";
+            const canShowCalendar = isCredit;
+            const tooltipPalette = [
+              { 
+                key: "movements", label: "Ver movimientos", icon: FileBarChart, 
+                onClick: () => handleViewMovements(account.id, account.type), 
+                show: true 
+              },
+              { 
+                key: "calendar", label: "Ver calendario de pagos", icon: Calendar,
+                onClick: () => canShowCalendar ? navigate(`/accounting/banking/payment-schedule/${account.id}`) : undefined, 
+                show: true, 
+                disabled: !canShowCalendar
+              },
+              { 
+                key: "statements", label: "Estados de cuenta", icon: FileText,
+                onClick: () => handleManageStatements(account), 
+                show: true 
+              },
+              { 
+                key: "edit", label: "Editar cuenta", icon: Pencil,
+                onClick: () => onEdit(account), 
+                show: true 
+              },
+              { 
+                key: "delete", label: "Eliminar cuenta", icon: Trash2,
+                onClick: () => onDelete(account),
+                show: true 
+              }
+            ];
+            
             return (
               <TableRow key={account.id} data-testid={`account-row-${account.id}`}>
                 <TableCell className="font-medium">{account.name}</TableCell>
@@ -121,96 +152,27 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                 <TableCell>
                   <div className="flex justify-end gap-1 flex-wrap items-center">
                     <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewMovements(account.id, account.type)}
-                            data-testid={`view-movements-button-${account.id}`}
-                            className="h-8 w-8 p-0"
-                          >
-                            <FileBarChart className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Ver movimientos</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    
-                    {(account.type === "Credit Card" || account.type === "Credit Simple") && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => navigate(`/accounting/banking/payment-schedule/${account.id}`)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Calendar className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Ver calendario de pagos</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleManageStatements(account)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Estados de cuenta</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onEdit(account)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Editar cuenta</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onDelete(account)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Eliminar cuenta</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      {tooltipPalette.map(({ key, label, icon: Icon, onClick, show, disabled }) => (
+                        show ? (
+                          <Tooltip key={key}>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={onClick}
+                                className="h-8 w-8 p-0"
+                                disabled={!!disabled}
+                                data-testid={`${key}-button-${account.id}`}
+                              >
+                                <Icon className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{label}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : null
+                      ))}
                     </TooltipProvider>
                   </div>
                 </TableCell>
