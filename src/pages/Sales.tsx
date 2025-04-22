@@ -1,16 +1,18 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { DollarSign, Receipt, Calendar } from "lucide-react";
+import { DollarSign, Receipt, Calendar, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SalesImportDialog } from "@/components/sales/SalesImportDialog";
 
 const Sales = () => {
   console.log("Sales component rendering");
   const [isLoading, setIsLoading] = useState(true);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-  const { data: sales } = useQuery({
+  const { data: sales, refetch } = useQuery({
     queryKey: ["sales"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -35,6 +37,15 @@ const Sales = () => {
     <div className="space-y-6 w-full max-w-7xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold">Resumen de Ventas</h1>
+        <Button onClick={() => setImportDialogOpen(true)} variant="outline">
+          <Upload className="w-4 h-4 mr-2" />
+          Importar Ventas
+        </Button>
+        <SalesImportDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          onImportSuccess={() => refetch()}
+        />
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
