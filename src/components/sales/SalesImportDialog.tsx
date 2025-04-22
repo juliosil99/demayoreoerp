@@ -9,12 +9,30 @@ import { read, utils } from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SalesImportDialogProps {
-  open: boolean;
+  isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onImportSuccess?: () => void;
 }
 
-export function SalesImportDialog({ open, onOpenChange, onImportSuccess }: SalesImportDialogProps) {
+interface SalesRowData {
+  [key: string]: string | number | null;
+  Fecha?: string;
+  date?: string;
+  "No. Orden"?: string;
+  orderNumber?: string;
+  Producto?: string;
+  productName?: string;
+  "ID Cliente"?: number;
+  idClient?: number;
+  Monto?: number;
+  price?: number;
+  Ganancia?: number;
+  Profit?: number;
+  Estado?: string;
+  statusPaid?: string;
+}
+
+export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: SalesImportDialogProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
@@ -26,17 +44,25 @@ export function SalesImportDialog({ open, onOpenChange, onImportSuccess }: Sales
     const data = await file.arrayBuffer();
     const workbook = read(data);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    return utils.sheet_to_json(worksheet);
+    return utils.sheet_to_json(worksheet) as SalesRowData[];
   };
 
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
-      toast.error("Seleccione un archivo para importar.");
+      toast({
+        title: "Error",
+        description: "Seleccione un archivo para importar.",
+        variant: "destructive"
+      });
       return;
     }
     if (!file.name.endsWith(".csv") && !file.name.endsWith(".xlsx")) {
-      toast.error("El archivo debe ser CSV o XLSX.");
+      toast({
+        title: "Error",
+        description: "El archivo debe ser CSV o XLSX.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -65,13 +91,24 @@ export function SalesImportDialog({ open, onOpenChange, onImportSuccess }: Sales
         }
       }
       if (successCount > 0) {
-        toast.success(`${successCount} ventas importadas exitosamente.`);
+        toast({
+          title: "Importación Exitosa",
+          description: `${successCount} ventas importadas exitosamente.`,
+        });
         if (onImportSuccess) onImportSuccess();
         onOpenChange(false);
       }
-      if (errorCount > 0) toast.error(`${errorCount} ventas no pudieron importarse.`);
+      if (errorCount > 0) toast({
+        title: "Error",
+        description: `${errorCount} ventas no pudieron importarse.`,
+        variant: "destructive"
+      });
     } catch (err) {
-      toast.error("Ocurrió un error procesando el archivo.");
+      toast({
+        title: "Error",
+        description: "Ocurrió un error procesando el archivo.",
+        variant: "destructive"
+      });
     } finally {
       setIsUploading(false);
       setFile(null);
@@ -79,7 +116,7 @@ export function SalesImportDialog({ open, onOpenChange, onImportSuccess }: Sales
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[430px]">
         <DialogHeader>
           <DialogTitle>Importar Ventas</DialogTitle>
