@@ -89,7 +89,7 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
             <TableHead>Tipo</TableHead>
             <TableHead className="text-right">Saldo Actual</TableHead>
             <TableHead className="text-right">Información de Pago</TableHead>
-            <TableHead className="text-right w-[200px]">Acciones</TableHead>
+            <TableHead className="text-right w-[220px]">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -118,94 +118,96 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                 <TableCell className="text-right">
                   {renderCreditInfo(account)}
                 </TableCell>
-                <TableCell className="flex justify-end gap-1 p-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleViewMovements(account.id, account.type)}
-                          data-testid={`view-movements-button-${account.id}`}
-                        >
-                          <FileBarChart className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Ver movimientos</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  {(account.type === "Credit Card" || account.type === "Credit Simple") && (
+                <TableCell>
+                  <div className="flex justify-end items-center space-x-1">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/accounting/banking/payment-schedule/${account.id}`)}
+                            onClick={() => handleViewMovements(account.id, account.type)}
+                            data-testid={`view-movements-button-${account.id}`}
                           >
-                            <Calendar className="h-4 w-4" />
+                            <FileBarChart className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Ver calendario de pagos</p>
+                          <p>Ver movimientos</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  )}
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleManageStatements(account)}
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Estados de cuenta</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onEdit(account)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Editar cuenta</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onDelete(account)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Eliminar cuenta</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                    
+                    {(account.type === "Credit Card" || account.type === "Credit Simple") && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => navigate(`/accounting/banking/payment-schedule/${account.id}`)}
+                            >
+                              <Calendar className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Ver calendario de pagos</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleManageStatements(account)}
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Estados de cuenta</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onEdit(account)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Editar cuenta</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onDelete(account)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Eliminar cuenta</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </TableCell>
               </TableRow>
             );
