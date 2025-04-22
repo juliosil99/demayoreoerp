@@ -1,3 +1,4 @@
+
 import { BanknoteIcon, CreditCard, Pencil, Trash2, FileBarChart, FileText, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,8 +84,6 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
           <TableRow>
             <TableHead>Nombre de la Cuenta</TableHead>
             <TableHead>Tipo</TableHead>
-            <TableHead className="text-right">Saldo Inicial</TableHead>
-            <TableHead className="text-right">Fecha Inicial</TableHead>
             <TableHead className="text-right">Saldo Actual</TableHead>
             <TableHead className="text-right">Información de Pago</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
@@ -108,18 +107,12 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                 </div>
               </TableCell>
               <TableCell className="text-right">
-                {formatCurrency(account.initial_balance)}
-              </TableCell>
-              <TableCell className="text-right">
-                {formatDate(account.balance_date)}
-              </TableCell>
-              <TableCell className="text-right">
                 {formatCurrency(account.balance)}
               </TableCell>
               <TableCell className="text-right">
                 {renderCreditInfo(account)}
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right min-w-[180px]">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="ghost"
@@ -192,3 +185,4 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
     </div>
   );
 }
+
