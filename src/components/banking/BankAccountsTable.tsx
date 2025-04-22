@@ -89,7 +89,7 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
             <TableHead>Tipo</TableHead>
             <TableHead className="text-right">Saldo Actual</TableHead>
             <TableHead className="text-right">Información de Pago</TableHead>
-            <TableHead className="text-right w-[220px]">Acciones</TableHead>
+            <TableHead className="text-right w-[300px]">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -119,15 +119,16 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                   {renderCreditInfo(account)}
                 </TableCell>
                 <TableCell>
-                  <div className="flex justify-end items-center space-x-1">
+                  <div className="flex justify-end gap-1 flex-wrap items-center">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             onClick={() => handleViewMovements(account.id, account.type)}
                             data-testid={`view-movements-button-${account.id}`}
+                            className="h-8 w-8 p-0"
                           >
                             <FileBarChart className="h-4 w-4" />
                           </Button>
@@ -144,8 +145,9 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                           <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
-                              size="icon"
+                              size="sm"
                               onClick={() => navigate(`/accounting/banking/payment-schedule/${account.id}`)}
+                              className="h-8 w-8 p-0"
                             >
                               <Calendar className="h-4 w-4" />
                             </Button>
@@ -162,8 +164,9 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                         <TooltipTrigger asChild>
                           <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             onClick={() => handleManageStatements(account)}
+                            className="h-8 w-8 p-0"
                           >
                             <FileText className="h-4 w-4" />
                           </Button>
@@ -179,8 +182,9 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                         <TooltipTrigger asChild>
                           <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             onClick={() => onEdit(account)}
+                            className="h-8 w-8 p-0"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -196,8 +200,9 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                         <TooltipTrigger asChild>
                           <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             onClick={() => onDelete(account)}
+                            className="h-8 w-8 p-0"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
