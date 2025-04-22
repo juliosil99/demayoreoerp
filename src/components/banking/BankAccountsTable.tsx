@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { BankStatementsDialog } from "./statements/BankStatementsDialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AccountActions } from "./AccountActions";
 
 interface BankAccountsTableProps {
   accounts: BankAccount[];
@@ -150,31 +151,12 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                   {renderCreditInfo(account)}
                 </TableCell>
                 <TableCell>
-                  <div className="flex justify-end gap-1 flex-wrap items-center">
-                    <TooltipProvider>
-                      {tooltipPalette.map(({ key, label, icon: Icon, onClick, show, disabled }) => (
-                        show ? (
-                          <Tooltip key={key}>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={onClick}
-                                className="h-8 w-8 p-0"
-                                disabled={!!disabled}
-                                data-testid={`${key}-button-${account.id}`}
-                              >
-                                <Icon className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{label}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : null
-                      ))}
-                    </TooltipProvider>
-                  </div>
+                  <AccountActions
+                    account={account}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onManageStatements={handleManageStatements}
+                  />
                 </TableCell>
               </TableRow>
             );
