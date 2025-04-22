@@ -1,4 +1,3 @@
-
 import { BanknoteIcon, CreditCard, Pencil, Trash2, FileBarChart, FileText, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +28,7 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
   const [statementsDialogOpen, setStatementsDialogOpen] = useState(false);
 
   const handleViewMovements = (accountId: number) => {
+    console.log("Viewing movements for account:", accountId);
     navigate(`/accounting/banking/account/${accountId}`);
   };
 
@@ -126,6 +126,7 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                     size="icon"
                     onClick={() => handleViewMovements(account.id)}
                     title="Ver movimientos"
+                    data-testid={`view-movements-${account.type}`}
                   >
                     <FileBarChart className="h-4 w-4" />
                   </Button>
