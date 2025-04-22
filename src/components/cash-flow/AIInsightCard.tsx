@@ -1,148 +1,105 @@
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Key } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface AIInsightCardProps {
-  insights: string;
+  insights?: string | null;
   isLoading?: boolean;
-  isGenerating?: boolean; // Add this prop to support both naming conventions
-  onRequestAPIKey: () => void;
-  isMobile?: boolean;
+  onUpdateForecast?: () => void;
+  onRequestAPIKey?: () => void;
 }
 
-export function AIInsightCard({ 
-  insights, 
-  isLoading,
-  isGenerating, // Accept the new prop
-  onRequestAPIKey,
-  isMobile = false
-}: AIInsightCardProps) {
-  // Use either isLoading or isGenerating (prioritize isGenerating if both are provided)
-  const isLoadingState = isGenerating !== undefined ? isGenerating : isLoading;
-  
-  // Parse insights if available
-  let parsedInsights: any = null;
-  try {
-    if (insights) {
-      parsedInsights = JSON.parse(insights);
+export function AIInsightCard({ insights, isLoading, onUpdateForecast, onRequestAPIKey }: AIInsightCardProps) {
+  const processInsights = (text: string) => {
+    if (!text) return [];
+    
+    try {
+      // Check if the insights string is JSON
+      if (text.startsWith("{") || text.startsWith("[")) {
+        const data = JSON.parse(text);
+        if (data.suggestions) {
+          return Array.isArray(data.suggestions) 
+            ? data.suggestions 
+            : [data.suggestions];
+        }
+        if (data.insight || data.message) {
+          return [data.insight || data.message];
+        }
+        if (Array.isArray(data)) {
+          return data;
+        }
+        return [JSON.stringify(data)];
+      }
+      
+      // Handle plain text - split by newlines or bullets
+      return text
+        .split(/\n+|•/)
+        .filter(line => line.trim() !== "")
+        .map(line => line.trim());
+    } catch (e) {
+      // If parsing fails, split by newlines
+      return text
+        .split(/\n+/)
+        .filter(line => line.trim() !== "")
+        .map(line => line.trim());
     }
-  } catch (e) {
-    console.error("Failed to parse AI insights:", e);
-  }
+  };
+
+  const renderedInsights = insights ? processInsights(insights) : [];
   
-  const needsApiKey = !insights && !isLoadingState;
-  
-  // Different layouts for mobile vs desktop
-  if (isMobile) {
-    return (
-      <div>
-        {isLoadingState && (
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-5/6" />
-          </div>
-        )}
-        
-        {needsApiKey && (
-          <div className="text-center py-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="w-full"
-              onClick={onRequestAPIKey}
-            >
-              <Key className="mr-2 h-4 w-4" />
-              Configurar OpenAI API Key
-            </Button>
-          </div>
-        )}
-        
-        {parsedInsights && (
-          <div className="space-y-3 text-sm">
-            <div>
-              <p className="font-medium">Posición de Efectivo:</p>
-              <p className="text-muted-foreground">{parsedInsights.cashPosition}</p>
-            </div>
-            
-            <div>
-              <p className="font-medium">Recomendaciones:</p>
-              <ul className="list-disc pl-5 text-muted-foreground">
-                {parsedInsights.recommendations?.map((rec: string, i: number) => (
-                  <li key={i}>{rec}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-  
-  // Desktop version
+  const noInsightsMessage = "No AI insights available for this forecast yet.";
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Insights de IA</CardTitle>
+    <Card className="w-full">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <BrainCircuit className="h-4 w-4" />
+            AI Insights
+          </CardTitle>
+          <div className="flex gap-2">
+            {onRequestAPIKey && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onRequestAPIKey}
+                className="text-xs"
+              >
+                Configure API Key
+              </Button>
+            )}
+            {onUpdateForecast && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onUpdateForecast}
+                className="text-xs"
+              >
+                Update Forecast
+              </Button>
+            )}
+          </div>
+        </div>
       </CardHeader>
-      <CardContent>
-        {isLoadingState && (
+      <CardContent className="text-sm">
+        {isLoading ? (
+          <p className="text-muted-foreground">Loading insights...</p>
+        ) : renderedInsights.length > 0 ? (
           <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-5/6" />
-            <Skeleton className="h-4 w-full" />
+            <ul className="list-disc list-inside space-y-1">
+              {renderedInsights.map((insight, index) => (
+                <li key={index} className="text-sm">
+                  {insight}
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
-        
-        {parsedInsights && (
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium">Posición de Efectivo:</h4>
-              <p className="text-muted-foreground">{parsedInsights.cashPosition}</p>
-            </div>
-            
-            {parsedInsights.payablesAnalysis && (
-              <div>
-                <h4 className="font-medium">Análisis de Cuentas por Pagar:</h4>
-                <p className="text-muted-foreground">{parsedInsights.payablesAnalysis}</p>
-              </div>
-            )}
-            
-            {parsedInsights.expenseTrends && (
-              <div>
-                <h4 className="font-medium">Tendencias de Gastos:</h4>
-                <p className="text-muted-foreground">{parsedInsights.expenseTrends}</p>
-              </div>
-            )}
-            
-            <div>
-              <h4 className="font-medium">Recomendaciones:</h4>
-              <ul className="list-disc pl-5 text-muted-foreground">
-                {parsedInsights.recommendations?.map((rec: string, i: number) => (
-                  <li key={i}>{rec}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
+        ) : (
+          <p className="text-muted-foreground">{noInsightsMessage}</p>
         )}
       </CardContent>
-      
-      {needsApiKey && (
-        <CardFooter>
-          <Button 
-            variant="outline" 
-            className="w-full"
-            onClick={onRequestAPIKey}
-          >
-            <Key className="mr-2 h-4 w-4" />
-            Configurar OpenAI API Key
-          </Button>
-        </CardFooter>
-      )}
     </Card>
   );
 }

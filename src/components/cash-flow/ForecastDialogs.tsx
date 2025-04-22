@@ -1,9 +1,9 @@
 
 import React from "react";
-import { CreateForecastDialog } from "@/components/cash-flow/CreateForecastDialog";
-import { GenerateForecastDialog } from "@/components/cash-flow/GenerateForecastDialog";
-import { ForecastItemDialog } from "@/components/cash-flow/ForecastItemDialog";
-import { OpenAIKeyDialog } from "@/components/cash-flow/OpenAIKeyDialog";
+import { CreateForecastDialog } from "./CreateForecastDialog";
+import { GenerateForecastDialog } from "./GenerateForecastDialog";
+import { ForecastItemDialog } from "./ForecastItemDialog";
+import { OpenAIKeyDialog } from "./OpenAIKeyDialog";
 import { ForecastItem, ForecastWeek } from "@/types/cashFlow";
 
 interface ForecastDialogsProps {
@@ -13,23 +13,17 @@ interface ForecastDialogsProps {
   isOpenAIDialogOpen: boolean;
   selectedWeek?: ForecastWeek;
   editingItem?: ForecastItem;
-  historicalDataCount: {
-    payables: number;
-    receivables: number;
-    expenses: number;
-    sales: number;
-    bankAccounts: number;
-  };
+  historicalDataCount: Record<string, number>;
   isCreating: boolean;
   isGenerating: boolean;
   onCloseCreateDialog: () => void;
   onCloseGenerateDialog: () => void;
   onCloseItemDialog: () => void;
   onCloseOpenAIDialog: () => void;
-  onCreateForecast: (name: string, startDate: Date) => void;
-  onGenerateForecast: (options: Record<string, any>) => void;
-  onSaveItem: (item: Partial<ForecastItem>) => void;
-  onSaveOpenAIKey: (apiKey: string) => void;
+  onCreateForecast: (name: string, startDate: Date) => Promise<{success: boolean, message?: string}>;
+  onGenerateForecast: (options: Record<string, any>) => Promise<boolean>;
+  onSaveItem: (item: Partial<ForecastItem>) => Promise<boolean>;
+  onSaveOpenAIKey: (apiKey: string) => Promise<boolean>;
 }
 
 export function ForecastDialogs({
@@ -54,31 +48,33 @@ export function ForecastDialogs({
   return (
     <>
       <CreateForecastDialog 
-        isOpen={isCreateDialogOpen}
-        onClose={onCloseCreateDialog}
-        onCreateForecast={onCreateForecast}
-        isCreating={isCreating}
+        open={isCreateDialogOpen}
+        onOpenChange={onCloseCreateDialog}
+        onCreate={onCreateForecast}
+        isLoading={isCreating}
       />
       
-      <GenerateForecastDialog 
-        isOpen={isGenerateDialogOpen}
-        onClose={onCloseGenerateDialog}
+      <GenerateForecastDialog
+        open={isGenerateDialogOpen}
+        onOpenChange={onCloseGenerateDialog}
         onGenerate={onGenerateForecast}
         isLoading={isGenerating}
         historicalDataCount={historicalDataCount}
       />
       
-      <ForecastItemDialog 
-        isOpen={isItemDialogOpen}
-        onClose={onCloseItemDialog}
-        onSave={onSaveItem}
-        selectedWeek={selectedWeek}
-        item={editingItem}
-      />
+      {selectedWeek && (
+        <ForecastItemDialog
+          open={isItemDialogOpen}
+          onOpenChange={onCloseItemDialog}
+          week={selectedWeek}
+          item={editingItem}
+          onSave={onSaveItem}
+        />
+      )}
       
-      <OpenAIKeyDialog 
-        isOpen={isOpenAIDialogOpen}
-        onClose={onCloseOpenAIDialog}
+      <OpenAIKeyDialog
+        open={isOpenAIDialogOpen}
+        onOpenChange={onCloseOpenAIDialog}
         onSave={onSaveOpenAIKey}
       />
     </>

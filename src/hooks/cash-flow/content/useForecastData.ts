@@ -51,7 +51,8 @@ export function useForecastData() {
     isGenerating,
     status: forecast?.status,
     initialBalance: forecast?.initial_balance,
-    availableCashBalance: forecast?.available_cash_balance
+    availableCashBalance: forecast?.available_cash_balance,
+    aiInsightsPreview: forecast?.ai_insights ? forecast.ai_insights.substring(0, 50) + '...' : 'none'
   });
   
   const { 
@@ -73,14 +74,14 @@ export function useForecastData() {
   }, [selectedForecastId, refreshAllForecastData]);
   
   const historicalDataCount = {
-    payables: historicalData.payables.length,
-    receivables: historicalData.receivables.length,
-    expenses: historicalData.expenses.length,
-    sales: historicalData.sales.length,
-    bankAccounts: historicalData.bankAccounts.length,
-    availableCashBalance: historicalData.availableCashBalance,
-    creditLiabilities: historicalData.creditLiabilities,
-    netPosition: historicalData.netPosition
+    payables: historicalData?.payables?.length || 0,
+    receivables: historicalData?.receivables?.length || 0,
+    expenses: historicalData?.expenses?.length || 0,
+    sales: historicalData?.sales?.length || 0,
+    bankAccounts: historicalData?.bankAccounts?.length || 0,
+    availableCashBalance: historicalData?.availableCashBalance || 0,
+    creditLiabilities: historicalData?.creditLiabilities || 0,
+    netPosition: historicalData?.netPosition || 0
   };
   
   const isDataLoading = isLoading || isLoadingForecasts || isLoadingHistoricalData;
