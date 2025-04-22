@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +6,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { DollarSign, Receipt, Calendar, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SalesImportDialog } from "@/components/sales/SalesImportDialog";
+import { downloadSalesExcelTemplate } from "@/components/sales/utils/salesTemplateUtils";
 
 const Sales = () => {
   console.log("Sales component rendering");
@@ -38,10 +38,19 @@ const Sales = () => {
     <div className="space-y-6 w-full max-w-7xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold">Resumen de Ventas</h1>
-        <Button onClick={() => setImportDialogOpen(true)} variant="outline">
-          <Upload className="w-4 h-4 mr-2" />
-          Importar Ventas
-        </Button>
+        <div className="flex flex-row gap-2">
+          <Button
+            variant="outline"
+            onClick={downloadSalesExcelTemplate}
+            className="border border-dashed"
+          >
+            Descargar plantilla
+          </Button>
+          <Button onClick={() => setImportDialogOpen(true)} variant="outline">
+            <Upload className="w-4 h-4 mr-2" />
+            Importar Ventas
+          </Button>
+        </div>
         <SalesImportDialog
           isOpen={importDialogOpen}
           onOpenChange={setImportDialogOpen}
