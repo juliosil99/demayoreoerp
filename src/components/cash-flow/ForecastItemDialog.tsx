@@ -10,8 +10,8 @@ import { ItemForm } from "./forecast-item/ItemForm";
 interface ForecastItemDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Partial<ForecastItem>) => void;
-  selectedWeek?: ForecastWeek;
+  onSave: (data: Partial<ForecastItem>) => Promise<boolean>;
+  week: ForecastWeek;
   item?: ForecastItem;
 }
 
@@ -19,7 +19,7 @@ export function ForecastItemDialog({
   isOpen,
   onClose,
   onSave,
-  selectedWeek,
+  week,
   item
 }: ForecastItemDialogProps) {
   const form = useForm<ItemFormValues>({
@@ -42,11 +42,9 @@ export function ForecastItemDialog({
   });
 
   const handleSubmit = (values: ItemFormValues) => {
-    if (!selectedWeek) return;
-    
     onSave({
       id: item?.id,
-      week_id: selectedWeek.id,
+      week_id: week.id,
       category: values.category,
       description: values.description,
       amount: values.amount,

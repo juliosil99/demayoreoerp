@@ -7,7 +7,6 @@ import { AIInsightCard } from "@/components/cash-flow/AIInsightCard";
 import { ForecastWeek, ForecastItem } from "@/types/cashFlow";
 import { MobileForecastSheet } from "@/components/cash-flow/MobileForecastSheet";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Button } from "@/components/ui/button";
 
 interface ForecastDetailsSectionProps {
   weeks: ForecastWeek[];
@@ -19,7 +18,7 @@ interface ForecastDetailsSectionProps {
   onAddItem: () => void;
   onEditItem: (item: ForecastItem) => void;
   onRequestAPIKey: () => void;
-  onUpdateForecast?: () => void; // Making sure this is properly defined in the interface
+  onUpdateForecast?: () => void;
 }
 
 export function ForecastDetailsSection({
@@ -54,9 +53,10 @@ export function ForecastDetailsSection({
         />
         
         <AIInsightCard 
-          insights={insights || ""} 
-          isGenerating={isGenerating}
+          insights={insights || ""}
+          isLoading={isGenerating}
           onRequestAPIKey={onRequestAPIKey}
+          onUpdateForecast={onUpdateForecast}
         />
         
         <MobileForecastSheet 
@@ -99,9 +99,10 @@ export function ForecastDetailsSection({
         
         <TabsContent value="insights">
           <AIInsightCard 
-            insights={insights || ""} 
-            isGenerating={isGenerating}
+            insights={insights || ""}
+            isLoading={isGenerating}
             onRequestAPIKey={onRequestAPIKey}
+            onUpdateForecast={onUpdateForecast}
           />
         </TabsContent>
       </Tabs>

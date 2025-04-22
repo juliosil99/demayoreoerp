@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 interface CreateForecastDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateForecast: (name: string, startDate: Date) => void;
+  onCreateForecast: (name: string, startDate: Date) => Promise<{success: boolean, message?: string}>;
   isCreating: boolean;
 }
 

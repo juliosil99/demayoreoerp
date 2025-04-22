@@ -5,6 +5,7 @@ import { GenerateForecastDialog } from "./GenerateForecastDialog";
 import { ForecastItemDialog } from "./ForecastItemDialog";
 import { OpenAIKeyDialog } from "./OpenAIKeyDialog";
 import { ForecastItem, ForecastWeek } from "@/types/cashFlow";
+import { ForecastDataCount } from "./forecast-generation/types";
 
 interface ForecastDialogsProps {
   isCreateDialogOpen: boolean;
@@ -13,7 +14,7 @@ interface ForecastDialogsProps {
   isOpenAIDialogOpen: boolean;
   selectedWeek?: ForecastWeek;
   editingItem?: ForecastItem;
-  historicalDataCount: Record<string, number>;
+  historicalDataCount: ForecastDataCount;
   isCreating: boolean;
   isGenerating: boolean;
   onCloseCreateDialog: () => void;
@@ -48,15 +49,15 @@ export function ForecastDialogs({
   return (
     <>
       <CreateForecastDialog 
-        open={isCreateDialogOpen}
-        onOpenChange={onCloseCreateDialog}
-        onCreate={onCreateForecast}
-        isLoading={isCreating}
+        isOpen={isCreateDialogOpen}
+        onClose={onCloseCreateDialog}
+        onCreateForecast={onCreateForecast}
+        isCreating={isCreating}
       />
       
       <GenerateForecastDialog
-        open={isGenerateDialogOpen}
-        onOpenChange={onCloseGenerateDialog}
+        isOpen={isGenerateDialogOpen}
+        onClose={onCloseGenerateDialog}
         onGenerate={onGenerateForecast}
         isLoading={isGenerating}
         historicalDataCount={historicalDataCount}
@@ -64,8 +65,8 @@ export function ForecastDialogs({
       
       {selectedWeek && (
         <ForecastItemDialog
-          open={isItemDialogOpen}
-          onOpenChange={onCloseItemDialog}
+          isOpen={isItemDialogOpen}
+          onClose={onCloseItemDialog}
           week={selectedWeek}
           item={editingItem}
           onSave={onSaveItem}
@@ -73,8 +74,8 @@ export function ForecastDialogs({
       )}
       
       <OpenAIKeyDialog
-        open={isOpenAIDialogOpen}
-        onOpenChange={onCloseOpenAIDialog}
+        isOpen={isOpenAIDialogOpen}
+        onClose={onCloseOpenAIDialog}
         onSave={onSaveOpenAIKey}
       />
     </>

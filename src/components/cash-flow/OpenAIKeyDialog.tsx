@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 interface OpenAIKeyDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (apiKey: string) => void;
+  onSave: (apiKey: string) => Promise<boolean>;
 }
 
 export function OpenAIKeyDialog({ isOpen, onClose, onSave }: OpenAIKeyDialogProps) {
