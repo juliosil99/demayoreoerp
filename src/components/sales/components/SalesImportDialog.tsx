@@ -7,11 +7,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useSalesImport } from "../hooks/useSalesImport";
 import { ImportForm } from "./ImportForm";
 import { FailureAlert } from "./FailureAlert";
 import { downloadFailedImports } from "../utils/salesTemplateUtils";
 import { SalesImportDialogProps } from "../types";
+import { useSalesImport } from "../hooks/useSalesImport";
 
 export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: SalesImportDialogProps) {
   const {

@@ -1,4 +1,7 @@
 
+import { type } from "os";
+import React from "react";
+
 export interface ImportFormProps {
   isUploading: boolean;
   file: File | null;
