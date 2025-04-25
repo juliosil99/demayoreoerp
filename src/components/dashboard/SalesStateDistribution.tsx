@@ -13,7 +13,7 @@ export const SalesStateDistribution = () => {
       console.log("Fetching sales state distribution data...");
       const { data, error } = await supabase
         .from("Sales")
-        .select('state');
+        .select('state, price'); // Include price to calculate total sales value
       
       if (error) {
         console.error("Error fetching sales data:", error);
@@ -27,25 +27,25 @@ export const SalesStateDistribution = () => {
       
       console.log(`Received ${data.length} sales records`);
       
-      // Filter out null states
-      const validSales = data.filter(sale => sale.state);
-      console.log(`${validSales.length} sales have valid states`);
-      
-      // Group sales by state and calculate count
-      const stateGroups = validSales.reduce((acc: { [key: string]: number }, sale) => {
-        if (sale.state) {
-          acc[sale.state] = (acc[sale.state] || 0) + 1;
+      // Create state groups including null states as "No especificado"
+      const stateGroups = data.reduce((acc: { [key: string]: { count: number, value: number } }, sale) => {
+        const state = sale.state || "No especificado";
+        if (!acc[state]) {
+          acc[state] = { count: 0, value: 0 };
         }
+        acc[state].count += 1;
+        acc[state].value += sale.price || 0;
         return acc;
       }, {});
 
-      console.log("State groups:", stateGroups);
+      console.log("State groups with values:", stateGroups);
 
       // Convert to array and sort by count
       const sortedStates = Object.entries(stateGroups)
-        .map(([state, count]) => ({
+        .map(([state, data]) => ({
           state,
-          count,
+          count: data.count,
+          value: data.value
         }))
         .sort((a, b) => b.count - a.count);
 
@@ -55,16 +55,23 @@ export const SalesStateDistribution = () => {
       const topStates = sortedStates.slice(0, 7);
       const otherStates = sortedStates.slice(7);
       
-      const otherCount = otherStates.reduce((sum, state) => sum + state.count, 0);
-      
-      if (otherCount > 0) {
+      if (otherStates.length > 0) {
+        const otherTotal = otherStates.reduce(
+          (sum, state) => ({
+            count: sum.count + state.count,
+            value: sum.value + state.value
+          }),
+          { count: 0, value: 0 }
+        );
+        
         topStates.push({
           state: "Otros",
-          count: otherCount,
+          count: otherTotal.count,
+          value: otherTotal.value
         });
       }
 
-      // Calculate percentages
+      // Calculate percentages based on total count
       const total = topStates.reduce((sum, state) => sum + state.count, 0);
       return topStates.map(state => ({
         ...state,
@@ -144,7 +151,7 @@ export const SalesStateDistribution = () => {
               </Pie>
               <Tooltip
                 formatter={(value, name, props) => [
-                  `${props.payload.percentage}% (${value} ventas)`,
+                  `${props.payload.percentage}% (${value} ventas - $${props.payload.value.toLocaleString('es-MX')})`,
                   props.payload.state
                 ]}
               />
