@@ -2,11 +2,13 @@
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
+import { Upload, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { read, utils } from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadFailedImports } from "@/components/sales/utils/salesTemplateUtils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SalesImportDialogProps {
   isOpen: boolean;
@@ -32,12 +34,22 @@ interface SalesRowData {
   statusPaid?: string;
 }
 
+interface FailedImport {
+  rowData: Record<string, any>;
+  reason: string;
+  rowIndex: number;
+}
+
 export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: SalesImportDialogProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [failedImports, setFailedImports] = useState<FailedImport[]>([]);
+  const [showFailures, setShowFailures] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
+    setFailedImports([]);
+    setShowFailures(false);
   };
 
   const processFile = async (file: File) => {
@@ -67,57 +79,128 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
     }
 
     setIsUploading(true);
+    setFailedImports([]);
+    setShowFailures(false);
+
     try {
       const salesRows = await processFile(file);
       let successCount = 0, errorCount = 0;
-      for (const row of salesRows) {
-        const { error } = await supabase
-          .from("Sales")
-          .insert([{
-            // Map fields as needed, you can adapt this mapping to your headers/ERP needs
-            date: row.Fecha || row.date || null,
-            orderNumber: row["No. Orden"] || row.orderNumber || null,
-            productName: row.Producto || row.productName || null,
-            idClient: row["ID Cliente"] || row.idClient || null,
-            price: row.Monto || row.price || null,
-            Profit: row.Ganancia || row.Profit || null,
-            statusPaid: row.Estado || row.statusPaid || null,
-            // ... agrega aquí otros campos relevantes que tengan tus archivos
-          }]);
-        if (error) {
+      const newFailedImports: FailedImport[] = [];
+
+      for (let index = 0; index < salesRows.length; index++) {
+        const row = salesRows[index];
+        
+        try {
+          // Basic validation before inserting
+          let validationError = '';
+          
+          if (!row.Fecha && !row.date) validationError = 'Fecha es requerida';
+          else if (!row["No. Orden"] && !row.orderNumber) validationError = 'No. Orden es requerido';
+          else if ((!row.Monto && row.Monto !== 0) && (!row.price && row.price !== 0)) validationError = 'Monto es requerido';
+          
+          if (validationError) {
+            newFailedImports.push({
+              rowData: row,
+              reason: validationError,
+              rowIndex: index + 2 // +2 because Excel is 1-indexed and has headers
+            });
+            errorCount++;
+            continue;
+          }
+          
+          const { error } = await supabase
+            .from("Sales")
+            .insert([{
+              date: row.Fecha || row.date || null,
+              orderNumber: row["No. Orden"] || row.orderNumber || null,
+              productName: row.Producto || row.productName || null,
+              idClient: row["ID Cliente"] || row.idClient || null,
+              price: row.Monto || row.price || null,
+              Profit: row.Ganancia || row.Profit || null,
+              statusPaid: row.Estado || row.statusPaid || null,
+              sku: row.SKU || row.sku || null,
+              Quantity: row.Cantidad || row.Quantity || null,
+              Channel: row.Canal || null,
+              cost: row.Costo || row.cost || null,
+              profitMargin: row.Margen || null,
+              comission: row.Comisión || row.comission || null,
+              retention: row.Retención || row.retention || null,
+              shipping: row.Envío || row.shipping || null,
+              category: row.Categoria || row.category || null,
+              supplierName: row["Nombre Proveedor"] || row.supplierName || null,
+              invoice: row.Factura || row.invoice || null,
+              invoiceDate: row["Fecha Factura"] || row.invoiceDate || null,
+              datePaid: row["Fecha de Pago"] || row.datePaid || null,
+              hour: row.Hora || row.hour || null,
+              city: row.Ciudad || row.city || null,
+              state: row.Estado || row.state || null,
+              postalCode: row["Código Postal"] || row.postalCode || null,
+            }]);
+            
+          if (error) {
+            newFailedImports.push({
+              rowData: row,
+              reason: `Error de base de datos: ${error.message}`,
+              rowIndex: index + 2
+            });
+            errorCount++;
+          } else {
+            successCount++;
+          }
+        } catch (err) {
+          newFailedImports.push({
+            rowData: row,
+            reason: `Error al procesar: ${err instanceof Error ? err.message : 'Desconocido'}`,
+            rowIndex: index + 2
+          });
           errorCount++;
-        } else {
-          successCount++;
         }
       }
+      
+      setFailedImports(newFailedImports);
+      
       if (successCount > 0) {
         toast({
           title: "Importación Exitosa",
           description: `${successCount} ventas importadas exitosamente.`,
         });
         if (onImportSuccess) onImportSuccess();
+      }
+      
+      if (errorCount > 0) {
+        setShowFailures(true);
+        toast({
+          title: "Error",
+          description: `${errorCount} ventas no pudieron importarse.`,
+          variant: "destructive"
+        });
+      } else if (successCount > 0) {
+        // Close dialog only if everything was successful
         onOpenChange(false);
       }
-      if (errorCount > 0) toast({
-        title: "Error",
-        description: `${errorCount} ventas no pudieron importarse.`,
-        variant: "destructive"
-      });
+      
     } catch (err) {
       toast({
         title: "Error",
         description: "Ocurrió un error procesando el archivo.",
         variant: "destructive"
       });
+      console.error("Error processing sales import:", err);
     } finally {
       setIsUploading(false);
       setFile(null);
     }
   };
 
+  const handleDownloadFailedImports = () => {
+    if (failedImports.length > 0) {
+      downloadFailedImports(failedImports);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[430px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Importar Ventas</DialogTitle>
           <DialogDescription>
@@ -132,6 +215,27 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
             onChange={handleFileChange}
             required
           />
+          
+          {showFailures && failedImports.length > 0 && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>
+                <div className="text-sm mb-2">
+                  No se pudieron importar {failedImports.length} registros.
+                </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleDownloadFailedImports}
+                  className="w-full flex items-center justify-center"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Descargar detalle de errores
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <DialogFooter>
             <Button type="button" variant="outline" disabled={isUploading} onClick={() => onOpenChange(false)}>
               Cancelar

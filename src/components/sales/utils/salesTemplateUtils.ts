@@ -1,6 +1,14 @@
 
+
 import { utils, writeFile } from "xlsx";
 import { toast } from "@/components/ui/use-toast";
+
+// Interface for failed imports
+interface FailedImport {
+  rowData: Record<string, any>;
+  reason: string;
+  rowIndex: number;
+}
 
 /**
  * Descarga un template de Excel para importación de ventas
@@ -82,3 +90,50 @@ export const downloadSalesExcelTemplate = () => {
   }
 };
 
+/**
+ * Genera y descarga un archivo Excel con detalles de las ventas que no pudieron ser importadas
+ * @param failedImports Array de objetos con los datos de las filas fallidas y los motivos
+ */
+export const downloadFailedImports = (failedImports: FailedImport[]) => {
+  try {
+    // Preparar datos para el Excel
+    const reportData = failedImports.map(item => {
+      // Combinar los datos originales de la fila con el motivo del error y el número de fila
+      return {
+        "Fila": item.rowIndex,
+        "Motivo de Error": item.reason,
+        ...item.rowData
+      };
+    });
+
+    // Creación del Excel
+    const ws = utils.json_to_sheet(reportData);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, "Errores de Importación");
+    
+    // Ajustar anchos de columnas
+    const wscols = [
+      { wch: 6 },  // Fila
+      { wch: 50 }, // Motivo de Error
+    ];
+    
+    ws['!cols'] = wscols;
+
+    // Guardar archivo
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    writeFile(wb, `errores-importacion-ventas-${timestamp}.xlsx`);
+    
+    toast({
+      title: "Reporte generado",
+      description: "El detalle de los errores de importación se ha descargado exitosamente.",
+    });
+  } catch (error) {
+    console.error("Error generando reporte de errores:", error);
+    toast({
+      title: "Error",
+      description: "No se pudo generar el reporte de errores.",
+      variant: "destructive",
+    });
+  }
+};
