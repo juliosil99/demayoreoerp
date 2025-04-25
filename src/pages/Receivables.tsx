@@ -14,13 +14,14 @@ const Receivables = () => {
   const { data: unpaidSales, isLoading } = useQuery({
     queryKey: ["unpaid-sales"],
     queryFn: async () => {
+      // Updated query to include both 'por cobrar' and null/empty statusPaid values
       const { data, error } = await supabase
         .from("Sales")
         .select(`
           *,
           accounts_receivable!inner(id, status)
         `)
-        .eq('statusPaid', 'por cobrar')
+        .or('statusPaid.eq.por cobrar,statusPaid.is.null,statusPaid.eq.')
         .order('date', { ascending: false });
 
       if (error) throw error;
@@ -79,14 +80,14 @@ const Receivables = () => {
         <CardContent>
           {isLoading ? (
             <div>Cargando...</div>
-          ) : (
+          ) : unpaidSales && unpaidSales.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
                   <TableHead>No. Orden</TableHead>
                   <TableHead>Producto</TableHead>
-                  <TableHead>ID Cliente</TableHead>
+                  <TableHead>Canal</TableHead>
                   <TableHead className="text-right">Monto</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Acciones</TableHead>
@@ -98,7 +99,7 @@ const Receivables = () => {
                     <TableCell>{sale.date ? format(new Date(sale.date), 'dd/MM/yyyy') : 'N/A'}</TableCell>
                     <TableCell>{sale.orderNumber}</TableCell>
                     <TableCell>{sale.productName}</TableCell>
-                    <TableCell>{sale.idClient}</TableCell>
+                    <TableCell>{sale.Channel || 'N/A'}</TableCell>
                     <TableCell className="text-right">{sale.price ? formatCurrency(sale.price) : 'N/A'}</TableCell>
                     <TableCell>
                       <Badge variant="secondary">Por Cobrar</Badge>
@@ -123,6 +124,10 @@ const Receivables = () => {
                 ))}
               </TableBody>
             </Table>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay ventas pendientes de pago en este momento.
+            </div>
           )}
         </CardContent>
       </Card>
