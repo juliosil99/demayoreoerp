@@ -1,4 +1,3 @@
-
 export interface FailedImport {
   rowData: Record<string, any>;
   reason: string;

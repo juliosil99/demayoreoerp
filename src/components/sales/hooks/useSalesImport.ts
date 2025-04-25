@@ -33,7 +33,7 @@ export const useSalesImport = (onImportSuccess?: () => void) => {
         description: "Seleccione un archivo para importar.",
         variant: "destructive"
       });
-      return;
+      return { successCount: 0, errorCount: 0, shouldClose: false };
     }
     if (!file.name.endsWith(".csv") && !file.name.endsWith(".xlsx")) {
       toast({
@@ -41,7 +41,7 @@ export const useSalesImport = (onImportSuccess?: () => void) => {
         description: "El archivo debe ser CSV o XLSX.",
         variant: "destructive"
       });
-      return;
+      return { successCount: 0, errorCount: 0, shouldClose: false };
     }
 
     setIsUploading(true);
