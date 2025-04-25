@@ -30,6 +30,7 @@ const Receivables = () => {
 
   const markAsPaid = useMutation({
     mutationFn: async ({ saleId, receivableId }: { saleId: number, receivableId: string }) => {
+      // Update the Sales record
       const { error: saleError } = await supabase
         .from('Sales')
         .update({ 
@@ -40,6 +41,7 @@ const Receivables = () => {
 
       if (saleError) throw saleError;
 
+      // Update the accounts_receivable record
       const { error: receivableError } = await supabase
         .from('accounts_receivable')
         .update({ status: 'paid' })
