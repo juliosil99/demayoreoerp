@@ -1,21 +1,16 @@
 
-import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { Label } from "@/components/ui/label";
+import { OrdersFileUpload } from "./OrdersFileUpload";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 interface ReconciliationFiltersProps {
   selectedChannel: string;
   onChannelChange: (channel: string) => void;
   orderNumbers: string;
-  onOrderNumbersChange: (orderNumbers: string) => void;
+  onOrderNumbersChange: (orders: string) => void;
 }
 
 export function ReconciliationFilters({
@@ -24,47 +19,48 @@ export function ReconciliationFilters({
   orderNumbers,
   onOrderNumbersChange,
 }: ReconciliationFiltersProps) {
-  const { data: salesChannels } = useQuery({
-    queryKey: ["salesChannels"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales_channels")
-        .select("*")
-        .eq("is_active", true);
-      if (error) throw error;
-      return data;
-    },
-  });
+  const handleFileUploadComplete = (orders: string[]) => {
+    onOrderNumbersChange(orders.join(","));
+  };
 
   return (
-    <div className="space-y-4 border p-4 rounded-md">
-      <h3 className="text-lg font-semibold">Filtros</h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Canal de Venta</Label>
+    <div className="space-y-4">
+      <div className="grid gap-4">
+        <div className="flex flex-col space-y-1.5">
+          <Label htmlFor="channel">Canal de Venta</Label>
           <Select value={selectedChannel} onValueChange={onChannelChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Todos los canales" />
+            <SelectTrigger id="channel">
+              <SelectValue placeholder="Seleccionar canal" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los canales</SelectItem>
-              {salesChannels?.map((channel) => (
-                <SelectItem key={channel.id} value={channel.id}>
-                  {channel.name}
-                </SelectItem>
-              ))}
+              <SelectItem value="Amazon">Amazon</SelectItem>
+              <SelectItem value="Mercado Libre">Mercado Libre</SelectItem>
+              <SelectItem value="Shopify">Shopify</SelectItem>
+              <SelectItem value="Walmart">Walmart</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Números de Orden (separados por coma)</Label>
-          <Input
-            value={orderNumbers}
-            onChange={(e) => onOrderNumbersChange(e.target.value)}
-            placeholder="Ej: 1001, 1002, 1003"
-          />
+        <div className="space-y-4">
+          <Label>Números de Orden</Label>
+          <div className="flex flex-col gap-4">
+            <Input
+              placeholder="Ingresar números de orden separados por coma"
+              value={orderNumbers}
+              onChange={(e) => onOrderNumbersChange(e.target.value)}
+            />
+            <div className="flex justify-between items-center">
+              <OrdersFileUpload onOrdersLoaded={handleFileUploadComplete} />
+            </div>
+          </div>
+
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Puedes ingresar los números de orden manualmente separados por coma, o cargar un archivo Excel con los números de orden en la primera columna.
+            </AlertDescription>
+          </Alert>
         </div>
       </div>
     </div>
