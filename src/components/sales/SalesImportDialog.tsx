@@ -108,24 +108,35 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
             continue;
           }
           
+          // Map the data to match the Supabase table structure 
+          // Fix: Insert each row individually with correct typing
           const { error } = await supabase
             .from("Sales")
-            .insert([{
+            .insert({
               date: row.Fecha || row.date || null,
               orderNumber: row["No. Orden"] || row.orderNumber || null,
               productName: row.Producto || row.productName || null,
-              idClient: row["ID Cliente"] || row.idClient || null,
-              price: row.Monto || row.price || null,
-              Profit: row.Ganancia || row.Profit || null,
+              idClient: typeof row["ID Cliente"] === 'number' ? row["ID Cliente"] : 
+                        typeof row.idClient === 'number' ? row.idClient : null,
+              price: typeof row.Monto === 'number' ? row.Monto : 
+                     typeof row.price === 'number' ? row.price : null,
+              Profit: typeof row.Ganancia === 'number' ? row.Ganancia :
+                      typeof row.Profit === 'number' ? row.Profit : null,
               statusPaid: row.Estado || row.statusPaid || null,
               sku: row.SKU || row.sku || null,
-              Quantity: row.Cantidad || row.Quantity || null,
-              Channel: row.Canal || null,
-              cost: row.Costo || row.cost || null,
-              profitMargin: row.Margen || null,
-              comission: row.Comisión || row.comission || null,
-              retention: row.Retención || row.retention || null,
-              shipping: row.Envío || row.shipping || null,
+              Quantity: typeof row.Cantidad === 'number' ? row.Cantidad :
+                        typeof row.Quantity === 'number' ? row.Quantity : null,
+              Channel: row.Canal || row.Channel || null,
+              cost: typeof row.Costo === 'number' ? row.Costo :
+                    typeof row.cost === 'number' ? row.cost : null,
+              profitMargin: typeof row.Margen === 'number' ? row.Margen :
+                            typeof row.profitMargin === 'number' ? row.profitMargin : null,
+              comission: typeof row.Comisión === 'number' ? row.Comisión :
+                         typeof row.comission === 'number' ? row.comission : null,
+              retention: typeof row.Retención === 'number' ? row.Retención :
+                         typeof row.retention === 'number' ? row.retention : null,
+              shipping: typeof row.Envío === 'number' ? row.Envío :
+                        typeof row.shipping === 'number' ? row.shipping : null,
               category: row.Categoria || row.category || null,
               supplierName: row["Nombre Proveedor"] || row.supplierName || null,
               invoice: row.Factura || row.invoice || null,
@@ -135,7 +146,7 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
               city: row.Ciudad || row.city || null,
               state: row.Estado || row.state || null,
               postalCode: row["Código Postal"] || row.postalCode || null,
-            }]);
+            });
             
           if (error) {
             newFailedImports.push({
