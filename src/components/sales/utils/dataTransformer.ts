@@ -1,13 +1,7 @@
 
-/**
- * Utility functions for transforming and validating data before inserting into Supabase
- */
 import { SalesBase } from "@/integrations/supabase/types/sales";
 import { validateSalesData } from "./salesValidation";
 
-/**
- * Safely converts a value to string, returning null if the value is null or undefined
- */
 const toSafeString = (value: any): string | null => {
   if (value === null || value === undefined || value === '') {
     return null;
@@ -15,9 +9,6 @@ const toSafeString = (value: any): string | null => {
   return String(value);
 };
 
-/**
- * Safely converts a value to number, returning null if the value is not a valid number
- */
 const toSafeNumber = (value: any): number | null => {
   if (value === null || value === undefined || value === '') {
     return null;
@@ -27,9 +18,6 @@ const toSafeNumber = (value: any): number | null => {
   return isNaN(num) ? null : num;
 };
 
-/**
- * Safely converts a status value to the proper type, ensuring it's either "pending", "paid", or null
- */
 const toSafeStatus = (value: any): string | null => {
   if (value === null || value === undefined || value === '') {
     return null;
@@ -39,10 +27,6 @@ const toSafeStatus = (value: any): string | null => {
   return status === "paid" || status === "cobrado" || status === "pagado" ? "paid" : "pending";
 };
 
-/**
- * Transforms raw Excel/CSV row data into a properly typed SalesBase object for Supabase
- * Using explicit property access to ensure exact field name matching
- */
 export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<SalesBase> => {
   console.log('Raw row data:', row); // Debug log to see incoming data
 
