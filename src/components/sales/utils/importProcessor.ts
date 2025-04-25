@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { FailedImport } from "../types";
 import { transformSalesRowToDbFormat, validateSalesRow } from "./dataTransformer";

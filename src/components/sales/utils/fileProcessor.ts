@@ -1,8 +1,6 @@
 
 import { read, utils } from "xlsx";
 import { FailedImport } from "../types";
-import { supabase } from "@/integrations/supabase/client";
-import { transformSalesRowToDbFormat, validateSalesRow } from "./dataTransformer";
 import { processImportData } from "./importProcessor";
 
 export const processFile = async (file: File) => {

@@ -1,12 +1,11 @@
 
+import React from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { FailureAlertProps } from "../types";
+import { FailureAlertProps } from '../types';
 
-export const FailureAlert = ({ failedImports, onDownload }: FailureAlertProps) => {
-  if (failedImports.length === 0) return null;
-  
+export function FailureAlert({ failedImports, onDownload }: FailureAlertProps) {
   return (
     <Alert variant="destructive" className="mt-4">
       <AlertDescription>
@@ -26,4 +25,4 @@ export const FailureAlert = ({ failedImports, onDownload }: FailureAlertProps) =
       </AlertDescription>
     </Alert>
   );
-};
+}
