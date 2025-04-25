@@ -45,7 +45,8 @@ const toSafeStatus = (value: any): string | null => {
 export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<SalesBase> => {
   console.log('Raw row data:', row); // Debug log to see incoming data
 
-  const transformedData = {
+  // Create the object with explicit property names matching the database schema
+  const transformedData: Partial<SalesBase> = {
     // String fields with explicit case handling
     category: toSafeString(row.Categoria || row.category),
     Channel: toSafeString(row.Canal || row.Channel),
@@ -57,7 +58,7 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
     invoiceDate: toSafeString(row["Fecha Factura"] || row.invoiceDate),
     orderNumber: toSafeString(row["No. Orden"] || row.orderNumber),
     postalCode: toSafeString(row["Código Postal"] || row.postalCode),
-    ["productName"]: toSafeString(row.Producto || row.productName), // Using bracket notation for exact case match
+    productName: toSafeString(row.Producto || row.productName), // Explicitly set with correct case
     sku: toSafeString(row.SKU || row.sku),
     state: toSafeString(row["Estado/Provincia"] || row.state),
     statusPaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid),
