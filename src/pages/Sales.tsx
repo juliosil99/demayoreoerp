@@ -31,11 +31,21 @@ const Sales = () => {
         query = query.lt("Profit", 0);
       }
 
-      const { count, error: countError } = await supabase
+      // Create a separate query for counting total rows
+      let countQuery = supabase
         .from("Sales")
-        .select("*", { count: "exact", head: true })
-        .ilike(searchTerm ? "orderNumber" : "id", searchTerm ? `%${searchTerm}%` : "%")
-        .condionalFilter("Profit", lt => showNegativeProfit ? lt.lt(0) : lt);
+        .select("*", { count: "exact", head: true });
+
+      // Apply the same filters to the count query
+      if (searchTerm) {
+        countQuery = countQuery.ilike("orderNumber", `%${searchTerm}%`);
+      }
+
+      if (showNegativeProfit) {
+        countQuery = countQuery.lt("Profit", 0);
+      }
+
+      const { count, error: countError } = await countQuery;
 
       if (countError) {
         console.error("Error fetching count:", countError);
