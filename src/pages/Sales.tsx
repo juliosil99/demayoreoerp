@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,21 +26,18 @@ const Sales = () => {
         query = query.ilike("orderNumber", `%${searchTerm}%`);
       }
 
-      // First, get the count using the correct method
-      const { data: countData, error: countError } = await supabase
+      const { count, error: countError } = await supabase
         .from("Sales")
-        .select("id", { count: "exact" })
-        .ilike(searchTerm ? "orderNumber" : "id", searchTerm ? `%${searchTerm}%` : "%")
-        .count();
-      
+        .select("*", { count: "exact", head: true })
+        .ilike(searchTerm ? "orderNumber" : "id", searchTerm ? `%${searchTerm}%` : "%");
+
       if (countError) {
         console.error("Error fetching count:", countError);
         throw countError;
       }
-      
-      setTotalCount(countData || 0);
 
-      // Then, get the paginated data
+      setTotalCount(count || 0);
+
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
 
