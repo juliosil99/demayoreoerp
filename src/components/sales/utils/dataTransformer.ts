@@ -3,6 +3,7 @@
  * Utility functions for transforming and validating data before inserting into Supabase
  */
 import { SalesBase } from "@/integrations/supabase/types/sales";
+import { validateSalesData } from "./salesValidation";
 
 /**
  * Safely converts a value to string, returning null if the value is null or undefined
@@ -42,10 +43,8 @@ const toSafeStatus = (value: any): string | null => {
  * Transforms raw Excel/CSV row data into a properly typed SalesBase object for Supabase
  */
 export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<SalesBase> => {
-  console.log('Transforming row:', row); // Debug log
-  
   return {
-    // String fields with Spanish column names as primary and English as fallback
+    // String fields
     category: toSafeString(row.Categoria || row.category),
     Channel: toSafeString(row.Canal || row.Channel),
     city: toSafeString(row.Ciudad || row.city),
@@ -62,7 +61,7 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
     statusPaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid),
     supplierName: toSafeString(row["Nombre Proveedor"] || row.supplierName),
     
-    // Number fields with Spanish column names as primary and English as fallback
+    // Number fields
     comission: toSafeNumber(row.Comisión || row.comission),
     cost: toSafeNumber(row.Costo || row.cost),
     idClient: toSafeNumber(row["ID Cliente"] || row.idClient),
@@ -75,19 +74,4 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
   };
 };
 
-/**
- * Validates if the transformed data contains the minimum required fields
- */
-export const validateSalesRow = (data: Partial<SalesBase>): { valid: boolean; reason: string } => {
-  if (!data.date) {
-    return { valid: false, reason: 'Fecha es requerida' };
-  }
-  if (!data.orderNumber) {
-    return { valid: false, reason: 'No. Orden es requerido' };
-  }
-  if (data.price === null && data.price !== 0) {
-    return { valid: false, reason: 'Monto es requerido' };
-  }
-  
-  return { valid: true, reason: '' };
-};
+export { validateSalesData as validateSalesRow };
