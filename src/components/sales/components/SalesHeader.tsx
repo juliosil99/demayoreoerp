@@ -8,9 +8,15 @@ interface SalesHeaderProps {
   onImportClick: () => void;
   onSearch: (value: string) => void;
   onNegativeProfitFilter: (enabled: boolean) => void;
+  showingNegativeProfit: boolean;
 }
 
-export const SalesHeader = ({ onImportClick, onSearch, onNegativeProfitFilter }: SalesHeaderProps) => {
+export const SalesHeader = ({ 
+  onImportClick, 
+  onSearch, 
+  onNegativeProfitFilter,
+  showingNegativeProfit 
+}: SalesHeaderProps) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -34,11 +40,11 @@ export const SalesHeader = ({ onImportClick, onSearch, onNegativeProfitFilter }:
           <SalesSearch onSearch={onSearch} />
         </div>
         <Button
-          variant="outline"
-          onClick={() => onNegativeProfitFilter(true)}
+          variant={showingNegativeProfit ? "destructive" : "outline"}
+          onClick={() => onNegativeProfitFilter(!showingNegativeProfit)}
           className="whitespace-nowrap min-w-40"
         >
-          Ver Ganancias Negativas
+          {showingNegativeProfit ? "Ver Todas las Ventas" : "Ver Ganancias Negativas"}
         </Button>
       </div>
     </div>
