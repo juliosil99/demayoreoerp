@@ -8,11 +8,13 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { SalesSearch } from "@/components/sales/components/SalesSearch";
 
 const ROWS_PER_PAGE = 50;
 
 const Receivables = () => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
   const queryClient = useQueryClient();
 
   const { data: unpaidSales, isLoading } = useQuery({
@@ -32,6 +34,15 @@ const Receivables = () => {
       return data;
     },
   });
+
+  // Filter sales based on search term
+  const filteredSales = unpaidSales?.filter(sale =>
+    sale.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil((filteredSales?.length || 0) / ROWS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+  const paginatedSales = filteredSales?.slice(startIndex, startIndex + ROWS_PER_PAGE);
 
   const markAsPaid = useMutation({
     mutationFn: async ({ saleId, receivableId }: { saleId: number, receivableId: string }) => {
@@ -71,10 +82,6 @@ const Receivables = () => {
     }).format(amount);
   };
 
-  const totalPages = Math.ceil((unpaidSales?.length || 0) / ROWS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
-  const paginatedSales = unpaidSales?.slice(startIndex, startIndex + ROWS_PER_PAGE);
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -86,6 +93,9 @@ const Receivables = () => {
           <CardTitle>Ventas Pendientes de Pago</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <SalesSearch onSearch={setSearchTerm} />
+          </div>
           {isLoading ? (
             <div>Cargando...</div>
           ) : paginatedSales && paginatedSales.length > 0 ? (
