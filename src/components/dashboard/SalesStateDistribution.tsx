@@ -71,9 +71,29 @@ export const SalesStateDistribution = () => {
 
       console.log("Sorted states:", sortedStates);
 
+      // Take top 7 states and group the rest as "Otros"
+      const topStates = sortedStates.slice(0, 7);
+      const otherStates = sortedStates.slice(7);
+      
+      if (otherStates.length > 0) {
+        const otherTotal = otherStates.reduce(
+          (sum, state) => ({
+            count: sum.count + state.count,
+            value: sum.value + state.value
+          }),
+          { count: 0, value: 0 }
+        );
+        
+        topStates.push({
+          state: "Otros",
+          count: otherTotal.count,
+          value: otherTotal.value
+        });
+      }
+
       // Calculate percentages based on total count
       const total = sortedStates.reduce((sum, state) => sum + state.count, 0);
-      return sortedStates.map(state => ({
+      return topStates.map(state => ({
         ...state,
         percentage: ((state.count / total) * 100).toFixed(1)
       }));
@@ -163,4 +183,3 @@ export const SalesStateDistribution = () => {
     </Card>
   );
 };
-
