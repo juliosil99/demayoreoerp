@@ -9,23 +9,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { ReconciliationFilters } from "./components/ReconciliationFilters";
 import { ReconciliationTable } from "./components/ReconciliationTable";
-import { PaymentDetailsForm } from "./components/PaymentDetailsForm";
-import { TotalsSummary } from "./components/TotalsSummary";
+import { PaymentSelector } from "./components/PaymentSelector";
 import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
-import { calculateTotals } from "./utils/calculations";
 
 interface BulkReconciliationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onReconcile: (data: {
     salesIds: number[];
-    paymentData: {
-      date: string;
-      amount: number;
-      account_id: number;
-      payment_method: string;
-      reference_number?: string;
-    };
+    paymentId: string;
   }) => void;
 }
 
@@ -39,25 +31,18 @@ export function BulkReconciliationDialog({
     setSelectedChannel,
     orderNumbers,
     setOrderNumbers,
-    paymentDetails,
-    setPaymentDetails,
-    bankAccounts,
+    selectedPaymentId,
+    setSelectedPaymentId,
     unreconciled,
     isLoading
   } = useBulkReconciliation(open);
 
-  const totals = calculateTotals(unreconciled || []);
-
   const handleReconcile = () => {
-    if (!unreconciled?.length) return;
+    if (!unreconciled?.length || !selectedPaymentId) return;
     
     onReconcile({
       salesIds: unreconciled.map(sale => sale.id),
-      paymentData: {
-        ...paymentDetails,
-        amount: totals.total,
-        account_id: parseInt(paymentDetails.account_id),
-      }
+      paymentId: selectedPaymentId
     });
   };
 
@@ -68,25 +53,25 @@ export function BulkReconciliationDialog({
           <DialogTitle>Reconciliación Masiva de Ventas</DialogTitle>
         </DialogHeader>
 
-        <ReconciliationFilters
-          selectedChannel={selectedChannel}
-          onChannelChange={setSelectedChannel}
-          orderNumbers={orderNumbers}
-          onOrderNumbersChange={setOrderNumbers}
-        />
+        <div className="space-y-6">
+          <PaymentSelector
+            selectedPaymentId={selectedPaymentId}
+            onPaymentSelect={setSelectedPaymentId}
+            selectedChannel={selectedChannel}
+          />
 
-        <ReconciliationTable
-          sales={unreconciled}
-          isLoading={isLoading}
-        />
+          <ReconciliationFilters
+            selectedChannel={selectedChannel}
+            onChannelChange={setSelectedChannel}
+            orderNumbers={orderNumbers}
+            onOrderNumbersChange={setOrderNumbers}
+          />
 
-        <PaymentDetailsForm
-          paymentDetails={paymentDetails}
-          onPaymentDetailsChange={setPaymentDetails}
-          bankAccounts={bankAccounts || []}
-        />
-
-        <TotalsSummary totals={totals} />
+          <ReconciliationTable
+            sales={unreconciled}
+            isLoading={isLoading}
+          />
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -94,7 +79,7 @@ export function BulkReconciliationDialog({
           </Button>
           <Button 
             onClick={handleReconcile}
-            disabled={!unreconciled?.length || !paymentDetails.account_id}
+            disabled={!unreconciled?.length || !selectedPaymentId}
           >
             Reconciliar {unreconciled?.length || 0} Ventas
           </Button>

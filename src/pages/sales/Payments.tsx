@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Payment } from "@/components/payments/PaymentForm";
 import { BulkReconciliationDialog } from "@/components/payments/BulkReconciliationDialog";
@@ -9,6 +8,9 @@ import { PaymentTable } from "./components/PaymentTable";
 import { PaymentHeader } from "./components/PaymentHeader";
 import { PaymentFormDialog } from "./components/PaymentFormDialog";
 import { PaymentPagination } from "./components/PaymentPagination";
+import { useMutation } from "react-query";
+import { supabase } from "@/lib/supabase";
+import { toast } from "react-toastify";
 
 type PaymentWithRelations = Payment & {
   sales_channels: { name: string } | null;
@@ -28,7 +30,30 @@ export default function Payments() {
   });
   
   const deletePaymentMutation = usePaymentDelete();
-  const bulkReconcileMutation = useBulkReconcile();
+  const bulkReconcileMutation = useMutation({
+    mutationFn: async ({ salesIds, paymentId }: { salesIds: number[], paymentId: string }) => {
+      const { error: salesError } = await supabase
+        .from('Sales')
+        .update({ 
+          reconciliation_id: paymentId,
+          statusPaid: 'cobrado',
+          datePaid: new Date().toISOString().split('T')[0]
+        })
+        .in('id', salesIds);
+
+      if (salesError) throw salesError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["unreconciled"] });
+      toast.success("Ventas reconciliadas exitosamente");
+      setShowBulkReconciliation(false);
+    },
+    onError: (error) => {
+      console.error("Error en reconciliación:", error);
+      toast.error("Error al reconciliar las ventas");
+    }
+  });
 
   const handleDelete = (id: string) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este pago?")) {
@@ -58,7 +83,6 @@ export default function Payments() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

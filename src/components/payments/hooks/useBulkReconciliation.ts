@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { SalesTable } from "@/integrations/supabase/types/sales";
 
-// Define a specific type for our use case
 export type UnreconciledSale = SalesTable['Row'] & {
   id: number;
   date: string | null;
@@ -18,18 +17,14 @@ export type UnreconciledSale = SalesTable['Row'] & {
 export function useBulkReconciliation(open: boolean) {
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [orderNumbers, setOrderNumbers] = useState("");
-  const [paymentDetails, setPaymentDetails] = useState({
-    date: new Date().toISOString().split("T")[0],
-    account_id: "",
-    payment_method: "transfer",
-    reference_number: "",
-  });
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string>();
 
   // Reset filters when the modal is opened/closed
   useEffect(() => {
     if (open) {
       setSelectedChannel("all");
       setOrderNumbers("");
+      setSelectedPaymentId(undefined);
     }
   }, [open]);
 
@@ -83,8 +78,8 @@ export function useBulkReconciliation(open: boolean) {
     setSelectedChannel,
     orderNumbers,
     setOrderNumbers,
-    paymentDetails,
-    setPaymentDetails,
+    selectedPaymentId,
+    setSelectedPaymentId,
     bankAccounts,
     unreconciled,
     isLoading,
