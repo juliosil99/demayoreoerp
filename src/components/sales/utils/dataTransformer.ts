@@ -47,29 +47,29 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
   return {
     // String fields with Spanish column names as primary and English as fallback
     category: toSafeString(row.Categoria || row.category),
-    channel: toSafeString(row.Canal || row.Channel || row.channel),
+    Channel: toSafeString(row.Canal || row.Channel),
     city: toSafeString(row.Ciudad || row.city),
     date: toSafeString(row.Fecha || row.date),
-    datepaid: toSafeString(row["Fecha de Pago"] || row.datePaid || row.datepaid),
+    datePaid: toSafeString(row["Fecha de Pago"] || row.datePaid),
     hour: toSafeString(row.Hora || row.hour),
     invoice: toSafeString(row.Factura || row.invoice),
-    invoicedate: toSafeString(row["Fecha Factura"] || row.invoiceDate || row.invoicedate),
-    ordernumber: toSafeString(row["No. Orden"] || row.orderNumber || row.ordernumber),
-    postalcode: toSafeString(row["Código Postal"] || row.postalCode || row.postalcode),
-    productname: toSafeString(row.Producto || row.productName || row.productname),
+    invoiceDate: toSafeString(row["Fecha Factura"] || row.invoiceDate),
+    orderNumber: toSafeString(row["No. Orden"] || row.orderNumber),
+    postalCode: toSafeString(row["Código Postal"] || row.postalCode),
+    productName: toSafeString(row.Producto || row.productName),
     sku: toSafeString(row.SKU || row.sku),
     state: toSafeString(row["Estado/Provincia"] || row.state),
-    statuspaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid || row.statuspaid),
-    suppliername: toSafeString(row["Nombre Proveedor"] || row.supplierName || row.suppliername),
+    statusPaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid),
+    supplierName: toSafeString(row["Nombre Proveedor"] || row.supplierName),
     
     // Number fields with Spanish column names as primary and English as fallback
     comission: toSafeNumber(row.Comisión || row.comission),
     cost: toSafeNumber(row.Costo || row.cost),
-    idclient: toSafeNumber(row["ID Cliente"] || row.idClient || row.idclient),
+    idClient: toSafeNumber(row["ID Cliente"] || row.idClient),
     price: toSafeNumber(row.Monto || row.price),
-    profit: toSafeNumber(row.Ganancia || row.Profit || row.profit),
-    profitmargin: toSafeNumber(row.Margen || row.profitMargin || row.profitmargin),
-    quantity: toSafeNumber(row.Cantidad || row.Quantity || row.quantity),
+    Profit: toSafeNumber(row.Ganancia || row.Profit),
+    profitMargin: toSafeNumber(row.Margen || row.profitMargin),
+    Quantity: toSafeNumber(row.Cantidad || row.Quantity),
     retention: toSafeNumber(row.Retención || row.retention),
     shipping: toSafeNumber(row.Envío || row.shipping),
   };
@@ -82,7 +82,7 @@ export const validateSalesRow = (data: Partial<SalesBase>): { valid: boolean; re
   if (!data.date) {
     return { valid: false, reason: 'Fecha es requerida' };
   }
-  if (!data.ordernumber) {
+  if (!data.orderNumber) {
     return { valid: false, reason: 'No. Orden es requerido' };
   }
   if (data.price === null && data.price !== 0) {

@@ -25,11 +25,11 @@ const Sales = () => {
         .select("*");
 
       if (searchTerm) {
-        query = query.ilike("ordernumber", `%${searchTerm}%`); // Updated to lowercase field name
+        query = query.ilike("orderNumber", `%${searchTerm}%`); // Updated to correct case
       }
 
       if (showNegativeProfit) {
-        query = query.lt("profit", 0); // Updated to lowercase field name
+        query = query.lt("Profit", 0); // Updated to correct case with uppercase 'P'
       }
 
       // Create a separate query for counting total rows
@@ -39,11 +39,11 @@ const Sales = () => {
 
       // Apply the same filters to the count query
       if (searchTerm) {
-        countQuery = countQuery.ilike("ordernumber", `%${searchTerm}%`); // Updated to lowercase field name
+        countQuery = countQuery.ilike("orderNumber", `%${searchTerm}%`); // Updated to correct case
       }
 
       if (showNegativeProfit) {
-        countQuery = countQuery.lt("profit", 0); // Updated to lowercase field name
+        countQuery = countQuery.lt("Profit", 0); // Updated to correct case with uppercase 'P'
       }
 
       const { count, error: countError } = await countQuery;
@@ -68,7 +68,7 @@ const Sales = () => {
       }
 
       // Cast the data to SalesBase[] to ensure type safety
-      return (data || []) as SalesBase[];
+      return data as SalesBase[];
     },
   });
 

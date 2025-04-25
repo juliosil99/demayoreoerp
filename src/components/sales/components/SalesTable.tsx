@@ -35,14 +35,14 @@ export const SalesTable = ({ sales, currentPage, totalPages, onPageChange }: Sal
         </TableHeader>
         <TableBody>
           {sales?.map((sale) => (
-            <TableRow key={sale.id ?? `${sale.ordernumber}-${sale.date}`}>
+            <TableRow key={sale.id ?? `${sale.orderNumber}-${sale.date}`}>
               <TableCell>{new Date(sale.date || "").toLocaleDateString()}</TableCell>
-              <TableCell>{sale.ordernumber}</TableCell>
-              <TableCell>{sale.productname}</TableCell>
-              <TableCell>{sale.idclient}</TableCell>
+              <TableCell>{sale.orderNumber}</TableCell>
+              <TableCell>{sale.productName}</TableCell>
+              <TableCell>{sale.idClient}</TableCell>
               <TableCell className="text-right">{formatCurrency(sale.price || null)}</TableCell>
-              <TableCell className="text-right">{formatCurrency(sale.profit || null)}</TableCell>
-              <TableCell>{sale.statuspaid}</TableCell>
+              <TableCell className="text-right">{formatCurrency(sale.Profit || null)}</TableCell>
+              <TableCell>{sale.statusPaid}</TableCell>
             </TableRow>
           ))}
         </TableBody>
