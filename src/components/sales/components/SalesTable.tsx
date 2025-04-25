@@ -1,0 +1,85 @@
+
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { SalesBase } from "@/integrations/supabase/types/sales";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
+interface SalesTableProps {
+  sales: SalesBase[];
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+export const SalesTable = ({ sales, currentPage, totalPages, onPageChange }: SalesTableProps) => {
+  return (
+    <div className="min-w-[800px]">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Fecha</TableHead>
+            <TableHead>No. Orden</TableHead>
+            <TableHead>Producto</TableHead>
+            <TableHead>ID Cliente</TableHead>
+            <TableHead className="text-right">Monto</TableHead>
+            <TableHead className="text-right">Ganancia</TableHead>
+            <TableHead>Estado</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sales?.map((sale) => (
+            <TableRow key={sale.id}>
+              <TableCell>{new Date(sale.date || "").toLocaleDateString()}</TableCell>
+              <TableCell>{sale.orderNumber}</TableCell>
+              <TableCell>{sale.productName}</TableCell>
+              <TableCell>{sale.idClient}</TableCell>
+              <TableCell className="text-right">${sale.price?.toFixed(2) || "0.00"}</TableCell>
+              <TableCell className="text-right">${sale.Profit?.toFixed(2) || "0.00"}</TableCell>
+              <TableCell>{sale.statusPaid}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {totalPages > 1 && (
+        <div className="mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+                  className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    onClick={() => onPageChange(page)}
+                    isActive={currentPage === page}
+                    className="cursor-pointer"
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
+                  className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+    </div>
+  );
+};
