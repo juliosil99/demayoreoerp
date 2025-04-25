@@ -1,28 +1,27 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer, Tooltip } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrency } from "@/utils/formatters";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#d0ed57'];
+// Custom colors that provide good contrast and visibility
+const COLORS = ['#9b87f5', '#7E69AB', '#6E59A5', '#F97316', '#0EA5E9', '#D946EF', '#8B5CF6', '#403E43'];
 
 // Function to standardize state names
 const standardizeState = (state: string | null): string => {
-  if (!state) return "pendiente";
+  if (!state) return "Pendiente";
   
-  // Convert to lowercase for standardization
   const normalized = state.toLowerCase().trim();
   
-  // Map common variations to standard names
   switch (normalized) {
     case "cobrado":
     case "pagado":
-      return "cobrado";
+      return "Cobrado";
     case "pendiente":
     case "por cobrar":
-      return "pendiente";
+      return "Pendiente";
     default:
-      return normalized;
+      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   }
 };
 
@@ -30,7 +29,6 @@ export const SalesStateDistribution = () => {
   const { data: stateDistribution, isLoading, error } = useQuery({
     queryKey: ["salesStateDistribution"],
     queryFn: async () => {
-      console.log("Fetching sales state distribution data...");
       const { data, error } = await supabase
         .from("Sales")
         .select('statusPaid, price');
@@ -41,13 +39,10 @@ export const SalesStateDistribution = () => {
       }
       
       if (!data || data.length === 0) {
-        console.log("No sales data returned from query");
         return [];
       }
-      
-      console.log(`Received ${data.length} sales records`);
-      
-      // Create state groups with standardized states
+
+      // Group and aggregate sales data
       const stateGroups = data.reduce((acc: { [key: string]: { count: number, value: number } }, sale) => {
         const state = standardizeState(sale.statusPaid);
         if (!acc[state]) {
@@ -58,18 +53,14 @@ export const SalesStateDistribution = () => {
         return acc;
       }, {});
 
-      console.log("State groups with values:", stateGroups);
-
-      // Convert to array and sort by count
+      // Convert to array and sort by value (not count)
       const sortedStates = Object.entries(stateGroups)
         .map(([state, data]) => ({
-          state: state.charAt(0).toUpperCase() + state.slice(1), // Capitalize first letter
+          state,
           count: data.count,
           value: data.value
         }))
-        .sort((a, b) => b.count - a.count);
-
-      console.log("Sorted states:", sortedStates);
+        .sort((a, b) => b.value - a.value); // Sort by value instead of count
 
       // Take top 7 states and group the rest as "Otros"
       const topStates = sortedStates.slice(0, 7);
@@ -91,11 +82,11 @@ export const SalesStateDistribution = () => {
         });
       }
 
-      // Calculate percentages based on total count
-      const total = sortedStates.reduce((sum, state) => sum + state.count, 0);
+      // Calculate percentages based on total value (not count)
+      const totalValue = sortedStates.reduce((sum, state) => sum + state.value, 0);
       return topStates.map(state => ({
         ...state,
-        percentage: ((state.count / total) * 100).toFixed(1)
+        percentage: ((state.value / totalValue) * 100).toFixed(1)
       }));
     }
   });
@@ -104,7 +95,7 @@ export const SalesStateDistribution = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Distribución de Ventas por Estado</CardTitle>
+          <CardTitle>Distribución de Estados de Venta</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] flex items-center justify-center">
@@ -120,7 +111,7 @@ export const SalesStateDistribution = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Distribución de Ventas por Estado</CardTitle>
+          <CardTitle>Distribución de Estados de Venta</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] flex items-center justify-center">
@@ -135,7 +126,7 @@ export const SalesStateDistribution = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Distribución de Ventas por Estado</CardTitle>
+          <CardTitle>Distribución de Estados de Venta</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] flex items-center justify-center">
@@ -157,25 +148,34 @@ export const SalesStateDistribution = () => {
             <PieChart>
               <Pie
                 data={stateDistribution}
-                dataKey="count"
+                dataKey="value"
                 nameKey="state"
                 cx="50%"
                 cy="50%"
-                outerRadius={100}
-                fill="#8884d8"
-                label={({ state, percentage }) => `${state} (${percentage}%)`}
+                outerRadius={80}
+                innerRadius={40}
               >
-                {stateDistribution.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                {stateDistribution.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value, name, props) => [
-                  `${props.payload.percentage}% (${value} ventas - $${props.payload.value.toLocaleString('es-MX')})`,
+                formatter={(value: number, name, props: any) => [
+                  `${formatCurrency(value)} (${props.payload.percentage}%)`,
                   props.payload.state
                 ]}
               />
-              <Legend />
+              <Legend 
+                verticalAlign="bottom" 
+                layout="horizontal"
+                formatter={(value, entry, index) => {
+                  const item = stateDistribution[index];
+                  return `${value} (${item.percentage}%)`;
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
