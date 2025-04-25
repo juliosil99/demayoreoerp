@@ -4,25 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/formatters";
 
-// Custom colors that provide good contrast and visibility
 const COLORS = ['#9b87f5', '#7E69AB', '#6E59A5', '#F97316', '#0EA5E9', '#D946EF', '#8B5CF6', '#403E43'];
 
-// Function to standardize state names
 const standardizeState = (state: string | null): string => {
-  if (!state) return "Pendiente";
-  
-  const normalized = state.toLowerCase().trim();
-  
-  switch (normalized) {
-    case "cobrado":
-    case "pagado":
-      return "Cobrado";
-    case "pendiente":
-    case "por cobrar":
-      return "Pendiente";
-    default:
-      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-  }
+  if (!state) return "Sin Estado";
+  return state.trim().charAt(0).toUpperCase() + state.trim().slice(1).toLowerCase();
 };
 
 export const SalesStateDistribution = () => {
@@ -31,7 +17,7 @@ export const SalesStateDistribution = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("Sales")
-        .select('statusPaid, price');
+        .select('state, price');
       
       if (error) {
         console.error("Error fetching sales data:", error);
@@ -42,9 +28,9 @@ export const SalesStateDistribution = () => {
         return [];
       }
 
-      // Group and aggregate sales data
+      // Group and aggregate sales data by state
       const stateGroups = data.reduce((acc: { [key: string]: { count: number, value: number } }, sale) => {
-        const state = standardizeState(sale.statusPaid);
+        const state = standardizeState(sale.state);
         if (!acc[state]) {
           acc[state] = { count: 0, value: 0 };
         }
@@ -53,14 +39,14 @@ export const SalesStateDistribution = () => {
         return acc;
       }, {});
 
-      // Convert to array and sort by value (not count)
+      // Convert to array and sort by value
       const sortedStates = Object.entries(stateGroups)
         .map(([state, data]) => ({
           state,
           count: data.count,
           value: data.value
         }))
-        .sort((a, b) => b.value - a.value); // Sort by value instead of count
+        .sort((a, b) => b.value - a.value);
 
       // Take top 7 states and group the rest as "Otros"
       const topStates = sortedStates.slice(0, 7);
@@ -76,13 +62,13 @@ export const SalesStateDistribution = () => {
         );
         
         topStates.push({
-          state: "Otros",
+          state: "Otros Estados",
           count: otherTotal.count,
           value: otherTotal.value
         });
       }
 
-      // Calculate percentages based on total value (not count)
+      // Calculate percentages based on total value
       const totalValue = sortedStates.reduce((sum, state) => sum + state.value, 0);
       return topStates.map(state => ({
         ...state,
@@ -95,7 +81,7 @@ export const SalesStateDistribution = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Distribución de Estados de Venta</CardTitle>
+          <CardTitle>Distribución de Ventas por Estado</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] flex items-center justify-center">
@@ -111,7 +97,7 @@ export const SalesStateDistribution = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Distribución de Estados de Venta</CardTitle>
+          <CardTitle>Distribución de Ventas por Estado</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] flex items-center justify-center">
@@ -126,7 +112,7 @@ export const SalesStateDistribution = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Distribución de Estados de Venta</CardTitle>
+          <CardTitle>Distribución de Ventas por Estado</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] flex items-center justify-center">
@@ -140,7 +126,7 @@ export const SalesStateDistribution = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Distribución de Estados de Venta</CardTitle>
+        <CardTitle>Distribución de Ventas por Estado</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
@@ -155,7 +141,7 @@ export const SalesStateDistribution = () => {
                 outerRadius={80}
                 innerRadius={40}
               >
-                {stateDistribution.map((entry, index) => (
+                {stateDistribution?.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
                     fill={COLORS[index % COLORS.length]}
@@ -172,8 +158,8 @@ export const SalesStateDistribution = () => {
                 verticalAlign="bottom" 
                 layout="horizontal"
                 formatter={(value, entry, index) => {
-                  const item = stateDistribution[index];
-                  return `${value} (${item.percentage}%)`;
+                  const item = stateDistribution?.[index];
+                  return `${value} (${item?.percentage}%)`;
                 }}
               />
             </PieChart>
