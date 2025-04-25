@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,25 +11,28 @@ const ITEMS_PER_PAGE = 50;
 
 const Sales = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
 
   const { data: sales, refetch } = useQuery({
-    queryKey: ["sales", currentPage],
+    queryKey: ["sales", currentPage, searchTerm],
     queryFn: async () => {
-      const { count } = await supabase
+      let query = supabase
         .from("Sales")
-        .select("*", { count: "exact", head: true });
-      
+        .select("*");
+
+      if (searchTerm) {
+        query = query.ilike("orderNumber", `%${searchTerm}%`);
+      }
+
+      const { count } = await query.select("*", { count: "exact", head: true });
       setTotalCount(count || 0);
 
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
 
-      const { data, error } = await supabase
-        .from("Sales")
-        .select("*")
+      const { data, error } = await query
         .order("date", { ascending: false })
         .range(from, to);
 
@@ -45,6 +47,11 @@ const Sales = () => {
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
   const totalSales = sales?.reduce((acc, sale) => acc + (sale.price || 0), 0) || 0;
   const totalProfit = sales?.reduce((acc, sale) => acc + (sale.Profit || 0), 0) || 0;
   const averageMargin = sales?.reduce((acc, sale) => acc + (sale.profitMargin || 0), 0) / (sales?.length || 1) || 0;
@@ -56,7 +63,10 @@ const Sales = () => {
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto">
-      <SalesHeader onImportClick={() => setImportDialogOpen(true)} />
+      <SalesHeader 
+        onImportClick={() => setImportDialogOpen(true)}
+        onSearch={handleSearch}
+      />
       
       <SalesImportDialog
         isOpen={importDialogOpen}
