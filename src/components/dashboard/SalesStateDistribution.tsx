@@ -6,6 +6,26 @@ import { supabase } from "@/integrations/supabase/client";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#d0ed57'];
 
+// Function to standardize state names
+const standardizeState = (state: string | null): string => {
+  if (!state) return "pendiente";
+  
+  // Convert to lowercase for standardization
+  const normalized = state.toLowerCase().trim();
+  
+  // Map common variations to standard names
+  switch (normalized) {
+    case "cobrado":
+    case "pagado":
+      return "cobrado";
+    case "pendiente":
+    case "por cobrar":
+      return "pendiente";
+    default:
+      return normalized;
+  }
+};
+
 export const SalesStateDistribution = () => {
   const { data: stateDistribution, isLoading, error } = useQuery({
     queryKey: ["salesStateDistribution"],
@@ -13,7 +33,7 @@ export const SalesStateDistribution = () => {
       console.log("Fetching sales state distribution data...");
       const { data, error } = await supabase
         .from("Sales")
-        .select('state, price'); // Include price to calculate total sales value
+        .select('statusPaid, price');
       
       if (error) {
         console.error("Error fetching sales data:", error);
@@ -27,9 +47,9 @@ export const SalesStateDistribution = () => {
       
       console.log(`Received ${data.length} sales records`);
       
-      // Create state groups including null states as "No especificado"
+      // Create state groups with standardized states
       const stateGroups = data.reduce((acc: { [key: string]: { count: number, value: number } }, sale) => {
-        const state = sale.state || "No especificado";
+        const state = standardizeState(sale.statusPaid);
         if (!acc[state]) {
           acc[state] = { count: 0, value: 0 };
         }
@@ -43,7 +63,7 @@ export const SalesStateDistribution = () => {
       // Convert to array and sort by count
       const sortedStates = Object.entries(stateGroups)
         .map(([state, data]) => ({
-          state,
+          state: state.charAt(0).toUpperCase() + state.slice(1), // Capitalize first letter
           count: data.count,
           value: data.value
         }))
@@ -51,29 +71,9 @@ export const SalesStateDistribution = () => {
 
       console.log("Sorted states:", sortedStates);
 
-      // Take top 7 states and sum the rest
-      const topStates = sortedStates.slice(0, 7);
-      const otherStates = sortedStates.slice(7);
-      
-      if (otherStates.length > 0) {
-        const otherTotal = otherStates.reduce(
-          (sum, state) => ({
-            count: sum.count + state.count,
-            value: sum.value + state.value
-          }),
-          { count: 0, value: 0 }
-        );
-        
-        topStates.push({
-          state: "Otros",
-          count: otherTotal.count,
-          value: otherTotal.value
-        });
-      }
-
       // Calculate percentages based on total count
-      const total = topStates.reduce((sum, state) => sum + state.count, 0);
-      return topStates.map(state => ({
+      const total = sortedStates.reduce((sum, state) => sum + state.count, 0);
+      return sortedStates.map(state => ({
         ...state,
         percentage: ((state.count / total) * 100).toFixed(1)
       }));
@@ -129,7 +129,7 @@ export const SalesStateDistribution = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Distribución de Ventas por Estado</CardTitle>
+        <CardTitle>Distribución de Estados de Venta</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
@@ -163,3 +163,4 @@ export const SalesStateDistribution = () => {
     </Card>
   );
 };
+
