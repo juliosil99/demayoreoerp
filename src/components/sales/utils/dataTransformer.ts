@@ -47,29 +47,29 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
   return {
     // String fields with Spanish column names as primary and English as fallback
     category: toSafeString(row.Categoria || row.category),
-    Channel: toSafeString(row.Canal || row.Channel),
+    channel: toSafeString(row.Canal || row.Channel), // Updated to lowercase 'channel'
     city: toSafeString(row.Ciudad || row.city),
     date: toSafeString(row.Fecha || row.date),
-    datePaid: toSafeString(row["Fecha de Pago"] || row.datePaid),
+    datepaid: toSafeString(row["Fecha de Pago"] || row.datePaid), // Updated to lowercase 'datepaid'
     hour: toSafeString(row.Hora || row.hour),
     invoice: toSafeString(row.Factura || row.invoice),
-    invoiceDate: toSafeString(row["Fecha Factura"] || row.invoiceDate),
-    orderNumber: toSafeString(row["No. Orden"] || row.orderNumber),
-    postalCode: toSafeString(row["Código Postal"] || row.postalCode),
-    productName: toSafeString(row.Producto || row.productName),
+    invoicedate: toSafeString(row["Fecha Factura"] || row.invoiceDate), // Updated to lowercase 'invoicedate'
+    ordernumber: toSafeString(row["No. Orden"] || row.orderNumber), // Updated to lowercase 'ordernumber'
+    postalcode: toSafeString(row["Código Postal"] || row.postalCode), // Updated to lowercase 'postalcode'
+    productname: toSafeString(row.Producto || row.productName), // Updated to lowercase 'productname'
     sku: toSafeString(row.SKU || row.sku),
     state: toSafeString(row["Estado/Provincia"] || row.state), // Geographic state
-    statusPaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid), // Payment status
-    supplierName: toSafeString(row["Nombre Proveedor"] || row.supplierName),
+    statuspaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid), // Updated to lowercase 'statuspaid'
+    suppliername: toSafeString(row["Nombre Proveedor"] || row.supplierName), // Updated to lowercase 'suppliername'
     
     // Number fields with Spanish column names as primary and English as fallback
     comission: toSafeNumber(row.Comisión || row.comission),
     cost: toSafeNumber(row.Costo || row.cost),
-    idClient: toSafeNumber(row["ID Cliente"] || row.idClient),
+    idclient: toSafeNumber(row["ID Cliente"] || row.idClient), // Updated to lowercase 'idclient'
     price: toSafeNumber(row.Monto || row.price),
-    Profit: toSafeNumber(row.Ganancia || row.Profit),
-    profitMargin: toSafeNumber(row.Margen || row.profitMargin),
-    Quantity: toSafeNumber(row.Cantidad || row.Quantity),
+    profit: toSafeNumber(row.Ganancia || row.Profit), // Updated to lowercase 'profit'
+    profitmargin: toSafeNumber(row.Margen || row.profitMargin), // Updated to lowercase 'profitmargin'
+    quantity: toSafeNumber(row.Cantidad || row.Quantity), // Updated to lowercase 'quantity'
     retention: toSafeNumber(row.Retención || row.retention),
     shipping: toSafeNumber(row.Envío || row.shipping),
   };
@@ -82,7 +82,7 @@ export const validateSalesRow = (data: Partial<SalesBase>): { valid: boolean; re
   if (!data.date) {
     return { valid: false, reason: 'Fecha es requerida' };
   }
-  if (!data.orderNumber) {
+  if (!data.ordernumber) { // Updated to match lowercase field name
     return { valid: false, reason: 'No. Orden es requerido' };
   }
   if (data.price === null && data.price !== 0) {
@@ -91,4 +91,3 @@ export const validateSalesRow = (data: Partial<SalesBase>): { valid: boolean; re
   
   return { valid: true, reason: '' };
 };
-
