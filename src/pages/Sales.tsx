@@ -27,16 +27,19 @@ const Sales = () => {
         query = query.ilike("orderNumber", `%${searchTerm}%`);
       }
 
-      // First, get the count
-      const countQuery = query.count();
-      const { count, error: countError } = await countQuery;
+      // First, get the count using the correct method
+      const { data: countData, error: countError } = await supabase
+        .from("Sales")
+        .select("id", { count: "exact" })
+        .ilike(searchTerm ? "orderNumber" : "id", searchTerm ? `%${searchTerm}%` : "%")
+        .count();
       
       if (countError) {
         console.error("Error fetching count:", countError);
         throw countError;
       }
       
-      setTotalCount(count || 0);
+      setTotalCount(countData || 0);
 
       // Then, get the paginated data
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
