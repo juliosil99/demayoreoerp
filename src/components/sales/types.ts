@@ -1,4 +1,3 @@
-
 export interface ImportFormProps {
   isUploading: boolean;
   file: File | null;
@@ -18,4 +17,9 @@ export interface SalesImportDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onImportSuccess?: () => void;
+}
+
+export interface FailureAlertProps {
+  failedImports: FailedImport[];
+  onDownload: () => void;
 }
