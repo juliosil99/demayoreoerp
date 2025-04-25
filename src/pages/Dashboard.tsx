@@ -1,3 +1,4 @@
+
 import { Building, CreditCard, BanknoteIcon, ReceiptIcon, ShoppingCart, Users } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
 import { MetricCard } from "@/components/dashboard/MetricCard";

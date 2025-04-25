@@ -7,17 +7,29 @@ import { supabase } from "@/integrations/supabase/client";
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#d0ed57'];
 
 export const SalesStateDistribution = () => {
-  const { data: stateDistribution } = useQuery({
+  const { data: stateDistribution, isLoading, error } = useQuery({
     queryKey: ["salesStateDistribution"],
     queryFn: async () => {
-      const { data } = await supabase
+      console.log("Fetching sales state distribution data...");
+      const { data, error } = await supabase
         .from("Sales")
-        .select('state, count');
+        .select('state');
       
-      if (!data) return [];
+      if (error) {
+        console.error("Error fetching sales data:", error);
+        throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        console.log("No sales data returned from query");
+        return [];
+      }
+      
+      console.log(`Received ${data.length} sales records`);
       
       // Filter out null states
       const validSales = data.filter(sale => sale.state);
+      console.log(`${validSales.length} sales have valid states`);
       
       // Group sales by state and calculate count
       const stateGroups = validSales.reduce((acc: { [key: string]: number }, sale) => {
@@ -27,6 +39,8 @@ export const SalesStateDistribution = () => {
         return acc;
       }, {});
 
+      console.log("State groups:", stateGroups);
+
       // Convert to array and sort by count
       const sortedStates = Object.entries(stateGroups)
         .map(([state, count]) => ({
@@ -34,6 +48,8 @@ export const SalesStateDistribution = () => {
           count,
         }))
         .sort((a, b) => b.count - a.count);
+
+      console.log("Sorted states:", sortedStates);
 
       // Take top 7 states and sum the rest
       const topStates = sortedStates.slice(0, 7);
@@ -57,8 +73,50 @@ export const SalesStateDistribution = () => {
     }
   });
 
-  if (!stateDistribution?.length) {
-    return null;
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Distribución de Ventas por Estado</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] flex items-center justify-center">
+            <div className="text-muted-foreground">Cargando datos...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    console.error("Error loading sales distribution data:", error);
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Distribución de Ventas por Estado</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] flex items-center justify-center">
+            <div className="text-destructive">Error al cargar los datos</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!stateDistribution || stateDistribution.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Distribución de Ventas por Estado</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] flex items-center justify-center">
+            <div className="text-muted-foreground">No hay datos de ventas por estado disponibles</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
