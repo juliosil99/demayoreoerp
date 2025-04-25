@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { FailedImport } from "../types";
 import { transformSalesRowToDbFormat, validateSalesRow } from "./dataTransformer";
@@ -6,13 +5,20 @@ import { handleImportError } from "./errorHandler";
 import { showImportToasts } from "./toastNotifier";
 import { ProcessingResult } from "./fileProcessor";
 
-export const processImportData = async (salesRows: Record<string, any>[]): Promise<ProcessingResult> => {
+export const processImportData = async (
+  salesRows: Record<string, any>[],
+  onProgress?: (currentRow: number) => void
+): Promise<ProcessingResult> => {
   let successCount = 0, errorCount = 0;
   const newFailedImports: FailedImport[] = [];
 
   for (let index = 0; index < salesRows.length; index++) {
     const row = salesRows[index];
     try {
+      if (onProgress) {
+        onProgress(index + 1);
+      }
+      
       console.log(`Processing row ${index + 2}:`, row);
       
       const salesData = transformSalesRowToDbFormat(row);

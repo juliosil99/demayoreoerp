@@ -19,6 +19,8 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
     file,
     failedImports,
     showFailures,
+    progress,
+    currentFile,
     handleFileChange,
     handleImport
   } = useSalesImport(onImportSuccess);
@@ -51,6 +53,8 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
           file={file}
           onFileChange={handleFileChange}
           onSubmit={handleSubmit}
+          progress={progress}
+          currentFile={currentFile}
         />
 
         {showFailures && (

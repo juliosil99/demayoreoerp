@@ -6,12 +6,15 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { Download, Upload } from "lucide-react";
 import { ImportFormProps } from "../types";
 import { downloadSalesExcelTemplate } from "../utils/salesTemplateUtils";
+import { UploadProgress } from "./UploadProgress";
 
 export const ImportForm = ({ 
   isUploading, 
   file, 
   onFileChange, 
-  onSubmit 
+  onSubmit,
+  progress = 0,
+  currentFile = ""
 }: ImportFormProps) => {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
@@ -36,6 +39,8 @@ export const ImportForm = ({
         onChange={onFileChange}
         required
       />
+      
+      <UploadProgress progress={progress} currentFile={currentFile} />
       
       <DialogFooter>
         <Button type="button" variant="outline" disabled={isUploading}>
