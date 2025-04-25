@@ -1,4 +1,3 @@
-
 import { utils, writeFile } from "xlsx";
 import { toast } from "@/components/ui/use-toast";
 
@@ -30,14 +29,14 @@ export const downloadSalesExcelTemplate = () => {
     "Ganancia", 
     "Margen", 
     "Ciudad", 
-    "Estado/Provincia",  // Geographic state
+    "Estado/Provincia",  // Corrected: Used for geographic state
     "Código Postal", 
     "Factura", 
     "Fecha Factura", 
     "Fecha de Pago", 
     "ID Cliente", 
     "Hora",
-    "Estatus de Pago"    // Payment status
+    "Estatus de Pago"    // Corrected: Used for payment status
   ];
 
   const exampleData = [

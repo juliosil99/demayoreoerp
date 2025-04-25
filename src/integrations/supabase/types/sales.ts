@@ -2,29 +2,29 @@
 export interface SalesBase {
   id?: number
   category: string | null
-  channel: string | null // Changed from Channel to channel
+  Channel: string | null
   city: string | null
   comission: number | null
   cost: number | null
   date: string | null
-  datepaid: string | null // Changed from datePaid to datepaid
+  datePaid: string | null
   hour: string | null
-  idclient: number | null // Changed from idClient to idclient
+  idClient: number | null
   invoice: string | null
-  invoicedate: string | null // Changed from invoiceDate to invoicedate
-  ordernumber: string | null // Changed from orderNumber to ordernumber
-  postalcode: string | null // Changed from postalCode to postalcode
+  invoiceDate: string | null
+  orderNumber: string | null
+  postalCode: string | null
   price: number | null
-  productname: string | null // Changed from productName to productname
-  profit: number | null // Changed from Profit to profit
-  profitmargin: number | null // Changed from profitMargin to profitmargin
-  quantity: number | null // Changed from Quantity to quantity
+  productName: string | null
+  Profit: number | null
+  profitMargin: number | null
+  Quantity: number | null
   retention: number | null
   shipping: number | null
   sku: string | null
   state: string | null
-  statuspaid: string | null // Changed from statusPaid to statuspaid
-  suppliername: string | null // Changed from supplierName to suppliername
+  statusPaid: string | null // Changed from 'pending' | 'paid' | null to string | null
+  supplierName: string | null
   created_at?: string
 }
 
