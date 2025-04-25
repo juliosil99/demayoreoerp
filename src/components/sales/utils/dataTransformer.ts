@@ -42,8 +42,10 @@ const toSafeStatus = (value: any): "pending" | "paid" | null => {
  * Transforms raw Excel/CSV row data into a properly typed SalesBase object for Supabase
  */
 export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<SalesBase> => {
+  console.log('Transforming row:', row); // Debug log
+  
   return {
-    // String fields
+    // String fields with Spanish column names as primary and English as fallback
     category: toSafeString(row.Categoria || row.category),
     Channel: toSafeString(row.Canal || row.Channel),
     city: toSafeString(row.Ciudad || row.city),
@@ -56,11 +58,11 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
     postalCode: toSafeString(row["Código Postal"] || row.postalCode),
     productName: toSafeString(row.Producto || row.productName),
     sku: toSafeString(row.SKU || row.sku),
-    state: toSafeString(row.Estado || row.state),
-    statusPaid: toSafeStatus(row.Estado || row.statusPaid),
+    state: toSafeString(row["Estado/Provincia"] || row.state), // Fixed: Using Estado/Provincia for state
+    statusPaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid), // Fixed: Using Estatus de Pago for payment status
     supplierName: toSafeString(row["Nombre Proveedor"] || row.supplierName),
     
-    // Number fields
+    // Number fields with Spanish column names as primary and English as fallback
     comission: toSafeNumber(row.Comisión || row.comission),
     cost: toSafeNumber(row.Costo || row.cost),
     idClient: toSafeNumber(row["ID Cliente"] || row.idClient),
@@ -89,3 +91,4 @@ export const validateSalesRow = (data: Partial<SalesBase>): { valid: boolean; re
   
   return { valid: true, reason: '' };
 };
+
