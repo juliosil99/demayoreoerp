@@ -34,7 +34,7 @@ export const SalesTable = ({ sales, currentPage, totalPages, onPageChange }: Sal
         </TableHeader>
         <TableBody>
           {sales?.map((sale) => (
-            <TableRow key={sale.id}>
+            <TableRow key={sale.id ?? `${sale.orderNumber}-${sale.date}`}>
               <TableCell>{new Date(sale.date || "").toLocaleDateString()}</TableCell>
               <TableCell>{sale.orderNumber}</TableCell>
               <TableCell>{sale.productName}</TableCell>

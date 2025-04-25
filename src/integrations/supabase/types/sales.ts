@@ -1,5 +1,6 @@
 
 export interface SalesBase {
+  id?: number
   category: string | null
   Channel: string | null
   city: string | null
@@ -22,8 +23,9 @@ export interface SalesBase {
   shipping: number | null
   sku: string | null
   state: string | null
-  statusPaid: 'pending' | 'paid' | null
+  statusPaid: string | null // Changed from 'pending' | 'paid' | null to string | null
   supplierName: string | null
+  created_at?: string
 }
 
 export interface SalesTable {

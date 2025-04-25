@@ -39,7 +39,7 @@ const Sales = () => {
         throw error;
       }
 
-      return data;
+      return data || [];
     },
   });
 
