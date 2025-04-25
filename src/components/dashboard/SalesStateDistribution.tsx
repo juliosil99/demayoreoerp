@@ -10,49 +10,50 @@ export const SalesStateDistribution = () => {
   const { data: stateDistribution } = useQuery({
     queryKey: ["salesStateDistribution"],
     queryFn: async () => {
-      const { data: salesByState } = await supabase
+      const { data } = await supabase
         .from("Sales")
-        .select('state, count')
-        .not('state', 'is', null)
-        .then(({ data }) => {
-          // Group sales by state and calculate count
-          const stateGroups = data?.reduce((acc: { [key: string]: number }, sale) => {
-            if (sale.state) {
-              acc[sale.state] = (acc[sale.state] || 0) + 1;
-            }
-            return acc;
-          }, {});
+        .select('state, count');
+      
+      if (!data) return [];
+      
+      // Filter out null states
+      const validSales = data.filter(sale => sale.state);
+      
+      // Group sales by state and calculate count
+      const stateGroups = validSales.reduce((acc: { [key: string]: number }, sale) => {
+        if (sale.state) {
+          acc[sale.state] = (acc[sale.state] || 0) + 1;
+        }
+        return acc;
+      }, {});
 
-          // Convert to array and sort by count
-          const sortedStates = Object.entries(stateGroups || {})
-            .map(([state, count]) => ({
-              state,
-              count,
-            }))
-            .sort((a, b) => b.count - a.count);
+      // Convert to array and sort by count
+      const sortedStates = Object.entries(stateGroups)
+        .map(([state, count]) => ({
+          state,
+          count,
+        }))
+        .sort((a, b) => b.count - a.count);
 
-          // Take top 7 states and sum the rest
-          const topStates = sortedStates.slice(0, 7);
-          const otherStates = sortedStates.slice(7);
-          
-          const otherCount = otherStates.reduce((sum, state) => sum + state.count, 0);
-          
-          if (otherCount > 0) {
-            topStates.push({
-              state: "Otros",
-              count: otherCount,
-            });
-          }
-
-          // Calculate percentages
-          const total = topStates.reduce((sum, state) => sum + state.count, 0);
-          return topStates.map(state => ({
-            ...state,
-            percentage: ((state.count / total) * 100).toFixed(1)
-          }));
+      // Take top 7 states and sum the rest
+      const topStates = sortedStates.slice(0, 7);
+      const otherStates = sortedStates.slice(7);
+      
+      const otherCount = otherStates.reduce((sum, state) => sum + state.count, 0);
+      
+      if (otherCount > 0) {
+        topStates.push({
+          state: "Otros",
+          count: otherCount,
         });
+      }
 
-      return data || [];
+      // Calculate percentages
+      const total = topStates.reduce((sum, state) => sum + state.count, 0);
+      return topStates.map(state => ({
+        ...state,
+        percentage: ((state.count / total) * 100).toFixed(1)
+      }));
     }
   });
 
