@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SalesImportDialog } from "@/components/sales/SalesImportDialog";
 import { SalesHeader } from "@/components/sales/components/SalesHeader";
 import { SalesTable } from "@/components/sales/components/SalesTable";
+import { SalesBase } from "@/integrations/supabase/types/sales";
 
 const ITEMS_PER_PAGE = 50;
 
@@ -23,11 +25,11 @@ const Sales = () => {
         .select("*");
 
       if (searchTerm) {
-        query = query.ilike("orderNumber", `%${searchTerm}%`);
+        query = query.ilike("ordernumber", `%${searchTerm}%`); // Updated to lowercase field name
       }
 
       if (showNegativeProfit) {
-        query = query.lt("Profit", 0);
+        query = query.lt("profit", 0); // Updated to lowercase field name
       }
 
       // Create a separate query for counting total rows
@@ -37,11 +39,11 @@ const Sales = () => {
 
       // Apply the same filters to the count query
       if (searchTerm) {
-        countQuery = countQuery.ilike("orderNumber", `%${searchTerm}%`);
+        countQuery = countQuery.ilike("ordernumber", `%${searchTerm}%`); // Updated to lowercase field name
       }
 
       if (showNegativeProfit) {
-        countQuery = countQuery.lt("Profit", 0);
+        countQuery = countQuery.lt("profit", 0); // Updated to lowercase field name
       }
 
       const { count, error: countError } = await countQuery;
@@ -65,7 +67,8 @@ const Sales = () => {
         throw error;
       }
 
-      return data || [];
+      // Cast the data to SalesBase[] to ensure type safety
+      return (data || []) as SalesBase[];
     },
   });
 

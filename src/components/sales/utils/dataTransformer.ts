@@ -29,7 +29,7 @@ const toSafeNumber = (value: any): number | null => {
 /**
  * Safely converts a status value to the proper type, ensuring it's either "pending", "paid", or null
  */
-const toSafeStatus = (value: any): "pending" | "paid" | null => {
+const toSafeStatus = (value: any): string | null => {
   if (value === null || value === undefined || value === '') {
     return null;
   }
@@ -47,29 +47,29 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
   return {
     // String fields with Spanish column names as primary and English as fallback
     category: toSafeString(row.Categoria || row.category),
-    Channel: toSafeString(row.Canal || row.Channel),
+    channel: toSafeString(row.Canal || row.Channel || row.channel),
     city: toSafeString(row.Ciudad || row.city),
     date: toSafeString(row.Fecha || row.date),
-    datePaid: toSafeString(row["Fecha de Pago"] || row.datePaid),
+    datepaid: toSafeString(row["Fecha de Pago"] || row.datePaid || row.datepaid),
     hour: toSafeString(row.Hora || row.hour),
     invoice: toSafeString(row.Factura || row.invoice),
-    invoiceDate: toSafeString(row["Fecha Factura"] || row.invoiceDate),
-    orderNumber: toSafeString(row["No. Orden"] || row.orderNumber),
-    postalCode: toSafeString(row["Código Postal"] || row.postalCode),
-    productName: toSafeString(row.Producto || row.productName),
+    invoicedate: toSafeString(row["Fecha Factura"] || row.invoiceDate || row.invoicedate),
+    ordernumber: toSafeString(row["No. Orden"] || row.orderNumber || row.ordernumber),
+    postalcode: toSafeString(row["Código Postal"] || row.postalCode || row.postalcode),
+    productname: toSafeString(row.Producto || row.productName || row.productname),
     sku: toSafeString(row.SKU || row.sku),
-    state: toSafeString(row["Estado/Provincia"] || row.state), // Geographic state
-    statusPaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid), // Payment status
-    supplierName: toSafeString(row["Nombre Proveedor"] || row.supplierName),
+    state: toSafeString(row["Estado/Provincia"] || row.state),
+    statuspaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid || row.statuspaid),
+    suppliername: toSafeString(row["Nombre Proveedor"] || row.supplierName || row.suppliername),
     
     // Number fields with Spanish column names as primary and English as fallback
     comission: toSafeNumber(row.Comisión || row.comission),
     cost: toSafeNumber(row.Costo || row.cost),
-    idClient: toSafeNumber(row["ID Cliente"] || row.idClient),
+    idclient: toSafeNumber(row["ID Cliente"] || row.idClient || row.idclient),
     price: toSafeNumber(row.Monto || row.price),
-    Profit: toSafeNumber(row.Ganancia || row.Profit),
-    profitMargin: toSafeNumber(row.Margen || row.profitMargin),
-    Quantity: toSafeNumber(row.Cantidad || row.Quantity),
+    profit: toSafeNumber(row.Ganancia || row.Profit || row.profit),
+    profitmargin: toSafeNumber(row.Margen || row.profitMargin || row.profitmargin),
+    quantity: toSafeNumber(row.Cantidad || row.Quantity || row.quantity),
     retention: toSafeNumber(row.Retención || row.retention),
     shipping: toSafeNumber(row.Envío || row.shipping),
   };
@@ -82,7 +82,7 @@ export const validateSalesRow = (data: Partial<SalesBase>): { valid: boolean; re
   if (!data.date) {
     return { valid: false, reason: 'Fecha es requerida' };
   }
-  if (!data.orderNumber) {
+  if (!data.ordernumber) {
     return { valid: false, reason: 'No. Orden es requerido' };
   }
   if (data.price === null && data.price !== 0) {
@@ -91,4 +91,3 @@ export const validateSalesRow = (data: Partial<SalesBase>): { valid: boolean; re
   
   return { valid: true, reason: '' };
 };
-
