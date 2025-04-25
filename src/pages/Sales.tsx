@@ -1,10 +1,10 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { SalesImportDialog } from "@/components/sales/SalesImportDialog";
 import { SalesHeader } from "@/components/sales/components/SalesHeader";
-import { SalesMetrics } from "@/components/sales/components/SalesMetrics";
 import { SalesTable } from "@/components/sales/components/SalesTable";
 
 const ITEMS_PER_PAGE = 50;
@@ -61,10 +61,6 @@ const Sales = () => {
     setCurrentPage(1);
   };
 
-  const totalSales = sales?.reduce((acc, sale) => acc + (sale.price || 0), 0) || 0;
-  const totalProfit = sales?.reduce((acc, sale) => acc + (sale.Profit || 0), 0) || 0;
-  const averageMargin = sales?.reduce((acc, sale) => acc + (sale.profitMargin || 0), 0) / (sales?.length || 1) || 0;
-
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -81,12 +77,6 @@ const Sales = () => {
         isOpen={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         onImportSuccess={() => refetch()}
-      />
-
-      <SalesMetrics 
-        totalSales={totalSales}
-        totalProfit={totalProfit}
-        averageMargin={averageMargin}
       />
 
       <Card>
