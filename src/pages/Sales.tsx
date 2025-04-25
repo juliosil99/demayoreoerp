@@ -12,11 +12,12 @@ const ITEMS_PER_PAGE = 50;
 const Sales = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showNegativeProfit, setShowNegativeProfit] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
 
   const { data: sales, refetch } = useQuery({
-    queryKey: ["sales", currentPage, searchTerm],
+    queryKey: ["sales", currentPage, searchTerm, showNegativeProfit],
     queryFn: async () => {
       let query = supabase
         .from("Sales")
@@ -26,10 +27,15 @@ const Sales = () => {
         query = query.ilike("orderNumber", `%${searchTerm}%`);
       }
 
+      if (showNegativeProfit) {
+        query = query.lt("Profit", 0);
+      }
+
       const { count, error: countError } = await supabase
         .from("Sales")
         .select("*", { count: "exact", head: true })
-        .ilike(searchTerm ? "orderNumber" : "id", searchTerm ? `%${searchTerm}%` : "%");
+        .ilike(searchTerm ? "orderNumber" : "id", searchTerm ? `%${searchTerm}%` : "%")
+        .condionalFilter("Profit", lt => showNegativeProfit ? lt.lt(0) : lt);
 
       if (countError) {
         console.error("Error fetching count:", countError);
@@ -61,6 +67,11 @@ const Sales = () => {
     setCurrentPage(1);
   };
 
+  const handleNegativeProfitFilter = (enabled: boolean) => {
+    setShowNegativeProfit(enabled);
+    setCurrentPage(1);
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -71,6 +82,7 @@ const Sales = () => {
       <SalesHeader 
         onImportClick={() => setImportDialogOpen(true)}
         onSearch={handleSearch}
+        onNegativeProfitFilter={handleNegativeProfitFilter}
       />
       
       <SalesImportDialog
