@@ -1,8 +1,8 @@
-
 import { Building, CreditCard, BanknoteIcon, ReceiptIcon, ShoppingCart, Users } from "lucide-react";
 import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
 import { MetricCard } from "@/components/dashboard/MetricCard";
-import { formatCurrency, formatDate } from "@/utils/formatters";
+import { SalesStateDistribution } from "@/components/dashboard/SalesStateDistribution";
+import { formatCurrency } from "@/utils/formatters";
 
 const Dashboard = () => {
   const { metrics, loading } = useDashboardMetrics();
@@ -44,6 +44,10 @@ const Dashboard = () => {
           count={metrics.receivablesCount}
           countLabel="cuentas pendientes"
         />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <SalesStateDistribution />
       </div>
     </div>
   );
