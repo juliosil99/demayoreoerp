@@ -1,0 +1,79 @@
+
+/**
+ * Utility functions for transforming and validating data before inserting into Supabase
+ */
+import { SalesBase } from "@/integrations/supabase/types/sales";
+
+/**
+ * Safely converts a value to string, returning null if the value is null or undefined
+ */
+const toSafeString = (value: any): string | null => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  return String(value);
+};
+
+/**
+ * Safely converts a value to number, returning null if the value is not a valid number
+ */
+const toSafeNumber = (value: any): number | null => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  
+  const num = Number(value);
+  return isNaN(num) ? null : num;
+};
+
+/**
+ * Transforms raw Excel/CSV row data into a properly typed SalesBase object for Supabase
+ */
+export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<SalesBase> => {
+  return {
+    // String fields
+    category: toSafeString(row.Categoria || row.category),
+    Channel: toSafeString(row.Canal || row.Channel),
+    city: toSafeString(row.Ciudad || row.city),
+    date: toSafeString(row.Fecha || row.date),
+    datePaid: toSafeString(row["Fecha de Pago"] || row.datePaid),
+    hour: toSafeString(row.Hora || row.hour),
+    invoice: toSafeString(row.Factura || row.invoice),
+    invoiceDate: toSafeString(row["Fecha Factura"] || row.invoiceDate),
+    orderNumber: toSafeString(row["No. Orden"] || row.orderNumber),
+    postalCode: toSafeString(row["Código Postal"] || row.postalCode),
+    productName: toSafeString(row.Producto || row.productName),
+    sku: toSafeString(row.SKU || row.sku),
+    state: toSafeString(row.Estado || row.state),
+    statusPaid: toSafeString(row.Estado || row.statusPaid),
+    supplierName: toSafeString(row["Nombre Proveedor"] || row.supplierName),
+    
+    // Number fields
+    comission: toSafeNumber(row.Comisión || row.comission),
+    cost: toSafeNumber(row.Costo || row.cost),
+    idClient: toSafeNumber(row["ID Cliente"] || row.idClient),
+    price: toSafeNumber(row.Monto || row.price),
+    Profit: toSafeNumber(row.Ganancia || row.Profit),
+    profitMargin: toSafeNumber(row.Margen || row.profitMargin),
+    Quantity: toSafeNumber(row.Cantidad || row.Quantity),
+    retention: toSafeNumber(row.Retención || row.retention),
+    shipping: toSafeNumber(row.Envío || row.shipping),
+  };
+};
+
+/**
+ * Validates if the transformed data contains the minimum required fields
+ */
+export const validateSalesRow = (data: Partial<SalesBase>): { valid: boolean; reason: string } => {
+  if (!data.date) {
+    return { valid: false, reason: 'Fecha es requerida' };
+  }
+  if (!data.orderNumber) {
+    return { valid: false, reason: 'No. Orden es requerido' };
+  }
+  if (data.price === null && data.price !== 0) {
+    return { valid: false, reason: 'Monto es requerido' };
+  }
+  
+  return { valid: true, reason: '' };
+};

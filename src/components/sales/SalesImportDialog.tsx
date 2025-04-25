@@ -9,6 +9,8 @@ import { read, utils } from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadFailedImports } from "@/components/sales/utils/salesTemplateUtils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { transformSalesRowToDbFormat, validateSalesRow } from "@/components/sales/utils/dataTransformer";
+import { SalesBase } from "@/integrations/supabase/types/sales";
 
 interface SalesImportDialogProps {
   isOpen: boolean;
@@ -17,21 +19,7 @@ interface SalesImportDialogProps {
 }
 
 interface SalesRowData {
-  [key: string]: string | number | null;
-  Fecha?: string;
-  date?: string;
-  "No. Orden"?: string;
-  orderNumber?: string;
-  Producto?: string;
-  productName?: string;
-  "ID Cliente"?: number;
-  idClient?: number;
-  Monto?: number;
-  price?: number;
-  Ganancia?: number;
-  Profit?: number;
-  Estado?: string;
-  statusPaid?: string;
+  [key: string]: any;
 }
 
 interface FailedImport {
@@ -91,61 +79,23 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
         const row = salesRows[index];
         
         try {
-          // Basic validation before inserting
-          let validationError = '';
+          // Transform the row data to match the database schema
+          const salesData: Partial<SalesBase> = transformSalesRowToDbFormat(row);
           
-          if (!row.Fecha && !row.date) validationError = 'Fecha es requerida';
-          else if (!row["No. Orden"] && !row.orderNumber) validationError = 'No. Orden es requerido';
-          else if ((!row.Monto && row.Monto !== 0) && (!row.price && row.price !== 0)) validationError = 'Monto es requerido';
+          // Validate the transformed data
+          const validation = validateSalesRow(salesData);
           
-          if (validationError) {
+          if (!validation.valid) {
             newFailedImports.push({
               rowData: row,
-              reason: validationError,
+              reason: validation.reason,
               rowIndex: index + 2 // +2 because Excel is 1-indexed and has headers
             });
             errorCount++;
             continue;
           }
           
-          // Create a properly typed object aligned with Supabase schema
-          const salesData = {
-            date: row.Fecha || row.date || null,
-            orderNumber: row["No. Orden"] || row.orderNumber || null,
-            productName: row.Producto || row.productName || null,
-            idClient: typeof row["ID Cliente"] === 'number' ? row["ID Cliente"] : 
-                      typeof row.idClient === 'number' ? row.idClient : null,
-            price: typeof row.Monto === 'number' ? row.Monto : 
-                   typeof row.price === 'number' ? row.price : null,
-            Profit: typeof row.Ganancia === 'number' ? row.Ganancia :
-                   typeof row.Profit === 'number' ? row.Profit : null,
-            statusPaid: row.Estado || row.statusPaid || null,
-            sku: row.SKU || row.sku || null,
-            Quantity: typeof row.Cantidad === 'number' ? row.Cantidad :
-                     typeof row.Quantity === 'number' ? row.Quantity : null,
-            Channel: row.Canal || row.Channel || null,
-            cost: typeof row.Costo === 'number' ? row.Costo :
-                 typeof row.cost === 'number' ? row.cost : null,
-            profitMargin: typeof row.Margen === 'number' ? row.Margen :
-                         typeof row.profitMargin === 'number' ? row.profitMargin : null,
-            comission: typeof row.Comisión === 'number' ? row.Comisión :
-                      typeof row.comission === 'number' ? row.comission : null,
-            retention: typeof row.Retención === 'number' ? row.Retención :
-                      typeof row.retention === 'number' ? row.retention : null,
-            shipping: typeof row.Envío === 'number' ? row.Envío :
-                     typeof row.shipping === 'number' ? row.shipping : null,
-            category: row.Categoria || row.category || null,
-            supplierName: row["Nombre Proveedor"] || row.supplierName || null,
-            invoice: row.Factura || row.invoice || null,
-            invoiceDate: row["Fecha Factura"] || row.invoiceDate || null,
-            datePaid: row["Fecha de Pago"] || row.datePaid || null,
-            hour: row.Hora || row.hour || null,
-            city: row.Ciudad || row.city || null,
-            state: row.Estado || row.state || null,
-            postalCode: row["Código Postal"] || row.postalCode || null,
-          };
-            
-          // Insert the row into Supabase
+          // Insert the validated data into Supabase
           const { error } = await supabase.from("Sales").insert(salesData);
             
           if (error) {
