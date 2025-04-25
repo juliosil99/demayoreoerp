@@ -41,6 +41,7 @@ const toSafeStatus = (value: any): string | null => {
 
 /**
  * Transforms raw Excel/CSV row data into a properly typed SalesBase object for Supabase
+ * Using explicit property access to ensure exact field name matching
  */
 export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<SalesBase> => {
   console.log('Raw row data:', row); // Debug log to see incoming data
@@ -77,6 +78,11 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
   };
 
   console.log('Transformed data:', transformedData); // Debug log to verify transformation
+  
+  // Extra debug to check object properties
+  console.log('Object keys:', Object.keys(transformedData));
+  console.log('Has productName?', Object.prototype.hasOwnProperty.call(transformedData, 'productName'));
+  
   return transformedData;
 };
 
