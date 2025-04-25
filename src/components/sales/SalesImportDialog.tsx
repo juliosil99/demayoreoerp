@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { read, utils } from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
-import { downloadFailedImports } from "@/components/sales/utils/salesTemplateUtils";
+import { downloadSalesExcelTemplate, downloadFailedImports } from "@/components/sales/utils/salesTemplateUtils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { transformSalesRowToDbFormat, validateSalesRow } from "@/components/sales/utils/dataTransformer";
 import { SalesBase } from "@/integrations/supabase/types/sales";
@@ -47,6 +47,10 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
     return utils.sheet_to_json(worksheet) as SalesRowData[];
   };
 
+  const handleDownloadTemplate = () => {
+    downloadSalesExcelTemplate();
+  };
+
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
@@ -77,6 +81,7 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
 
       for (let index = 0; index < salesRows.length; index++) {
         const row = salesRows[index];
+        console.log("Processing row:", row); // Debug log
         
         try {
           // Transform the row data to match the database schema
@@ -169,6 +174,20 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleImport} className="space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-muted-foreground">Usar plantilla:</span>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={handleDownloadTemplate}
+              className="flex items-center"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Descargar plantilla
+            </Button>
+          </div>
+          
           <Input
             type="file"
             accept=".csv,.xlsx"

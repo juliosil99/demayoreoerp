@@ -35,7 +35,7 @@ const toSafeStatus = (value: any): "pending" | "paid" | null => {
   }
   
   const status = String(value).toLowerCase();
-  return status === "paid" || status === "cobrado" ? "paid" : "pending";
+  return status === "paid" || status === "cobrado" || status === "pagado" ? "paid" : "pending";
 };
 
 /**
@@ -58,8 +58,8 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
     postalCode: toSafeString(row["Código Postal"] || row.postalCode),
     productName: toSafeString(row.Producto || row.productName),
     sku: toSafeString(row.SKU || row.sku),
-    state: toSafeString(row["Estado/Provincia"] || row.state), // Fixed: Using Estado/Provincia for state
-    statusPaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid), // Fixed: Using Estatus de Pago for payment status
+    state: toSafeString(row["Estado/Provincia"] || row.state), // Geographic state
+    statusPaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid), // Payment status
     supplierName: toSafeString(row["Nombre Proveedor"] || row.supplierName),
     
     // Number fields with Spanish column names as primary and English as fallback
