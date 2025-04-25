@@ -47,6 +47,7 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
   console.log('Raw row data:', row); // Debug log to see incoming data
 
   // Create the object with explicit property names matching the database schema
+  // This ensures case sensitivity is properly maintained
   const transformedData: Partial<SalesBase> = {
     // String fields with explicit case handling
     category: toSafeString(row.Categoria || row.category),

@@ -27,40 +27,36 @@ export const processImportData = async (salesRows: Record<string, any>[]): Promi
         continue;
       }
       
-      // Ensure we're using the right field names with correct casing
-      // Convert the data to a plain object to avoid any prototype issues
-      const cleanData = {
-        category: salesData.category,
-        Channel: salesData.Channel,
-        city: salesData.city,
-        comission: salesData.comission,
-        cost: salesData.cost,
-        date: salesData.date,
-        datePaid: salesData.datePaid,
-        hour: salesData.hour,
-        idClient: salesData.idClient,
-        invoice: salesData.invoice,
-        invoiceDate: salesData.invoiceDate,
-        orderNumber: salesData.orderNumber,
-        postalCode: salesData.postalCode,
-        price: salesData.price,
-        productName: salesData.productName, // Make sure this is exactly as expected by the database
-        Profit: salesData.Profit,
-        profitMargin: salesData.profitMargin,
-        Quantity: salesData.Quantity,
-        retention: salesData.retention,
-        shipping: salesData.shipping,
-        sku: salesData.sku,
-        state: salesData.state,
-        statusPaid: salesData.statusPaid,
-        supplierName: salesData.supplierName
-      };
-      
-      console.log(`Clean data for insertion for row ${index + 2}:`, cleanData); // Debug the final data
-      
+      // Using an object with explicit field names to ensure case sensitivity is preserved
+      // We're using the PostgreSQL-preferred format with quoted identifiers
       const { error } = await supabase
         .from("Sales")
-        .insert(cleanData);
+        .insert({
+          "category": salesData.category,
+          "Channel": salesData.Channel,
+          "city": salesData.city,
+          "comission": salesData.comission,
+          "cost": salesData.cost,
+          "date": salesData.date,
+          "datePaid": salesData.datePaid,
+          "hour": salesData.hour,
+          "idClient": salesData.idClient,
+          "invoice": salesData.invoice,
+          "invoiceDate": salesData.invoiceDate,
+          "orderNumber": salesData.orderNumber,
+          "postalCode": salesData.postalCode,
+          "price": salesData.price,
+          "productName": salesData.productName, // This ensures exact case preservation
+          "Profit": salesData.Profit,
+          "profitMargin": salesData.profitMargin,
+          "Quantity": salesData.Quantity,
+          "retention": salesData.retention,
+          "shipping": salesData.shipping,
+          "sku": salesData.sku,
+          "state": salesData.state,
+          "statusPaid": salesData.statusPaid,
+          "supplierName": salesData.supplierName
+        });
         
       if (error) {
         console.error(`Error inserting row ${index + 2}:`, error); // Debug log
