@@ -7,19 +7,40 @@ import { DollarSign, Receipt, Calendar, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SalesImportDialog } from "@/components/sales/SalesImportDialog";
 import { downloadSalesExcelTemplate } from "@/components/sales/utils/salesTemplateUtils";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
+const ITEMS_PER_PAGE = 50;
 
 const Sales = () => {
-  console.log("Sales component rendering");
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
 
   const { data: sales, refetch } = useQuery({
-    queryKey: ["sales"],
+    queryKey: ["sales", currentPage],
     queryFn: async () => {
+      const { count } = await supabase
+        .from("Sales")
+        .select("*", { count: "exact", head: true });
+      
+      setTotalCount(count || 0);
+
+      const from = (currentPage - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
       const { data, error } = await supabase
         .from("Sales")
         .select("*")
-        .order("date", { ascending: false });
+        .order("date", { ascending: false })
+        .range(from, to);
 
       if (error) {
         console.error("Error fetching sales:", error);
@@ -30,9 +51,16 @@ const Sales = () => {
     },
   });
 
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
   const totalSales = sales?.reduce((acc, sale) => acc + (sale.price || 0), 0) || 0;
   const totalProfit = sales?.reduce((acc, sale) => acc + (sale.Profit || 0), 0) || 0;
   const averageMargin = sales?.reduce((acc, sale) => acc + (sale.profitMargin || 0), 0) / (sales?.length || 1) || 0;
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto">
@@ -120,6 +148,40 @@ const Sales = () => {
                 ))}
               </TableBody>
             </Table>
+
+            {totalPages > 1 && (
+              <div className="mt-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                        className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                        className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
