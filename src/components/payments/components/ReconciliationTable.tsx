@@ -1,7 +1,8 @@
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatCardDate } from "@/utils/formatters";
-import type { UnreconciledSale } from "../hooks/useBulkReconciliation";
+import { Skeleton } from "@/components/ui/skeleton";
+import { UnreconciledSale } from "../hooks/useBulkReconciliation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 interface ReconciliationTableProps {
   sales?: UnreconciledSale[];
@@ -10,45 +11,44 @@ interface ReconciliationTableProps {
 
 export function ReconciliationTable({ sales, isLoading }: ReconciliationTableProps) {
   if (isLoading) {
-    return <div className="text-center py-4">Cargando ventas...</div>;
+    return <Skeleton className="h-32 w-full" />;
   }
 
-  if (!sales?.length) {
+  if (!sales || sales.length === 0) {
     return (
-      <div className="text-center py-4 border rounded-md">
-        No hay ventas sin reconciliar que coincidan con los filtros.
-      </div>
+      <Alert variant="default" className="bg-muted/50">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          No hay ventas sin reconciliar que coincidan con los filtros.
+        </AlertDescription>
+      </Alert>
     );
   }
 
-  // Calculate total amount
-  const totalAmount = sales.reduce((sum, sale) => {
-    const amount = sale.type === 'E' ? -1 * (sale.price || 0) : (sale.price || 0);
-    return sum + amount;
-  }, 0);
-
-  // Calculate totals by type
-  const regularInvoices = sales.filter(sale => sale.type !== 'E');
-  const creditNotes = sales.filter(sale => sale.type === 'E');
+  // Calculate totals
+  const totalSales = sales.length;
+  const totalAmount = sales.reduce((sum, sale) => sum + (sale.price || 0), 0);
+  
+  // Count number of invoices and credit notes
+  const invoices = sales.filter(sale => !sale.type || sale.type === 'invoice').length;
+  const creditNotes = sales.filter(sale => sale.type === 'credit_note').length;
 
   return (
-    <div className="border rounded-md p-4 space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="p-4 bg-gray-50 rounded-md">
-          <p className="text-sm text-gray-600">Total Facturas</p>
-          <p className="text-lg font-semibold">{regularInvoices.length}</p>
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Resumen de Reconciliación</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-4 border rounded-md bg-background">
+          <div className="text-sm text-muted-foreground">Total de Facturas</div>
+          <div className="text-2xl font-bold">{invoices}</div>
         </div>
-        <div className="p-4 bg-gray-50 rounded-md">
-          <p className="text-sm text-gray-600">Total Notas de Crédito</p>
-          <p className="text-lg font-semibold">{creditNotes.length}</p>
+        <div className="p-4 border rounded-md bg-background">
+          <div className="text-sm text-muted-foreground">Notas de Crédito</div>
+          <div className="text-2xl font-bold">{creditNotes}</div>
         </div>
-      </div>
-      
-      <div className="bg-gray-50 p-4 rounded-md">
-        <p className="text-sm text-gray-600">Monto Total a Reconciliar</p>
-        <p className="text-xl font-semibold">
-          ${Math.abs(totalAmount).toFixed(2)}
-        </p>
+        <div className="p-4 border rounded-md bg-background">
+          <div className="text-sm text-muted-foreground">Monto Total</div>
+          <div className="text-2xl font-bold">${totalAmount.toFixed(2)}</div>
+        </div>
       </div>
     </div>
   );

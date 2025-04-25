@@ -11,6 +11,7 @@ import { ReconciliationFilters } from "./components/ReconciliationFilters";
 import { ReconciliationTable } from "./components/ReconciliationTable";
 import { PaymentSelector } from "./components/PaymentSelector";
 import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
+import { useEffect } from "react";
 
 interface BulkReconciliationDialogProps {
   open: boolean;
@@ -34,8 +35,14 @@ export function BulkReconciliationDialog({
     selectedPaymentId,
     setSelectedPaymentId,
     unreconciled,
-    isLoading
+    isLoading,
+    resetFilters
   } = useBulkReconciliation(open);
+
+  // Reset the payment selection when the channel changes
+  useEffect(() => {
+    setSelectedPaymentId(undefined);
+  }, [selectedChannel, setSelectedPaymentId]);
 
   const handleReconcile = () => {
     if (!unreconciled?.length || !selectedPaymentId) return;

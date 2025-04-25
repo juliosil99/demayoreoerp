@@ -19,12 +19,17 @@ export function useBulkReconciliation(open: boolean) {
   const [orderNumbers, setOrderNumbers] = useState("");
   const [selectedPaymentId, setSelectedPaymentId] = useState<string>();
 
+  // Reset filters when the modal is opened
+  const resetFilters = () => {
+    setSelectedChannel("all");
+    setOrderNumbers("");
+    setSelectedPaymentId(undefined);
+  };
+
   // Reset filters when the modal is opened/closed
   useEffect(() => {
     if (open) {
-      setSelectedChannel("all");
-      setOrderNumbers("");
-      setSelectedPaymentId(undefined);
+      resetFilters();
     }
   }, [open]);
 
@@ -42,8 +47,14 @@ export function useBulkReconciliation(open: boolean) {
 
   // Fetch unreconciled sales
   const { data: unreconciled, isLoading } = useQuery({
-    queryKey: ["unreconciled", selectedChannel, orderNumbers],
+    queryKey: ["unreconciled", selectedChannel, orderNumbers, selectedPaymentId],
     queryFn: async () => {
+      console.log("Fetching unreconciled sales with filters:", {
+        channel: selectedChannel,
+        orderNumbers,
+        paymentId: selectedPaymentId
+      });
+      
       let query = supabase
         .from("Sales")
         .select("*")
@@ -67,7 +78,12 @@ export function useBulkReconciliation(open: boolean) {
       }
 
       const { data, error } = await query.order("date", { ascending: false });
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching unreconciled sales:", error);
+        throw error;
+      }
+      
+      console.log("Fetched unreconciled sales:", data?.length || 0);
       return data as UnreconciledSale[];
     },
     enabled: open,
@@ -83,5 +99,6 @@ export function useBulkReconciliation(open: boolean) {
     bankAccounts,
     unreconciled,
     isLoading,
+    resetFilters
   };
 }
