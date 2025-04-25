@@ -5,6 +5,7 @@ import { transformSalesRowToDbFormat, validateSalesRow } from "./dataTransformer
 import { handleImportError } from "./errorHandler";
 import { showImportToasts } from "./toastNotifier";
 import { ProcessingResult } from "./fileProcessor";
+import { SalesBase } from "@/integrations/supabase/types/sales";
 
 export const processImportData = async (salesRows: Record<string, any>[]): Promise<ProcessingResult> => {
   let successCount = 0, errorCount = 0;
@@ -13,7 +14,11 @@ export const processImportData = async (salesRows: Record<string, any>[]): Promi
   for (let index = 0; index < salesRows.length; index++) {
     const row = salesRows[index];
     try {
+      console.log(`Processing row ${index + 2}:`, row); // Debug log
+      
       const salesData = transformSalesRowToDbFormat(row);
+      console.log(`Transformed data for row ${index + 2}:`, salesData); // Debug log
+      
       const validation = validateSalesRow(salesData);
       
       if (!validation.valid) {
@@ -22,15 +27,25 @@ export const processImportData = async (salesRows: Record<string, any>[]): Promi
         continue;
       }
       
-      const { error } = await supabase.from("Sales").insert(salesData);
+      // Type check before insertion
+      const { error } = await supabase
+        .from("Sales")
+        .insert(salesData as Partial<SalesBase>);
         
       if (error) {
-        handleImportError(row, `Error de base de datos: ${error.message}`, index + 2, newFailedImports);
+        console.error(`Error inserting row ${index + 2}:`, error); // Debug log
+        handleImportError(
+          row, 
+          `Error de base de datos: ${error.message} (Details: ${JSON.stringify(error.details)})`, 
+          index + 2, 
+          newFailedImports
+        );
         errorCount++;
       } else {
         successCount++;
       }
     } catch (err) {
+      console.error(`Error processing row ${index + 2}:`, err); // Debug log
       handleImportError(
         row,
         `Error al procesar: ${err instanceof Error ? err.message : 'Desconocido'}`,

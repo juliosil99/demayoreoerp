@@ -43,8 +43,10 @@ const toSafeStatus = (value: any): string | null => {
  * Transforms raw Excel/CSV row data into a properly typed SalesBase object for Supabase
  */
 export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<SalesBase> => {
-  return {
-    // String fields
+  console.log('Raw row data:', row); // Debug log to see incoming data
+
+  const transformedData = {
+    // String fields with explicit case handling
     category: toSafeString(row.Categoria || row.category),
     Channel: toSafeString(row.Canal || row.Channel),
     city: toSafeString(row.Ciudad || row.city),
@@ -55,7 +57,7 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
     invoiceDate: toSafeString(row["Fecha Factura"] || row.invoiceDate),
     orderNumber: toSafeString(row["No. Orden"] || row.orderNumber),
     postalCode: toSafeString(row["Código Postal"] || row.postalCode),
-    productName: toSafeString(row.Producto || row.productName), // Fixed field name to match database schema
+    ["productName"]: toSafeString(row.Producto || row.productName), // Using bracket notation for exact case match
     sku: toSafeString(row.SKU || row.sku),
     state: toSafeString(row["Estado/Provincia"] || row.state),
     statusPaid: toSafeStatus(row["Estatus de Pago"] || row.statusPaid),
@@ -72,6 +74,9 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
     retention: toSafeNumber(row.Retención || row.retention),
     shipping: toSafeNumber(row.Envío || row.shipping),
   };
+
+  console.log('Transformed data:', transformedData); // Debug log to verify transformation
+  return transformedData;
 };
 
 export { validateSalesData as validateSalesRow };
