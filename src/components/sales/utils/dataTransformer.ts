@@ -27,6 +27,18 @@ const toSafeNumber = (value: any): number | null => {
 };
 
 /**
+ * Safely converts a status value to the proper type, ensuring it's either "pending", "paid", or null
+ */
+const toSafeStatus = (value: any): "pending" | "paid" | null => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  
+  const status = String(value).toLowerCase();
+  return status === "paid" || status === "cobrado" ? "paid" : "pending";
+};
+
+/**
  * Transforms raw Excel/CSV row data into a properly typed SalesBase object for Supabase
  */
 export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<SalesBase> => {
@@ -45,7 +57,7 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
     productName: toSafeString(row.Producto || row.productName),
     sku: toSafeString(row.SKU || row.sku),
     state: toSafeString(row.Estado || row.state),
-    statusPaid: toSafeString(row.Estado || row.statusPaid),
+    statusPaid: toSafeStatus(row.Estado || row.statusPaid),
     supplierName: toSafeString(row["Nombre Proveedor"] || row.supplierName),
     
     // Number fields
