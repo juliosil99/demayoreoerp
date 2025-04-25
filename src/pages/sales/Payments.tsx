@@ -1,16 +1,16 @@
+
 import { useState } from "react";
 import { Payment } from "@/components/payments/PaymentForm";
 import { BulkReconciliationDialog } from "@/components/payments/BulkReconciliationDialog";
 import { usePaymentsQuery } from "./hooks/usePaymentsQuery";
 import { usePaymentDelete } from "./hooks/usePaymentDelete";
-import { useBulkReconcile } from "./hooks/useBulkReconcile";
 import { PaymentTable } from "./components/PaymentTable";
 import { PaymentHeader } from "./components/PaymentHeader";
 import { PaymentFormDialog } from "./components/PaymentFormDialog";
 import { PaymentPagination } from "./components/PaymentPagination";
-import { useMutation } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { toast } from "react-toastify";
+import { toast } from "@/hooks/use-toast";
 
 type PaymentWithRelations = Payment & {
   sales_channels: { name: string } | null;
@@ -30,6 +30,8 @@ export default function Payments() {
   });
   
   const deletePaymentMutation = usePaymentDelete();
+  const queryClient = useQueryClient();
+  
   const bulkReconcileMutation = useMutation({
     mutationFn: async ({ salesIds, paymentId }: { salesIds: number[], paymentId: string }) => {
       const { error: salesError } = await supabase
@@ -46,12 +48,19 @@ export default function Payments() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] });
       queryClient.invalidateQueries({ queryKey: ["unreconciled"] });
-      toast.success("Ventas reconciliadas exitosamente");
+      toast({
+        title: "Ventas reconciliadas exitosamente",
+        description: "Las ventas han sido vinculadas al pago seleccionado"
+      });
       setShowBulkReconciliation(false);
     },
     onError: (error) => {
       console.error("Error en reconciliación:", error);
-      toast.error("Error al reconciliar las ventas");
+      toast({
+        title: "Error al reconciliar las ventas",
+        description: "No se pudieron vincular las ventas al pago",
+        variant: "destructive"
+      });
     }
   });
 
