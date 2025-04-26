@@ -37,6 +37,8 @@ export function BulkReconciliationDialog({
     setOrderNumbers,
     selectedPaymentId,
     setSelectedPaymentId,
+    dateRange,
+    setDateRange,
     unreconciled,
     isLoading,
     resetFilters
@@ -78,6 +80,9 @@ export function BulkReconciliationDialog({
               onChannelChange={setSelectedChannel}
               orderNumbers={orderNumbers}
               onOrderNumbersChange={setOrderNumbers}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              onReset={resetFilters}
             />
           </div>
 
