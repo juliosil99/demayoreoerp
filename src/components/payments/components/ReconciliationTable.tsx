@@ -1,9 +1,9 @@
-
 import { Skeleton } from "@/components/ui/skeleton";
 import { UnreconciledSale } from "../hooks/useBulkReconciliation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info, Download } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
+import { downloadReconciliationDetails } from "../utils/reconciliationExport";
 import {
   Table,
   TableBody,
@@ -47,8 +47,7 @@ export function ReconciliationTable({ sales, isLoading }: ReconciliationTablePro
   const creditNotes = sales.filter(sale => sale.type === 'credit_note').length;
 
   const handleDownloadSummary = () => {
-    // TODO: Implement download functionality
-    console.log("Download summary clicked");
+    downloadReconciliationDetails(sales);
   };
 
   return (
