@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { UnreconciledSale } from "../hooks/useBulkReconciliation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
+import { formatCurrency } from "@/utils/formatters";
 
 interface ReconciliationTableProps {
   sales?: UnreconciledSale[];
@@ -47,7 +48,7 @@ export function ReconciliationTable({ sales, isLoading }: ReconciliationTablePro
         </div>
         <div className="p-4 border rounded-md bg-background">
           <div className="text-sm text-muted-foreground">Monto Total</div>
-          <div className="text-2xl font-bold">${totalAmount.toFixed(2)}</div>
+          <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
         </div>
       </div>
     </div>

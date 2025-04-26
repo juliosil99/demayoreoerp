@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
+import { formatCurrency, formatCardDate } from "@/utils/formatters";
 
 interface PaymentSelectorProps {
   selectedPaymentId?: string;
@@ -90,7 +91,7 @@ export function PaymentSelector({
         <SelectContent>
           {payments?.map((payment) => (
             <SelectItem key={payment.id} value={payment.id}>
-              ${payment.amount.toFixed(2)} - {payment.date} - 
+              {formatCurrency(payment.amount)} - {formatCardDate(payment.date)} - 
               {payment.reference_number ? ` Ref: ${payment.reference_number} - ` : ''}
               {payment.sales_channels?.name || "Sin canal"}
             </SelectItem>

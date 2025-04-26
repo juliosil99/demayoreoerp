@@ -3,7 +3,9 @@ export const formatCurrency = (amount: number | null) => {
   if (amount === null) return '-';
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
-    currency: 'MXN'
+    currency: 'MXN',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(amount);
 };
 

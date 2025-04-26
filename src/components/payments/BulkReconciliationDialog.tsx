@@ -12,6 +12,7 @@ import { ReconciliationTable } from "./components/ReconciliationTable";
 import { PaymentSelector } from "./components/PaymentSelector";
 import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
 import { useEffect } from "react";
+import { formatCurrency } from "@/utils/formatters";
 
 interface BulkReconciliationDialogProps {
   open: boolean;
@@ -53,6 +54,9 @@ export function BulkReconciliationDialog({
     });
   };
 
+  // Calculate total amount if there are unreconciled sales
+  const totalAmount = unreconciled?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl">
@@ -88,7 +92,7 @@ export function BulkReconciliationDialog({
             onClick={handleReconcile}
             disabled={!unreconciled?.length || !selectedPaymentId}
           >
-            Reconciliar {unreconciled?.length || 0} Ventas
+            Reconciliar {unreconciled?.length || 0} Ventas ({totalAmount > 0 ? formatCurrency(totalAmount) : '$0.00'})
           </Button>
         </DialogFooter>
       </DialogContent>
