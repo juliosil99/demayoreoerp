@@ -16,7 +16,7 @@ export const formatInvoiceAmount = (invoice: Invoice): string => {
     ? -1 * invoice.total_amount 
     : invoice.total_amount;
     
-  return `${invoice.currency || "MXN"} ${amount.toFixed(2)}`;
+  return formatCurrency(amount);
 };
 
 /**
@@ -31,7 +31,7 @@ export const formatInvoiceTaxAmount = (invoice: Invoice): string => {
     ? -1 * invoice.tax_amount 
     : invoice.tax_amount;
     
-  return `${invoice.currency || "MXN"} ${amount.toFixed(2)}`;
+  return formatCurrency(amount);
 };
 
 /**
