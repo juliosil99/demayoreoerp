@@ -16,6 +16,10 @@ import { useEffect, useState } from "react";
 import { formatCurrency } from "@/utils/formatters";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
+import { DiscrepancyAlert } from "./components/DiscrepancyAlert";
+import { detectDiscrepancies } from "./utils/discrepancyDetection";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BulkReconciliationDialogProps {
   open: boolean;
@@ -78,6 +82,28 @@ export function BulkReconciliationDialog({
 
   const hasUnreconciled = unreconciled && unreconciled.length > 0;
 
+  // Add payment details query
+  const { data: selectedPayment } = useQuery({
+    queryKey: ["payment", selectedPaymentId],
+    queryFn: async () => {
+      if (!selectedPaymentId) return null;
+      
+      const { data, error } = await supabase
+        .from("payments")
+        .select("*")
+        .eq("id", selectedPaymentId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedPaymentId,
+  });
+
+  // Calculate discrepancies
+  const selectedSalesData = unreconciled?.filter(sale => selectedSales.includes(sale.id)) || [];
+  const discrepancy = detectDiscrepancies(selectedSalesData, selectedPayment);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -114,6 +140,10 @@ export function BulkReconciliationDialog({
               </Alert>
             )}
 
+            {discrepancy.hasDiscrepancy && selectedPaymentId && (
+              <DiscrepancyAlert discrepancy={discrepancy} />
+            )}
+
             <SalesSelectionManager
               sales={unreconciled}
               selectedSales={selectedSales}
@@ -142,9 +172,9 @@ export function BulkReconciliationDialog({
             </Button>
             <Button 
               onClick={handleReconcile}
-              disabled={!selectedSales.length || !selectedPaymentId}
+              disabled={!selectedSales.length || !selectedPaymentId || discrepancy.hasDiscrepancy}
             >
-              Reconciliar {selectedSales.length} Ventas ({formatCurrency(selectedAmount)})
+              Reconciliar {selectedSales.length} Ventas
             </Button>
           </DialogFooter>
         </DialogContent>

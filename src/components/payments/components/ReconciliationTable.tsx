@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/utils/cn";
 
 interface ReconciliationTableProps {
   sales?: UnreconciledSale[];
@@ -105,28 +106,47 @@ export function ReconciliationTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sales.slice(0, 10).map((sale) => (
-              <TableRow 
-                key={sale.id}
-                className={selectedSales.includes(sale.id) ? "bg-muted/50" : ""}
-              >
-                <TableCell>
-                  <Checkbox
-                    checked={selectedSales.includes(sale.id)}
-                    onCheckedChange={() => onSelectSale(sale.id)}
-                  />
-                </TableCell>
-                <TableCell>{sale.date}</TableCell>
-                <TableCell>{sale.orderNumber}</TableCell>
-                <TableCell>{sale.Channel}</TableCell>
-                <TableCell className="text-right">{formatCurrency(sale.price)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(sale.comission)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(sale.shipping)}</TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency((sale.price || 0) - (sale.comission || 0) - (sale.shipping || 0))}
-                </TableCell>
-              </TableRow>
-            ))}
+            {sales.slice(0, 10).map((sale) => {
+              const isSelected = selectedSales.includes(sale.id);
+              
+              return (
+                <TableRow 
+                  key={sale.id}
+                  className={cn(
+                    isSelected && "bg-muted/50",
+                    isSelected && sale.price && sale.price < 0 && "bg-red-50"
+                  )}
+                >
+                  <TableCell>
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => onSelectSale(sale.id)}
+                    />
+                  </TableCell>
+                  <TableCell>{sale.date}</TableCell>
+                  <TableCell>{sale.orderNumber}</TableCell>
+                  <TableCell>{sale.Channel}</TableCell>
+                  <TableCell 
+                    className={cn(
+                      "text-right",
+                      sale.price && sale.price < 0 && "text-red-600 font-medium"
+                    )}
+                  >
+                    {formatCurrency(sale.price)}
+                  </TableCell>
+                  <TableCell className="text-right">{formatCurrency(sale.comission)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(sale.shipping)}</TableCell>
+                  <TableCell 
+                    className={cn(
+                      "text-right",
+                      sale.price && sale.price < 0 && "text-red-600 font-medium"
+                    )}
+                  >
+                    {formatCurrency((sale.price || 0) - (sale.comission || 0) - (sale.shipping || 0))}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
