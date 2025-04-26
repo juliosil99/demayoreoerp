@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 interface ReconciliationTableProps {
   sales?: UnreconciledSale[];
