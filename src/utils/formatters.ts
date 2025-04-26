@@ -5,7 +5,8 @@ export const formatCurrency = (amount: number | null) => {
     style: 'currency',
     currency: 'MXN',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
+    useGrouping: true  // This enables comma separators
   }).format(amount);
 };
 
