@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { SalesTable } from "@/integrations/supabase/types/sales";
@@ -17,21 +17,21 @@ export type UnreconciledSale = SalesTable['Row'] & {
 export function useBulkReconciliation(open: boolean) {
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [orderNumbers, setOrderNumbers] = useState("");
-  const [selectedPaymentId, setSelectedPaymentId] = useState<string | undefined>(undefined);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string>();
 
-  // Reset filters function - useful for when the dialog is opened or closed
-  const resetFilters = useCallback(() => {
+  // Reset filters when the modal is opened
+  const resetFilters = () => {
     setSelectedChannel("all");
     setOrderNumbers("");
     setSelectedPaymentId(undefined);
-  }, []);
+  };
 
-  // Reset filters when the modal is opened
+  // Reset filters when the modal is opened/closed
   useEffect(() => {
     if (open) {
       resetFilters();
     }
-  }, [open, resetFilters]);
+  }, [open]);
 
   // Fetch bank accounts
   const { data: bankAccounts } = useQuery({

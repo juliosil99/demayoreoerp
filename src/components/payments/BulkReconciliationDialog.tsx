@@ -39,13 +39,6 @@ export function BulkReconciliationDialog({
     resetFilters
   } = useBulkReconciliation(open);
 
-  // Reset all filters including payment when dialog opens
-  useEffect(() => {
-    if (open) {
-      resetFilters();
-    }
-  }, [open, resetFilters]);
-
   // Reset the payment selection when the channel changes
   useEffect(() => {
     setSelectedPaymentId(undefined);

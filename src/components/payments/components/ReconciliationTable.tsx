@@ -1,85 +1,55 @@
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { UnreconciledSale } from "../hooks/useBulkReconciliation";
-import { formatCurrency } from "@/lib/utils";
+import { UnreconciledSale } from "../hooks/useBulkReconciliation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 interface ReconciliationTableProps {
   sales?: UnreconciledSale[];
-  isLoading?: boolean;
+  isLoading: boolean;
 }
 
-export function ReconciliationTable({ sales = [], isLoading = false }: ReconciliationTableProps) {
-  const renderContent = () => {
-    if (isLoading) {
-      return Array(5).fill(0).map((_, i) => (
-        <TableRow key={i}>
-          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-        </TableRow>
-      ));
-    }
+export function ReconciliationTable({ sales, isLoading }: ReconciliationTableProps) {
+  if (isLoading) {
+    return <Skeleton className="h-32 w-full" />;
+  }
 
-    if (sales.length === 0) {
-      return (
-        <TableRow>
-          <TableCell colSpan={5} className="h-24 text-center">
-            <div className="flex flex-col items-center justify-center py-4">
-              <p className="text-muted-foreground text-sm">No se encontraron ventas que coincidan con los filtros actuales</p>
-              <p className="text-xs text-muted-foreground mt-1">Intenta cambiar los filtros o cargar un archivo con números de orden diferentes</p>
-            </div>
-          </TableCell>
-        </TableRow>
-      );
-    }
+  if (!sales || sales.length === 0) {
+    return (
+      <Alert variant="default" className="bg-muted/50">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          No hay ventas sin reconciliar que coincidan con los filtros.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
-    return sales.map((sale) => (
-      <TableRow key={sale.id}>
-        <TableCell>{sale.orderNumber || '-'}</TableCell>
-        <TableCell>{sale.date ? new Date(sale.date).toLocaleDateString() : '-'}</TableCell>
-        <TableCell>{sale.Channel || '-'}</TableCell>
-        <TableCell>{sale.productName || '-'}</TableCell>
-        <TableCell className="text-right">
-          {sale.price !== null ? formatCurrency(sale.price) : '-'}
-        </TableCell>
-      </TableRow>
-    ));
-  };
-
-  const calculateTotal = () => {
-    if (!sales?.length) return 0;
-    return sales.reduce((acc, sale) => acc + (sale.price || 0), 0);
-  };
+  // Calculate totals
+  const totalSales = sales.length;
+  const totalAmount = sales.reduce((sum, sale) => sum + (sale.price || 0), 0);
+  
+  // Count number of invoices and credit notes
+  const invoices = sales.filter(sale => !sale.type || sale.type === 'invoice').length;
+  const creditNotes = sales.filter(sale => sale.type === 'credit_note').length;
 
   return (
-    <div className="border rounded-lg">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Número de Orden</TableHead>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Canal</TableHead>
-            <TableHead>Producto</TableHead>
-            <TableHead className="text-right">Monto</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {renderContent()}
-        </TableBody>
-      </Table>
-      
-      {sales.length > 0 && (
-        <div className="flex justify-end p-4 border-t">
-          <div className="flex gap-2 items-center">
-            <span className="text-sm font-medium">Total:</span>
-            <span className="text-lg font-semibold">{formatCurrency(calculateTotal())}</span>
-            <span className="text-sm text-muted-foreground">({sales.length} órdenes)</span>
-          </div>
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Resumen de Reconciliación</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-4 border rounded-md bg-background">
+          <div className="text-sm text-muted-foreground">Total de Facturas</div>
+          <div className="text-2xl font-bold">{invoices}</div>
         </div>
-      )}
+        <div className="p-4 border rounded-md bg-background">
+          <div className="text-sm text-muted-foreground">Notas de Crédito</div>
+          <div className="text-2xl font-bold">{creditNotes}</div>
+        </div>
+        <div className="p-4 border rounded-md bg-background">
+          <div className="text-sm text-muted-foreground">Monto Total</div>
+          <div className="text-2xl font-bold">${totalAmount.toFixed(2)}</div>
+        </div>
+      </div>
     </div>
   );
 }

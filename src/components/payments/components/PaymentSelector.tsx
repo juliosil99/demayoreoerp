@@ -43,9 +43,9 @@ export function PaymentSelector({
         `)
         .eq("status", "completed");
 
-      // Apply channel filter if not "all"
-      if (selectedChannel && selectedChannel !== "all") {
-        query = query.eq("sales_channels.name", selectedChannel);
+      // We want payments without reconciled sales or with some sales not reconciled
+      if (selectedChannel !== "all") {
+        query = query.eq("sales_channel_id", selectedChannel);
       }
 
       const { data, error } = await query;
