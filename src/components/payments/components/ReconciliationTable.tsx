@@ -13,13 +13,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ReconciliationTableProps {
   sales?: UnreconciledSale[];
   isLoading: boolean;
+  selectedSales: number[];
+  onSelectSale: (id: number) => void;
 }
 
-export function ReconciliationTable({ sales, isLoading }: ReconciliationTableProps) {
+export function ReconciliationTable({ 
+  sales, 
+  isLoading,
+  selectedSales,
+  onSelectSale 
+}: ReconciliationTableProps) {
   if (isLoading) {
     return <Skeleton className="h-32 w-full" />;
   }
@@ -35,14 +43,12 @@ export function ReconciliationTable({ sales, isLoading }: ReconciliationTablePro
     );
   }
 
-  // Calculate totals and summaries
   const totalSales = sales.length;
   const totalAmount = sales.reduce((sum, sale) => sum + (sale.price || 0), 0);
   const totalCommissions = sales.reduce((sum, sale) => sum + (sale.comission || 0), 0);
   const totalShipping = sales.reduce((sum, sale) => sum + (sale.shipping || 0), 0);
   const netAmount = totalAmount - totalCommissions - totalShipping;
   
-  // Count invoices and credit notes
   const invoices = sales.filter(sale => !sale.type || sale.type === 'invoice').length;
   const creditNotes = sales.filter(sale => sale.type === 'credit_note').length;
 
@@ -88,6 +94,7 @@ export function ReconciliationTable({ sales, isLoading }: ReconciliationTablePro
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]"></TableHead>
               <TableHead>Fecha</TableHead>
               <TableHead>Orden</TableHead>
               <TableHead>Canal</TableHead>
@@ -99,7 +106,16 @@ export function ReconciliationTable({ sales, isLoading }: ReconciliationTablePro
           </TableHeader>
           <TableBody>
             {sales.slice(0, 10).map((sale) => (
-              <TableRow key={sale.id}>
+              <TableRow 
+                key={sale.id}
+                className={selectedSales.includes(sale.id) ? "bg-muted/50" : ""}
+              >
+                <TableCell>
+                  <Checkbox
+                    checked={selectedSales.includes(sale.id)}
+                    onCheckedChange={() => onSelectSale(sale.id)}
+                  />
+                </TableCell>
                 <TableCell>{sale.date}</TableCell>
                 <TableCell>{sale.orderNumber}</TableCell>
                 <TableCell>{sale.Channel}</TableCell>

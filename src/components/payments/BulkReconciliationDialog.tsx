@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -10,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { ReconciliationFilters } from "./components/ReconciliationFilters";
 import { ReconciliationTable } from "./components/ReconciliationTable";
 import { PaymentSelector } from "./components/PaymentSelector";
+import { SalesSelectionManager } from "./components/SalesSelectionManager";
+import { ReconciliationConfirmDialog } from "./components/ReconciliationConfirmDialog";
 import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { formatCurrency } from "@/utils/formatters";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
@@ -44,77 +45,118 @@ export function BulkReconciliationDialog({
     resetFilters
   } = useBulkReconciliation(open);
 
+  const [selectedSales, setSelectedSales] = useState<number[]>([]);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
   useEffect(() => {
     setSelectedPaymentId(undefined);
+    setSelectedSales([]);
   }, [selectedChannel, setSelectedPaymentId]);
 
+  useEffect(() => {
+    if (!open) {
+      setSelectedSales([]);
+    }
+  }, [open]);
+
   const handleReconcile = () => {
-    if (!unreconciled?.length || !selectedPaymentId) return;
-    
-    onReconcile({
-      salesIds: unreconciled.map(sale => sale.id),
-      paymentId: selectedPaymentId
-    });
+    if (!selectedSales.length || !selectedPaymentId) return;
+    setShowConfirmDialog(true);
   };
 
-  const totalAmount = unreconciled?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0;
+  const handleConfirmReconcile = () => {
+    onReconcile({
+      salesIds: selectedSales,
+      paymentId: selectedPaymentId
+    });
+    setShowConfirmDialog(false);
+  };
+
+  const selectedAmount = unreconciled
+    ?.filter(sale => selectedSales.includes(sale.id))
+    .reduce((sum, sale) => sum + (sale.price || 0), 0) || 0;
+
   const hasUnreconciled = unreconciled && unreconciled.length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">Reconciliación Masiva de Ventas</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Reconciliación Masiva de Ventas</DialogTitle>
+          </DialogHeader>
 
-        <div className="grid gap-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <PaymentSelector
-              selectedPaymentId={selectedPaymentId}
-              onPaymentSelect={setSelectedPaymentId}
-              selectedChannel={selectedChannel}
-            />
+          <div className="grid gap-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <PaymentSelector
+                selectedPaymentId={selectedPaymentId}
+                onPaymentSelect={setSelectedPaymentId}
+                selectedChannel={selectedChannel}
+              />
 
-            <ReconciliationFilters
-              selectedChannel={selectedChannel}
-              onChannelChange={setSelectedChannel}
-              orderNumbers={orderNumbers}
-              onOrderNumbersChange={setOrderNumbers}
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-              onReset={resetFilters}
-            />
-          </div>
+              <ReconciliationFilters
+                selectedChannel={selectedChannel}
+                onChannelChange={setSelectedChannel}
+                orderNumbers={orderNumbers}
+                onOrderNumbersChange={setOrderNumbers}
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+                onReset={resetFilters}
+              />
+            </div>
 
-          {hasUnreconciled && (
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Se encontraron {unreconciled.length} documentos para reconciliar por un total de {formatCurrency(totalAmount)}
-              </AlertDescription>
-            </Alert>
-          )}
+            {hasUnreconciled && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Se encontraron {unreconciled.length} documentos para reconciliar
+                </AlertDescription>
+              </Alert>
+            )}
 
-          <div className="min-h-[300px]">
-            <ReconciliationTable
+            <SalesSelectionManager
               sales={unreconciled}
-              isLoading={isLoading}
+              selectedSales={selectedSales}
+              onSelectionChange={setSelectedSales}
             />
-          </div>
-        </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleReconcile}
-            disabled={!hasUnreconciled || !selectedPaymentId}
-          >
-            Reconciliar {unreconciled?.length || 0} Ventas ({formatCurrency(totalAmount)})
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <div className="min-h-[300px]">
+              <ReconciliationTable
+                sales={unreconciled}
+                isLoading={isLoading}
+                selectedSales={selectedSales}
+                onSelectSale={(id) => {
+                  if (selectedSales.includes(id)) {
+                    setSelectedSales(selectedSales.filter(sId => sId !== id));
+                  } else {
+                    setSelectedSales([...selectedSales, id]);
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleReconcile}
+              disabled={!selectedSales.length || !selectedPaymentId}
+            >
+              Reconciliar {selectedSales.length} Ventas ({formatCurrency(selectedAmount)})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ReconciliationConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        onConfirm={handleConfirmReconcile}
+        selectedCount={selectedSales.length}
+        totalAmount={selectedAmount}
+      />
+    </>
   );
 }
