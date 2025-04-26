@@ -1,7 +1,6 @@
-
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { formatCardDate } from "@/utils/formatters";
+import { formatCardDate, formatCurrency } from "@/utils/formatters";
 import { ExpenseActions } from "./ExpenseActions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Database } from "@/integrations/supabase/types/base";
@@ -47,13 +46,10 @@ export function ExpenseRow({
     onEdit(expense);
   };
 
-  // Check if the expense comes from a payable
   const isFromPayable = !!expense.accounts_payable;
   
-  // Get recipient type if available
   const recipientType = expense.contacts?.type || 'supplier';
   
-  // Format recipient display
   const getRecipientDisplay = () => {
     if (isFromPayable && expense.accounts_payable?.client?.name) {
       return expense.accounts_payable.client.name;
@@ -87,7 +83,9 @@ export function ExpenseRow({
           )}
         </div>
       </TableCell>
-      <TableCell className="text-right font-medium whitespace-nowrap">${expense.amount.toFixed(2)}</TableCell>
+      <TableCell className="text-right font-medium whitespace-nowrap">
+        {formatCurrency(expense.amount)}
+      </TableCell>
       <TableCell className="whitespace-nowrap">{expense.bank_accounts.name}</TableCell>
       <TableCell>
         <span className="whitespace-nowrap">
