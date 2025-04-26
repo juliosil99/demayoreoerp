@@ -38,8 +38,8 @@ export function ReconciliationTable({ sales, isLoading }: ReconciliationTablePro
   // Calculate totals and summaries
   const totalSales = sales.length;
   const totalAmount = sales.reduce((sum, sale) => sum + (sale.price || 0), 0);
-  const totalCommissions = sales.reduce((sum, sale) => sum + (sale.commission || 0), 0);
-  const totalShipping = sales.reduce((sum, sale) => sum + (sale.shippingCost || 0), 0);
+  const totalCommissions = sales.reduce((sum, sale) => sum + (sale.comission || 0), 0);
+  const totalShipping = sales.reduce((sum, sale) => sum + (sale.shipping || 0), 0);
   const netAmount = totalAmount - totalCommissions - totalShipping;
   
   // Count invoices and credit notes
@@ -105,10 +105,10 @@ export function ReconciliationTable({ sales, isLoading }: ReconciliationTablePro
                 <TableCell>{sale.orderNumber}</TableCell>
                 <TableCell>{sale.Channel}</TableCell>
                 <TableCell className="text-right">{formatCurrency(sale.price)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(sale.commission)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(sale.shippingCost)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(sale.comission)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(sale.shipping)}</TableCell>
                 <TableCell className="text-right">
-                  {formatCurrency((sale.price || 0) - (sale.commission || 0) - (sale.shippingCost || 0))}
+                  {formatCurrency((sale.price || 0) - (sale.comission || 0) - (sale.shipping || 0))}
                 </TableCell>
               </TableRow>
             ))}
