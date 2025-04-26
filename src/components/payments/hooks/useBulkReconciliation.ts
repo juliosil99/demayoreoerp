@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { DateRange } from "react-day-picker";
 import type { SalesTable } from "@/integrations/supabase/types/sales";
 
 export type UnreconciledSale = SalesTable['Row'] & {
@@ -18,11 +19,13 @@ export function useBulkReconciliation(open: boolean) {
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [orderNumbers, setOrderNumbers] = useState("");
   const [selectedPaymentId, setSelectedPaymentId] = useState<string>();
+  const [dateRange, setDateRange] = useState<DateRange>();
 
   // Reset filters when the modal is opened
   const resetFilters = () => {
     setSelectedChannel("all");
     setOrderNumbers("");
+    setDateRange(undefined);
     setSelectedPaymentId(undefined);
   };
 
@@ -33,25 +36,14 @@ export function useBulkReconciliation(open: boolean) {
     }
   }, [open]);
 
-  // Fetch bank accounts
-  const { data: bankAccounts } = useQuery({
-    queryKey: ["bankAccounts"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bank_accounts")
-        .select("*");
-      if (error) throw error;
-      return data;
-    },
-  });
-
   // Fetch unreconciled sales
   const { data: unreconciled, isLoading } = useQuery({
-    queryKey: ["unreconciled", selectedChannel, orderNumbers, selectedPaymentId],
+    queryKey: ["unreconciled", selectedChannel, orderNumbers, dateRange, selectedPaymentId],
     queryFn: async () => {
       console.log("Fetching unreconciled sales with filters:", {
         channel: selectedChannel,
         orderNumbers,
+        dateRange,
         paymentId: selectedPaymentId
       });
       
@@ -77,6 +69,14 @@ export function useBulkReconciliation(open: boolean) {
         }
       }
 
+      // Apply date range filter if provided
+      if (dateRange?.from) {
+        query = query.gte("date", dateRange.from.toISOString().split('T')[0]);
+      }
+      if (dateRange?.to) {
+        query = query.lte("date", dateRange.to.toISOString().split('T')[0]);
+      }
+
       const { data, error } = await query.order("date", { ascending: false });
       if (error) {
         console.error("Error fetching unreconciled sales:", error);
@@ -96,7 +96,8 @@ export function useBulkReconciliation(open: boolean) {
     setOrderNumbers,
     selectedPaymentId,
     setSelectedPaymentId,
-    bankAccounts,
+    dateRange,
+    setDateRange,
     unreconciled,
     isLoading,
     resetFilters
