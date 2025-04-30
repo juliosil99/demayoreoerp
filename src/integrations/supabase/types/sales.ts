@@ -25,6 +25,7 @@ export interface SalesBase {
   state: string | null
   statusPaid: string | null  // Keeping camelCase to match database
   supplierName: string | null  // Keeping camelCase to match database
+  paymentType: string | null  // New field for payment type
   created_at?: string
 }
 

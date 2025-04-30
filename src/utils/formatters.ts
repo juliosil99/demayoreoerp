@@ -50,6 +50,27 @@ export const formatCardDate = (dateString: string) => {
   }
 };
 
+// Format payment type for display
+export const formatPaymentType = (paymentType: string | null) => {
+  if (!paymentType) return '-';
+  
+  switch(paymentType.toLowerCase()) {
+    case 'cash':
+    case 'efectivo':
+      return 'Efectivo';
+    case 'card':
+    case 'tarjeta':
+    case 'credit_card':
+    case 'tarjeta bancaria':
+      return 'Tarjeta bancaria';
+    case 'transfer':
+    case 'transferencia':
+      return 'Transferencia';
+    default:
+      return paymentType;
+  }
+};
+
 // Utility function to safely parse dates in UTC
 function parseUTCDate(dateString: string): Date {
   // Handle ISO format dates (YYYY-MM-DDTHH:mm:ss.sssZ)
