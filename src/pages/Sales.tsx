@@ -68,7 +68,7 @@ const Sales = () => {
       }
 
       // Cast the data to SalesBase[] to ensure type safety
-      return data as SalesBase[];
+      return data as unknown as SalesBase[];
     },
   });
 

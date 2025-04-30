@@ -1,6 +1,7 @@
+
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { SalesBase } from "@/integrations/supabase/types/sales";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatPaymentType } from "@/utils/formatters";
 import {
   Pagination,
   PaginationContent,
@@ -27,6 +28,7 @@ export const SalesTable = ({ sales, currentPage, totalPages, onPageChange }: Sal
             <TableHead>No. Orden</TableHead>
             <TableHead>Producto</TableHead>
             <TableHead>Canal</TableHead>
+            <TableHead>Tipo de Pago</TableHead>
             <TableHead className="text-right">Monto</TableHead>
             <TableHead className="text-right">Ganancia</TableHead>
           </TableRow>
@@ -38,6 +40,7 @@ export const SalesTable = ({ sales, currentPage, totalPages, onPageChange }: Sal
               <TableCell>{sale.orderNumber}</TableCell>
               <TableCell>{sale.productName}</TableCell>
               <TableCell>{sale.Channel}</TableCell>
+              <TableCell>{formatPaymentType(sale.paymentType)}</TableCell>
               <TableCell className="text-right">{formatCurrency(sale.price || null)}</TableCell>
               <TableCell className="text-right">{formatCurrency(sale.Profit || null)}</TableCell>
             </TableRow>

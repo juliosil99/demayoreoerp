@@ -84,7 +84,9 @@ export function useBulkReconciliation(open: boolean) {
       }
       
       console.log("Fetched unreconciled sales:", data?.length || 0);
-      return data as UnreconciledSale[];
+      
+      // Cast the data to UnreconciledSale[] to ensure type safety
+      return data as unknown as UnreconciledSale[];
     },
     enabled: open,
   });
