@@ -10,6 +10,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SalesTableProps {
   sales: SalesBase[];
@@ -20,33 +21,37 @@ interface SalesTableProps {
 
 export const SalesTable = ({ sales, currentPage, totalPages, onPageChange }: SalesTableProps) => {
   return (
-    <div className="min-w-[800px]">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Fecha</TableHead>
-            <TableHead>No. Orden</TableHead>
-            <TableHead>Producto</TableHead>
-            <TableHead>Canal</TableHead>
-            <TableHead>Tipo de Pago</TableHead>
-            <TableHead className="text-right">Monto</TableHead>
-            <TableHead className="text-right">Ganancia</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sales?.map((sale) => (
-            <TableRow key={sale.id ?? `${sale.orderNumber}-${sale.date}`}>
-              <TableCell>{new Date(sale.date || "").toLocaleDateString()}</TableCell>
-              <TableCell>{sale.orderNumber}</TableCell>
-              <TableCell>{sale.productName}</TableCell>
-              <TableCell>{sale.Channel}</TableCell>
-              <TableCell>{formatPaymentType(sale.paymentType)}</TableCell>
-              <TableCell className="text-right">{formatCurrency(sale.price || null)}</TableCell>
-              <TableCell className="text-right">{formatCurrency(sale.Profit || null)}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div>
+      <ScrollArea className="rounded-md border">
+        <div className="w-full">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fecha</TableHead>
+                <TableHead>No. Orden</TableHead>
+                <TableHead>Producto</TableHead>
+                <TableHead>Canal</TableHead>
+                <TableHead>Tipo de Pago</TableHead>
+                <TableHead className="text-right">Monto</TableHead>
+                <TableHead className="text-right">Ganancia</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sales?.map((sale) => (
+                <TableRow key={sale.id ?? `${sale.orderNumber}-${sale.date}`}>
+                  <TableCell>{new Date(sale.date || "").toLocaleDateString()}</TableCell>
+                  <TableCell>{sale.orderNumber}</TableCell>
+                  <TableCell>{sale.productName}</TableCell>
+                  <TableCell>{sale.Channel}</TableCell>
+                  <TableCell>{formatPaymentType(sale.paymentType)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(sale.price || null)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(sale.Profit || null)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </ScrollArea>
 
       {totalPages > 1 && (
         <div className="mt-4">
