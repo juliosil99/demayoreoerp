@@ -1686,6 +1686,7 @@ export type Database = {
           invoice: string | null
           invoiceDate: string | null
           orderNumber: string | null
+          payment_method: string | null
           postalCode: string | null
           price: number | null
           productName: string | null
@@ -1715,6 +1716,7 @@ export type Database = {
           invoice?: string | null
           invoiceDate?: string | null
           orderNumber?: string | null
+          payment_method?: string | null
           postalCode?: string | null
           price?: number | null
           productName?: string | null
@@ -1744,6 +1746,7 @@ export type Database = {
           invoice?: string | null
           invoiceDate?: string | null
           orderNumber?: string | null
+          payment_method?: string | null
           postalCode?: string | null
           price?: number | null
           productName?: string | null

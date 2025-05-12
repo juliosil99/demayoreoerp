@@ -3,10 +3,11 @@ import React, { useState } from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Edit, Repeat } from "lucide-react";
+import { FileText, Edit, Repeat, AlertCircle } from "lucide-react";
 import { AccountPayable } from "@/types/payables";
 import { formatCardDate } from "@/utils/formatters";
 import { DeletePayableButton, DeletePayableDialog } from "./DeletePayableDialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PayableRowProps {
   payable: AccountPayable;
@@ -51,6 +52,10 @@ export function PayableRow({
   const seriesNumber = payable.series_number !== null && payable.series_number !== undefined 
     ? payable.series_number 
     : null;
+
+  // Check if this could be the last recurring payment in the series
+  const isNearEndOfSeries = isRecurring && payable.recurrence_end_date &&
+    new Date(payable.recurrence_end_date).getTime() - new Date(payable.due_date).getTime() < 30 * 24 * 60 * 60 * 1000;
 
   const handleDeleteClick = () => {
     setIsDeleteDialogOpen(true);
@@ -98,7 +103,21 @@ export function PayableRow({
       <TableCell>{formatCurrency(payable.amount)}</TableCell>
       <TableCell>
         <div className="flex flex-col">
-          <div>{formatCardDate(payable.due_date)}</div>
+          <div className="flex items-center gap-1">
+            {formatCardDate(payable.due_date)}
+            {isNearEndOfSeries && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Este es posiblemente el último pago de la serie</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
           {isRecurring && (
             <div className="flex items-center text-xs text-muted-foreground mt-1">
               <Repeat className="h-3 w-3 mr-1" />
