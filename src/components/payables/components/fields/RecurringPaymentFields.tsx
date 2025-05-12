@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PayableFormData } from "../../types/payableTypes";
+import { Button } from "@/components/ui/button";
 
 interface RecurringPaymentFieldsProps {
   form: UseFormReturn<PayableFormData>;
@@ -131,9 +132,21 @@ export function RecurringPaymentFields({ form }: RecurringPaymentFieldsProps) {
                     <Calendar
                       mode="single"
                       selected={field.value || undefined}
-                      onSelect={field.onChange}
+                      onSelect={(date) => {
+                        if (date) {
+                          // Create a date object at mid-day to avoid timezone issues
+                          const year = date.getFullYear();
+                          const month = date.getMonth();
+                          const day = date.getDate();
+                          
+                          // Create new date with time set to noon to avoid timezone issues
+                          const selectedDate = new Date(year, month, day, 12, 0, 0);
+                          field.onChange(selectedDate);
+                        }
+                      }}
                       disabled={(date) => date < new Date()}
                       initialFocus
+                      className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
                 </Popover>
@@ -144,23 +157,5 @@ export function RecurringPaymentFields({ form }: RecurringPaymentFieldsProps) {
         </div>
       )}
     </>
-  );
-}
-
-// Helper Button component for the Date Selector
-function Button({
-  variant, className, children, ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "outline" }) {
-  return (
-    <button
-      className={cn(
-        "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-        variant === "outline" && "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </button>
   );
 }
