@@ -16,11 +16,14 @@ export function useHistoricalData() {
     },
   });
 
-  // Fetch receivables data
+  // Fetch receivables data (directly from Sales table)
   const { data: receivables = [] } = useQuery({
     queryKey: ["accounts-receivable"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("accounts_receivable").select("*");
+      const { data, error } = await supabase
+        .from("Sales")
+        .select("*")
+        .or('statusPaid.eq.por cobrar,statusPaid.is.null,statusPaid.eq.');
       if (error) throw error;
       return data;
     },
