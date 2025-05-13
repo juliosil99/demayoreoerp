@@ -1,5 +1,6 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -20,13 +21,10 @@ const Receivables = () => {
   const { data: unpaidSales, isLoading } = useQuery({
     queryKey: ["unpaid-sales"],
     queryFn: async () => {
-      // Updated query to include both 'por cobrar' and null/empty statusPaid values
+      // Query directly from Sales table for unpaid sales
       const { data, error } = await supabase
         .from("Sales")
-        .select(`
-          *,
-          accounts_receivable!inner(id, status)
-        `)
+        .select('*')
         .or('statusPaid.eq.por cobrar,statusPaid.is.null,statusPaid.eq.')
         .order('date', { ascending: false });
 
@@ -45,9 +43,9 @@ const Receivables = () => {
   const paginatedSales = filteredSales?.slice(startIndex, startIndex + ROWS_PER_PAGE);
 
   const markAsPaid = useMutation({
-    mutationFn: async ({ saleId, receivableId }: { saleId: number, receivableId: string }) => {
-      // Update the Sales record
-      const { error: saleError } = await supabase
+    mutationFn: async (saleId: number) => {
+      // Update the Sales record directly
+      const { error } = await supabase
         .from('Sales')
         .update({ 
           statusPaid: 'cobrado',
@@ -55,15 +53,7 @@ const Receivables = () => {
         })
         .eq('id', saleId);
 
-      if (saleError) throw saleError;
-
-      // Update the accounts_receivable record
-      const { error: receivableError } = await supabase
-        .from('accounts_receivable')
-        .update({ status: 'paid' })
-        .eq('id', receivableId);
-
-      if (receivableError) throw receivableError;
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["unpaid-sales"] });
@@ -126,14 +116,7 @@ const Receivables = () => {
                       <TableCell>
                         <Button
                           size="sm"
-                          onClick={() => {
-                            if (sale.accounts_receivable?.[0]?.id) {
-                              markAsPaid.mutate({
-                                saleId: sale.id,
-                                receivableId: sale.accounts_receivable[0].id
-                              });
-                            }
-                          }}
+                          onClick={() => markAsPaid.mutate(sale.id)}
                           disabled={markAsPaid.isPending}
                         >
                           Marcar como Pagado

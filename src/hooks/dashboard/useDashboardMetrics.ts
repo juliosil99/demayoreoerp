@@ -53,26 +53,26 @@ export const useDashboardMetrics = () => {
 
         if (expensesError) throw expensesError;
 
-        // Fetch pending receivables
+        // Fetch pending receivables directly from Sales table
         const { data: receivablesData, error: receivablesError, count: receivablesCount } = await supabase
-          .from("accounts_receivable")
-          .select('amount', { count: 'exact' })
-          .eq('status', 'pending');
+          .from("Sales")
+          .select('price', { count: 'exact' })
+          .or('statusPaid.eq.por cobrar,statusPaid.is.null,statusPaid.eq.');
 
         if (receivablesError) throw receivablesError;
 
-        // Fetch total sales count
+        // Fetch total sales count that are unpaid
         const { count: salesCount, error: salesCountError } = await supabase
           .from("Sales")
           .select('*', { count: 'exact', head: true })
-          .is('statusPaid', null);
+          .or('statusPaid.eq.por cobrar,statusPaid.is.null,statusPaid.eq.');
 
         if (salesCountError) throw salesCountError;
 
         setMetrics({
           yesterdaySales: salesData?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0,
           unreconciled: unreconciledExpenses?.reduce((sum, exp) => sum + (exp.amount || 0), 0) || 0,
-          receivablesPending: receivablesData?.reduce((sum, rec) => sum + (rec.amount || 0), 0) || 0,
+          receivablesPending: receivablesData?.reduce((sum, rec) => sum + (rec.price || 0), 0) || 0,
           salesCount: salesCount || 0,
           unreconciledCount: unreconciledCount || 0,
           receivablesCount: receivablesCount || 0
