@@ -30,8 +30,8 @@ export function useCompanyFetch(userId: string | undefined, isEditMode: boolean)
       console.log("isEditMode:", isEditMode);
 
       if (!userId) {
-        console.log("❌ No userId found, redirecting to login");
-        navigate("/login");
+        console.log("❌ No userId found, setting loading to false");
+        setIsLoading(false);
         return;
       }
       
@@ -62,7 +62,8 @@ export function useCompanyFetch(userId: string | undefined, isEditMode: boolean)
           
           if (!data) {
             console.log("ℹ️ No company found for user");
-            navigate("/company-setup");
+            toast.error("No tienes permiso para editar esta empresa");
+            navigate("/dashboard"); // Redirect to dashboard instead of company setup
             return;
           }
           

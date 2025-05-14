@@ -1,3 +1,4 @@
+
 import { Building } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -61,43 +62,46 @@ export default function CompanySetup() {
           return;
         }
         
-        // Check for ALL invitations related to this email
-        const { data: invitations, error: invitationError } = await supabase
-          .from("user_invitations")
-          .select("*")
-          .eq("email", user.email);
-        
-        console.log("CompanySetup: All invitations for this user:", invitations);
-        
-        if (invitationError) {
-          console.error("CompanySetup: Error checking invitations:", invitationError);
-          throw invitationError;
-        }
-        
-        // Check for completed invitations
-        const completedInvitation = invitations?.find(inv => inv.status === 'completed');
-        
-        if (completedInvitation) {
-          console.log("CompanySetup: User has a completed invitation, redirecting to dashboard");
-          navigate("/dashboard");
-          return;
-        }
-        
-        // Check for pending invitations
-        const pendingInvitation = invitations?.find(inv => inv.status === 'pending');
-        
-        if (pendingInvitation) {
-          console.log("CompanySetup: User has a pending invitation, redirecting to registration");
-          navigate(`/register?token=${pendingInvitation.invitation_token}`);
-          return;
-        }
-        
-        // Check for expired invitations
-        const expiredInvitation = invitations?.find(inv => inv.status === 'expired');
-        
-        if (expiredInvitation) {
-          console.log("CompanySetup: User has an expired invitation");
-          toast.error("Tu invitación ha expirado. Contacta al administrador para que la reactive.");
+        // Only check invitations if we're not in edit mode
+        if (!isEditMode) {
+          // Check for ALL invitations related to this email
+          const { data: invitations, error: invitationError } = await supabase
+            .from("user_invitations")
+            .select("*")
+            .eq("email", user.email);
+          
+          console.log("CompanySetup: All invitations for this user:", invitations);
+          
+          if (invitationError) {
+            console.error("CompanySetup: Error checking invitations:", invitationError);
+            throw invitationError;
+          }
+          
+          // Check for completed invitations
+          const completedInvitation = invitations?.find(inv => inv.status === 'completed');
+          
+          if (completedInvitation) {
+            console.log("CompanySetup: User has a completed invitation, redirecting to dashboard");
+            navigate("/dashboard");
+            return;
+          }
+          
+          // Check for pending invitations
+          const pendingInvitation = invitations?.find(inv => inv.status === 'pending');
+          
+          if (pendingInvitation) {
+            console.log("CompanySetup: User has a pending invitation, redirecting to registration");
+            navigate(`/register?token=${pendingInvitation.invitation_token}`);
+            return;
+          }
+          
+          // Check for expired invitations
+          const expiredInvitation = invitations?.find(inv => inv.status === 'expired');
+          
+          if (expiredInvitation) {
+            console.log("CompanySetup: User has an expired invitation");
+            toast.error("Tu invitación ha expirado. Contacta al administrador para que la reactive.");
+          }
         }
         
         // Check if there's any company in the system
@@ -116,7 +120,7 @@ export default function CompanySetup() {
         if (anyCompany && anyCompany.length > 0) {
           console.log("CompanySetup: Companies exist but none belongs to this user");
           // At this point companies exist but this user doesn't have one and wasn't invited
-          // IMPORTANT: Don't redirect to login here, just show a message and keep user on the page
+          // Show an error message but don't redirect or logout the user
           toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
           setCheckingInvitation(false);
           return;

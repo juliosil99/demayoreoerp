@@ -100,7 +100,8 @@ export function useCompanyInvitations(userEmail: string | undefined, userId: str
         if (anyCompany && anyCompany.length > 0) {
           console.log("✅ Company exists in the system, but user has no access");
           toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
-          navigate("/login");
+          // Remove the redirect to login to prevent logout loop
+          // navigate("/login");
           return;
         }
         

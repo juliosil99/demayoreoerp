@@ -94,6 +94,7 @@ export default function Login() {
       
       if (anyCompany && anyCompany.length > 0) {
         // Companies exist but this user doesn't have one and wasn't invited
+        // Just show an error message but don't redirect the user
         console.log("Login: Companies exist but none for this user and not invited");
         toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
         return;
