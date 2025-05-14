@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PdfTemplatesList } from "@/components/pdf-templates/PdfTemplatesList";
 import { PdfTemplateDialog } from "@/components/pdf-templates/PdfTemplateDialog";
 import { usePdfTemplates } from "@/hooks/usePdfTemplates";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PdfTemplates = () => {
+  const { user } = useAuth(); // Add this to get the authenticated user
+
   const {
     templates,
     isLoading,
@@ -17,6 +20,25 @@ const PdfTemplates = () => {
     updateTemplate,
     deleteTemplate
   } = usePdfTemplates();
+
+  // Handler for creating new templates with user_id
+  const handleCreateTemplate = async (templateData: any) => {
+    if (!user) {
+      console.error("No authenticated user found");
+      return;
+    }
+    
+    // Include the user_id when creating a new template
+    await createTemplate({
+      ...templateData,
+      user_id: user.id
+    });
+  };
+
+  // Handler for updating templates, preserving user_id
+  const handleUpdateTemplate = async (templateData: any) => {
+    await updateTemplate(templateData);
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -55,7 +77,7 @@ const PdfTemplates = () => {
           template={currentTemplate}
           isOpen={isEditing}
           onClose={() => setIsEditing(false)}
-          onSave={currentTemplate ? updateTemplate : createTemplate}
+          onSave={currentTemplate ? handleUpdateTemplate : handleCreateTemplate}
         />
       )}
     </div>

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { IssuerPdfConfig } from "@/types/pdf-templates";
 import { useForm } from "react-hook-form";
+import { toast } from "@/components/ui/use-toast";
 
 interface PdfTemplateDialogProps {
   isOpen: boolean;
@@ -33,8 +33,30 @@ export const PdfTemplateDialog = ({
   });
 
   const onSubmit = async (data: IssuerPdfConfig) => {
-    await onSave(data);
-    onClose();
+    try {
+      // Ensure issuer_rfc is not empty
+      if (!data.issuer_rfc || data.issuer_rfc.trim() === "") {
+        toast({
+          title: "Error",
+          description: "El RFC del emisor es obligatorio",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Keep the existing ID if we're editing
+      const submissionData = template?.id ? { ...data, id: template.id } : data;
+      
+      await onSave(submissionData);
+      onClose();
+    } catch (error) {
+      console.error("Error al guardar la plantilla:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la plantilla",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
