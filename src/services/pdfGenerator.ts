@@ -119,8 +119,10 @@ export const generateInvoicePdf = async (
     
     // Footer with additional information
     const footerText = "Este documento es una representación impresa de un CFDI";
-    const footerTextWidth = doc.getStringUnitWidth(footerText) * doc.internal.getFontSize() / doc.internal.scaleFactor;
-    doc.text(footerText, doc.internal.pageSize.getWidth() / 2 - footerTextWidth / 2, doc.internal.pageSize.getHeight() - 10);
+    // Fixed the getFontSize issue by using doc.getTextWidth
+    const textWidth = doc.getTextWidth(footerText);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    doc.text(footerText, pageWidth / 2 - textWidth / 2, doc.internal.pageSize.getHeight() - 10);
     
     // Save PDF
     doc.save(`Factura-${invoice.serie || ""}-${invoice.invoice_number || invoice.id}.pdf`);

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductSearchResult } from "@/types/product-search";
 import { toast } from "@/components/ui/use-toast";
-import { downloadInvoiceXml } from "@/utils/invoiceDownload";
+import { downloadInvoiceFile } from "@/utils/invoiceDownload";
 import { generateInvoicePdf } from "@/services/pdfGenerator";
 
 export const useProductSearch = () => {
@@ -90,7 +90,7 @@ export const useProductSearch = () => {
         throw new Error("No se encontró el archivo XML de la factura");
       }
 
-      await downloadInvoiceXml(invoice.file_path, invoice.filename);
+      await downloadInvoiceFile(invoice.file_path, invoice.filename);
 
       toast({
         title: "Descarga exitosa",

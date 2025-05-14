@@ -38,9 +38,14 @@ export const usePdfTemplates = () => {
 
   const createTemplateMutation = useMutation({
     mutationFn: async (template: Partial<IssuerPdfConfig>) => {
+      // Ensure the required fields are there
+      if (!template.user_id || !template.issuer_rfc) {
+        throw new Error("User ID and Issuer RFC are required");
+      }
+      
       const { data, error } = await supabase
         .from("issuer_pdf_configs")
-        .insert([template])
+        .insert(template) // Pass the single object, not an array
         .select();
 
       if (error) throw error;
