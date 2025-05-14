@@ -45,7 +45,7 @@ export const usePdfTemplates = () => {
       
       const { data, error } = await supabase
         .from("issuer_pdf_configs")
-        .insert(template) // Pass the single object, not an array
+        .insert(template)
         .select();
 
       if (error) throw error;
@@ -71,6 +71,11 @@ export const usePdfTemplates = () => {
   const updateTemplateMutation = useMutation({
     mutationFn: async (template: Partial<IssuerPdfConfig>) => {
       const { id, ...updateData } = template;
+      
+      if (!id) {
+        throw new Error("Template ID is required for updates");
+      }
+      
       const { data, error } = await supabase
         .from("issuer_pdf_configs")
         .update(updateData)

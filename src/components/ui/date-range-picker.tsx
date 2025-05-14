@@ -10,22 +10,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { DateRange } from "react-day-picker";
 
-interface DateRangePickerProps {
-  from: Date | undefined;
-  to: Date | undefined;
-  onFromChange: (date: Date | undefined) => void;
-  onToChange: (date: Date | undefined) => void;
+interface DatePickerWithRangeProps {
+  date: DateRange | undefined;
+  setDate: (date: DateRange | undefined) => void;
   className?: string;
 }
 
-export function DateRangePicker({
-  from,
-  to,
-  onFromChange,
-  onToChange,
+export function DatePickerWithRange({
+  date,
+  setDate,
   className,
-}: DateRangePickerProps) {
+}: DatePickerWithRangeProps) {
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
@@ -35,17 +32,17 @@ export function DateRangePicker({
             variant={"outline"}
             className={cn(
               "w-full justify-start text-left font-normal",
-              !from && !to && "text-muted-foreground"
+              !date && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {from ? (
-              to ? (
+            {date?.from ? (
+              date.to ? (
                 <>
-                  {format(from, "dd/MM/yyyy")} - {format(to, "dd/MM/yyyy")}
+                  {format(date.from, "dd/MM/yyyy")} - {format(date.to, "dd/MM/yyyy")}
                 </>
               ) : (
-                format(from, "dd/MM/yyyy")
+                format(date.from, "dd/MM/yyyy")
               )
             ) : (
               <span>Seleccione un rango de fechas</span>
@@ -53,31 +50,18 @@ export function DateRangePicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <div className="flex flex-col gap-2 p-2">
-            <div>
-              <h4 className="font-medium mb-2">Fecha Inicial</h4>
-              <Calendar
-                mode="single"
-                selected={from}
-                onSelect={onFromChange}
-                initialFocus
-                className="pointer-events-auto"
-              />
-            </div>
-            <div>
-              <h4 className="font-medium mb-2">Fecha Final</h4>
-              <Calendar
-                mode="single"
-                selected={to}
-                onSelect={onToChange}
-                initialFocus
-                className="pointer-events-auto"
-                disabled={(date) => (from ? date < from : false)}
-              />
-            </div>
-          </div>
+          <Calendar
+            mode="range"
+            selected={date}
+            onSelect={setDate}
+            initialFocus
+            className="pointer-events-auto"
+          />
         </PopoverContent>
       </Popover>
     </div>
   );
 }
+
+// Re-export the DateRangePicker component for backwards compatibility
+export { DateRangePicker } from "@/components/ui/date-range-picker";
