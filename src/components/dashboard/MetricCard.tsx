@@ -1,16 +1,15 @@
 
 import { LucideIcon } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface MetricCardProps {
   title: string;
   value: string;
   icon: LucideIcon;
+  change?: number;
+  changeLabel?: string;
+  changeType?: "positive" | "negative" | "neutral";
   count?: number;
   countLabel?: string;
 }
@@ -19,6 +18,9 @@ export const MetricCard = ({
   title, 
   value, 
   icon: Icon, 
+  change,
+  changeLabel = "desde el último periodo",
+  changeType = "neutral",
   count, 
   countLabel = "registros" 
 }: MetricCardProps) => {
@@ -32,6 +34,23 @@ export const MetricCard = ({
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
+        
+        {change !== undefined && (
+          <div className="mt-2 flex items-center text-xs">
+            <span 
+              className={cn(
+                "mr-1 rounded-md px-1.5 py-0.5 font-medium",
+                changeType === "positive" && "bg-emerald-100 text-emerald-800",
+                changeType === "negative" && "bg-rose-100 text-rose-800",
+                changeType === "neutral" && "bg-gray-100 text-gray-800"
+              )}
+            >
+              {change > 0 ? "+" : ""}{change.toFixed(2)}%
+            </span>
+            <span className="text-muted-foreground">{changeLabel}</span>
+          </div>
+        )}
+        
         {count !== undefined && (
           <div className="mt-1 text-xs text-muted-foreground flex items-center">
             <span className="font-medium text-primary">{count}</span>
