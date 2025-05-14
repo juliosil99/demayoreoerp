@@ -1,4 +1,3 @@
-
 import { Building } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -49,6 +48,14 @@ export default function CompanySetup() {
         }
         
         if (userCompany) {
+          // If in edit mode and user has their own company, this is valid, so just let the component render
+          if (isEditMode) {
+            console.log("CompanySetup: User has their own company and is in edit mode, allowing edit");
+            setCheckingInvitation(false);
+            return;
+          }
+          
+          // If not in edit mode, redirect to dashboard since they already have a company
           console.log("CompanySetup: User has their own company, redirecting to dashboard");
           navigate("/dashboard");
           return;
@@ -109,23 +116,24 @@ export default function CompanySetup() {
         if (anyCompany && anyCompany.length > 0) {
           console.log("CompanySetup: Companies exist but none belongs to this user");
           // At this point companies exist but this user doesn't have one and wasn't invited
+          // IMPORTANT: Don't redirect to login here, just show a message and keep user on the page
           toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
-          navigate("/login");
+          setCheckingInvitation(false);
           return;
         }
         
         console.log("CompanySetup: No companies found, user can setup a new company");
         // No companies found - allow user to create the first company
+        setCheckingInvitation(false);
       } catch (err) {
         console.error("CompanySetup: Unexpected error:", err);
         toast.error("Error verificando estado de usuario");
-      } finally {
         setCheckingInvitation(false);
       }
     };
     
     checkInvitationStatus();
-  }, [user, navigate]);
+  }, [user, navigate, isEditMode]);
 
   if (isLoading || checkingInvitation) {
     return <div className="container flex items-center justify-center min-h-screen">Cargando...</div>;
