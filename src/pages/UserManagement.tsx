@@ -1,9 +1,11 @@
-import { UsersTable } from "./users/components/UsersTable";
-import { InviteUserForm } from "./users/components/InviteUserForm";
-import { PendingInvitations } from "./users/components/PendingInvitations";
-import { useUserPermissions } from "./users/hooks/useUserPermissions";
+
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useUserPermissions } from "./users/hooks/useUserPermissions";
+import {
+  UserInvitationSection,
+  PendingInvitationsSection,
+  UsersTableSection
+} from "./users/components/sections";
 
 export default function UserManagement() {
   const {
@@ -14,7 +16,6 @@ export default function UserManagement() {
     handleRoleChange,
     currentUserId
   } = useUserPermissions();
-  const isMobile = useIsMobile();
 
   if (isLoading) {
     return (
@@ -38,19 +39,16 @@ export default function UserManagement() {
     <div className="container mx-auto p-2 sm:py-6">
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Administración de Usuarios</h1>
       
-      <InviteUserForm />
-      <PendingInvitations />
+      <UserInvitationSection />
+      <PendingInvitationsSection />
       
-      <div className="rounded-md border mt-8 overflow-x-auto">
-        <UsersTable
-          profiles={profiles}
-          userPermissions={userPermissions}
-          onPermissionChange={handlePermissionChange}
-          onRoleChange={handleRoleChange}
-          isMobile={isMobile}
-          currentUserId={currentUserId}
-        />
-      </div>
+      <UsersTableSection
+        profiles={profiles}
+        userPermissions={userPermissions}
+        onPermissionChange={handlePermissionChange}
+        onRoleChange={handleRoleChange}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }
