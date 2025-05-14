@@ -12,6 +12,7 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     // Initialize with default values
     contributionMargin: 0,
+    contributionMarginChange: 0, // Added this missing property
     marginPercentage: 0,
     marginPercentageChange: 0,
     orderRevenue: 0,
