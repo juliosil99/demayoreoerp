@@ -6,7 +6,7 @@ import { SalesVsAdSpendChart } from "@/components/dashboard/SalesVsAdSpendChart"
 interface ChartDataPoint {
   date: string;
   sales: number;
-  adSpend: number;
+  adSpend?: number;
 }
 
 interface ChartSectionProps {
@@ -17,7 +17,7 @@ export const ChartSection = ({ chartData }: ChartSectionProps) => {
   return (
     <Card className="col-span-1 md:col-span-2">
       <CardHeader>
-        <CardTitle>Ventas vs Gasto Publicitario</CardTitle>
+        <CardTitle>Ventas</CardTitle>
       </CardHeader>
       <CardContent>
         <SalesVsAdSpendChart data={chartData} />

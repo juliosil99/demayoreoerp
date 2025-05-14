@@ -9,8 +9,6 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  Line,
-  ComposedChart,
   ReferenceLine,
 } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
@@ -18,7 +16,6 @@ import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 interface ChartDataPoint {
   date: string;
   sales: number;
-  adSpend: number;
   target?: number;
 }
 
@@ -28,16 +25,12 @@ interface SalesVsAdSpendChartProps {
 
 export const SalesVsAdSpendChart = ({ data }: SalesVsAdSpendChartProps) => {
   // Find max value to set as a reference for the chart height
-  const maxValue = Math.max(...data.map(item => Math.max(item.sales, item.adSpend)));
+  const maxValue = Math.max(...data.map(item => item.sales));
   
   const config = {
     sales: {
       label: "Ventas",
       color: "#2563eb" // Blue
-    },
-    adSpend: {
-      label: "Gasto Publicitario",
-      color: "#ef4444" // Red
     },
     target: {
       label: "Objetivo",
@@ -50,7 +43,7 @@ export const SalesVsAdSpendChart = ({ data }: SalesVsAdSpendChartProps) => {
       config={config} 
       className="h-[300px] w-full"
     >
-      <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+      <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis 
           dataKey="date"
@@ -67,11 +60,10 @@ export const SalesVsAdSpendChart = ({ data }: SalesVsAdSpendChartProps) => {
         <Tooltip content={<ChartTooltipContent />} />
         <Legend />
         <Bar dataKey="sales" fill="var(--color-sales)" radius={[4, 4, 0, 0]} barSize={20} name="Ventas" />
-        <Bar dataKey="adSpend" fill="var(--color-adSpend)" radius={[4, 4, 0, 0]} barSize={20} name="Gasto Publicitario" />
         {data[0]?.target && (
           <ReferenceLine y={data[0].target} stroke="var(--color-target)" strokeDasharray="3 3" />
         )}
-      </ComposedChart>
+      </BarChart>
     </ChartContainer>
   );
 };

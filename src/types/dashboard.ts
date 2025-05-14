@@ -1,8 +1,6 @@
-
 export interface ChartDataPoint {
   date: string;
   sales: number;
-  adSpend: number;
   target?: number;
 }
 

@@ -1,4 +1,3 @@
-
 import { addDays, format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { DashboardMetrics, ChartDataPoint } from "@/types/dashboard";
@@ -93,7 +92,6 @@ function generateChartData(dateRange?: DateRange): ChartDataPoint[] {
     chartData.push({
       date: format(currentDate, 'yyyy-MM-dd'),
       sales,
-      adSpend: Math.round(sales * (Math.random() * 0.3 + 0.1)),
       target: Math.round(sales * (Math.random() * 0.3 + 1.1))
     });
     

@@ -1,10 +1,10 @@
 
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { differenceInDays, subDays } from "date-fns";
+import { differenceInDays, subDays, format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
-import { DashboardMetrics } from "@/types/dashboard";
+import { DashboardMetrics, ChartDataPoint } from "@/types/dashboard";
 
 export const useFetchSalesData = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -65,6 +65,12 @@ export const useFetchSalesData = () => {
         // 3. Calculate the previous period for comparison
         const comparisonData = await fetchComparisonData(dateRange, realData);
         Object.assign(realData, comparisonData);
+        
+        // 4. Fetch sales data for chart
+        const chartData = await fetchChartData(dateRange);
+        if (chartData) {
+          realData.chartData = chartData;
+        }
       }
 
       return realData;
@@ -90,6 +96,50 @@ export const useFetchSalesData = () => {
       .select("price, orderNumber")
       .gte("date", dateRange.from!.toISOString().split('T')[0])
       .lte("date", dateRange.to!.toISOString().split('T')[0]);
+  };
+  
+  const fetchChartData = async (dateRange: DateRange): Promise<ChartDataPoint[] | null> => {
+    try {
+      // Query to get sales data grouped by date
+      const { data, error } = await supabase
+        .from("Sales")
+        .select("date, price")
+        .gte("date", dateRange.from!.toISOString().split('T')[0])
+        .lte("date", dateRange.to!.toISOString().split('T')[0])
+        .order("date", { ascending: true });
+        
+      if (error) {
+        console.error("Error fetching chart data:", error);
+        return null;
+      }
+      
+      if (!data || data.length === 0) {
+        return null;
+      }
+      
+      // Group sales by date and sum the prices
+      const salesByDate = data.reduce((acc: Record<string, number>, curr) => {
+        const date = curr.date;
+        if (!date) return acc;
+        
+        if (!acc[date]) {
+          acc[date] = 0;
+        }
+        acc[date] += (curr.price || 0);
+        return acc;
+      }, {});
+      
+      // Convert to the required chart format
+      const chartData: ChartDataPoint[] = Object.entries(salesByDate).map(([date, sales]) => ({
+        date,
+        sales
+      }));
+      
+      return chartData.sort((a, b) => a.date.localeCompare(b.date));
+    } catch (error) {
+      console.error("Error in fetchChartData:", error);
+      return null;
+    }
   };
 
   const fetchComparisonData = async (
