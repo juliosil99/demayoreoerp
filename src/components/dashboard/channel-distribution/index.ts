@@ -1,0 +1,2 @@
+
+export { SalesChannelDistribution } from "./SalesChannelDistribution";
