@@ -1,11 +1,24 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer, Tooltip } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/formatters";
+import { Loader2 } from "lucide-react";
 
-const COLORS = ['#9b87f5', '#7E69AB', '#6E59A5', '#F97316', '#0EA5E9', '#D946EF', '#8B5CF6', '#403E43'];
+// Enhanced color palette with better contrast and visual appeal
+const COLORS = [
+  '#9b87f5', // Primary purple
+  '#7E69AB', // Secondary purple
+  '#6E59A5', // Tertiary purple
+  '#F97316', // Orange
+  '#0EA5E9', // Blue
+  '#D946EF', // Magenta
+  '#8B5CF6', // Violet
+  '#403E43'  // Dark gray
+];
 
+// Standardize state name formatting
 const standardizeState = (state: string | null): string => {
   if (!state) return "Sin Estado";
   return state.trim().charAt(0).toUpperCase() + state.trim().slice(1).toLowerCase();
@@ -79,13 +92,13 @@ export const SalesStateDistribution = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Distribución de Ventas por Estado</CardTitle>
+      <Card className="shadow-md transition-all hover:shadow-lg">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-medium">Distribución de Ventas por Estado</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] flex items-center justify-center">
-            <div className="text-muted-foreground">Cargando datos...</div>
+            <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
           </div>
         </CardContent>
       </Card>
@@ -95,9 +108,9 @@ export const SalesStateDistribution = () => {
   if (error) {
     console.error("Error loading sales distribution data:", error);
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Distribución de Ventas por Estado</CardTitle>
+      <Card className="shadow-md border-destructive/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-medium">Distribución de Ventas por Estado</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] flex items-center justify-center">
@@ -110,9 +123,9 @@ export const SalesStateDistribution = () => {
 
   if (!stateDistribution || stateDistribution.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Distribución de Ventas por Estado</CardTitle>
+      <Card className="shadow-md">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-medium">Distribución de Ventas por Estado</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] flex items-center justify-center">
@@ -123,47 +136,72 @@ export const SalesStateDistribution = () => {
     );
   }
 
+  // Calculate the total value for the summary display
+  const totalValue = stateDistribution.reduce((sum, item) => sum + item.value, 0);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Distribución de Ventas por Estado</CardTitle>
+    <Card className="shadow-md transition-all hover:shadow-lg">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-medium">Distribución de Ventas por Estado</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={stateDistribution}
-                dataKey="value"
-                nameKey="state"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                innerRadius={40}
-              >
-                {stateDistribution?.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: number, name, props: any) => [
-                  `${formatCurrency(value)} (${props.payload.percentage}%)`,
-                  props.payload.state
-                ]}
-              />
-              <Legend 
-                verticalAlign="bottom" 
-                layout="horizontal"
-                formatter={(value, entry, index) => {
-                  const item = stateDistribution?.[index];
-                  return `${value} (${item?.percentage}%)`;
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="flex flex-col items-center">
+          <div className="h-[260px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={stateDistribution}
+                  dataKey="value"
+                  nameKey="state"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  innerRadius={40}
+                  paddingAngle={1}
+                  cornerRadius={3}
+                >
+                  {stateDistribution?.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]}
+                      stroke="transparent"
+                      className="transition-opacity hover:opacity-80"
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: number, name, props: any) => [
+                    `${formatCurrency(value)} (${props.payload.percentage}%)`,
+                    props.payload.state
+                  ]}
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    padding: '8px 12px'
+                  }}
+                />
+                <Legend 
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
+                  iconType="circle"
+                  formatter={(value, entry, index) => {
+                    const item = stateDistribution?.[index];
+                    return (
+                      <span className="text-xs font-medium">
+                        {value} ({item?.percentage}%)
+                      </span>
+                    );
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-2 text-sm text-center font-medium">
+            Total: {formatCurrency(totalValue)}
+          </div>
         </div>
       </CardContent>
     </Card>
