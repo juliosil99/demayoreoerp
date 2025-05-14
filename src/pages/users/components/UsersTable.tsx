@@ -31,6 +31,10 @@ export const UsersTable = memo(function UsersTable({
   isMobile = false,
   currentUserId
 }: UsersTableProps) {
+  if (!profiles || profiles.length === 0) {
+    return <div className="text-center p-6 text-muted-foreground">No hay usuarios disponibles</div>
+  }
+
   if (isMobile) {
     return (
       <div className="space-y-4">

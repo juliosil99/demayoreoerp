@@ -1,7 +1,7 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserPermissions } from "./users/hooks/useUserPermissions";
 import {
@@ -9,8 +9,10 @@ import {
   PendingInvitationsSection,
   UsersTableSection
 } from "./users/components/sections";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function UserManagement() {
+  const { isAdmin } = useAuth();
   const {
     profiles,
     isLoading,
@@ -61,6 +63,30 @@ export default function UserManagement() {
             <RefreshCw className="mr-2 h-4 w-4" /> Reintentar
           </Button>
         </Alert>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto p-2 sm:py-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Administración de Usuarios</h1>
+        
+        <Alert className="mb-6">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Acceso Restringido</AlertTitle>
+          <AlertDescription>
+            Solo los administradores pueden acceder a la gestión completa de usuarios.
+          </AlertDescription>
+        </Alert>
+
+        <UsersTableSection
+          profiles={profiles?.filter(p => p.id === currentUserId) || []}
+          userPermissions={userPermissions}
+          onPermissionChange={handlePermissionChange}
+          onRoleChange={handleRoleChange}
+          currentUserId={currentUserId}
+        />
       </div>
     );
   }

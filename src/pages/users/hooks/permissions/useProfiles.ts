@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Profile } from "../../types";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -20,20 +20,21 @@ export function useProfiles() {
       console.log("Fetching profiles...");
       const { data, error } = await supabase
         .from("profiles")
-        .select("*");
+        .select("*, companies:company_users(company:companies(id, nombre))");
 
       if (error) {
         console.error("Error fetching profiles:", error);
-        toast({
-          title: "Error",
-          description: "Error al cargar perfiles: " + error.message,
-          variant: "destructive",
-        });
+        toast.error("Error al cargar perfiles: " + error.message);
         throw error;
       }
       
       console.log("Profiles fetched successfully:", data);
-      return data as Profile[];
+      
+      // Format the data for proper display
+      return data.map((profile: any) => ({
+        ...profile,
+        company: profile.companies?.[0]?.company || null
+      })) as Profile[];
     },
     retry: 1,
     retryDelay: 1000,

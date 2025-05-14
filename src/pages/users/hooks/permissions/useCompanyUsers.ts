@@ -1,53 +1,89 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { toast } from "@/components/ui/use-toast";
-
-export interface CompanyUser {
-  id: string;
-  company_id: string;
-  user_id: string;
-  role: string;
-  created_at: string | null;
-  companies?: {
-    id: string;
-    nombre: string;
-  };
-}
+import { toast } from "sonner";
 
 export function useCompanyUsers() {
-  const { data: companyUsers, isLoading: isCompanyUsersLoading, error, refetch } = useQuery({
-    queryKey: ["company-users"],
+  const { 
+    data: companyUsers,
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ["company_users"],
     queryFn: async () => {
       console.log("Fetching company users...");
-      try {
-        const { data, error } = await supabase
-          .from("company_users")
-          .select("*, companies:company_id(id, nombre)");
+      
+      // First get current user's company
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error("Error fetching user:", userError);
+        throw userError;
+      }
+      
+      if (!userData?.user?.id) {
+        console.error("No user found");
+        return [];
+      }
 
-        if (error) {
-          console.error("Error fetching company users:", error);
-          toast({
-            title: "Error",
-            description: "Error al cargar relaciones de empresa: " + error.message,
-            variant: "destructive",
-          });
-          // Return empty array instead of throwing to avoid breaking the permissions flow
+      // Get company for current user
+      const { data: userCompany, error: companyError } = await supabase
+        .from("company_users")
+        .select("company_id")
+        .eq("user_id", userData.user.id)
+        .single();
+        
+      if (companyError && companyError.code !== 'PGRST116') {
+        console.error("Error fetching user's company:", companyError);
+        toast.error("Error al cargar datos de empresa");
+        throw companyError;
+      }
+      
+      if (!userCompany?.company_id) {
+        // Try to get company where user is the owner
+        const { data: ownedCompany, error: ownedError } = await supabase
+          .from("companies")
+          .select("id")
+          .eq("user_id", userData.user.id)
+          .single();
+          
+        if (ownedError && ownedError.code !== 'PGRST116') {
+          console.error("Error fetching owned company:", ownedError);
+          throw ownedError;
+        }
+        
+        if (!ownedCompany?.id) {
+          console.log("No company found for user");
           return [];
         }
         
-        console.log("Company users fetched successfully:", data);
-        return data as CompanyUser[];
-      } catch (err) {
-        console.error("Unexpected error in company users fetch:", err);
-        toast({
-          title: "Error",
-          description: "Error inesperado al cargar usuarios de empresa",
-          variant: "destructive",
-        });
-        // Return empty array to avoid breaking permissions flow
-        return [];
+        // Fetch all company users for this company
+        const { data: companyUsers, error: usersError } = await supabase
+          .from("company_users")
+          .select("*")
+          .eq("company_id", ownedCompany.id);
+        
+        if (usersError) {
+          console.error("Error fetching company users:", usersError);
+          throw usersError;
+        }
+        
+        return companyUsers;
       }
+      
+      // Fetch all company users for this company
+      const { data: companyUsers, error: usersError } = await supabase
+        .from("company_users")
+        .select("*")
+        .eq("company_id", userCompany.company_id);
+      
+      if (usersError) {
+        console.error("Error fetching company users:", usersError);
+        throw usersError;
+      }
+      
+      return companyUsers;
     },
     retry: 1,
     retryDelay: 1000,
@@ -55,8 +91,8 @@ export function useCompanyUsers() {
   });
 
   return { 
-    companyUsers: companyUsers || [], 
-    isLoading: isCompanyUsersLoading, 
+    companyUsers, 
+    isLoading, 
     error,
     refetch
   };
