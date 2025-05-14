@@ -5,10 +5,11 @@ import { DateRange } from "react-day-picker";
 import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
+import { ContributionMarginSection } from "@/components/dashboard/sections/ContributionMarginSection";
 import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
 import { ChartSection } from "@/components/dashboard/ChartSection";
 import { MetricsGroupsSection } from "@/components/dashboard/MetricsGroupsSection";
-import { ContributionMarginCard } from "@/components/dashboard/ContributionMarginCard";
+import { StateDistributionSection } from "@/components/dashboard/sections/StateDistributionSection";
 
 const Dashboard = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -28,13 +29,18 @@ const Dashboard = () => {
       <DashboardHeader dateRange={dateRange} setDateRange={setDateRange} />
 
       {/* Contribution Margin Card */}
-      <ContributionMarginCard contributionMargin={metrics.contributionMargin} />
+      <ContributionMarginSection contributionMargin={metrics.contributionMargin} />
 
       {/* Main Metrics Cards */}
       <MainMetricsSection metrics={metrics} />
 
-      {/* Chart Section */}
-      <ChartSection chartData={metrics.chartData || []} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Chart Section */}
+        <ChartSection chartData={metrics.chartData || []} />
+        
+        {/* State Distribution */}
+        <StateDistributionSection />
+      </div>
       
       {/* Metrics Groups */}
       <MetricsGroupsSection metrics={metrics} />
