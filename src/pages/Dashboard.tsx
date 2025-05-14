@@ -1,23 +1,13 @@
 
 import React, { useState } from "react";
-import { 
-  ArrowDown, 
-  ArrowUp, 
-  Calendar, 
-  DollarSign, 
-  ShoppingBag, 
-  TrendingDown, 
-  TrendingUp 
-} from "lucide-react";
-import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MetricCard } from "@/components/dashboard/MetricCard";
-import { SalesVsAdSpendChart } from "@/components/dashboard/SalesVsAdSpendChart";
-import { formatCurrency } from "@/utils/formatters";
-import { DateRange } from "react-day-picker";
 import { addDays } from "date-fns";
-import { MetricGroup } from "@/components/dashboard/MetricGroup";
+import { DateRange } from "react-day-picker";
+import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
+import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
+import { ChartSection } from "@/components/dashboard/ChartSection";
+import { MetricsGroupsSection } from "@/components/dashboard/MetricsGroupsSection";
 
 const Dashboard = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -28,185 +18,22 @@ const Dashboard = () => {
   const { metrics, loading } = useDashboardMetrics(dateRange);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <div className="text-muted-foreground">Cargando...</div>
-      </div>
-    );
+    return <DashboardLoading />;
   }
 
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">Margen de Contribución</h1>
-          <p className="text-muted-foreground text-sm">
-            Ingresos menos todos los costos variables, incluyendo gastos publicitarios
-          </p>
-        </div>
-        <DatePickerWithRange
-          date={dateRange}
-          setDate={setDateRange}
-          className="w-full md:w-auto"
-        />
-      </div>
+      <DashboardHeader dateRange={dateRange} setDateRange={setDateRange} />
 
       {/* Main Metrics Cards */}
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
-        <MetricCard
-          title="Ingresos por Órdenes"
-          value={formatCurrency(metrics.orderRevenue || 0)}
-          icon={DollarSign}
-          change={metrics.revenueChange}
-          changeLabel={metrics.revenueChange > 0 ? "incremento" : "disminución"}
-          changeType={metrics.revenueChange > 0 ? "positive" : "negative"}
-        />
-        <MetricCard
-          title="Gasto Publicitario"
-          value={formatCurrency(metrics.adSpend || 0)}
-          icon={DollarSign}
-          change={metrics.adSpendChange}
-          changeLabel={metrics.adSpendChange > 0 ? "incremento" : "disminución"}
-          changeType={metrics.adSpendChange < 0 ? "positive" : "negative"}
-        />
-        <MetricCard
-          title="MER"
-          value={metrics.mer?.toFixed(2) || "0"}
-          icon={TrendingUp}
-          change={metrics.merChange}
-          changeLabel={metrics.merChange > 0 ? "incremento" : "disminución"}
-          changeType={metrics.merChange > 0 ? "positive" : "negative"}
-        />
-        <MetricCard
-          title="Valor Promedio (AOV)"
-          value={formatCurrency(metrics.aov || 0)}
-          icon={ShoppingBag}
-          change={metrics.aovChange}
-          changeLabel={metrics.aovChange > 0 ? "incremento" : "disminución"}
-          changeType={metrics.aovChange > 0 ? "positive" : "negative"}
-        />
-        <MetricCard
-          title="Órdenes"
-          value={metrics.orders?.toString() || "0"}
-          icon={ShoppingBag}
-          change={metrics.ordersChange}
-          changeLabel={metrics.ordersChange > 0 ? "incremento" : "disminución"}
-          changeType={metrics.ordersChange > 0 ? "positive" : "negative"}
-        />
-      </div>
+      <MainMetricsSection metrics={metrics} />
 
       {/* Chart Section */}
-      <Card className="col-span-1 md:col-span-2">
-        <CardHeader>
-          <CardTitle>Ventas vs Gasto Publicitario</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SalesVsAdSpendChart data={metrics.chartData || []} />
-        </CardContent>
-      </Card>
+      <ChartSection chartData={metrics.chartData || []} />
       
       {/* Metrics Groups */}
-      <div className="space-y-6">
-        {/* Returning Metrics */}
-        <MetricGroup
-          title="Clientes Recurrentes"
-          metrics={[
-            {
-              title: "Ingresos",
-              value: formatCurrency(metrics.returningRevenue || 0),
-              change: metrics.returningRevenueChange,
-              changeType: metrics.returningRevenueChange > 0 ? "positive" : "negative"
-            },
-            {
-              title: "Órdenes",
-              value: metrics.returningOrders?.toString() || "0",
-              change: metrics.returningOrdersChange,
-              changeType: metrics.returningOrdersChange > 0 ? "positive" : "negative"
-            },
-            {
-              title: "AOV",
-              value: formatCurrency(metrics.returningAOV || 0),
-              change: metrics.returningAOVChange,
-              changeType: metrics.returningAOVChange > 0 ? "positive" : "negative"
-            },
-            {
-              title: "Tasa de Repetición",
-              value: `${metrics.repeatRate?.toFixed(2) || "0"}%`,
-              change: metrics.repeatRateChange,
-              changeType: metrics.repeatRateChange > 0 ? "positive" : "negative"
-            }
-          ]}
-        />
-        
-        {/* New Customer Metrics */}
-        <MetricGroup
-          title="Nuevos Clientes"
-          metrics={[
-            {
-              title: "Ingresos",
-              value: formatCurrency(metrics.newCustomerRevenue || 0),
-              change: metrics.newCustomerRevenueChange,
-              changeType: metrics.newCustomerRevenueChange > 0 ? "positive" : "negative"
-            },
-            {
-              title: "Órdenes",
-              value: metrics.newCustomerOrders?.toString() || "0",
-              change: metrics.newCustomerOrdersChange,
-              changeType: metrics.newCustomerOrdersChange > 0 ? "positive" : "negative"
-            },
-            {
-              title: "AOV",
-              value: formatCurrency(metrics.newCustomerAOV || 0),
-              change: metrics.newCustomerAOVChange,
-              changeType: metrics.newCustomerAOVChange > 0 ? "positive" : "negative"
-            },
-            {
-              title: "CAC",
-              value: formatCurrency(metrics.cac || 0),
-              change: metrics.cacChange,
-              changeType: metrics.cacChange < 0 ? "positive" : "negative"
-            }
-          ]}
-        />
-        
-        {/* Paid Performance Metrics */}
-        <MetricGroup
-          title="Rendimiento Pagado"
-          metrics={[
-            {
-              title: "Ingresos",
-              value: formatCurrency(metrics.paidRevenue || 0),
-              change: metrics.paidRevenueChange,
-              changeType: metrics.paidRevenueChange > 0 ? "positive" : "negative"
-            },
-            {
-              title: "Órdenes",
-              value: metrics.paidOrders?.toString() || "0",
-              change: metrics.paidOrdersChange,
-              changeType: metrics.paidOrdersChange > 0 ? "positive" : "negative"
-            },
-            {
-              title: "AOV",
-              value: formatCurrency(metrics.paidAOV || 0),
-              change: metrics.paidAOVChange,
-              changeType: metrics.paidAOVChange > 0 ? "positive" : "negative"
-            },
-            {
-              title: "CAC",
-              value: formatCurrency(metrics.paidCAC || 0),
-              change: metrics.paidCACChange,
-              changeType: metrics.paidCACChange < 0 ? "positive" : "negative"
-            },
-            {
-              title: "PAMER",
-              value: metrics.pamer?.toFixed(2) || "0",
-              change: metrics.pamerChange,
-              changeType: metrics.pamerChange > 0 ? "positive" : "negative"
-            }
-          ]}
-        />
-      </div>
+      <MetricsGroupsSection metrics={metrics} />
     </div>
   );
 };

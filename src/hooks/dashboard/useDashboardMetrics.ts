@@ -5,71 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
 import { DateRange } from "react-day-picker";
-
-interface ChartDataPoint {
-  date: string;
-  sales: number;
-  adSpend: number;
-}
-
-interface DashboardMetrics {
-  // Top-level metrics
-  orderRevenue: number;
-  adSpend: number;
-  mer: number;
-  aov: number;
-  orders: number;
-  
-  // Change percentages
-  revenueChange: number;
-  adSpendChange: number;
-  merChange: number;
-  aovChange: number;
-  ordersChange: number;
-  
-  // Chart data
-  chartData: ChartDataPoint[];
-  
-  // Returning customer metrics
-  returningRevenue: number;
-  returningOrders: number;
-  returningAOV: number;
-  repeatRate: number;
-  returningRevenueChange: number;
-  returningOrdersChange: number;
-  returningAOVChange: number;
-  repeatRateChange: number;
-  
-  // New customer metrics
-  newCustomerRevenue: number;
-  newCustomerOrders: number;
-  newCustomerAOV: number;
-  cac: number;
-  newCustomerRevenueChange: number;
-  newCustomerOrdersChange: number;
-  newCustomerAOVChange: number;
-  cacChange: number;
-  
-  // Paid performance metrics
-  paidRevenue: number;
-  paidOrders: number;
-  paidAOV: number;
-  paidCAC: number;
-  pamer: number;
-  paidRevenueChange: number;
-  paidOrdersChange: number;
-  paidAOVChange: number;
-  paidCACChange: number;
-  pamerChange: number;
-  
-  // Legacy metrics for backward compatibility
-  yesterdaySales: number;
-  unreconciled: number;
-  receivablesPending: number;
-  salesCount: number;
-  unreconciledCount: number;
-  receivablesCount: number;
-}
+import { DashboardMetrics, ChartDataPoint } from "@/types/dashboard";
 
 export const useDashboardMetrics = (dateRange?: DateRange) => {
   const navigate = useNavigate();
