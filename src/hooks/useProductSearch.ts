@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,14 +81,14 @@ export const useProductSearch = () => {
   const downloadXml = useCallback(async (invoiceId: number) => {
     try {
       console.log(`Downloading XML for invoice ID: ${invoiceId}`);
-      const { data: invoice } = await supabase
+      const { data: invoice, error } = await supabase
         .from("invoices")
         .select("file_path, filename")
         .eq("id", invoiceId)
         .single();
 
-      if (!invoice?.file_path) {
-        console.error("XML file path not found for invoice:", invoiceId);
+      if (error || !invoice?.file_path) {
+        console.error("XML file path not found for invoice:", invoiceId, error);
         throw new Error("No se encontró el archivo XML de la factura");
       }
 
@@ -117,6 +116,25 @@ export const useProductSearch = () => {
         console.error("Missing required data:", { invoiceId, issuerRfc });
         throw new Error("Faltan datos necesarios para generar el PDF");
       }
+      
+      // Double-check the invoice exists and has minimum required fields
+      const { data: invoice, error: invoiceError } = await supabase
+        .from("invoices")
+        .select("id, invoice_number, serie, invoice_date, uuid")
+        .eq("id", invoiceId)
+        .single();
+        
+      if (invoiceError) {
+        console.error("Error verifying invoice existence:", invoiceError);
+        throw new Error("No se pudo verificar la existencia de la factura");
+      }
+      
+      console.log("Invoice verification complete, proceeding with PDF generation:", {
+        hasNumber: !!invoice.invoice_number,
+        hasSerie: !!invoice.serie,
+        hasDate: !!invoice.invoice_date,
+        hasUuid: !!invoice.uuid
+      });
       
       const result = await generateInvoicePdf(invoiceId, issuerRfc);
       

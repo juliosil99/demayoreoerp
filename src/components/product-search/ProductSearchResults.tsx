@@ -9,9 +9,10 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Loader2 } from "lucide-react";
+import { Download, FileText, Loader2, AlertCircle } from "lucide-react";
 import { ProductSearchResult } from "@/types/product-search";
 import { formatCurrency } from "@/utils/formatters";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProductSearchResultsProps {
   products: ProductSearchResult[];
@@ -46,6 +47,10 @@ export const ProductSearchResults = ({
     } finally {
       setGeneratingPdf(null);
     }
+  };
+
+  const isPdfGenerationPossible = (product: ProductSearchResult) => {
+    return !!product.invoice_id && !!product.invoice?.issuer_rfc;
   };
 
   if (isLoading) {
@@ -110,18 +115,35 @@ export const ProductSearchResults = ({
                       <><Download className="h-4 w-4 mr-1" /> XML</>
                     )}
                   </Button>
-                  <Button 
-                    size="sm"
-                    onClick={() => product.invoice_id && product.invoice?.issuer_rfc && 
-                      handleGeneratePdf(product.invoice_id, product.invoice.issuer_rfc)}
-                    disabled={generatingPdf === product.invoice_id || !product.invoice_id || !product.invoice?.issuer_rfc}
-                  >
-                    {generatingPdf === product.invoice_id ? (
-                      <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> PDF</>
-                    ) : (
-                      <><FileText className="h-4 w-4 mr-1" /> PDF</>
-                    )}
-                  </Button>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Button 
+                            size="sm"
+                            onClick={() => product.invoice_id && product.invoice?.issuer_rfc && 
+                              handleGeneratePdf(product.invoice_id, product.invoice.issuer_rfc)}
+                            disabled={generatingPdf === product.invoice_id || !isPdfGenerationPossible(product)}
+                            variant={isPdfGenerationPossible(product) ? "default" : "outline"}
+                          >
+                            {generatingPdf === product.invoice_id ? (
+                              <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> PDF</>
+                            ) : isPdfGenerationPossible(product) ? (
+                              <><FileText className="h-4 w-4 mr-1" /> PDF</>
+                            ) : (
+                              <><AlertCircle className="h-4 w-4 mr-1" /> PDF</>
+                            )}
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      {!isPdfGenerationPossible(product) && (
+                        <TooltipContent>
+                          <p>No se puede generar PDF: Faltan datos necesarios de la factura</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </TableCell>
             </TableRow>

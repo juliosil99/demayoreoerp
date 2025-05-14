@@ -63,7 +63,7 @@ export const generateInvoicePdf = async (
     doc.setFontSize(18);
     doc.text("FACTURA", doc.internal.pageSize.getWidth() / 2, 20, { align: "center" });
     
-    // Adding issuer and receiver information
+    // Adding issuer and receiver information with fallbacks for missing data
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text("EMISOR", 14, 30);
@@ -85,12 +85,26 @@ export const generateInvoicePdf = async (
     doc.text(`${invoice.receiver_name || "N/A"}`, 14, 84);
     doc.text(`RFC: ${invoice.receiver_rfc || "N/A"}`, 14, 90);
     
-    // Invoice details
+    // Invoice details with explicit fallbacks for potentially missing fields
     doc.setFont("helvetica", "bold");
     doc.text("DETALLES DE LA FACTURA", 120, 30);
     doc.setFont("helvetica", "normal");
-    doc.text(`Serie-Folio: ${invoice.serie || ""} ${invoice.invoice_number || "N/A"}`, 120, 36);
-    doc.text(`Fecha: ${invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : "N/A"}`, 120, 42);
+    
+    // Use fallbacks for potentially missing fields
+    const invoiceNumber = invoice.serie && invoice.invoice_number ? 
+      `${invoice.serie} ${invoice.invoice_number}` : 
+      invoice.serie ? `${invoice.serie} (Sin número)` : 
+      invoice.invoice_number ? invoice.invoice_number : 
+      invoice.uuid ? `Folio UUID: ${invoice.uuid.substring(0, 8)}` : "N/A";
+      
+    const invoiceDate = invoice.invoice_date ? 
+      new Date(invoice.invoice_date).toLocaleDateString() : 
+      invoice.stamp_date ? 
+      new Date(invoice.stamp_date).toLocaleDateString() : 
+      "N/A";
+      
+    doc.text(`Serie-Folio: ${invoiceNumber}`, 120, 36);
+    doc.text(`Fecha: ${invoiceDate}`, 120, 42);
     doc.text(`UUID: ${invoice.uuid || "N/A"}`, 120, 48);
     doc.text(`Total: ${formatCurrency(invoice.total_amount || 0)}`, 120, 54);
     
@@ -132,8 +146,16 @@ export const generateInvoicePdf = async (
     
     console.log("PDF generation completed, saving file...");
     
-    // Save PDF with a clear filename
-    const filename = `Factura-${invoice.serie || ""}-${invoice.invoice_number || invoice.id}.pdf`;
+    // Save PDF with a more robust filename that uses available data
+    let filename;
+    if (invoice.invoice_number) {
+      filename = `Factura-${invoice.serie || ""}-${invoice.invoice_number}.pdf`;
+    } else if (invoice.uuid) {
+      filename = `Factura-UUID-${invoice.uuid.substring(0, 8)}.pdf`;
+    } else {
+      filename = `Factura-${invoiceId}.pdf`;
+    }
+    
     doc.save(filename);
     console.log("PDF saved successfully:", filename);
     
