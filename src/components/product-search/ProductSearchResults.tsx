@@ -17,6 +17,20 @@ export const ProductSearchResults: React.FC<ProductSearchResultsProps> = ({
   downloadXml,
   generatePdf,
 }) => {
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 10;
+  
+  // Reset to first page when products change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [products]);
+  
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of results for better UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="space-y-4">
       <InfoAlert />
@@ -25,6 +39,9 @@ export const ProductSearchResults: React.FC<ProductSearchResultsProps> = ({
         isLoading={isLoading}
         downloadXml={downloadXml}
         generatePdf={generatePdf}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        onPageChange={handlePageChange}
       />
     </div>
   );
