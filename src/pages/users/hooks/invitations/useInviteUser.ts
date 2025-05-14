@@ -16,10 +16,10 @@ export const useInviteUser = () => {
   const { resendInvitation } = useResendInvitation();
   const { invalidateInvitations } = useInvitationQueries();
 
-  const inviteUser = async (email: string, role: 'admin' | 'user') => {
+  const inviteUser = async (email: string, role: 'admin' | 'user', companyId: string) => {
     try {
       setIsInviting(true);
-      console.log(`Inviting user: ${email} with role: ${role}`);
+      console.log(`Inviting user: ${email} with role: ${role} to company: ${companyId}`);
 
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
@@ -29,7 +29,7 @@ export const useInviteUser = () => {
       // Verificar si ya existe una invitación para este email
       const { data: existingInvitation, error: checkError } = await supabase
         .from('user_invitations')
-        .select('id, status')
+        .select('id, status, company_id')
         .eq('email', email)
         .maybeSingle();
 
@@ -40,27 +40,43 @@ export const useInviteUser = () => {
 
       console.log("Existing invitation check result:", existingInvitation);
 
+      // Get company name
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('nombre')
+        .eq('id', companyId)
+        .single();
+        
+      if (companyError) {
+        console.error("Error fetching company:", companyError);
+        throw new Error("No se pudo obtener información de la empresa");
+      }
+
       if (existingInvitation) {
-        // If invitation exists but is expired, update it and resend
-        if (existingInvitation.status === 'expired') {
+        // If invitation exists for same company and is expired, update it and resend
+        if (existingInvitation.status === 'expired' && existingInvitation.company_id === companyId) {
           console.log("Found expired invitation, reactivating and resending");
           const invitation = {
             id: existingInvitation.id,
             status: 'expired',
-            email
+            email,
+            company_id: companyId
           } as UserInvitation;
           
           await resendInvitation(invitation);
           return;
         }
         
-        console.log("Active invitation already exists");
-        await createInvitationLog(
-          existingInvitation.id,
-          'duplicate',
-          'Ya existe una invitación para este email'
-        );
-        throw new Error("Ya existe una invitación para este email");
+        // If invitation exists for same company and is pending
+        if (existingInvitation.company_id === companyId) {
+          console.log("Active invitation already exists for this company");
+          await createInvitationLog(
+            existingInvitation.id,
+            'duplicate',
+            'Ya existe una invitación para este email en esta empresa'
+          );
+          throw new Error("Ya existe una invitación para este email en esta empresa");
+        }
       }
       
       // Crear la invitación con un nuevo token
@@ -74,7 +90,8 @@ export const useInviteUser = () => {
           role,
           status: 'pending',
           invited_by: session.session.user.id,
-          invitation_token: invitationToken
+          invitation_token: invitationToken,
+          company_id: companyId
         })
         .select()
         .single();
@@ -89,7 +106,10 @@ export const useInviteUser = () => {
       // Enviar el correo de invitación usando la Edge Function
       console.log("Calling send-invitation edge function with ID:", invitation.id);
       const { data, error: sendError } = await supabase.functions.invoke('send-invitation', {
-        body: { invitationId: invitation.id }
+        body: { 
+          invitationId: invitation.id,
+          companyName: company.nombre
+        }
       });
 
       console.log("Edge function response:", { data, sendError });

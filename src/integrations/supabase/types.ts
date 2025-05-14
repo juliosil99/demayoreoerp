@@ -1949,6 +1949,7 @@ export type Database = {
       }
       user_invitations: {
         Row: {
+          company_id: string | null
           created_at: string | null
           email: string
           id: string
@@ -1958,6 +1959,7 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           email: string
           id?: string
@@ -1967,6 +1969,7 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           email?: string
           id?: string
@@ -1975,7 +1978,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"] | null
           status?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -2010,6 +2021,7 @@ export type Database = {
       find_invitation_by_token: {
         Args: { token_param: string }
         Returns: {
+          company_id: string | null
           created_at: string | null
           email: string
           id: string

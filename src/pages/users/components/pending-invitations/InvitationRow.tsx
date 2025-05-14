@@ -1,108 +1,56 @@
 
-import React, { useState } from "react";
-import { TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { Send, AlertTriangle, Info, Loader2 } from "lucide-react";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { UserInvitation } from "../../types";
 import { InvitationStatusBadge } from "./InvitationStatusBadge";
-import { InvitationDetailsPanel } from "./InvitationDetailsPanel";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { format } from "date-fns";
 
 interface InvitationRowProps {
   invitation: UserInvitation;
-  resendInvitation: (invitation: UserInvitation) => void;
+  onResend: (invitation: UserInvitation) => void;
   isResending: boolean;
+  currentResendingId: string | null;
 }
 
-export function InvitationRow({ invitation, resendInvitation, isResending }: InvitationRowProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
+export function InvitationRow({ 
+  invitation, 
+  onResend, 
+  isResending, 
+  currentResendingId 
+}: InvitationRowProps) {
+  const isThisResending = isResending && currentResendingId === invitation.id;
+  
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd/MM/yyyy HH:mm");
+    } catch (error) {
+      return "Fecha inválida";
+    }
   };
-
+  
   return (
-    <React.Fragment>
-      <TableRow>
-        <TableCell className="font-medium">{invitation.email}</TableCell>
-        <TableCell>{invitation.role === 'admin' ? 'Administrador' : 'Usuario'}</TableCell>
-        <TableCell>
-          <div className="flex items-center gap-2">
-            <InvitationStatusBadge status={invitation.status} />
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={toggleExpand}>
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {invitation.status === 'pending' ? 'Ver detalles de la invitación' : 
-                  invitation.status === 'expired' ? 'Ver por qué expiró' : 
-                  'Ver cuándo fue completada'}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </TableCell>
-        <TableCell className="whitespace-nowrap">
-          {format(new Date(invitation.created_at), 'dd/MM/yyyy HH:mm')}
-        </TableCell>
-        <TableCell>
-          {(invitation.status === 'pending' || invitation.status === 'expired') && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => resendInvitation(invitation)}
-              disabled={isResending}
-              className="whitespace-nowrap"
-            >
-              {isResending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Enviando...</span>
-                  <span className="sm:hidden">...</span>
-                </>
-              ) : invitation.status === 'expired' ? (
-                <>
-                  <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
-                  <span className="hidden sm:inline">Reactivar y Reenviar</span>
-                  <span className="sm:hidden">Reactivar</span>
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Reenviar</span>
-                  <span className="sm:hidden">Enviar</span>
-                </>
-              )}
-            </Button>
-          )}
-        </TableCell>
-        <TableCell>
+    <TableRow>
+      <TableCell className="font-medium">{invitation.email}</TableCell>
+      <TableCell>{invitation.company_name || 'N/A'}</TableCell>
+      <TableCell>{invitation.role === 'admin' ? 'Administrador' : 'Usuario'}</TableCell>
+      <TableCell>{formatDate(invitation.created_at)}</TableCell>
+      <TableCell>
+        <InvitationStatusBadge status={invitation.status} />
+      </TableCell>
+      <TableCell>
+        {invitation.status === 'pending' || invitation.status === 'expired' ? (
           <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={toggleExpand}
-            className="whitespace-nowrap"
+            size="sm" 
+            variant="secondary"
+            onClick={() => onResend(invitation)} 
+            disabled={isResending}
           >
-            {isExpanded ? 'Ocultar' : 'Detalles'}
+            {isThisResending ? "Enviando..." : "Reenviar"}
           </Button>
-        </TableCell>
-      </TableRow>
-      {isExpanded && (
-        <TableRow className="bg-muted/20">
-          <TableCell colSpan={6}>
-            <InvitationDetailsPanel invitation={invitation} />
-          </TableCell>
-        </TableRow>
-      )}
-    </React.Fragment>
+        ) : (
+          <span className="text-muted-foreground text-sm">No disponible</span>
+        )}
+      </TableCell>
+    </TableRow>
   );
 }

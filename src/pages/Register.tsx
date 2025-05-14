@@ -40,7 +40,7 @@ export default function Register() {
       // First check if the token exists at all with direct query using eq()
       const { data: invitation, error } = await supabase
         .from("user_invitations")
-        .select("*")
+        .select("*, companies:company_id(id, nombre)")
         .eq("invitation_token", token)
         .maybeSingle();
 
@@ -53,6 +53,7 @@ export default function Register() {
         setTokenDebugInfo(prev => `${prev}\nQuery result: ${invitation ? 'Found' : 'Not found'}`);
         if (invitation) {
           setTokenDebugInfo(prev => `${prev}\nInvitation status: ${invitation.status}, Created: ${invitation.created_at}`);
+          setTokenDebugInfo(prev => `${prev}\nCompany: ${invitation.companies?.nombre || 'No company'}`);
         }
       }
 
@@ -67,7 +68,7 @@ export default function Register() {
         // If invitation not found, try a more direct approach - query by token as string
         const { data: altInvitation, error: altError } = await supabase
           .from("user_invitations")
-          .select("*")
+          .select("*, companies:company_id(id, nombre)")
           .filter("invitation_token::text", "eq", token)
           .maybeSingle();
           
@@ -83,7 +84,7 @@ export default function Register() {
         if (session.session?.user.email) {
           const { data: invitationsByEmail, error: emailError } = await supabase
             .from("user_invitations")
-            .select("*")
+            .select("*, companies:company_id(id, nombre)")
             .eq("email", session.session.user.email)
             .order('created_at', { ascending: false })
             .limit(1);
@@ -103,7 +104,7 @@ export default function Register() {
               // Retry the verification with the updated token
               const { data: updatedInvitation } = await supabase
                 .from("user_invitations")
-                .select("*")
+                .select("*, companies:company_id(id, nombre)")
                 .eq("invitation_token", token)
                 .maybeSingle();
                 
@@ -149,7 +150,7 @@ export default function Register() {
       }
 
       setInvitation(invitation);
-      setTokenDebugInfo(prev => `${prev}\nResult: Valid invitation found for ${invitation.email}`);
+      setTokenDebugInfo(prev => `${prev}\nResult: Valid invitation found for ${invitation.email} to company ${invitation.companies?.nombre || 'Unknown'}`);
       setVerifyingToken(false);
     } catch (error) {
       console.error("Error verifying token:", error);
@@ -184,6 +185,22 @@ export default function Register() {
       }
 
       console.log("User created successfully:", adminAuthData);
+
+      // Create company_user relationship if invitation has company_id
+      if (invitation.company_id) {
+        const { error: relationError } = await supabase
+          .from("company_users")
+          .insert({
+            company_id: invitation.company_id,
+            user_id: adminAuthData.user.id,
+            role: invitation.role
+          });
+          
+        if (relationError) {
+          console.error("Error creating company-user relationship:", relationError);
+          throw relationError;
+        }
+      }
 
       // Actualizar el estado de la invitación
       const { error: updateError } = await supabase
@@ -290,7 +307,15 @@ export default function Register() {
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-bold">Completa tu registro</h1>
           <p className="text-gray-500">
-            Bienvenido {invitation?.email}. Por favor, establece tu contraseña para completar el registro.
+            Bienvenido {invitation?.email}.
+          </p>
+          {invitation?.companies?.nombre && (
+            <p className="text-sm font-medium">
+              Estás siendo invitado a unirte a la empresa: <span className="text-primary">{invitation.companies.nombre}</span>
+            </p>
+          )}
+          <p className="text-gray-500 mt-2">
+            Por favor, establece tu contraseña para completar el registro.
           </p>
         </div>
 

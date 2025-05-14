@@ -6,93 +6,77 @@ import { UserInvitation } from "../../types";
 import { useInvitationLogs } from "./useInvitationLogs";
 import { useInvitationQueries } from "./useInvitationQueries";
 
-/**
- * Hook for resending invitations
- */
-export const useResendInvitation = () => {
+export function useResendInvitation() {
   const [isResending, setIsResending] = useState(false);
   const { createInvitationLog } = useInvitationLogs();
-  const { invalidateInvitations, updateInvitationCache } = useInvitationQueries();
-
+  const { invalidateInvitations } = useInvitationQueries();
+  
   const resendInvitation = async (invitation: UserInvitation) => {
     try {
       setIsResending(true);
-      console.log(`Resending invitation to ${invitation.email}, current status: ${invitation.status}`);
+      console.log(`Resending invitation to: ${invitation.email}`);
       
-      // Generate the new token
-      const newToken = crypto.randomUUID();
-      console.log(`Generated new token: ${newToken}`);
+      // Update the invitation status to pending and generate a new token if needed
+      const invitationToken = invitation.invitation_token || crypto.randomUUID();
       
-      // First update the invitation with a new token
       const { error: updateError } = await supabase
         .from('user_invitations')
         .update({ 
-          invitation_token: newToken,
-          // Reset status to pending if it was expired
-          status: invitation.status === 'expired' ? 'pending' : invitation.status
+          status: 'pending',
+          invitation_token: invitationToken
         })
         .eq('id', invitation.id);
-        
+      
       if (updateError) {
-        console.error("Error updating invitation token:", updateError);
-        throw new Error("Error al actualizar el token de invitación: " + updateError.message);
+        console.error("Error updating invitation:", updateError);
+        throw updateError;
       }
       
-      console.log("Invitation token updated successfully to:", newToken);
+      // Get company info if applicable
+      let companyName = null;
+      if (invitation.company_id) {
+        const { data: company } = await supabase
+          .from('companies')
+          .select('nombre')
+          .eq('id', invitation.company_id)
+          .single();
+          
+        if (company) {
+          companyName = company.nombre;
+        }
+      }
       
-      // Verify the token was correctly stored
-      const { data: verifyToken } = await supabase
-        .from('user_invitations')
-        .select('invitation_token')
-        .eq('id', invitation.id)
-        .single();
-        
-      console.log("Verification of updated token:", verifyToken);
-      
-      // Registrar el intento de reenvío
-      await createInvitationLog(
-        invitation.id,
-        'resend_attempt',
-        'Intento de reenvío de invitación'
-      );
-
-      // Llamar a la Edge Function para enviar el correo
-      console.log("Calling send-invitation edge function with ID:", invitation.id);
-      const { data, error } = await supabase.functions.invoke('send-invitation', {
-        body: { invitationId: invitation.id }
+      // Call send-invitation edge function
+      const { data, error: sendError } = await supabase.functions.invoke('send-invitation', {
+        body: { 
+          invitationId: invitation.id,
+          companyName: companyName || invitation.company_name
+        }
       });
-
-      console.log("Edge function response:", { data, error });
-
-      if (error) {
-        await createInvitationLog(invitation.id, 'email_failed', error.message);
-        throw new Error("Error al reenviar la invitación: " + error.message);
+      
+      if (sendError) {
+        console.error("Error sending invitation email:", sendError);
+        await createInvitationLog(invitation.id, 'email_failed', sendError.message);
+        toast.error("Error al enviar la invitación por email");
+        throw sendError;
       }
-
+      
       await createInvitationLog(invitation.id, 'email_sent', 'Correo reenviado exitosamente');
       toast.success("Invitación reenviada exitosamente");
       
-      // Update the cache with the updated invitation
-      const updatedInvitation = { 
-        ...invitation, 
-        invitation_token: newToken, 
-        status: invitation.status === 'expired' ? 'pending' : invitation.status 
-      };
-      
-      updateInvitationCache(updatedInvitation);
-      
-      // Also invalidate to ensure fresh data
+      // Refresh the invitations list
       invalidateInvitations();
+      
     } catch (error: any) {
       console.error("Error resending invitation:", error);
-      toast.error(error.message);
+      toast.error(error.message || "Error al reenviar la invitación");
     } finally {
       setIsResending(false);
     }
   };
-
+  
   return {
     resendInvitation,
     isResending
   };
-};
+}

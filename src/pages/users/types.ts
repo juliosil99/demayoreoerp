@@ -10,6 +10,11 @@ export interface Profile {
   email: string | null;
   first_name: string | null;
   last_name: string | null;
+  company?: {
+    id: string;
+    nombre: string;
+  } | null;
+  isCurrentUser?: boolean;
 }
 
 export interface UserInvitation {
@@ -20,6 +25,8 @@ export interface UserInvitation {
   created_at: string;
   invitation_token?: string;
   invited_by?: string;
+  company_id?: string;
+  company_name?: string;
 }
 
 export interface InvitationLog {
@@ -28,6 +35,14 @@ export interface InvitationLog {
   status: string;
   error_message: string | null;
   attempted_by: string;
+  created_at: string;
+}
+
+export interface CompanyUser {
+  id: string;
+  company_id: string;
+  user_id: string;
+  role: 'admin' | 'user';
   created_at: string;
 }
 

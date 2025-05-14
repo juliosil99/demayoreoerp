@@ -1,26 +1,53 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { UserPermissions, Profile } from "../types";
+import { UserPermissions, Profile, CompanyUser } from "../types";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useUserPermissions() {
   const [userPermissions, setUserPermissions] = useState<{ [key: string]: UserPermissions }>({});
+  const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: profiles, isLoading: isProfilesLoading } = useQuery({
-    queryKey: ["profiles"],
+    queryKey: ["profiles-with-companies"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get all profiles
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
       
-      if (error) {
-        toast.error("Error al cargar usuarios: " + error.message);
-        throw error;
+      if (profilesError) {
+        toast.error("Error al cargar usuarios: " + profilesError.message);
+        throw profilesError;
       }
-      return data as Profile[];
+
+      // Get company-user relationships
+      const { data: companyUsers, error: companyUsersError } = await supabase
+        .from('company_users')
+        .select('*, companies:company_id(id, nombre)');
+      
+      if (companyUsersError) {
+        toast.error("Error al cargar relaciones de empresa: " + companyUsersError.message);
+        throw companyUsersError;
+      }
+
+      // Map company info to profiles
+      const enrichedProfiles = profilesData.map((profile: Profile) => {
+        const userCompany = companyUsers.find((cu: any) => cu.user_id === profile.id);
+        return {
+          ...profile,
+          company: userCompany ? {
+            id: userCompany.companies.id,
+            nombre: userCompany.companies.nombre,
+          } : null,
+          isCurrentUser: profile.id === currentUser?.id
+        };
+      });
+
+      return enrichedProfiles as Profile[];
     },
   });
 
@@ -39,15 +66,15 @@ export function useUserPermissions() {
     },
   });
 
-  const { data: rolePermissions, isLoading: isRolePermissionsLoading } = useQuery({
-    queryKey: ["user-roles"],
+  const { data: companyUsers, isLoading: isCompanyUsersLoading } = useQuery({
+    queryKey: ["company-users"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("user_roles")
+        .from("company_users")
         .select("*");
 
       if (error) {
-        toast.error("Error al cargar roles: " + error.message);
+        toast.error("Error al cargar roles de empresa: " + error.message);
         throw error;
       }
       return data;
@@ -55,7 +82,7 @@ export function useUserPermissions() {
   });
 
   useEffect(() => {
-    if (pagePermissions && rolePermissions) {
+    if (pagePermissions && companyUsers && profiles) {
       const permissionsMap: { [key: string]: UserPermissions } = {};
       
       // Inicializar con todos los usuarios
@@ -81,22 +108,22 @@ export function useUserPermissions() {
         permissionsMap[perm.user_id].pages[perm.page_path] = perm.can_access;
       });
 
-      // Agregar roles
-      rolePermissions.forEach((role) => {
-        if (!permissionsMap[role.user_id]) {
-          permissionsMap[role.user_id] = {
-            userId: role.user_id,
+      // Agregar roles desde company_users
+      companyUsers.forEach((cu) => {
+        if (!permissionsMap[cu.user_id]) {
+          permissionsMap[cu.user_id] = {
+            userId: cu.user_id,
             pages: {},
-            role: role.role
+            role: cu.role
           };
         } else {
-          permissionsMap[role.user_id].role = role.role;
+          permissionsMap[cu.user_id].role = cu.role;
         }
       });
 
       setUserPermissions(permissionsMap);
     }
-  }, [pagePermissions, rolePermissions, profiles]);
+  }, [pagePermissions, companyUsers, profiles]);
 
   const handlePermissionChange = async (userId: string, page: string, checked: boolean) => {
     try {
@@ -131,14 +158,37 @@ export function useUserPermissions() {
 
   const handleRoleChange = async (userId: string, role: 'admin' | 'user') => {
     try {
-      const { error } = await supabase
-        .from("user_roles")
-        .upsert({
-          user_id: userId,
-          role: role
-        });
+      // Find the company user relationship
+      const { data: userCompany, error: findError } = await supabase
+        .from("company_users")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      
+      if (findError && findError.code !== 'PGRST116') { // Not found error
+        throw findError;
+      }
 
-      if (error) throw error;
+      // If found, update the role
+      if (userCompany) {
+        const { error } = await supabase
+          .from("company_users")
+          .update({ role })
+          .eq("id", userCompany.id);
+
+        if (error) throw error;
+      } else {
+        // This shouldn't happen in the updated system, but as a fallback
+        // update the user_roles table
+        const { error } = await supabase
+          .from("user_roles")
+          .upsert({
+            user_id: userId,
+            role: role
+          });
+
+        if (error) throw error;
+      }
 
       setUserPermissions(prev => ({
         ...prev,
@@ -148,7 +198,7 @@ export function useUserPermissions() {
         }
       }));
 
-      queryClient.invalidateQueries({ queryKey: ["user-roles"] });
+      queryClient.invalidateQueries({ queryKey: ["company-users"] });
       toast.success("Rol actualizado correctamente");
     } catch (error: any) {
       console.error("Error updating role:", error);
@@ -156,13 +206,14 @@ export function useUserPermissions() {
     }
   };
 
-  const isLoading = isProfilesLoading || isPagePermissionsLoading || isRolePermissionsLoading;
+  const isLoading = isProfilesLoading || isPagePermissionsLoading || isCompanyUsersLoading;
 
   return {
     profiles,
     isLoading,
     userPermissions,
     handlePermissionChange,
-    handleRoleChange
+    handleRoleChange,
+    currentUserId: currentUser?.id
   };
 }

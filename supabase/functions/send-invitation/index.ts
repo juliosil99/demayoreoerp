@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
@@ -23,6 +22,7 @@ const supabase = createClient(
 
 interface InvitationRequest {
   invitationId: string;
+  companyName?: string;
 }
 
 interface InvitationLogEntry {
@@ -40,7 +40,7 @@ async function getInvitationData(invitationId: string): Promise<Invitation> {
 
   const { data: invitation, error: invitationError } = await supabase
     .from("user_invitations")
-    .select("*")
+    .select("*, companies:company_id(nombre)")
     .eq("id", invitationId)
     .single();
 
@@ -51,7 +51,7 @@ async function getInvitationData(invitationId: string): Promise<Invitation> {
   }
 
   console.log("Invitación encontrada:", invitation);
-  return invitation as Invitation;
+  return invitation as unknown as Invitation;
 }
 
 /**
@@ -98,11 +98,22 @@ async function ensureInvitationToken(invitation: Invitation): Promise<Invitation
 /**
  * Gets company information for the email
  */
-async function getCompanyInfo(invitedById: string): Promise<string> {
+async function getCompanyInfo(invitation: Invitation, companyNameOverride?: string): Promise<string> {
+  // If a company name is provided directly in the function call, use it
+  if (companyNameOverride) {
+    return companyNameOverride;
+  }
+
+  // If the invitation has company info from the join, use it
+  if (invitation.companies && invitation.companies.nombre) {
+    return invitation.companies.nombre;
+  }
+
+  // Otherwise, try to get the inviter's company
   const { data: companyData, error: companyError } = await supabase
     .from("companies")
     .select("nombre")
-    .eq("user_id", invitedById)
+    .eq("user_id", invitation.invited_by)
     .maybeSingle();
 
   return (companyData as CompanyData)?.nombre || "Sistema ERP";
@@ -179,7 +190,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { invitationId }: InvitationRequest = await req.json();
+    const { invitationId, companyName }: InvitationRequest = await req.json();
     
     // Get invitation data
     const invitation = await getInvitationData(invitationId);
@@ -188,8 +199,8 @@ const handler = async (req: Request): Promise<Response> => {
     const validatedInvitation = await ensureInvitationToken(invitation);
     
     // Get company info for email
-    const companyName = await getCompanyInfo(invitation.invited_by);
-    console.log("Nombre de empresa para correo:", companyName);
+    const companyNameToUse = await getCompanyInfo(validatedInvitation, companyName);
+    console.log("Nombre de empresa para correo:", companyNameToUse);
     
     // Generate invitation link
     const origin = req.headers.get("origin") || "https://demayoreoerp.lovable.app";
@@ -201,10 +212,10 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Invitador:", inviterName);
     
     // Generate email content
-    const htmlContent = generateEmailContent(validatedInvitation, invitationLink, companyName, inviterName);
+    const htmlContent = generateEmailContent(validatedInvitation, invitationLink, companyNameToUse, inviterName);
     
     // Send email
-    await sendInvitationEmail(validatedInvitation, htmlContent, companyName);
+    await sendInvitationEmail(validatedInvitation, htmlContent, companyNameToUse);
     
     // Log successful email sending
     await logInvitationEvent(invitationId, "email_sent", null, invitation.invited_by);
@@ -217,7 +228,8 @@ const handler = async (req: Request): Promise<Response> => {
         id: invitation.id,
         email: invitation.email,
         token: validatedInvitation.invitation_token,
-        link: invitationLink
+        link: invitationLink,
+        company: companyNameToUse
       }
     });
     

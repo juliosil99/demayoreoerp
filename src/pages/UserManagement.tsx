@@ -13,7 +13,8 @@ export default function UserManagement() {
     isLoading,
     userPermissions,
     handlePermissionChange,
-    handleRoleChange
+    handleRoleChange,
+    currentUserId
   } = useUserPermissions();
   const isMobile = useIsMobile();
 
@@ -49,6 +50,7 @@ export default function UserManagement() {
           onPermissionChange={handlePermissionChange}
           onRoleChange={handleRoleChange}
           isMobile={isMobile}
+          currentUserId={currentUserId}
         />
       </div>
     </div>

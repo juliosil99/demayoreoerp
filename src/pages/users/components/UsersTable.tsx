@@ -12,6 +12,7 @@ import { Profile, UserPermissions, availablePages } from "../types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface UsersTableProps {
   profiles: Profile[] | null;
@@ -19,6 +20,7 @@ interface UsersTableProps {
   onPermissionChange: (userId: string, page: string, checked: boolean) => void;
   onRoleChange: (userId: string, role: 'admin' | 'user') => void;
   isMobile?: boolean;
+  currentUserId?: string;
 }
 
 export const UsersTable = memo(function UsersTable({ 
@@ -26,21 +28,32 @@ export const UsersTable = memo(function UsersTable({
   userPermissions, 
   onPermissionChange, 
   onRoleChange,
-  isMobile = false
+  isMobile = false,
+  currentUserId
 }: UsersTableProps) {
   if (isMobile) {
     return (
       <div className="space-y-4">
         {profiles?.map((profile) => (
-          <Card key={profile.id} className="mb-4">
+          <Card key={profile.id} className={`mb-4 ${profile.id === currentUserId ? 'border-primary' : ''}`}>
             <CardContent className="p-4">
-              <div className="font-medium mb-2 text-sm">{profile.email}</div>
+              <div className="flex justify-between items-center mb-2">
+                <div className="font-medium text-sm">{profile.email}</div>
+                {profile.id === currentUserId && (
+                  <Badge variant="outline" className="ml-2">Tú</Badge>
+                )}
+              </div>
+              
+              <div className="text-xs text-muted-foreground mb-2">
+                {profile.company ? `Empresa: ${profile.company.nombre}` : 'Sin empresa asignada'}
+              </div>
               
               <div className="mb-3">
                 <label className="text-xs text-muted-foreground mb-1 block">Rol:</label>
                 <Select
                   value={userPermissions[profile.id]?.role || 'user'}
                   onValueChange={(value) => onRoleChange(profile.id, value as 'admin' | 'user')}
+                  disabled={profile.id === currentUserId}
                 >
                   <SelectTrigger className="w-full text-sm">
                     <SelectValue />
@@ -62,6 +75,7 @@ export const UsersTable = memo(function UsersTable({
                       onCheckedChange={(checked) => 
                         onPermissionChange(profile.id, page.path, checked as boolean)
                       }
+                      disabled={profile.id === currentUserId && userPermissions[profile.id]?.role === 'admin'}
                     />
                   </div>
                 ))}
@@ -78,7 +92,8 @@ export const UsersTable = memo(function UsersTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Email</TableHead>
+            <TableHead>Usuario</TableHead>
+            <TableHead>Empresa</TableHead>
             <TableHead>Rol</TableHead>
             {availablePages.map((page) => (
               <TableHead key={page.path} className="text-center whitespace-nowrap">{page.label}</TableHead>
@@ -87,12 +102,21 @@ export const UsersTable = memo(function UsersTable({
         </TableHeader>
         <TableBody>
           {profiles?.map((profile) => (
-            <TableRow key={profile.id}>
-              <TableCell className="whitespace-nowrap">{profile.email}</TableCell>
+            <TableRow key={profile.id} className={profile.id === currentUserId ? 'bg-muted/30' : ''}>
+              <TableCell className="whitespace-nowrap">
+                <div className="flex items-center gap-2">
+                  {profile.email}
+                  {profile.id === currentUserId && (
+                    <Badge variant="outline" className="ml-2">Tú</Badge>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>{profile.company?.nombre || 'Sin empresa'}</TableCell>
               <TableCell>
                 <Select
                   value={userPermissions[profile.id]?.role || 'user'}
                   onValueChange={(value) => onRoleChange(profile.id, value as 'admin' | 'user')}
+                  disabled={profile.id === currentUserId}
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue />
@@ -110,6 +134,7 @@ export const UsersTable = memo(function UsersTable({
                     onCheckedChange={(checked) => 
                       onPermissionChange(profile.id, page.path, checked as boolean)
                     }
+                    disabled={profile.id === currentUserId && userPermissions[profile.id]?.role === 'admin'}
                   />
                 </TableCell>
               ))}
