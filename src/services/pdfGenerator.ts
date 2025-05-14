@@ -2,12 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-
-// Add jspdf-autotable dependency
-const additionalInfo = `
-Importamos jspdf-autotable en el package.json pero lo simularemos aquí
-porque solo podemos añadir dependencias con lov-add-dependency.
-`;
+import { toast } from "@/components/ui/use-toast";
 
 interface PdfGenerationResult {
   success: boolean;
@@ -19,6 +14,8 @@ export const generateInvoicePdf = async (
   issuerRfc: string
 ): Promise<PdfGenerationResult> => {
   try {
+    console.log(`Generating PDF for invoice ID: ${invoiceId}, RFC: ${issuerRfc}`);
+
     // 1. Get invoice data
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
@@ -27,8 +24,11 @@ export const generateInvoicePdf = async (
       .single();
 
     if (invoiceError || !invoice) {
+      console.error("Error fetching invoice:", invoiceError);
       throw new Error("No se encontró la factura");
     }
+
+    console.log("Invoice data fetched successfully:", invoice.invoice_number);
 
     // 2. Get invoice products
     const { data: products, error: productsError } = await supabase
@@ -37,8 +37,11 @@ export const generateInvoicePdf = async (
       .eq("invoice_id", invoiceId);
 
     if (productsError) {
+      console.error("Error fetching products:", productsError);
       throw new Error("Error al obtener los productos de la factura");
     }
+
+    console.log(`Fetched ${products.length} products for invoice`);
 
     // 3. Get PDF template configuration
     const { data: templateConfig, error: templateError } = await supabase
@@ -47,7 +50,11 @@ export const generateInvoicePdf = async (
       .eq("issuer_rfc", issuerRfc)
       .single();
 
-    // No template is fine, we'll use default formatting
+    if (templateError) {
+      console.log("No custom template found for RFC, using default template");
+    } else {
+      console.log("Using custom template for RFC:", issuerRfc);
+    }
     
     // 4. Generate PDF
     const doc = new jsPDF();
@@ -119,13 +126,16 @@ export const generateInvoicePdf = async (
     
     // Footer with additional information
     const footerText = "Este documento es una representación impresa de un CFDI";
-    // Fixed the getFontSize issue by using doc.getTextWidth
     const textWidth = doc.getTextWidth(footerText);
     const pageWidth = doc.internal.pageSize.getWidth();
     doc.text(footerText, pageWidth / 2 - textWidth / 2, doc.internal.pageSize.getHeight() - 10);
     
-    // Save PDF
-    doc.save(`Factura-${invoice.serie || ""}-${invoice.invoice_number || invoice.id}.pdf`);
+    console.log("PDF generation completed, saving file...");
+    
+    // Save PDF with a clear filename
+    const filename = `Factura-${invoice.serie || ""}-${invoice.invoice_number || invoice.id}.pdf`;
+    doc.save(filename);
+    console.log("PDF saved successfully:", filename);
     
     return { success: true };
   } catch (error) {

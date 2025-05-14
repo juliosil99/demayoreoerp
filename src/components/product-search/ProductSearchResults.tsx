@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { 
   Table, 
   TableBody, 
@@ -9,7 +9,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Loader2 } from "lucide-react";
 import { ProductSearchResult } from "@/types/product-search";
 import { formatCurrency } from "@/utils/formatters";
 
@@ -26,6 +26,28 @@ export const ProductSearchResults = ({
   downloadXml,
   generatePdf,
 }: ProductSearchResultsProps) => {
+  const [generatingPdf, setGeneratingPdf] = useState<number | null>(null);
+  const [downloadingXml, setDownloadingXml] = useState<number | null>(null);
+  
+  const handleDownloadXml = async (invoiceId: number) => {
+    try {
+      setDownloadingXml(invoiceId);
+      await downloadXml(invoiceId);
+    } finally {
+      setDownloadingXml(null);
+    }
+  };
+
+  const handleGeneratePdf = async (invoiceId: number, issuerRfc: string) => {
+    try {
+      console.log(`Generating PDF for invoice ID: ${invoiceId}, RFC: ${issuerRfc}`);
+      setGeneratingPdf(invoiceId);
+      await generatePdf(invoiceId, issuerRfc);
+    } finally {
+      setGeneratingPdf(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-10">
@@ -79,16 +101,26 @@ export const ProductSearchResults = ({
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    onClick={() => product.invoice_id && downloadXml(product.invoice_id)}
+                    onClick={() => product.invoice_id && handleDownloadXml(product.invoice_id)}
+                    disabled={downloadingXml === product.invoice_id || !product.invoice_id}
                   >
-                    <Download className="h-4 w-4 mr-1" /> XML
+                    {downloadingXml === product.invoice_id ? (
+                      <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> XML</>
+                    ) : (
+                      <><Download className="h-4 w-4 mr-1" /> XML</>
+                    )}
                   </Button>
                   <Button 
                     size="sm"
                     onClick={() => product.invoice_id && product.invoice?.issuer_rfc && 
-                      generatePdf(product.invoice_id, product.invoice.issuer_rfc)}
+                      handleGeneratePdf(product.invoice_id, product.invoice.issuer_rfc)}
+                    disabled={generatingPdf === product.invoice_id || !product.invoice_id || !product.invoice?.issuer_rfc}
                   >
-                    <FileText className="h-4 w-4 mr-1" /> PDF
+                    {generatingPdf === product.invoice_id ? (
+                      <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> PDF</>
+                    ) : (
+                      <><FileText className="h-4 w-4 mr-1" /> PDF</>
+                    )}
                   </Button>
                 </div>
               </TableCell>

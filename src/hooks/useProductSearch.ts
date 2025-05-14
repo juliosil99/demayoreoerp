@@ -53,6 +53,7 @@ export const useProductSearch = () => {
           throw error;
         }
 
+        console.log(`Found ${data?.length || 0} products matching "${searchQuery}"`);
         return data as ProductSearchResult[];
       } catch (error) {
         console.error("Error searching products:", error);
@@ -80,6 +81,7 @@ export const useProductSearch = () => {
 
   const downloadXml = useCallback(async (invoiceId: number) => {
     try {
+      console.log(`Downloading XML for invoice ID: ${invoiceId}`);
       const { data: invoice } = await supabase
         .from("invoices")
         .select("file_path, filename")
@@ -87,6 +89,7 @@ export const useProductSearch = () => {
         .single();
 
       if (!invoice?.file_path) {
+        console.error("XML file path not found for invoice:", invoiceId);
         throw new Error("No se encontró el archivo XML de la factura");
       }
 
@@ -108,12 +111,21 @@ export const useProductSearch = () => {
 
   const generatePdf = useCallback(async (invoiceId: number, issuerRfc: string) => {
     try {
+      console.log(`Initiating PDF generation for invoice ID: ${invoiceId}, RFC: ${issuerRfc}`);
+      
+      if (!invoiceId || !issuerRfc) {
+        console.error("Missing required data:", { invoiceId, issuerRfc });
+        throw new Error("Faltan datos necesarios para generar el PDF");
+      }
+      
       const result = await generateInvoicePdf(invoiceId, issuerRfc);
       
       if (!result.success) {
+        console.error("PDF generation failed:", result.error);
         throw new Error(result.error || "Error generando PDF");
       }
       
+      console.log("PDF generation successful");
       toast({
         title: "PDF generado",
         description: "El PDF se ha generado y descargado correctamente.",
@@ -122,7 +134,9 @@ export const useProductSearch = () => {
       console.error("Error generating PDF:", error);
       toast({
         title: "Error",
-        description: typeof error === "string" ? error : "No se pudo generar el PDF.",
+        description: typeof error === "string" ? error : 
+          error instanceof Error ? error.message : 
+          "No se pudo generar el PDF.",
         variant: "destructive",
       });
     }
