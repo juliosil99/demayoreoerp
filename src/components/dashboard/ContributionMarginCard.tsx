@@ -18,7 +18,7 @@ export const ContributionMarginCard = ({ contributionMargin }: ContributionMargi
           {formatCurrency(contributionMargin)}
         </div>
         <p className="text-center text-sm text-muted-foreground">
-          Total de ganancias en el período seleccionado
+          Total de contribuciones en el período seleccionado
         </p>
       </CardContent>
     </Card>
