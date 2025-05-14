@@ -10,7 +10,7 @@ import { UserInvitation } from "../../types";
 import { InvitationRow } from "./InvitationRow";
 import { useState } from "react";
 
-interface InvitationsTableProps {
+export interface InvitationsTableProps {
   invitations: UserInvitation[] | null;
   onResend: (invitation: UserInvitation) => void;
   isResending: boolean;

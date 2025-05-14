@@ -1,8 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
-// Fix import path for playwright-chromium
-import { chromium } from "https://deno.land/x/playwright_chromium@v0.4.0/mod.ts";
+// Using Puppeteer instead of Playwright as it has better Deno support
+import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -60,18 +60,17 @@ serve(async (req) => {
       .eq('id', jobId)
       .eq('user_id', user.id);
 
-    // Launch browser
-    const browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext();
-    const page = await context.newPage();
+    // Launch browser (using puppeteer instead of playwright)
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
 
     try {
       // Navigate to SAT login page
       await page.goto('https://portalcfdi.facturaelectronica.sat.gob.mx');
       
       // Fill RFC and password fields
-      await page.fill('#rfc', rfc);
-      await page.fill('#password', password);
+      await page.type('#rfc', rfc);
+      await page.type('#password', password);
       
       // Check if CAPTCHA is present
       const captchaExists = await page.$('#divCaptcha');
@@ -80,8 +79,8 @@ serve(async (req) => {
         // Take screenshot of CAPTCHA area
         const captchaElement = await page.$('#divCaptcha img');
         if (captchaElement) {
-          const captchaImage = await captchaElement.screenshot({ type: 'jpeg', quality: 90 });
-          const base64Image = Buffer.from(captchaImage).toString('base64');
+          const captchaImage = await captchaElement.screenshot();
+          const base64Image = captchaImage.toString('base64');
           
           // Create captcha session in database
           const { data: captchaSession } = await supabaseClient
@@ -128,7 +127,10 @@ serve(async (req) => {
         await page.waitForSelector('#selFiltro', { timeout: 10000 });
       } catch (e) {
         // Check for error messages
-        const errorText = await page.textContent('.errorcl') || '';
+        const errorText = await page.evaluate(() => {
+          const errorEl = document.querySelector('.errorcl');
+          return errorEl ? errorEl.textContent : '';
+        });
         throw new Error(`Login failed: ${errorText.trim() || 'Invalid credentials or CAPTCHA'}`);
       }
       
@@ -136,8 +138,8 @@ serve(async (req) => {
       await page.click('a:has-text("Consultar Facturas Recibidas")');
       
       // Set date range for invoice search
-      await page.fill('input[name="fechaInicial"]', startDate);
-      await page.fill('input[name="fechaFinal"]', endDate);
+      await page.type('input[name="fechaInicial"]', startDate);
+      await page.type('input[name="fechaFinal"]', endDate);
       
       // Submit search form
       await page.click('#btnBusqueda');
@@ -146,7 +148,10 @@ serve(async (req) => {
       await page.waitForSelector('table.detalleTable', { timeout: 30000 });
       
       // Check if there are any results
-      const noResults = await page.$$eval('.noResultados', elements => elements.length > 0);
+      const noResults = await page.evaluate(() => {
+        return document.querySelectorAll('.noResultados').length > 0;
+      });
+      
       if (noResults) {
         await browser.close();
         
@@ -169,7 +174,9 @@ serve(async (req) => {
       }
       
       // Get total number of results
-      const totalResults = await page.$$eval('table.detalleTable tbody tr', rows => rows.length);
+      const totalResults = await page.evaluate(() => {
+        return document.querySelectorAll('table.detalleTable tbody tr').length;
+      });
       
       // Update job status with total files
       await supabaseClient
@@ -187,14 +194,14 @@ serve(async (req) => {
           await page.waitForTimeout(2000);
           
           // Get invoice UUID from table cell
-          const uuid = await page.$eval(
-            `table.detalleTable tbody tr:nth-child(${i + 1}) td:nth-child(4)`, 
-            cell => cell.textContent?.trim()
-          );
+          const uuid = await page.evaluate((idx) => {
+            const cell = document.querySelector(`table.detalleTable tbody tr:nth-child(${idx + 1}) td:nth-child(4)`);
+            return cell ? cell.textContent?.trim() : null;
+          }, i);
           
           if (!uuid) continue;
           
-          // For now, simulate a successful download
+          // Simulate a successful download
           console.log(`Downloaded XML with UUID: ${uuid}`);
           
           // Update download counter
@@ -233,7 +240,7 @@ serve(async (req) => {
       console.error("Error during SAT automation:", error);
       
       // Take screenshot of error state
-      const screenshot = await page.screenshot({ fullPage: true });
+      const screenshot = await page.screenshot();
       const screenshotPath = `${user.id}/${jobId}/error-screenshot.png`;
       
       // Upload screenshot to storage

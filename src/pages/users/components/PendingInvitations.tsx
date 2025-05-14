@@ -31,7 +31,7 @@ export function PendingInvitations() {
       <CardContent className="p-3 sm:p-4">
         <InvitationsTable 
           invitations={invitations}
-          resendInvitation={resendInvitation}
+          onResend={resendInvitation}
           isResending={isResending}
         />
       </CardContent>

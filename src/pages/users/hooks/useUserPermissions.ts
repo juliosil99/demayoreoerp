@@ -114,10 +114,10 @@ export function useUserPermissions() {
           permissionsMap[cu.user_id] = {
             userId: cu.user_id,
             pages: {},
-            role: cu.role
+            role: cu.role as 'admin' | 'user'
           };
         } else {
-          permissionsMap[cu.user_id].role = cu.role;
+          permissionsMap[cu.user_id].role = cu.role as 'admin' | 'user';
         }
       });
 
