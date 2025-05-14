@@ -1,32 +1,59 @@
 
+
 /**
  * Helper functions for XML element and attribute extraction
  */
 
 // Helper function to get an element regardless of namespace prefix
-export const getElementWithAnyNamespace = (xmlDoc: Document | null, localName: string): Element | null => {
-  if (!xmlDoc) return null;
+export const getElementWithAnyNamespace = (node: Document | Element | null, localName: string): Element | null => {
+  if (!node) return null;
   
   try {
     // First try with cfdi prefix (most common)
-    let element = xmlDoc.getElementsByTagName(`cfdi:${localName}`)[0];
+    let element: Element | null = null;
     
-    // If not found, try without prefix
-    if (!element) {
-      element = xmlDoc.getElementsByTagName(localName)[0];
-    }
-    
-    // If still not found, try with other common prefixes
-    if (!element) {
-      const commonPrefixes = ['', 'cfdi', 'cfd', 'tfd', 'nomina', 'pago'];
-      for (const prefix of commonPrefixes) {
-        const tagName = prefix ? `${prefix}:${localName}` : localName;
-        element = xmlDoc.getElementsByTagName(tagName)[0];
-        if (element) break;
+    // If it's a Document, use getElementsByTagName
+    if (node.nodeType === Node.DOCUMENT_NODE) {
+      const doc = node as Document;
+      element = doc.getElementsByTagName(`cfdi:${localName}`)[0] as Element | undefined || null;
+      
+      // If not found, try without prefix
+      if (!element) {
+        element = doc.getElementsByTagName(localName)[0] as Element | undefined || null;
+      }
+      
+      // If still not found, try with other common prefixes
+      if (!element) {
+        const commonPrefixes = ['', 'cfdi', 'cfd', 'tfd', 'nomina', 'pago'];
+        for (const prefix of commonPrefixes) {
+          const tagName = prefix ? `${prefix}:${localName}` : localName;
+          element = doc.getElementsByTagName(tagName)[0] as Element | undefined || null;
+          if (element) break;
+        }
+      }
+    } 
+    // If it's an Element, search within its children
+    else if (node.nodeType === Node.ELEMENT_NODE) {
+      const elem = node as Element;
+      element = elem.getElementsByTagName(`cfdi:${localName}`)[0] as Element | undefined || null;
+      
+      // If not found, try without prefix
+      if (!element) {
+        element = elem.getElementsByTagName(localName)[0] as Element | undefined || null;
+      }
+      
+      // If still not found, try with other common prefixes
+      if (!element) {
+        const commonPrefixes = ['', 'cfdi', 'cfd', 'tfd', 'nomina', 'pago'];
+        for (const prefix of commonPrefixes) {
+          const tagName = prefix ? `${prefix}:${localName}` : localName;
+          element = elem.getElementsByTagName(tagName)[0] as Element | undefined || null;
+          if (element) break;
+        }
       }
     }
     
-    return element || null;
+    return element;
   } catch (error) {
     console.error(`Error getting element ${localName}:`, error);
     return null;
@@ -71,3 +98,4 @@ export const isValidISODate = (dateString: string): boolean => {
   const simpleRegex = /^\d{4}-\d{2}-\d{2}$/;
   return simpleRegex.test(dateString);
 };
+

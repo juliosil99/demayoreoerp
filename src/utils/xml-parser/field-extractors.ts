@@ -1,4 +1,5 @@
 
+
 /**
  * Functions for extracting specific fields from CFDI XML documents
  */
@@ -184,3 +185,4 @@ export const extractReceiverInfo = (receptor: Element | null) => {
     return defaultInfo;
   }
 };
+
