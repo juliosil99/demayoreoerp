@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
@@ -12,7 +11,7 @@ import { CompanyNameField } from "./form-fields/CompanyNameField";
 import { RFCField } from "./form-fields/RFCField";
 import { PostalCodeField } from "./form-fields/PostalCodeField";
 import { TaxRegimeField } from "./form-fields/TaxRegimeField";
-import { checkRFCExists } from "@/hooks/company/useCompanyData";
+import { checkRFCExists } from "@/hooks/company/utils/rfcChecker";
 
 interface CompanyFormProps {
   defaultValues?: CompanyFormData;
