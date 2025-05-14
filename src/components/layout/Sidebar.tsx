@@ -13,7 +13,6 @@ import {
   ChevronDown,
   ChevronRight,
   LayoutDashboard,
-  User,
   FileSpreadsheet,
   FilePlus2,
 } from 'lucide-react';
@@ -65,13 +64,6 @@ export const Sidebar = () => {
           icon={LayoutDashboard}
           label="Dashboard"
           isActive={isActive('/dashboard')}
-        />
-
-        <SidebarItem
-          to="/profile"
-          icon={User}
-          label="Perfil"
-          isActive={isActive('/profile')}
         />
 
         <SidebarGroup title="Ventas" isOpen={location.pathname.startsWith('/sales')}>
