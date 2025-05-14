@@ -1,4 +1,5 @@
 
+
 export interface ProductSearchResult {
   id: number;
   invoice_id: number | null;
@@ -13,6 +14,7 @@ export interface ProductSearchResult {
     invoice_number: string | null;
     serie: string | null;
     invoice_date: string | null;
+    stamp_date: string | null;
     issuer_name: string | null;
     issuer_rfc: string | null;
     file_path: string;
@@ -20,3 +22,4 @@ export interface ProductSearchResult {
     receiver_rfc: string | null;
   };
 }
+
