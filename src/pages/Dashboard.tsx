@@ -40,9 +40,9 @@ const Dashboard = () => {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Contribution Margin</h1>
+          <h1 className="text-2xl font-bold mb-1">Margen de Contribución</h1>
           <p className="text-muted-foreground text-sm">
-            Revenue minus all variable costs, including advertising spend
+            Ingresos menos todos los costos variables, incluyendo gastos publicitarios
           </p>
         </div>
         <DatePickerWithRange
@@ -55,19 +55,19 @@ const Dashboard = () => {
       {/* Main Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
         <MetricCard
-          title="Order Revenue"
+          title="Ingresos por Órdenes"
           value={formatCurrency(metrics.orderRevenue || 0)}
           icon={DollarSign}
           change={metrics.revenueChange}
-          changeLabel={metrics.revenueChange > 0 ? "increase" : "decrease"}
+          changeLabel={metrics.revenueChange > 0 ? "incremento" : "disminución"}
           changeType={metrics.revenueChange > 0 ? "positive" : "negative"}
         />
         <MetricCard
-          title="Ad Spend"
+          title="Gasto Publicitario"
           value={formatCurrency(metrics.adSpend || 0)}
           icon={DollarSign}
           change={metrics.adSpendChange}
-          changeLabel={metrics.adSpendChange > 0 ? "increase" : "decrease"}
+          changeLabel={metrics.adSpendChange > 0 ? "incremento" : "disminución"}
           changeType={metrics.adSpendChange < 0 ? "positive" : "negative"}
         />
         <MetricCard
@@ -75,23 +75,23 @@ const Dashboard = () => {
           value={metrics.mer?.toFixed(2) || "0"}
           icon={TrendingUp}
           change={metrics.merChange}
-          changeLabel={metrics.merChange > 0 ? "increase" : "decrease"}
+          changeLabel={metrics.merChange > 0 ? "incremento" : "disminución"}
           changeType={metrics.merChange > 0 ? "positive" : "negative"}
         />
         <MetricCard
-          title="AOV"
+          title="Valor Promedio (AOV)"
           value={formatCurrency(metrics.aov || 0)}
           icon={ShoppingBag}
           change={metrics.aovChange}
-          changeLabel={metrics.aovChange > 0 ? "increase" : "decrease"}
+          changeLabel={metrics.aovChange > 0 ? "incremento" : "disminución"}
           changeType={metrics.aovChange > 0 ? "positive" : "negative"}
         />
         <MetricCard
-          title="Orders"
+          title="Órdenes"
           value={metrics.orders?.toString() || "0"}
           icon={ShoppingBag}
           change={metrics.ordersChange}
-          changeLabel={metrics.ordersChange > 0 ? "increase" : "decrease"}
+          changeLabel={metrics.ordersChange > 0 ? "incremento" : "disminución"}
           changeType={metrics.ordersChange > 0 ? "positive" : "negative"}
         />
       </div>
@@ -99,7 +99,7 @@ const Dashboard = () => {
       {/* Chart Section */}
       <Card className="col-span-1 md:col-span-2">
         <CardHeader>
-          <CardTitle>Sales vs Ad Spend</CardTitle>
+          <CardTitle>Ventas vs Gasto Publicitario</CardTitle>
         </CardHeader>
         <CardContent>
           <SalesVsAdSpendChart data={metrics.chartData || []} />
@@ -110,16 +110,16 @@ const Dashboard = () => {
       <div className="space-y-6">
         {/* Returning Metrics */}
         <MetricGroup
-          title="Returning"
+          title="Clientes Recurrentes"
           metrics={[
             {
-              title: "Revenue",
+              title: "Ingresos",
               value: formatCurrency(metrics.returningRevenue || 0),
               change: metrics.returningRevenueChange,
               changeType: metrics.returningRevenueChange > 0 ? "positive" : "negative"
             },
             {
-              title: "Orders",
+              title: "Órdenes",
               value: metrics.returningOrders?.toString() || "0",
               change: metrics.returningOrdersChange,
               changeType: metrics.returningOrdersChange > 0 ? "positive" : "negative"
@@ -131,7 +131,7 @@ const Dashboard = () => {
               changeType: metrics.returningAOVChange > 0 ? "positive" : "negative"
             },
             {
-              title: "Repeat Rate",
+              title: "Tasa de Repetición",
               value: `${metrics.repeatRate?.toFixed(2) || "0"}%`,
               change: metrics.repeatRateChange,
               changeType: metrics.repeatRateChange > 0 ? "positive" : "negative"
@@ -141,16 +141,16 @@ const Dashboard = () => {
         
         {/* New Customer Metrics */}
         <MetricGroup
-          title="New Customer"
+          title="Nuevos Clientes"
           metrics={[
             {
-              title: "Revenue",
+              title: "Ingresos",
               value: formatCurrency(metrics.newCustomerRevenue || 0),
               change: metrics.newCustomerRevenueChange,
               changeType: metrics.newCustomerRevenueChange > 0 ? "positive" : "negative"
             },
             {
-              title: "Orders",
+              title: "Órdenes",
               value: metrics.newCustomerOrders?.toString() || "0",
               change: metrics.newCustomerOrdersChange,
               changeType: metrics.newCustomerOrdersChange > 0 ? "positive" : "negative"
@@ -172,16 +172,16 @@ const Dashboard = () => {
         
         {/* Paid Performance Metrics */}
         <MetricGroup
-          title="Paid Performance"
+          title="Rendimiento Pagado"
           metrics={[
             {
-              title: "Revenue",
+              title: "Ingresos",
               value: formatCurrency(metrics.paidRevenue || 0),
               change: metrics.paidRevenueChange,
               changeType: metrics.paidRevenueChange > 0 ? "positive" : "negative"
             },
             {
-              title: "Orders",
+              title: "Órdenes",
               value: metrics.paidOrders?.toString() || "0",
               change: metrics.paidOrdersChange,
               changeType: metrics.paidOrdersChange > 0 ? "positive" : "negative"

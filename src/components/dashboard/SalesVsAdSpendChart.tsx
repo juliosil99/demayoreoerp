@@ -32,15 +32,15 @@ export const SalesVsAdSpendChart = ({ data }: SalesVsAdSpendChartProps) => {
   
   const config = {
     sales: {
-      label: "Sales",
+      label: "Ventas",
       color: "#2563eb" // Blue
     },
     adSpend: {
-      label: "Ad Spend",
+      label: "Gasto Publicitario",
       color: "#ef4444" // Red
     },
     target: {
-      label: "Target",
+      label: "Objetivo",
       color: "#10b981" // Green
     }
   };
@@ -66,8 +66,8 @@ export const SalesVsAdSpendChart = ({ data }: SalesVsAdSpendChartProps) => {
         />
         <Tooltip content={<ChartTooltipContent />} />
         <Legend />
-        <Bar dataKey="sales" fill="var(--color-sales)" radius={[4, 4, 0, 0]} barSize={20} name="Sales" />
-        <Bar dataKey="adSpend" fill="var(--color-adSpend)" radius={[4, 4, 0, 0]} barSize={20} name="Ad Spend" />
+        <Bar dataKey="sales" fill="var(--color-sales)" radius={[4, 4, 0, 0]} barSize={20} name="Ventas" />
+        <Bar dataKey="adSpend" fill="var(--color-adSpend)" radius={[4, 4, 0, 0]} barSize={20} name="Gasto Publicitario" />
         {data[0]?.target && (
           <ReferenceLine y={data[0].target} stroke="var(--color-target)" strokeDasharray="3 3" />
         )}
