@@ -7,94 +7,147 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
 import { Loader2, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
+
+interface CaptchaSession {
+  id: string;
+  captcha_image: string;
+  job_id: string;
+}
+
+interface SatAutomationJob {
+  id: string;
+  rfc: string;
+  start_date: string;
+  end_date: string;
+}
 
 export function CaptchaResolver() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
+  
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [captchaSession, setCaptchaSession] = useState<any>(null);
+  const [captchaSession, setCaptchaSession] = useState<CaptchaSession | null>(null);
   const [captchaSolution, setCaptchaSolution] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [job, setJob] = useState<any>(null);
+  const [job, setJob] = useState<SatAutomationJob | null>(null);
+  const [satPassword, setSatPassword] = useState("");
 
   useEffect(() => {
-    const fetchCaptchaSession = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Get the CAPTCHA session
-        const { data: captchaData, error: captchaError } = await supabase
-          .from("sat_captcha_sessions")
-          .select("*")
-          .eq("id", sessionId)
-          .single();
-
-        if (captchaError) {
-          throw captchaError;
-        }
-
-        if (!captchaData) {
-          throw new Error("CAPTCHA session not found");
-        }
-
-        setCaptchaSession(captchaData);
-
-        // Get associated job
-        const { data: jobData, error: jobError } = await supabase
-          .from("sat_automation_jobs")
-          .select("*")
-          .eq("id", captchaData.job_id)
-          .single();
-
-        if (jobError) {
-          throw jobError;
-        }
-
-        setJob(jobData);
-      } catch (err: any) {
-        setError(err.message || "Error loading CAPTCHA session");
-        toast.error("Error loading CAPTCHA session");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (sessionId) {
-      fetchCaptchaSession();
-    }
+    fetchCaptchaSession();
   }, [sessionId]);
+
+  const fetchCaptchaSession = async () => {
+    if (!sessionId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get the CAPTCHA session
+      const { data: captchaData, error: captchaError } = await supabase
+        .from("sat_captcha_sessions")
+        .select("*")
+        .eq("id", sessionId)
+        .single();
+
+      if (captchaError) {
+        throw captchaError;
+      }
+
+      if (!captchaData) {
+        throw new Error("CAPTCHA session not found");
+      }
+
+      setCaptchaSession(captchaData as CaptchaSession);
+
+      // Get associated job
+      const { data: jobData, error: jobError } = await supabase
+        .from("sat_automation_jobs")
+        .select("*")
+        .eq("id", captchaData.job_id)
+        .single();
+
+      if (jobError) {
+        throw jobError;
+      }
+
+      setJob(jobData as SatAutomationJob);
+    } catch (err: any) {
+      const errorMessage = err.message || "Error loading CAPTCHA session";
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!captchaSolution.trim()) {
-      toast.error("Por favor ingresa la solución del CAPTCHA");
+      toast({
+        title: "Error",
+        description: "Por favor ingresa la solución del CAPTCHA",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!satPassword.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor ingresa tu contraseña del SAT",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!job || !captchaSession) {
+      toast({
+        title: "Error",
+        description: "Información de sesión incompleta",
+        variant: "destructive"
+      });
       return;
     }
 
     try {
       setSubmitting(true);
+      setError(null);
       
+      // Call the refactored edge function with the new structure
       const { error } = await supabase.functions.invoke("sat-captcha", {
         body: {
           captchaSessionId: sessionId,
           captchaSolution,
           rfc: job.rfc,
-          password: "",  // Password will need to be re-entered for security
+          password: satPassword,
           jobId: job.id
         }
       });
 
       if (error) throw error;
       
-      toast.success("CAPTCHA resuelto correctamente, procesando descarga...");
+      toast({
+        title: "Éxito",
+        description: "CAPTCHA resuelto correctamente, procesando descarga...",
+      });
+      
       navigate("/sales/invoices");
     } catch (err: any) {
-      setError(err.message || "Error al resolver el CAPTCHA");
-      toast.error("Error al resolver el CAPTCHA");
+      const errorMessage = err.message || "Error al resolver el CAPTCHA";
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
     } finally {
       setSubmitting(false);
     }
@@ -133,7 +186,7 @@ export function CaptchaResolver() {
         <CardHeader>
           <CardTitle>Resolver CAPTCHA</CardTitle>
           <CardDescription>
-            Ingresa los caracteres que ves en la imagen para continuar con la descarga de facturas del SAT
+            Ingresa los caracteres que ves en la imagen y tu contraseña del SAT para continuar con la descarga de facturas
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -147,33 +200,54 @@ export function CaptchaResolver() {
             </div>
           )}
           
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <Input
-                  type="text"
-                  placeholder="Ingresa los caracteres del CAPTCHA"
-                  value={captchaSolution}
-                  onChange={(e) => setCaptchaSolution(e.target.value)}
-                  autoFocus
-                />
-              </div>
-              
-              <div className="text-sm text-muted-foreground">
-                <p>Este CAPTCHA es requerido para continuar con la descarga de facturas del período:</p>
-                <p className="font-medium">
-                  {job?.start_date?.split('T')[0]} a {job?.end_date?.split('T')[0]}
-                </p>
-                <p className="mt-2">Para proteger tu privacidad, deberás ingresar tu contraseña del SAT nuevamente cuando resuelvas el CAPTCHA.</p>
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="captcha-solution" className="text-sm font-medium mb-1 block">
+                Solución del CAPTCHA
+              </label>
+              <Input
+                id="captcha-solution"
+                type="text"
+                placeholder="Ingresa los caracteres del CAPTCHA"
+                value={captchaSolution}
+                onChange={(e) => setCaptchaSolution(e.target.value)}
+                autoFocus
+                className="w-full"
+              />
             </div>
+            
+            <div>
+              <label htmlFor="sat-password" className="text-sm font-medium mb-1 block">
+                Contraseña del SAT
+              </label>
+              <Input
+                id="sat-password"
+                type="password"
+                placeholder="Ingresa tu contraseña del SAT"
+                value={satPassword}
+                onChange={(e) => setSatPassword(e.target.value)}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Por tu seguridad, tu contraseña no será almacenada
+              </p>
+            </div>
+            
+            {job && (
+              <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+                <p>Descargando facturas del período:</p>
+                <p className="font-medium">
+                  {job.start_date?.split('T')[0]} a {job.end_date?.split('T')[0]}
+                </p>
+              </div>
+            )}
           </form>
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button variant="outline" onClick={handleCancel} disabled={submitting}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !captchaSolution.trim()}>
+          <Button onClick={handleSubmit} disabled={submitting || !captchaSolution.trim() || !satPassword.trim()}>
             {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {submitting ? "Procesando..." : "Enviar"}
           </Button>
