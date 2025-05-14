@@ -1,5 +1,4 @@
-
-export const parseXMLContent = (xmlContent: string) => {
+export const parseXMLContent = (xmlContent: string): CFDIParseResult => {
   try {
     console.log("Starting XML parsing process");
     
@@ -41,7 +40,7 @@ export const parseXMLContent = (xmlContent: string) => {
     const taxInfo = calculateTaxAmounts(xmlDoc, namespaces);
     
     // Construct the final result
-    const result = {
+    const result: CFDIParseResult = {
       uuid: getAttribute(timbreFiscal, "UUID"),
       serie: getAttribute(comprobante, "Serie"),
       invoice_number: invoiceNumber,
@@ -264,16 +263,22 @@ const extractInvoiceNumber = (comprobante: Element | null, documentType: string)
     // If still not found, check for folioFiscal in some custom fields
     if (!invoiceNumber) {
       // Try with complemento fields
-      const complemento = getElementWithAnyNamespace(comprobante.ownerDocument, "Complemento");
-      if (complemento) {
-        invoiceNumber = getAttribute(complemento, "FolioFiscal");
+      const ownerDoc = comprobante.ownerDocument;
+      if (ownerDoc) {
+        const complemento = getElementWithAnyNamespace(ownerDoc, "Complemento");
+        if (complemento) {
+          invoiceNumber = getAttribute(complemento, "FolioFiscal");
+        }
       }
     }
     
     // If not found and this is a payment or payroll doc, try other relevant elements
     if (!invoiceNumber && (documentType === 'payment' || documentType === 'payroll')) {
+      const ownerDoc = comprobante.ownerDocument;
+      if (!ownerDoc) return null;
+      
       // For payment docs, try to use NumOperacion or some other identifier
-      const pagos = getElementWithAnyNamespace(comprobante.ownerDocument, "Pagos");
+      const pagos = getElementWithAnyNamespace(ownerDoc, "Pagos");
       if (pagos) {
         const pago = getElementWithAnyNamespace(pagos, "Pago");
         if (pago) {
@@ -283,7 +288,7 @@ const extractInvoiceNumber = (comprobante: Element | null, documentType: string)
       
       // For payroll, use some other identifier if available
       if (!invoiceNumber && documentType === 'payroll') {
-        const nomina = getElementWithAnyNamespace(comprobante.ownerDocument, "Nomina");
+        const nomina = getElementWithAnyNamespace(ownerDoc, "Nomina");
         if (nomina) {
           invoiceNumber = getAttribute(nomina, "NumEmpleado") || getAttribute(nomina, "NumeroRecibo");
         }
@@ -292,7 +297,10 @@ const extractInvoiceNumber = (comprobante: Element | null, documentType: string)
     
     // Last resort: Use UUID prefix or Serie + counter if Serie exists
     if (!invoiceNumber) {
-      const timbreFiscal = getElementWithAnyNamespace(comprobante.ownerDocument, "TimbreFiscalDigital");
+      const ownerDoc = comprobante.ownerDocument;
+      if (!ownerDoc) return null;
+      
+      const timbreFiscal = getElementWithAnyNamespace(ownerDoc, "TimbreFiscalDigital");
       const uuid = getAttribute(timbreFiscal, "UUID");
       const serie = getAttribute(comprobante, "Serie");
       
