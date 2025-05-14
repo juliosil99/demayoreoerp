@@ -43,8 +43,8 @@ const Dashboard = () => {
         
       {/* Distribution Charts - Now in a horizontal grid instead of nested */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <StateDistributionSection />
-        <ChannelDistributionSection />
+        <StateDistributionSection dateRange={dateRange} />
+        <ChannelDistributionSection dateRange={dateRange} />
       </div>
       
       {/* Metrics Groups */}

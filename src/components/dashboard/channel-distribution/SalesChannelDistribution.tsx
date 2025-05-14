@@ -5,9 +5,14 @@ import { useChannelDistributionData } from "./useChannelDistributionData";
 import { ChannelPieChart } from "./ChannelPieChart";
 import { LoadingState, ErrorState, EmptyState } from "./ChannelChartStates";
 import { calculateTotalValue } from "./utils";
+import { DateRange } from "react-day-picker";
 
-export const SalesChannelDistribution = () => {
-  const { data: channelDistribution, isLoading, error } = useChannelDistributionData();
+interface SalesChannelDistributionProps {
+  dateRange?: DateRange;
+}
+
+export const SalesChannelDistribution = ({ dateRange }: SalesChannelDistributionProps) => {
+  const { data: channelDistribution, isLoading, error } = useChannelDistributionData(dateRange);
 
   if (isLoading) {
     return <LoadingState title="Distribución de Ventas por Canal" />;

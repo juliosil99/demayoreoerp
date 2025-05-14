@@ -5,9 +5,14 @@ import { useStateDistributionData } from "./useStateDistributionData";
 import { StatePieChart } from "./StatePieChart";
 import { LoadingState, ErrorState, EmptyState } from "./StateChartStates";
 import { calculateTotalValue } from "./utils";
+import { DateRange } from "react-day-picker";
 
-export const SalesStateDistribution = () => {
-  const { data: stateDistribution, isLoading, error } = useStateDistributionData();
+interface SalesStateDistributionProps {
+  dateRange?: DateRange;
+}
+
+export const SalesStateDistribution = ({ dateRange }: SalesStateDistributionProps) => {
+  const { data: stateDistribution, isLoading, error } = useStateDistributionData(dateRange);
 
   if (isLoading) {
     return <LoadingState title="Distribución de Ventas por Estado" />;
