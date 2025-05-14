@@ -1,7 +1,7 @@
 
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { SalesBase } from "@/integrations/supabase/types/sales";
-import { formatCurrency, formatPaymentType } from "@/utils/formatters";
+import { formatCurrency, formatPaymentType, formatCardDate } from "@/utils/formatters";
 import {
   Pagination,
   PaginationContent,
@@ -39,7 +39,7 @@ export const SalesTable = ({ sales, currentPage, totalPages, onPageChange }: Sal
             <TableBody>
               {sales?.map((sale) => (
                 <TableRow key={sale.id ?? `${sale.orderNumber}-${sale.date}`}>
-                  <TableCell>{new Date(sale.date || "").toLocaleDateString()}</TableCell>
+                  <TableCell>{formatCardDate(sale.date || "")}</TableCell>
                   <TableCell>{sale.orderNumber}</TableCell>
                   <TableCell>{sale.productName}</TableCell>
                   <TableCell>{sale.Channel}</TableCell>
