@@ -167,13 +167,6 @@ export const Sidebar = () => {
         />
 
         <SidebarItem
-          to="/sales-channels"
-          icon={ShoppingCart}
-          label="Canales"
-          isActive={isActive('/sales-channels')}
-        />
-
-        <SidebarItem
           to="/users"
           icon={Users}
           label="Usuarios"
