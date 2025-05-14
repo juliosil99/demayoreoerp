@@ -45,7 +45,11 @@ export const usePdfTemplates = () => {
       
       const { data, error } = await supabase
         .from("issuer_pdf_configs")
-        .insert(template)
+        .insert({
+          ...template,
+          issuer_rfc: template.issuer_rfc,
+          user_id: template.user_id
+        })
         .select();
 
       if (error) throw error;
