@@ -10,15 +10,34 @@ export function useUserPermissions() {
   const [userPermissions, setUserPermissions] = useState<{ [key: string]: UserPermissions }>({});
   
   // Fetch data using the extracted hooks
-  const { profiles, isLoading: isProfilesLoading, currentUserId } = useProfiles();
-  const { pagePermissions, isLoading: isPagePermissionsLoading } = usePagePermissions();
-  const { companyUsers, isLoading: isCompanyUsersLoading } = useCompanyUsers();
+  const { 
+    profiles, 
+    isLoading: isProfilesLoading, 
+    currentUserId,
+    error: profilesError,
+    refetch: refetchProfiles 
+  } = useProfiles();
+  
+  const { 
+    pagePermissions, 
+    isLoading: isPagePermissionsLoading,
+    error: pagePermissionsError,
+    refetch: refetchPagePermissions
+  } = usePagePermissions();
+  
+  const { 
+    companyUsers, 
+    isLoading: isCompanyUsersLoading,
+    error: companyUsersError,
+    refetch: refetchCompanyUsers
+  } = useCompanyUsers();
   
   // Get mutation handlers
   const { handlePermissionChange, handleRoleChange } = usePermissionMutations(setUserPermissions);
 
   useEffect(() => {
     if (pagePermissions && companyUsers && profiles) {
+      console.log("Building user permissions map...");
       const permissionsMap: { [key: string]: UserPermissions } = {};
       
       // Initialize with all users
@@ -45,7 +64,7 @@ export function useUserPermissions() {
       });
 
       // Add roles from company_users
-      companyUsers.forEach((cu) => {
+      companyUsers?.forEach((cu) => {
         if (!permissionsMap[cu.user_id]) {
           permissionsMap[cu.user_id] = {
             userId: cu.user_id,
@@ -57,18 +76,32 @@ export function useUserPermissions() {
         }
       });
 
+      console.log("User permissions map built:", permissionsMap);
       setUserPermissions(permissionsMap);
     }
   }, [pagePermissions, companyUsers, profiles]);
 
   const isLoading = isProfilesLoading || isPagePermissionsLoading || isCompanyUsersLoading;
+  
+  // Combine errors
+  const error = profilesError || pagePermissionsError || companyUsersError;
+  
+  // Function to refetch all data
+  const refetchData = () => {
+    console.log("Refetching all user data...");
+    refetchProfiles();
+    refetchPagePermissions();
+    refetchCompanyUsers();
+  };
 
   return {
     profiles,
     isLoading,
+    error,
     userPermissions,
     handlePermissionChange,
     handleRoleChange,
-    currentUserId
+    currentUserId,
+    refetchData
   };
 }

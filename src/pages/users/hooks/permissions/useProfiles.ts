@@ -1,52 +1,43 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { Profile } from "../../types";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function useProfiles() {
-  const { user: currentUser } = useAuth();
-  
-  const { data: profiles, isLoading: isProfilesLoading } = useQuery({
-    queryKey: ["profiles-with-companies"],
+  const { user } = useAuth();
+  const currentUserId = user?.id;
+
+  const { 
+    data: profiles, 
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ["profiles"],
     queryFn: async () => {
-      // Get all profiles
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*');
-      
-      if (profilesError) {
-        toast.error("Error al cargar usuarios: " + profilesError.message);
-        throw profilesError;
+      console.log("Fetching profiles...");
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*");
+
+      if (error) {
+        console.error("Error fetching profiles:", error);
+        toast({
+          title: "Error",
+          description: "Error al cargar perfiles: " + error.message,
+          variant: "destructive",
+        });
+        throw error;
       }
-
-      // Get company-user relationships
-      const { data: companyUsers, error: companyUsersError } = await supabase
-        .from('company_users')
-        .select('*, companies:company_id(id, nombre)');
       
-      if (companyUsersError) {
-        toast.error("Error al cargar relaciones de empresa: " + companyUsersError.message);
-        throw companyUsersError;
-      }
-
-      // Map company info to profiles
-      const enrichedProfiles = profilesData.map((profile: Profile) => {
-        const userCompany = companyUsers.find((cu: any) => cu.user_id === profile.id);
-        return {
-          ...profile,
-          company: userCompany ? {
-            id: userCompany.companies.id,
-            nombre: userCompany.companies.nombre,
-          } : null,
-          isCurrentUser: profile.id === currentUser?.id
-        };
-      });
-
-      return enrichedProfiles as Profile[];
+      console.log("Profiles fetched successfully:", data);
+      return data as Profile[];
     },
+    retry: 1,
+    retryDelay: 1000,
   });
 
-  return { profiles, isLoading: isProfilesLoading, currentUserId: currentUser?.id };
+  return { profiles, isLoading, currentUserId, error, refetch };
 }

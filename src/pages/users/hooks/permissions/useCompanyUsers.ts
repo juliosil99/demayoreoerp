@@ -16,14 +16,16 @@ export interface CompanyUser {
 }
 
 export function useCompanyUsers() {
-  const { data: companyUsers, isLoading: isCompanyUsersLoading } = useQuery({
+  const { data: companyUsers, isLoading: isCompanyUsersLoading, error, refetch } = useQuery({
     queryKey: ["company-users"],
     queryFn: async () => {
+      console.log("Fetching company users...");
       const { data, error } = await supabase
         .from("company_users")
         .select("*, companies:company_id(id, nombre)");
 
       if (error) {
+        console.error("Error fetching company users:", error);
         toast({
           title: "Error",
           description: "Error al cargar roles de empresa: " + error.message,
@@ -31,9 +33,18 @@ export function useCompanyUsers() {
         });
         throw error;
       }
+      
+      console.log("Company users fetched successfully:", data);
       return data as CompanyUser[];
     },
+    retry: 1,
+    retryDelay: 1000,
   });
 
-  return { companyUsers, isLoading: isCompanyUsersLoading };
+  return { 
+    companyUsers, 
+    isLoading: isCompanyUsersLoading, 
+    error,
+    refetch
+  };
 }

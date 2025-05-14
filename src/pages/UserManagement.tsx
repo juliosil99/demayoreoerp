@@ -1,5 +1,8 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useUserPermissions } from "./users/hooks/useUserPermissions";
 import {
   UserInvitationSection,
@@ -11,10 +14,12 @@ export default function UserManagement() {
   const {
     profiles,
     isLoading,
+    error,
     userPermissions,
     handlePermissionChange,
     handleRoleChange,
-    currentUserId
+    currentUserId,
+    refetchData
   } = useUserPermissions();
 
   if (isLoading) {
@@ -35,6 +40,31 @@ export default function UserManagement() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="container mx-auto p-2 sm:py-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Administración de Usuarios</h1>
+        
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Ocurrió un error al cargar los datos de usuarios. 
+            {error instanceof Error && `: ${error.message}`}
+          </AlertDescription>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2"
+            onClick={() => refetchData && refetchData()}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Reintentar
+          </Button>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-2 sm:py-6">
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Administración de Usuarios</h1>
@@ -43,7 +73,7 @@ export default function UserManagement() {
       <PendingInvitationsSection />
       
       <UsersTableSection
-        profiles={profiles}
+        profiles={profiles || []}
         userPermissions={userPermissions}
         onPermissionChange={handlePermissionChange}
         onRoleChange={handleRoleChange}
