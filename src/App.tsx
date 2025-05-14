@@ -28,6 +28,8 @@ import UserManagement from "@/pages/UserManagement";
 import CashFlowForecast from "@/pages/CashFlowForecast";
 import CreditPaymentSchedule from "./pages/CreditPaymentSchedule";
 import { CaptchaResolver } from "./components/invoices/sat-automation/CaptchaResolver";
+import ProductSearch from "./pages/ProductSearch";
+import PdfTemplates from "./pages/PdfTemplates";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -72,6 +74,8 @@ function App() {
             <Route path="sales/payments" element={<Payments />} />
             <Route path="sales/invoices" element={<Invoices />} />
             <Route path="sales/invoices/captcha/:sessionId" element={<CaptchaResolver />} />
+            <Route path="product-search" element={<ProductSearch />} />
+            <Route path="pdf-templates" element={<PdfTemplates />} />
             <Route path="expenses" element={<Expenses />} />
             <Route path="expenses/reconciliation" element={<Reconciliation />} />
             <Route path="expenses/receivables" element={<Receivables />} />

@@ -1365,6 +1365,51 @@ export type Database = {
         }
         Relationships: []
       }
+      issuer_pdf_configs: {
+        Row: {
+          additional_info: Json | null
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          issuer_name: string | null
+          issuer_rfc: string
+          logo_url: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          additional_info?: Json | null
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          issuer_name?: string | null
+          issuer_rfc: string
+          logo_url?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          additional_info?: Json | null
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          issuer_name?: string | null
+          issuer_rfc?: string
+          logo_url?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       manual_invoice_files: {
         Row: {
           content_type: string

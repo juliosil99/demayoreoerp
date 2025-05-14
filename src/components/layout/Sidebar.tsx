@@ -1,152 +1,193 @@
 
-import { cn } from "@/lib/utils";
-import { LayoutDashboard, Receipt, Wallet, Building2, FileText, BanknoteIcon, ArrowLeftRight, DollarSign, CreditCard, FileX, Users, BookOpen, UserCog, ChevronRight, LineChart } from "lucide-react";
-import { NavLink } from "react-router-dom";
-import { useState } from "react";
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  BarChart3,
+  ShoppingCart,
+  CreditCard,
+  Receipt,
+  Users,
+  FileSearch,
+  FileText,
+  Building,
+  ChevronDown,
+  ChevronRight,
+  LayoutDashboard,
+  User,
+  FileSpreadsheet,
+  FilePlus2,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-const menuItems = [{
-  icon: LayoutDashboard,
-  label: "Panel de Control",
-  to: "/"
-}, {
-  icon: DollarSign,
-  label: "Ventas",
-  to: "/sales",
-  submenu: [{
-    icon: CreditCard,
-    label: "Pagos Recibidos",
-    to: "/sales/payments"
-  }, {
-    icon: Receipt,
-    label: "Cuentas por Cobrar",
-    to: "/expenses/receivables"
-  }]
-}, {
-  icon: Receipt,
-  label: "Gastos",
-  to: "/expenses",
-  submenu: [{
-    icon: ArrowLeftRight,
-    label: "Conciliación",
-    to: "/expenses/reconciliation"
-  }, {
-    icon: Wallet,
-    label: "Cuentas por Pagar",
-    to: "/expenses/payables"
-  }]
-}, {
-  icon: Users,
-  label: "Contactos",
-  to: "/contacts"
-}, {
-  icon: Building2,
-  label: "Contabilidad",
-  to: "/accounting",
-  submenu: [{
-    icon: BookOpen,
-    label: "Catálogo de Cuentas",
-    to: "/accounting/chart-of-accounts"
-  }, {
-    icon: BanknoteIcon,
-    label: "Bancos",
-    to: "/accounting/banking"
-  }, {
-    icon: FileX,
-    label: "Facturas",
-    to: "/sales/invoices"
-  }, {
-    icon: FileText,
-    label: "Reportes",
-    to: "/accounting/reports"
-  }, {
-    icon: LineChart,
-    label: "Pronóstico de Flujo",
-    to: "/accounting/cash-flow-forecast"
-  }]
-}, {
-  icon: UserCog,
-  label: "Administrar Usuarios",
-  to: "/users"
-}];
+const SidebarItem = React.memo(({ icon: Icon, label, to, onClick, isActive }: any) => (
+  <Link
+    to={to}
+    onClick={onClick}
+    className={cn(
+      'flex items-center px-3 py-2 rounded-md text-sm transition-colors hover:bg-gray-800 group',
+      isActive ? 'bg-gray-800 text-white' : 'text-gray-400'
+    )}
+  >
+    <Icon className="h-5 w-5 mr-3" />
+    <span>{label}</span>
+  </Link>
+));
 
-export function Sidebar() {
-  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
-  
-  // Auto-expand current path section
-  useState(() => {
-    const path = window.location.pathname;
-    menuItems.forEach(item => {
-      if (item.submenu && (path === item.to || path.startsWith(item.to + '/'))) {
-        setExpandedMenus(prev => ({
-          ...prev,
-          [item.to]: true
-        }));
-      }
-    });
-  });
-
-  const toggleSubmenu = (path: string) => {
-    setExpandedMenus(prev => ({
-      ...prev,
-      [path]: !prev[path]
-    }));
-  };
-  
+const SidebarGroup = ({ title, children, isOpen = false }: any) => {
+  const [open, setOpen] = useState(isOpen);
   return (
-    <div className="h-full w-full border-r bg-background p-2 md:p-4 overflow-y-auto">
-      <div className="mb-4 md:mb-8">
-        <h2 className="px-2 font-semibold text-base md:text-lg text-primary">demayoreo.com</h2>
-      </div>
-      <nav className="space-y-0.5">
-        {menuItems.map(item => (
-          <div key={item.to}>
-            <div className="flex items-center">
-              <NavLink 
-                to={item.to} 
-                className={({isActive}) => cn(
-                  "flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 md:px-3 md:py-2 text-sm transition-all hover:bg-accent",
-                  isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-                )}
-              >
-                <item.icon className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{item.label}</span>
-              </NavLink>
-              {item.submenu && (
-                <button 
-                  onClick={() => toggleSubmenu(item.to)} 
-                  className="p-1.5 md:p-2 hover:bg-accent rounded-lg transition-colors" 
-                  aria-label={expandedMenus[item.to] ? "Colapsar menú" : "Expandir menú"}
-                >
-                  <ChevronRight className={cn(
-                    "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                    expandedMenus[item.to] && "transform rotate-90"
-                  )} />
-                </button>
-              )}
-            </div>
-            {item.submenu && (
-              <div className={cn(
-                "ml-4 md:ml-6 space-y-1 overflow-hidden transition-all duration-200",
-                expandedMenus[item.to] ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-              )}>
-                {item.submenu.map(subItem => (
-                  <NavLink 
-                    key={subItem.to} 
-                    to={subItem.to} 
-                    className={({isActive}) => cn(
-                      "flex items-center gap-2 rounded-lg px-2 py-1.5 md:px-3 md:py-2 text-xs md:text-sm transition-all hover:bg-accent",
-                      isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-                    )}
-                  >
-                    <subItem.icon className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
-                    <span className="truncate">{subItem.label}</span>
-                  </NavLink>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </nav>
+    <div className="mb-2">
+      <button
+        className="flex items-center justify-between w-full px-3 py-2 text-gray-200 hover:text-white"
+        onClick={() => setOpen(!open)}
+      >
+        <span className="font-medium">{title}</span>
+        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+      </button>
+      {open && <div className="pl-3 space-y-1">{children}</div>}
     </div>
   );
-}
+};
+
+export const Sidebar = () => {
+  const location = useLocation();
+  const isActive = (path: string) => location.pathname === path;
+
+  return (
+    <aside className="bg-gray-900 text-white w-64 min-h-screen flex flex-col">
+      <div className="p-4 border-b border-gray-800">
+        <h1 className="text-2xl font-semibold">ERP Lovable</h1>
+      </div>
+
+      <div className="flex-1 overflow-auto p-4 space-y-2">
+        <SidebarItem
+          to="/dashboard"
+          icon={LayoutDashboard}
+          label="Dashboard"
+          isActive={isActive('/dashboard')}
+        />
+
+        <SidebarItem
+          to="/profile"
+          icon={User}
+          label="Perfil"
+          isActive={isActive('/profile')}
+        />
+
+        <SidebarGroup title="Ventas" isOpen={location.pathname.startsWith('/sales')}>
+          <SidebarItem
+            to="/sales"
+            icon={ShoppingCart}
+            label="Ventas"
+            isActive={isActive('/sales')}
+          />
+          <SidebarItem
+            to="/sales/payments"
+            icon={CreditCard}
+            label="Pagos"
+            isActive={isActive('/sales/payments')}
+          />
+        </SidebarGroup>
+
+        <SidebarGroup title="Facturas" isOpen={location.pathname.startsWith('/sales/invoices') || location.pathname === '/product-search' || location.pathname === '/pdf-templates'}>
+          <SidebarItem
+            to="/sales/invoices"
+            icon={Receipt}
+            label="Facturas"
+            isActive={isActive('/sales/invoices')}
+          />
+          <SidebarItem
+            to="/product-search"
+            icon={FileSearch}
+            label="Buscar Productos"
+            isActive={isActive('/product-search')}
+          />
+          <SidebarItem
+            to="/pdf-templates"
+            icon={FileText}
+            label="Plantillas PDF"
+            isActive={isActive('/pdf-templates')}
+          />
+        </SidebarGroup>
+
+        <SidebarGroup title="Finanzas" isOpen={location.pathname.startsWith('/expenses') || location.pathname.startsWith('/accounting')}>
+          <SidebarItem
+            to="/expenses"
+            icon={FileSpreadsheet}
+            label="Gastos"
+            isActive={isActive('/expenses')}
+          />
+          <SidebarItem
+            to="/expenses/reconciliation"
+            icon={FilePlus2}
+            label="Conciliación"
+            isActive={isActive('/expenses/reconciliation')}
+          />
+          <SidebarItem
+            to="/expenses/receivables"
+            icon={CreditCard}
+            label="Por Cobrar"
+            isActive={isActive('/expenses/receivables')}
+          />
+          <SidebarItem
+            to="/expenses/payables"
+            icon={CreditCard}
+            label="Por Pagar"
+            isActive={isActive('/expenses/payables')}
+          />
+          <SidebarItem
+            to="/accounting/banking"
+            icon={Building}
+            label="Bancos"
+            isActive={isActive('/accounting/banking')}
+          />
+          <SidebarItem
+            to="/accounting/transfers"
+            icon={CreditCard}
+            label="Transferencias"
+            isActive={isActive('/accounting/transfers')}
+          />
+          <SidebarItem
+            to="/accounting/chart-of-accounts"
+            icon={BarChart3}
+            label="Catálogo de Cuentas"
+            isActive={isActive('/accounting/chart-of-accounts')}
+          />
+          <SidebarItem
+            to="/accounting/reports"
+            icon={BarChart3}
+            label="Reportes"
+            isActive={isActive('/accounting/reports')}
+          />
+          <SidebarItem
+            to="/accounting/cash-flow-forecast"
+            icon={BarChart3}
+            label="Flujo de Efectivo"
+            isActive={isActive('/accounting/cash-flow-forecast')}
+          />
+        </SidebarGroup>
+
+        <SidebarItem
+          to="/contacts"
+          icon={Users}
+          label="Contactos"
+          isActive={isActive('/contacts')}
+        />
+
+        <SidebarItem
+          to="/sales-channels"
+          icon={ShoppingCart}
+          label="Canales"
+          isActive={isActive('/sales-channels')}
+        />
+
+        <SidebarItem
+          to="/users"
+          icon={Users}
+          label="Usuarios"
+          isActive={isActive('/users')}
+        />
+      </div>
+    </aside>
+  );
+};
