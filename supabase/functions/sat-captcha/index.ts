@@ -1,8 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.31.0";
-// Fix import path for playwright-chromium
-import { chromium } from "https://deno.land/x/playwright_chromium@v0.4.0/mod.ts";
+// Use Puppeteer instead of Playwright for better Deno compatibility
+import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,22 +89,21 @@ serve(async (req) => {
       .eq('id', captchaSessionId);
     
     // Launch browser and continue the process
-    const browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext();
-    const page = await context.newPage();
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
     
     try {
       // Navigate to SAT login page
       await page.goto('https://portalcfdi.facturaelectronica.sat.gob.mx');
       
       // Fill RFC and password fields
-      await page.fill('#rfc', rfc);
-      await page.fill('#password', password);
+      await page.type('#rfc', rfc);
+      await page.type('#password', password);
       
       // Fill CAPTCHA solution if needed
       const captchaInput = await page.$('#captcha');
       if (captchaInput) {
-        await captchaInput.fill(captchaSolution);
+        await captchaInput.type(captchaSolution);
       } else {
         throw new Error("CAPTCHA field not found");
       }
@@ -117,7 +116,10 @@ serve(async (req) => {
         await page.waitForSelector('#selFiltro', { timeout: 10000 });
       } catch (e) {
         // Check for error messages
-        const errorText = await page.textContent('.errorcl') || '';
+        const errorText = await page.evaluate(() => {
+          const errorEl = document.querySelector('.errorcl');
+          return errorEl ? errorEl.textContent : '';
+        });
         throw new Error(`Login failed: ${errorText.trim() || 'Invalid CAPTCHA solution or credentials'}`);
       }
       
@@ -126,8 +128,8 @@ serve(async (req) => {
       await page.click('a:has-text("Consultar Facturas Recibidas")');
       
       // Set date range for invoice search
-      await page.fill('input[name="fechaInicial"]', job.start_date);
-      await page.fill('input[name="fechaFinal"]', job.end_date);
+      await page.type('input[name="fechaInicial"]', job.start_date);
+      await page.type('input[name="fechaFinal"]', job.end_date);
       
       // Submit search form
       await page.click('#btnBusqueda');
@@ -136,7 +138,10 @@ serve(async (req) => {
       await page.waitForSelector('table.detalleTable', { timeout: 30000 });
       
       // Check if there are any results
-      const noResults = await page.$$eval('.noResultados', elements => elements.length > 0);
+      const noResults = await page.evaluate(() => {
+        return document.querySelectorAll('.noResultados').length > 0;
+      });
+      
       if (noResults) {
         await browser.close();
         
@@ -159,7 +164,9 @@ serve(async (req) => {
       }
       
       // Get total number of results
-      const totalResults = await page.$$eval('table.detalleTable tbody tr', rows => rows.length);
+      const totalResults = await page.evaluate(() => {
+        return document.querySelectorAll('table.detalleTable tbody tr').length;
+      });
       
       // Update job status with total files
       await supabaseClient
@@ -170,6 +177,7 @@ serve(async (req) => {
       // Process each invoice XML - similar to main function
       for (let i = 0; i < totalResults; i++) {
         try {
+          // Click download button for each invoice
           await page.click(`table.detalleTable tbody tr:nth-child(${i + 1}) td:last-child a[id^="BtnDescarga"]`);
           await page.waitForTimeout(2000);
           
@@ -207,7 +215,7 @@ serve(async (req) => {
       console.error("Error during SAT captcha resolution:", error);
       
       // Take screenshot of error state
-      const screenshot = await page.screenshot({ fullPage: true });
+      const screenshot = await page.screenshot();
       const screenshotPath = `${user.id}/${jobId}/captcha-error-screenshot.png`;
       
       // Upload screenshot to storage
