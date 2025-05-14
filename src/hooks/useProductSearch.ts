@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProductSearchResult } from "@/types/product-search";
 import { toast } from "@/components/ui/use-toast";
 import { downloadInvoiceFile } from "@/utils/invoiceDownload";
-import { generateInvoicePdf } from "@/services/pdfGenerator";
+import { generateInvoicePdf } from "@/services/invoicePdfService";
 
 export const useProductSearch = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -95,7 +95,7 @@ export const useProductSearch = () => {
         .from("invoices")
         .select("file_path, filename")
         .eq("id", invoiceId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching invoice data:", error);
@@ -133,20 +133,6 @@ export const useProductSearch = () => {
         throw new Error("Falta el ID de la factura para generar el PDF");
       }
       
-      // Verify the invoice exists before attempting to generate PDF
-      const { data: invoice, error: invoiceError } = await supabase
-        .from("invoices")
-        .select("id")
-        .eq("id", invoiceId)
-        .maybeSingle();
-        
-      if (invoiceError || !invoice) {
-        console.error("Error verifying invoice existence:", invoiceError);
-        throw new Error("No se pudo verificar la existencia de la factura");
-      }
-      
-      console.log("Invoice verified, proceeding with PDF generation");
-      
       // Generate the PDF with the improved generator function
       const result = await generateInvoicePdf(invoiceId, issuerRfc);
       
@@ -158,7 +144,7 @@ export const useProductSearch = () => {
       console.log("PDF generation successful");
       toast({
         title: "PDF generado",
-        description: "El PDF se ha generado y descargado correctamente.",
+        description: `El PDF "${result.filename}" se ha generado y descargado correctamente.`,
       });
     } catch (error) {
       console.error("Error generating PDF:", error);
