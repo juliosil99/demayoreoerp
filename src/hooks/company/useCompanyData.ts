@@ -3,6 +3,9 @@ import { useCompanyFetch } from "./useCompanyFetch";
 import { useCompanyInvitations } from "./useCompanyInvitations";
 import { checkRFCExists } from "./utils/rfcChecker";
 
+// Re-export the RFC checker function to be used in forms
+export { checkRFCExists };
+
 /**
  * Main hook for company data management.
  * Combines company data fetching and invitation checking.
@@ -19,9 +22,6 @@ export function useCompanyData(userId: string | undefined, isEditMode: boolean) 
   const { isLoading: isInvitationLoading } = !isEditMode 
     ? useCompanyInvitations(userEmail, userId)
     : { isLoading: false };
-
-  // Export the RFC checker function to be used in forms
-  export { checkRFCExists };
 
   return { 
     companyData, 
