@@ -10,6 +10,7 @@ import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
 import { ChartSection } from "@/components/dashboard/ChartSection";
 import { MetricsGroupsSection } from "@/components/dashboard/MetricsGroupsSection";
 import { StateDistributionSection } from "@/components/dashboard/sections/StateDistributionSection";
+import { ChannelDistributionSection } from "@/components/dashboard/sections/ChannelDistributionSection";
 
 const Dashboard = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -37,12 +38,16 @@ const Dashboard = () => {
       {/* Main Metrics Cards */}
       <MainMetricsSection metrics={metrics} />
 
+      {/* Charts Section - Add Channel Distribution alongside State Distribution */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Chart Section */}
         <ChartSection chartData={metrics.chartData || []} />
         
-        {/* State Distribution */}
-        <StateDistributionSection />
+        {/* Distribution Charts - Now in a grid for the two charts */}
+        <div className="grid grid-cols-1 gap-6">
+          <StateDistributionSection />
+          <ChannelDistributionSection />
+        </div>
       </div>
       
       {/* Metrics Groups */}
