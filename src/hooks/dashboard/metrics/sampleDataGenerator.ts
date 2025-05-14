@@ -1,6 +1,7 @@
+
 import { addDays, format } from "date-fns";
 import { DateRange } from "react-day-picker";
-import { DashboardMetrics, ChartDataPoint } from "@/types/dashboard";
+import { DashboardMetrics, ChartDataPoint, ChannelMetrics } from "@/types/dashboard";
 
 export const generateSampleData = (dateRange?: DateRange): DashboardMetrics => {
   // Generate sample order revenue
@@ -11,6 +12,31 @@ export const generateSampleData = (dateRange?: DateRange): DashboardMetrics => {
   
   // Calculate margin percentage
   const marginPercentage = (contributionMargin / orderRevenue) * 100;
+  
+  // Generate sample channel metrics
+  const sampleChannels = ["Mercado Libre", "Amazon", "Shopify", "Coppel", "Liverpool", "Walmart"];
+  const channelMetrics: ChannelMetrics[] = sampleChannels.map(channel => {
+    // Generate sample revenue for this channel (roughly dividing the total)
+    const channelRevenue = Math.round((Math.random() * 0.3 + 0.05) * orderRevenue);
+    const channelOrders = Math.floor(Math.random() * 40) + 10;
+    const channelAOV = channelOrders > 0 ? Math.round(channelRevenue / channelOrders) : 0;
+    const channelContribution = Math.round(channelRevenue * (Math.random() * 0.2 + 0.2));
+    const channelMarginPercentage = channelRevenue > 0 ? (channelContribution / channelRevenue) * 100 : 0;
+    
+    return {
+      name: channel,
+      revenue: channelRevenue,
+      orders: channelOrders,
+      aov: channelAOV,
+      contributionMargin: channelContribution,
+      marginPercentage: channelMarginPercentage,
+      revenueChange: Math.round((Math.random() * 60) - 20),
+      ordersChange: Math.round((Math.random() * 50) - 15),
+      aovChange: Math.round((Math.random() * 40) - 10),
+      contributionMarginChange: Math.round((Math.random() * 50) - 10),
+      marginPercentageChange: Math.round((Math.random() * 30) - 10)
+    };
+  });
   
   // Generate sample metrics
   return {
@@ -33,6 +59,9 @@ export const generateSampleData = (dateRange?: DateRange): DashboardMetrics => {
     merChange: Math.round((Math.random() * 20) - 5),
     aovChange: Math.round((Math.random() * 15) - 5),
     ordersChange: Math.round((Math.random() * 25) - 5),
+    
+    // Channel metrics
+    channelMetrics,
     
     // Chart data
     chartData: generateChartData(dateRange),
