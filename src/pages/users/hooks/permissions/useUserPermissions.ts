@@ -36,7 +36,8 @@ export function useUserPermissions() {
   const { handlePermissionChange, handleRoleChange } = usePermissionMutations(setUserPermissions);
 
   useEffect(() => {
-    if (pagePermissions && companyUsers && profiles) {
+    // Only build the permissions map if profiles are available - this is the minimum required data
+    if (profiles) {
       console.log("Building user permissions map...");
       const permissionsMap: { [key: string]: UserPermissions } = {};
       
@@ -51,30 +52,34 @@ export function useUserPermissions() {
         }
       });
       
-      // Add page permissions
-      pagePermissions.forEach((perm) => {
-        if (!permissionsMap[perm.user_id]) {
-          permissionsMap[perm.user_id] = {
-            userId: perm.user_id,
-            pages: {},
-            role: 'user'
-          };
-        }
-        permissionsMap[perm.user_id].pages[perm.page_path] = perm.can_access;
-      });
+      // Add page permissions if available
+      if (pagePermissions) {
+        pagePermissions.forEach((perm) => {
+          if (!permissionsMap[perm.user_id]) {
+            permissionsMap[perm.user_id] = {
+              userId: perm.user_id,
+              pages: {},
+              role: 'user'
+            };
+          }
+          permissionsMap[perm.user_id].pages[perm.page_path] = perm.can_access;
+        });
+      }
 
-      // Add roles from company_users
-      companyUsers?.forEach((cu) => {
-        if (!permissionsMap[cu.user_id]) {
-          permissionsMap[cu.user_id] = {
-            userId: cu.user_id,
-            pages: {},
-            role: cu.role as 'admin' | 'user'
-          };
-        } else {
-          permissionsMap[cu.user_id].role = cu.role as 'admin' | 'user';
-        }
-      });
+      // Add roles from company_users if available
+      if (companyUsers && companyUsers.length > 0) {
+        companyUsers.forEach((cu) => {
+          if (!permissionsMap[cu.user_id]) {
+            permissionsMap[cu.user_id] = {
+              userId: cu.user_id,
+              pages: {},
+              role: cu.role as 'admin' | 'user'
+            };
+          } else {
+            permissionsMap[cu.user_id].role = cu.role as 'admin' | 'user';
+          }
+        });
+      }
 
       console.log("User permissions map built:", permissionsMap);
       setUserPermissions(permissionsMap);

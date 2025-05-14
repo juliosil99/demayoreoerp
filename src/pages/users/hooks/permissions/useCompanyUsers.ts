@@ -20,29 +20,43 @@ export function useCompanyUsers() {
     queryKey: ["company-users"],
     queryFn: async () => {
       console.log("Fetching company users...");
-      const { data, error } = await supabase
-        .from("company_users")
-        .select("*, companies:company_id(id, nombre)");
+      try {
+        const { data, error } = await supabase
+          .from("company_users")
+          .select("*, companies:company_id(id, nombre)");
 
-      if (error) {
-        console.error("Error fetching company users:", error);
+        if (error) {
+          console.error("Error fetching company users:", error);
+          toast({
+            title: "Error",
+            description: "Error al cargar relaciones de empresa: " + error.message,
+            variant: "destructive",
+          });
+          // Return empty array instead of throwing to avoid breaking the permissions flow
+          return [];
+        }
+        
+        console.log("Company users fetched successfully:", data);
+        return data as CompanyUser[];
+      } catch (err) {
+        console.error("Unexpected error in company users fetch:", err);
         toast({
           title: "Error",
-          description: "Error al cargar roles de empresa: " + error.message,
+          description: "Error inesperado al cargar usuarios de empresa",
           variant: "destructive",
         });
-        throw error;
+        // Return empty array to avoid breaking permissions flow
+        return [];
       }
-      
-      console.log("Company users fetched successfully:", data);
-      return data as CompanyUser[];
     },
     retry: 1,
     retryDelay: 1000,
+    // Continue even if there's an error
+    useErrorBoundary: false,
   });
 
   return { 
-    companyUsers, 
+    companyUsers: companyUsers || [], 
     isLoading: isCompanyUsersLoading, 
     error,
     refetch
