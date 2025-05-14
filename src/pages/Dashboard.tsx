@@ -38,16 +38,13 @@ const Dashboard = () => {
       {/* Main Metrics Cards */}
       <MainMetricsSection metrics={metrics} />
 
-      {/* Charts Section - Add Channel Distribution alongside State Distribution */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Chart Section */}
-        <ChartSection chartData={metrics.chartData || []} />
+      {/* Main Chart Section */}
+      <ChartSection chartData={metrics.chartData || []} />
         
-        {/* Distribution Charts - Now in a grid for the two charts */}
-        <div className="grid grid-cols-1 gap-6">
-          <StateDistributionSection />
-          <ChannelDistributionSection />
-        </div>
+      {/* Distribution Charts - Now in a horizontal grid instead of nested */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <StateDistributionSection />
+        <ChannelDistributionSection />
       </div>
       
       {/* Metrics Groups */}
