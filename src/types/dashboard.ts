@@ -7,6 +7,9 @@ export interface ChartDataPoint {
 }
 
 export interface DashboardMetrics {
+  // New contribution margin metric
+  contributionMargin: number;
+
   // Top-level metrics
   orderRevenue: number;
   adSpend: number;

@@ -11,6 +11,7 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     // Initialize with default values
+    contributionMargin: 0,
     orderRevenue: 0,
     adSpend: 0,
     mer: 0,
@@ -67,10 +68,32 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
           return;
         }
 
-        // For now, let's generate some sample data
-        // This will be replaced with actual data fetching logic later
+        // Fetch actual contribution margin data from Sales table
+        let contributionMargin = 0;
+        if (dateRange?.from && dateRange?.to) {
+          const { data: salesData, error: salesError } = await supabase
+            .from("Sales")
+            .select("Profit")
+            .gte("date", dateRange.from.toISOString().split('T')[0])
+            .lte("date", dateRange.to.toISOString().split('T')[0]);
+          
+          if (salesError) {
+            console.error("Error fetching sales data:", salesError);
+            toast.error("Error al cargar datos de ventas");
+          } else if (salesData) {
+            // Calculate contribution margin by summing all Profit values
+            contributionMargin = salesData.reduce((sum, sale) => sum + (sale.Profit || 0), 0);
+          }
+        }
+
+        // For now, let's generate remaining sample data
         const sampleData = generateSampleData(dateRange);
-        setMetrics(sampleData);
+        
+        // Merge actual contribution margin with sample data
+        setMetrics({
+          ...sampleData,
+          contributionMargin
+        });
         
       } catch (error) {
         console.error("Error fetching metrics:", error);
@@ -129,7 +152,11 @@ function generateSampleData(dateRange?: DateRange): DashboardMetrics {
     currentDate.setDate(currentDate.getDate() + 1);
   }
   
+  // Default contribution margin if real data isn't available
+  const contributionMargin = orderRevenue * 0.35;
+  
   return {
+    contributionMargin,
     orderRevenue,
     adSpend,
     mer,

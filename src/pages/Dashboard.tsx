@@ -8,6 +8,7 @@ import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
 import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
 import { ChartSection } from "@/components/dashboard/ChartSection";
 import { MetricsGroupsSection } from "@/components/dashboard/MetricsGroupsSection";
+import { ContributionMarginCard } from "@/components/dashboard/ContributionMarginCard";
 
 const Dashboard = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -25,6 +26,9 @@ const Dashboard = () => {
     <div className="space-y-6">
       {/* Header Section */}
       <DashboardHeader dateRange={dateRange} setDateRange={setDateRange} />
+
+      {/* Contribution Margin Card */}
+      <ContributionMarginCard contributionMargin={metrics.contributionMargin} />
 
       {/* Main Metrics Cards */}
       <MainMetricsSection metrics={metrics} />
