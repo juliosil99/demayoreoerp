@@ -13,9 +13,6 @@ export const DashboardHeader = ({ dateRange, setDateRange }: DashboardHeaderProp
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div>
         <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
-        <p className="text-muted-foreground text-sm">
-          Ingresos menos todos los costos variables, incluyendo gastos publicitarios
-        </p>
       </div>
       <DatePickerWithRange
         date={dateRange}
