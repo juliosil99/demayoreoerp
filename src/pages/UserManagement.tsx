@@ -1,10 +1,8 @@
-
 import { UsersTable } from "./users/components/UsersTable";
 import { InviteUserForm } from "./users/components/InviteUserForm";
 import { PendingInvitations } from "./users/components/PendingInvitations";
 import { useUserPermissions } from "./users/hooks/useUserPermissions";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function UserManagement() {

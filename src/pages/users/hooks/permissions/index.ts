@@ -1,0 +1,2 @@
+
+export { useUserPermissions } from './useUserPermissions';
