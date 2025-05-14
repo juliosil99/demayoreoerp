@@ -1,24 +1,24 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { processChannelData, ChannelData } from "./utils";
+import { processStateData, StateData } from "./utils";
 import { SalesBase } from "@/integrations/supabase/types/sales";
 
-export const useChannelDistributionData = () => {
+export const useStateDistributionData = () => {
   return useQuery({
-    queryKey: ["salesChannelDistribution"],
+    queryKey: ["salesStateDistribution"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("Sales")
-        .select('Channel, price');
+        .select('state, price');
       
       if (error) {
         console.error("Error fetching sales data:", error);
         throw error;
       }
       
-      // Cast the data to partial SalesBase since we're only using Channel and price
-      return processChannelData(data as SalesBase[]);
+      // Cast the data to partial SalesBase since we're only using state and price
+      return processStateData(data as SalesBase[]);
     }
   });
 };
