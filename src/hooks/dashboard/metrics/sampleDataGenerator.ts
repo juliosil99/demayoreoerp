@@ -1,108 +1,131 @@
 
-import { format, subDays } from "date-fns";
+import { addDays, format, subMonths } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { DashboardMetrics, ChartDataPoint } from "@/types/dashboard";
 
-// Function to generate sample data for UI testing
 export const generateSampleData = (dateRange?: DateRange): DashboardMetrics => {
-  const orderRevenue = 258943.75;
-  const adSpend = 38419.25;
-  const orders = 3245;
-  const aov = orderRevenue / orders;
-  const mer = orderRevenue / adSpend;
+  // Base metrics
+  const orderRevenue = Math.round(Math.random() * 50000) + 20000;
+  const uniqueOrderCount = Math.round(Math.random() * 100) + 50; // Generate unique order count
+  const adSpend = Math.round(orderRevenue * (Math.random() * 0.3 + 0.1));
+  const mer = orderRevenue > 0 ? Number((adSpend / orderRevenue * 100).toFixed(2)) : 0;
+  const aov = uniqueOrderCount > 0 ? Number((orderRevenue / uniqueOrderCount).toFixed(2)) : 0;
+
+  // Generate chart data based on date range
+  const chartData = generateChartData(dateRange);
+
+  // Generate percentage changes
+  const revenueChange = generatePercentageChange();
+  const ordersChange = generatePercentageChange();
+  const adSpendChange = generatePercentageChange();
+  const merChange = generatePercentageChange();
+  const aovChange = generatePercentageChange();
   
-  const returningRevenue = orderRevenue * 0.65;
-  const returningOrders = orders * 0.6;
-  const returningAOV = returningRevenue / returningOrders;
-  const repeatRate = 32.5;
-  
-  const newCustomerRevenue = orderRevenue * 0.35;
-  const newCustomerOrders = orders * 0.4;
-  const newCustomerAOV = newCustomerRevenue / newCustomerOrders;
-  const cac = adSpend / newCustomerOrders;
-  
-  const paidRevenue = orderRevenue * 0.7;
-  const paidOrders = orders * 0.72;
-  const paidAOV = paidRevenue / paidOrders;
-  const paidCAC = adSpend / paidOrders;
-  const pamer = paidRevenue / adSpend;
-  
-  // Create chart data
-  const chartData: ChartDataPoint[] = generateChartData(dateRange);
-  
-  // Default contribution margin if real data isn't available
-  const contributionMargin = orderRevenue * 0.35;
-  
+  // Returming customer metrics
+  const returningRevenue = orderRevenue * (Math.random() * 0.5 + 0.3);
+  const returningOrders = Math.round(uniqueOrderCount * (Math.random() * 0.4 + 0.3));
+  const returningAOV = returningOrders > 0 ? returningRevenue / returningOrders : 0;
+  const repeatRate = (returningOrders / uniqueOrderCount) * 100;
+
+  // New customer metrics
+  const newCustomerRevenue = orderRevenue - returningRevenue;
+  const newCustomerOrders = uniqueOrderCount - returningOrders;
+  const newCustomerAOV = newCustomerOrders > 0 ? newCustomerRevenue / newCustomerOrders : 0;
+  const cac = newCustomerOrders > 0 ? adSpend / newCustomerOrders : 0;
+
+  // Generate paid performance metrics
+  const paidRevenue = orderRevenue * (Math.random() * 0.7 + 0.2);
+  const paidOrders = Math.floor(uniqueOrderCount * (Math.random() * 0.6 + 0.3));
+  const paidAOV = paidOrders > 0 ? paidRevenue / paidOrders : 0;
+  const paidCAC = paidOrders > 0 ? adSpend / paidOrders : 0;
+  const pamer = paidRevenue > 0 ? (adSpend / paidRevenue) * 100 : 0;
+
+  // Add contribution margin metric
+  const contributionMargin = orderRevenue - adSpend - Math.random() * 10000;
+
   return {
     contributionMargin,
     orderRevenue,
     adSpend,
     mer,
     aov,
-    orders,
-    revenueChange: 15.4,
-    adSpendChange: 8.2,
-    merChange: 6.7,
-    aovChange: 3.2,
-    ordersChange: 12.3,
+    orders: uniqueOrderCount, // This is now unique order count
     chartData,
+    revenueChange,
+    ordersChange,
+    adSpendChange,
+    merChange,
+    aovChange,
+    // Returning customer metrics
     returningRevenue,
     returningOrders,
     returningAOV,
     repeatRate,
-    returningRevenueChange: 18.7,
-    returningOrdersChange: 14.5,
-    returningAOVChange: 3.8,
-    repeatRateChange: 5.2,
+    returningRevenueChange: generatePercentageChange(),
+    returningOrdersChange: generatePercentageChange(),
+    returningAOVChange: generatePercentageChange(),
+    repeatRateChange: generatePercentageChange(),
+    // New customer metrics
     newCustomerRevenue,
     newCustomerOrders,
     newCustomerAOV,
     cac,
-    newCustomerRevenueChange: 9.5,
-    newCustomerOrdersChange: 7.3,
-    newCustomerAOVChange: 2.1,
-    cacChange: -3.4,
+    newCustomerRevenueChange: generatePercentageChange(),
+    newCustomerOrdersChange: generatePercentageChange(),
+    newCustomerAOVChange: generatePercentageChange(),
+    cacChange: generatePercentageChange(),
+    // Paid performance metrics
     paidRevenue,
     paidOrders,
     paidAOV,
     paidCAC,
     pamer,
-    paidRevenueChange: 16.8,
-    paidOrdersChange: 14.9,
-    paidAOVChange: 2.5,
-    paidCACChange: -4.2,
-    pamerChange: 8.3,
+    paidRevenueChange: generatePercentageChange(),
+    paidOrdersChange: generatePercentageChange(),
+    paidAOVChange: generatePercentageChange(),
+    paidCACChange: generatePercentageChange(),
+    pamerChange: generatePercentageChange(),
     // Legacy metrics
-    yesterdaySales: orderRevenue / 30,
-    unreconciled: 18250.43,
-    receivablesPending: 42680.19,
-    salesCount: orders / 30,
-    unreconciledCount: 48,
-    receivablesCount: 127
+    yesterdaySales: Math.round(orderRevenue / 30),
+    unreconciled: Math.round(Math.random() * 5000) + 1000,
+    receivablesPending: Math.round(Math.random() * 10000) + 2000,
+    salesCount: Math.round(Math.random() * 200) + 100,
+    unreconciledCount: Math.round(Math.random() * 50) + 10,
+    receivablesCount: Math.round(Math.random() * 30) + 5
   };
 };
 
-// Helper function to generate chart data based on date range
+const generatePercentageChange = () => {
+  return Number((Math.random() * 40 - 20).toFixed(2));
+};
+
 const generateChartData = (dateRange?: DateRange): ChartDataPoint[] => {
+  // Default to last 30 days if no date range provided
+  const endDate = dateRange?.to || new Date();
+  const startDate = dateRange?.from || subMonths(new Date(), 1);
+  
+  const days = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   const chartData: ChartDataPoint[] = [];
-  const start = dateRange?.from ? new Date(dateRange.from) : subDays(new Date(), 30);
-  const end = dateRange?.to ? new Date(dateRange.to) : new Date();
   
-  const orderRevenue = 258943.75;
-  const adSpend = 38419.25;
+  // Create a growing trend for sales and slightly fluctuating ad spend
+  let baseSales = Math.round(Math.random() * 1000) + 500;
+  let baseAdSpend = baseSales * (Math.random() * 0.3 + 0.1);
+  const targetValue = baseSales * 1.5;
   
-  let currentDate = new Date(start);
-  while (currentDate <= end) {
-    const dailyRevenue = orderRevenue / 30 * (0.7 + Math.random() * 0.6);
-    const dailyAdSpend = adSpend / 30 * (0.8 + Math.random() * 0.4);
+  for (let i = 0; i < days; i++) {
+    const currentDate = addDays(startDate, i);
+    
+    // Gradually increase sales with some random fluctuation
+    baseSales = baseSales * (1 + (Math.random() * 0.04 - 0.01));
+    // Ad spend follows sales but with more volatility
+    baseAdSpend = baseAdSpend * (1 + (Math.random() * 0.08 - 0.03));
     
     chartData.push({
-      date: format(currentDate, 'MM/dd'),
-      sales: Math.round(dailyRevenue),
-      adSpend: Math.round(dailyAdSpend)
+      date: format(currentDate, 'yyyy-MM-dd'),
+      sales: Math.round(baseSales),
+      adSpend: Math.round(baseAdSpend),
+      target: Math.round(targetValue)
     });
-    
-    currentDate.setDate(currentDate.getDate() + 1);
   }
   
   return chartData;

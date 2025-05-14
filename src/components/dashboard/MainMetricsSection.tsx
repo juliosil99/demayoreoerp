@@ -58,7 +58,7 @@ export const MainMetricsSection = ({ metrics }: MainMetricsSectionProps) => {
         changeType={metrics.aovChange > 0 ? "positive" : "negative"}
       />
       <MetricCard
-        title="Órdenes"
+        title="Órdenes Únicas"
         value={metrics.orders?.toString() || "0"}
         icon={ShoppingBag}
         change={metrics.ordersChange}

@@ -29,7 +29,7 @@ export const useFetchSalesData = () => {
         realData.contributionMargin = salesData.reduce((sum, sale) => sum + (sale.Profit || 0), 0);
       }
 
-      // 2. Calculate Order Revenue from "price" column
+      // 2. Calculate Order Revenue from "price" column and count unique order numbers
       const { data: revenueData, error: revenueError } = await fetchRevenueData(dateRange);
 
       if (revenueError) {
@@ -39,8 +39,16 @@ export const useFetchSalesData = () => {
         // Sum the price values
         realData.orderRevenue = revenueData.reduce((sum, sale) => sum + (sale.price || 0), 0);
         
-        // Count orders
-        realData.orders = revenueData.length;
+        // Count unique order numbers instead of all records
+        const uniqueOrderNumbers = new Set();
+        revenueData.forEach(sale => {
+          if (sale.orderNumber) {
+            uniqueOrderNumbers.add(sale.orderNumber);
+          }
+        });
+        
+        // Set the count of unique orders
+        realData.orders = uniqueOrderNumbers.size;
         
         // Calculate Average Order Value if we have orders
         if (realData.orders > 0) {
@@ -72,7 +80,7 @@ export const useFetchSalesData = () => {
   const fetchRevenueData = async (dateRange: DateRange) => {
     return await supabase
       .from("Sales")
-      .select("price")
+      .select("price, orderNumber")
       .gte("date", dateRange.from!.toISOString().split('T')[0])
       .lte("date", dateRange.to!.toISOString().split('T')[0]);
   };
@@ -90,13 +98,22 @@ export const useFetchSalesData = () => {
     
     const { data: prevRevenueData, error: prevRevenueError } = await supabase
       .from("Sales")
-      .select("price")
+      .select("price, orderNumber")
       .gte("date", prevPeriodStart.toISOString().split('T')[0])
       .lte("date", prevPeriodEnd.toISOString().split('T')[0]);
     
     if (!prevRevenueError && prevRevenueData) {
       const prevRevenue = prevRevenueData.reduce((sum, sale) => sum + (sale.price || 0), 0);
-      const prevOrders = prevRevenueData.length;
+      
+      // Count unique order numbers for previous period
+      const uniquePrevOrderNumbers = new Set();
+      prevRevenueData.forEach(sale => {
+        if (sale.orderNumber) {
+          uniquePrevOrderNumbers.add(sale.orderNumber);
+        }
+      });
+      
+      const prevOrders = uniquePrevOrderNumbers.size;
       const prevAOV = prevOrders > 0 ? prevRevenue / prevOrders : 0;
       
       // Calculate percentage changes
