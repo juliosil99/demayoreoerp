@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { parseXMLContent } from "./xml-parser";
 
@@ -20,10 +21,19 @@ const checkDuplicateUUID = async (uuid: string | null) => {
 
 export const processInvoiceFile = async (file: File, xmlContent: string) => {
   try {
+    console.log("Processing invoice file:", file.name);
     const cfdiData = parseXMLContent(xmlContent);
+    
+    // Check if there was an error in parsing
+    if (cfdiData.error) {
+      console.error("Error parsing XML content:", cfdiData.errorMessage);
+      return { success: false, isDuplicate: false, error: cfdiData.errorMessage };
+    }
+    
     const isDuplicate = await checkDuplicateUUID(cfdiData.uuid);
     
     if (isDuplicate) {
+      console.log("Duplicate invoice detected with UUID:", cfdiData.uuid);
       return { success: false, isDuplicate: true };
     }
 
@@ -36,8 +46,8 @@ export const processInvoiceFile = async (file: File, xmlContent: string) => {
       .upload(filePath, file);
 
     if (uploadError) {
-      console.error("Error uploading file:", uploadError);
-      return { success: false, isDuplicate: false };
+      console.error("Error uploading file to storage:", uploadError);
+      return { success: false, isDuplicate: false, error: uploadError.message };
     }
 
     // First insert the invoice without the products
@@ -82,8 +92,10 @@ export const processInvoiceFile = async (file: File, xmlContent: string) => {
 
     if (invoiceError) {
       console.error("Error inserting invoice data:", invoiceError);
-      return { success: false, isDuplicate: false };
+      return { success: false, isDuplicate: false, error: invoiceError.message };
     }
+
+    console.log("Invoice record created successfully with ID:", invoice?.id);
 
     // Then insert the products if any
     if (cfdiData.products && cfdiData.products.length > 0) {
@@ -105,12 +117,17 @@ export const processInvoiceFile = async (file: File, xmlContent: string) => {
       if (productsError) {
         console.error("Error inserting product data:", productsError);
         // We don't return false here since the invoice was already created
+      } else {
+        console.log(`Successfully inserted ${productsWithInvoiceId.length} products for invoice ID ${invoice.id}`);
       }
+    } else {
+      console.log("No products found in the invoice XML");
     }
 
     return { success: true, isDuplicate: false };
   } catch (error) {
-    console.error("Error processing invoice:", error);
-    return { success: false, isDuplicate: false };
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error processing invoice:", errorMessage);
+    return { success: false, isDuplicate: false, error: errorMessage };
   }
 };
