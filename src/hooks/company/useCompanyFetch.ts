@@ -39,6 +39,7 @@ export function useCompanyFetch(userId: string | undefined, isEditMode: boolean)
         if (isEditMode) {
           console.log("📝 Edit mode detected, fetching company for user:", userId);
           
+          // Check if user has a company to edit
           const { data, error } = await supabase
             .from("companies")
             .select("*")
@@ -61,17 +62,16 @@ export function useCompanyFetch(userId: string | undefined, isEditMode: boolean)
           }
           
           if (!data) {
-            console.log("ℹ️ No company found for user");
+            console.log("ℹ️ No company found for user in edit mode");
             toast.error("No tienes permiso para editar esta empresa");
-            navigate("/dashboard"); // Redirect to dashboard instead of company setup
+            // Don't navigate away, just show the error
+            setIsLoading(false);
             return;
           }
           
           console.log("✅ Company found for user:", data);
           setIsEditing(true);
           setCompanyData(data);
-          setIsLoading(false);
-          return;
         }
         
         setIsLoading(false);

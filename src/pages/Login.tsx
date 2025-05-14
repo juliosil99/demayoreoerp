@@ -74,35 +74,39 @@ export default function Login() {
         return;
       }
       
-      // Check if there's an expired invitation
+      // Check for expired invitations
       const expiredInvitation = invitations?.find(inv => inv.status === 'expired');
       
       if (expiredInvitation) {
         console.log("Login: User has an expired invitation");
         toast.error("Tu invitación ha expirado. Contacta al administrador para que la reactive.");
-        return;
       }
       
       // Check if any company exists at all
       console.log("Login: No invitation found, checking if any company exists...");
-      const { data: anyCompany } = await supabase
+      const { data: anyCompany, error: anyCompanyError } = await supabase
         .from("companies")
-        .select("*")
-        .limit(1);
+        .select("count");
       
       console.log("Login: Any company check result:", anyCompany);
       
-      if (anyCompany && anyCompany.length > 0) {
-        // Companies exist but this user doesn't have one and wasn't invited
-        // Just show an error message but don't redirect the user
-        console.log("Login: Companies exist but none for this user and not invited");
-        toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
-        return;
-      } else {
-        // No companies exist, so this user should set up the first company
+      if (anyCompanyError) {
+        console.error("Login: Error checking for any company:", anyCompanyError);
+        throw anyCompanyError;
+      }
+      
+      // If no companies exist at all, user should be able to create one
+      if (!anyCompany || anyCompany.length === 0 || anyCompany[0].count === 0) {
         console.log("Login: No company found, redirecting to company setup");
         navigate("/company-setup");
+        return;
       }
+      
+      // Companies exist but this user doesn't have one and wasn't invited
+      console.log("Login: Companies exist but none for this user and not invited");
+      toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
+      // Stay on the current page and don't redirect
+      
     } catch (err) {
       console.error("Login: Error in checkUserStatus:", err);
       toast.error("Error verificando el estado del usuario");
@@ -118,6 +122,7 @@ export default function Login() {
         console.log("Login: Starting sign up process...");
         await signUp(email, password);
         toast.success("Cuenta creada exitosamente! Por favor, inicia sesión.");
+        setIsLoading(false);
       } else {
         console.log("Login: Starting sign in process...");
         await signIn(email, password);
@@ -131,6 +136,7 @@ export default function Login() {
           console.log("Login: No user found after authentication");
         }
         toast.success("Inició sesión exitosamente!");
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Login Error:", error);
@@ -139,7 +145,6 @@ export default function Login() {
       } else {
         toast.error("Error de autenticación");
       }
-    } finally {
       setIsLoading(false);
     }
   };

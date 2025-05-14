@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 
 /**
  * Hook to check user invitation status
@@ -11,7 +10,6 @@ import { useNavigate } from "react-router-dom";
  * @returns Status of invitation checking
  */
 export function useCompanyInvitations(userEmail: string | undefined, userId: string | undefined) {
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
@@ -39,9 +37,10 @@ export function useCompanyInvitations(userEmail: string | undefined, userId: str
           throw companyError;
         }
         
+        // If user already has a company, nothing more to do
         if (userCompany) {
-          console.log("✅ User has their own company, redirecting to dashboard");
-          navigate("/dashboard");
+          console.log("✅ User has their own company");
+          setIsLoading(false);
           return;
         }
         
@@ -58,70 +57,22 @@ export function useCompanyInvitations(userEmail: string | undefined, userId: str
           throw invitationError;
         }
         
-        // Check for completed invitations
-        const completedInvitation = invitations?.find(inv => inv.status === 'completed');
-        
-        if (completedInvitation) {
-          console.log("✅ User has a completed invitation, redirecting to dashboard");
-          navigate("/dashboard");
-          return;
-        }
-        
-        // Check for pending invitations
-        const pendingInvitation = invitations?.find(inv => inv.status === 'pending');
-        
-        if (pendingInvitation) {
-          console.log("🔍 User has a pending invitation, redirecting to registration");
-          navigate(`/register?token=${pendingInvitation.invitation_token}`);
-          return;
-        }
-        
-        // Check for expired invitations
-        const expiredInvitation = invitations?.find(inv => inv.status === 'expired');
-        
-        if (expiredInvitation) {
-          console.log("⚠️ User has an expired invitation");
-          toast.error("Tu invitación ha expirado. Contacta al administrador para que la reactive.");
-        }
-        
-        // Check if any company exists
-        const { data: anyCompany, error: anyCompanyError } = await supabase
-          .from("companies")
-          .select("*")
-          .limit(1);
-        
-        console.log("Any company check result:", anyCompany);
-        
-        if (anyCompanyError) {
-          console.error("❌ Error checking for any company:", anyCompanyError);
-          throw anyCompanyError;
-        }
-        
-        if (anyCompany && anyCompany.length > 0) {
-          console.log("✅ Company exists in the system, but user has no access");
-          toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
-          // Remove the redirect to login to prevent logout loop
-          // navigate("/login");
-          return;
-        }
-        
-        console.log("ℹ️ No company found, staying on setup page");
-      } catch (error) {
-        console.error("❌ Unexpected error:", error);
-        if (error instanceof Error) {
+        setIsLoading(false);
+      } catch (err) {
+        console.error("❌ Unexpected error:", err);
+        if (err instanceof Error) {
           console.error("Error details:", {
-            message: error.message,
-            stack: error.stack
+            message: err.message,
+            stack: err.stack
           });
         }
         toast.error("Error al verificar la empresa");
-      } finally {
         setIsLoading(false);
       }
     };
 
     checkInvitationStatus();
-  }, [userEmail, userId, navigate]);
+  }, [userEmail, userId]);
 
   return { isLoading };
 }
