@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { parseXMLContent } from "./xml-parser";
+import { CFDIParseResult } from "@/types/invoice-types";
 
 const checkDuplicateUUID = async (uuid: string | null) => {
   if (!uuid) return false;
@@ -22,7 +23,7 @@ const checkDuplicateUUID = async (uuid: string | null) => {
 export const processInvoiceFile = async (file: File, xmlContent: string) => {
   try {
     console.log("Processing invoice file:", file.name);
-    const cfdiData = parseXMLContent(xmlContent);
+    const cfdiData: CFDIParseResult = parseXMLContent(xmlContent);
     
     // Check if there was an error in parsing
     if (cfdiData.error) {
