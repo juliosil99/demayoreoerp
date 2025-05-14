@@ -18,23 +18,40 @@ export function useProfiles() {
     queryKey: ["profiles"],
     queryFn: async () => {
       console.log("Fetching profiles...");
-      const { data, error } = await supabase
+      
+      // Step 1: Fetch all profiles
+      const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("*, companies:company_users(company:companies(id, nombre))");
+        .select("*");
 
-      if (error) {
-        console.error("Error fetching profiles:", error);
-        toast.error("Error al cargar perfiles: " + error.message);
-        throw error;
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        toast.error("Error al cargar perfiles: " + profilesError.message);
+        throw profilesError;
       }
       
-      console.log("Profiles fetched successfully:", data);
+      console.log("Profiles fetched successfully:", profilesData);
       
-      // Format the data for proper display
-      return data.map((profile: any) => ({
-        ...profile,
-        company: profile.companies?.[0]?.company || null
-      })) as Profile[];
+      // Step 2: For each profile, fetch company information separately
+      const profilesWithCompany = await Promise.all(
+        profilesData.map(async (profile) => {
+          // Get company information from company_users and companies tables
+          const { data: companyData } = await supabase
+            .from("company_users")
+            .select("company:companies(id, nombre)")
+            .eq("user_id", profile.id)
+            .maybeSingle();
+          
+          // Return profile with company information
+          return {
+            ...profile,
+            company: companyData?.company || null
+          };
+        })
+      );
+      
+      console.log("Profiles with company info:", profilesWithCompany);
+      return profilesWithCompany as Profile[];
     },
     retry: 1,
     retryDelay: 1000,
