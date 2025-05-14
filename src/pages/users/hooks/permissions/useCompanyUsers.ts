@@ -1,7 +1,19 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
+
+export interface CompanyUser {
+  id: string;
+  company_id: string;
+  user_id: string;
+  role: string;
+  created_at: string | null;
+  companies?: {
+    id: string;
+    nombre: string;
+  };
+}
 
 export function useCompanyUsers() {
   const { data: companyUsers, isLoading: isCompanyUsersLoading } = useQuery({
@@ -9,13 +21,17 @@ export function useCompanyUsers() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("company_users")
-        .select("*");
+        .select("*, companies:company_id(id, nombre)");
 
       if (error) {
-        toast.error("Error al cargar roles de empresa: " + error.message);
+        toast({
+          title: "Error",
+          description: "Error al cargar roles de empresa: " + error.message,
+          variant: "destructive",
+        });
         throw error;
       }
-      return data;
+      return data as CompanyUser[];
     },
   });
 

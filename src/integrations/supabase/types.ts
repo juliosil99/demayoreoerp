@@ -2018,6 +2018,10 @@ export type Database = {
         Args: { user_id: string; company_id: string }
         Returns: boolean
       }
+      can_access_company_user: {
+        Args: { user_id: string; company_id: string }
+        Returns: boolean
+      }
       find_invitation_by_token: {
         Args: { token_param: string }
         Returns: {
