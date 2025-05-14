@@ -147,6 +147,11 @@ export const useFetchSalesData = () => {
       if (!prevMarginError && prevMarginData) {
         const prevContributionMargin = prevMarginData.reduce((sum, sale) => sum + (sale.Profit || 0), 0);
         
+        // Calculate contribution margin change
+        changes.contributionMarginChange = prevContributionMargin > 0 
+          ? ((currentData.contributionMargin! - prevContributionMargin) / prevContributionMargin) * 100
+          : 0;
+        
         // Calculate previous margin percentage
         const prevMarginPercentage = prevRevenue > 0 
           ? (prevContributionMargin / prevRevenue) * 100 

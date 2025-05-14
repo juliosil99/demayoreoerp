@@ -4,8 +4,17 @@ import { ContributionMarginCard } from "@/components/dashboard/ContributionMargi
 
 interface ContributionMarginSectionProps {
   contributionMargin: number;
+  contributionMarginChange?: number;
 }
 
-export const ContributionMarginSection = ({ contributionMargin }: ContributionMarginSectionProps) => {
-  return <ContributionMarginCard contributionMargin={contributionMargin} />;
+export const ContributionMarginSection = ({ 
+  contributionMargin,
+  contributionMarginChange 
+}: ContributionMarginSectionProps) => {
+  return (
+    <ContributionMarginCard 
+      contributionMargin={contributionMargin} 
+      contributionMarginChange={contributionMarginChange}
+    />
+  );
 };

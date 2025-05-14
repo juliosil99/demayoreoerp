@@ -17,6 +17,7 @@ export const generateSampleData = (dateRange?: DateRange): DashboardMetrics => {
   return {
     // New contribution margin metrics
     contributionMargin,
+    contributionMarginChange: Math.round((Math.random() * 30) - 5), // New field for % change
     marginPercentage,
     marginPercentageChange: Math.round((Math.random() * 20) - 10),
     

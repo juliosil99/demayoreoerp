@@ -29,7 +29,10 @@ const Dashboard = () => {
       <DashboardHeader dateRange={dateRange} setDateRange={setDateRange} />
 
       {/* Contribution Margin Card */}
-      <ContributionMarginSection contributionMargin={metrics.contributionMargin} />
+      <ContributionMarginSection 
+        contributionMargin={metrics.contributionMargin} 
+        contributionMarginChange={metrics.contributionMarginChange}
+      />
 
       {/* Main Metrics Cards */}
       <MainMetricsSection metrics={metrics} />
