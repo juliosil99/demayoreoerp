@@ -51,8 +51,7 @@ export function useCompanyUsers() {
     },
     retry: 1,
     retryDelay: 1000,
-    // Continue even if there's an error
-    useErrorBoundary: false,
+    // Removed the useErrorBoundary option which was causing the error
   });
 
   return { 
