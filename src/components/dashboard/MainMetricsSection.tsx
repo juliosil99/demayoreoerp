@@ -34,12 +34,10 @@ export const MainMetricsSection = ({ metrics }: MainMetricsSectionProps) => {
         changeType={metrics.revenueChange > 0 ? "positive" : "negative"}
       />
       <MetricCard
-        title="Gasto Publicitario"
-        value={formatCurrency(metrics.adSpend || 0)}
-        icon={DollarSign}
-        change={metrics.adSpendChange}
-        changeLabel={metrics.adSpendChange > 0 ? "incremento" : "disminución"}
-        changeType={metrics.adSpendChange < 0 ? "positive" : "negative"}
+        title="Sales Velocity"
+        value="-"
+        icon={TrendingUp}
+        // We're removing the change indicators since we don't have data yet
       />
       <MetricCard
         title="MER"
