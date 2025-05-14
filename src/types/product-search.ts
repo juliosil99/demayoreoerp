@@ -20,6 +20,7 @@ export interface ProductSearchResult {
     file_path: string;
     receiver_name: string | null;
     receiver_rfc: string | null;
+    uuid: string | null;  // Added this field to match the actual data structure
   };
 }
 

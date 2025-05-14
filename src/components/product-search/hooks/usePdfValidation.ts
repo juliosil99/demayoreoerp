@@ -1,4 +1,5 @@
 
+
 import { ProductSearchResult } from "@/types/product-search";
 
 interface PdfStatus {
@@ -59,7 +60,7 @@ export const usePdfValidation = (product: ProductSearchResult) => {
     
     const missingFields: string[] = [];
     
-    // Check for identification fields
+    // Check for identification fields - now safely using uuid property
     if (!product.invoice.invoice_number && !product.invoice.serie && !product.invoice.uuid) {
       missingFields.push("identificadores de factura");
     }
@@ -89,3 +90,4 @@ export const usePdfValidation = (product: ProductSearchResult) => {
     fieldsStatus: hasCriticalFields(product)
   };
 };
+
