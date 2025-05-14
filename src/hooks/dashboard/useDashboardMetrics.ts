@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DateRange } from "react-day-picker";
@@ -11,6 +12,8 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     // Initialize with default values
     contributionMargin: 0,
+    marginPercentage: 0,
+    marginPercentageChange: 0,
     orderRevenue: 0,
     adSpend: 0,
     mer: 0,

@@ -55,6 +55,13 @@ export const useFetchSalesData = () => {
           realData.aov = realData.orderRevenue / realData.orders;
         }
 
+        // Calculate margin percentage if we have revenue
+        if (realData.orderRevenue > 0 && realData.contributionMargin !== undefined) {
+          realData.marginPercentage = (realData.contributionMargin / realData.orderRevenue) * 100;
+        } else {
+          realData.marginPercentage = 0;
+        }
+
         // 3. Calculate the previous period for comparison
         const comparisonData = await fetchComparisonData(dateRange, realData);
         Object.assign(realData, comparisonData);
@@ -96,6 +103,7 @@ export const useFetchSalesData = () => {
     const prevPeriodEnd = subDays(dateRange.from!, 1);
     const prevPeriodStart = subDays(prevPeriodEnd, daysDiff - 1);
     
+    // Fetch previous period revenue data
     const { data: prevRevenueData, error: prevRevenueError } = await supabase
       .from("Sales")
       .select("price, orderNumber")
@@ -128,6 +136,27 @@ export const useFetchSalesData = () => {
       changes.aovChange = prevAOV > 0 
         ? ((currentData.aov! - prevAOV) / prevAOV) * 100
         : 0;
+      
+      // Fetch previous contribution margin data for margin percentage calculation
+      const { data: prevMarginData, error: prevMarginError } = await supabase
+        .from("Sales")
+        .select("Profit")
+        .gte("date", prevPeriodStart.toISOString().split('T')[0])
+        .lte("date", prevPeriodEnd.toISOString().split('T')[0]);
+      
+      if (!prevMarginError && prevMarginData) {
+        const prevContributionMargin = prevMarginData.reduce((sum, sale) => sum + (sale.Profit || 0), 0);
+        
+        // Calculate previous margin percentage
+        const prevMarginPercentage = prevRevenue > 0 
+          ? (prevContributionMargin / prevRevenue) * 100 
+          : 0;
+        
+        // Calculate margin percentage change
+        changes.marginPercentageChange = prevMarginPercentage > 0 
+          ? ((currentData.marginPercentage! - prevMarginPercentage) / prevMarginPercentage) * 100
+          : 0;
+      }
     }
     
     return changes;

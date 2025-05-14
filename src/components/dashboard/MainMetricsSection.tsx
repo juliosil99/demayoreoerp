@@ -15,6 +15,9 @@ interface DashboardMetrics {
   merChange: number;
   aovChange: number;
   ordersChange: number;
+  contributionMargin: number;
+  marginPercentage: number;
+  marginPercentageChange: number;
   [key: string]: any;
 }
 
@@ -40,12 +43,12 @@ export const MainMetricsSection = ({ metrics }: MainMetricsSectionProps) => {
         // We're removing the change indicators since we don't have data yet
       />
       <MetricCard
-        title="MER"
-        value={metrics.mer?.toFixed(2) || "0"}
+        title="Margen porcentual"
+        value={`${(metrics.marginPercentage || 0).toFixed(2)}%`}
         icon={TrendingUp}
-        change={metrics.merChange}
-        changeLabel={metrics.merChange > 0 ? "incremento" : "disminución"}
-        changeType={metrics.merChange > 0 ? "positive" : "negative"}
+        change={metrics.marginPercentageChange}
+        changeLabel={metrics.marginPercentageChange > 0 ? "incremento" : "disminución"}
+        changeType={metrics.marginPercentageChange > 0 ? "positive" : "negative"}
       />
       <MetricCard
         title="Valor Promedio (AOV)"
