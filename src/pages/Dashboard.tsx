@@ -8,7 +8,7 @@ import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
 import { ContributionMarginSection } from "@/components/dashboard/sections/ContributionMarginSection";
 import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
 import { ChartSection } from "@/components/dashboard/ChartSection";
-import { MetricsGroupsSection } from "@/components/dashboard/MetricsGroupsSection";
+import { ChannelMetricsSection } from "@/components/dashboard/sections/ChannelMetricsSection";
 import { StateDistributionSection } from "@/components/dashboard/sections/StateDistributionSection";
 import { ChannelDistributionSection } from "@/components/dashboard/sections/ChannelDistributionSection";
 
@@ -47,8 +47,8 @@ const Dashboard = () => {
         <ChannelDistributionSection dateRange={dateRange} />
       </div>
       
-      {/* Metrics Groups */}
-      <MetricsGroupsSection metrics={metrics} />
+      {/* Channel Metrics Section (replacing MetricsGroupsSection) */}
+      <ChannelMetricsSection channelMetrics={metrics.channelMetrics || []} />
     </div>
   );
 };

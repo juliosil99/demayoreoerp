@@ -12,7 +12,7 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     // Initialize with default values
     contributionMargin: 0,
-    contributionMarginChange: 0, // Added this missing property
+    contributionMarginChange: 0,
     marginPercentage: 0,
     marginPercentageChange: 0,
     orderRevenue: 0,
@@ -26,6 +26,7 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     aovChange: 0,
     ordersChange: 0,
     chartData: [],
+    channelMetrics: [], // New field for channel metrics
     returningRevenue: 0,
     returningOrders: 0,
     returningAOV: 0,

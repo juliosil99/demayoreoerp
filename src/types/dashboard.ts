@@ -1,13 +1,28 @@
+
 export interface ChartDataPoint {
   date: string;
   sales: number;
   target?: number;
 }
 
+export interface ChannelMetrics {
+  name: string;
+  revenue: number;
+  orders: number;
+  aov: number;
+  contributionMargin: number;
+  marginPercentage: number;
+  revenueChange: number;
+  ordersChange: number;
+  aovChange: number;
+  contributionMarginChange: number;
+  marginPercentageChange: number;
+}
+
 export interface DashboardMetrics {
   // New contribution margin metrics
   contributionMargin: number;
-  contributionMarginChange: number; // Added for percentage change
+  contributionMarginChange: number;
   marginPercentage: number;
   marginPercentageChange: number;
 
@@ -27,6 +42,9 @@ export interface DashboardMetrics {
   
   // Chart data
   chartData: ChartDataPoint[];
+  
+  // Channel-specific metrics
+  channelMetrics: ChannelMetrics[];
   
   // Returning customer metrics
   returningRevenue: number;

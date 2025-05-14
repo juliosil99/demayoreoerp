@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { differenceInDays, subDays, format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
-import { DashboardMetrics, ChartDataPoint } from "@/types/dashboard";
+import { DashboardMetrics, ChartDataPoint, ChannelMetrics } from "@/types/dashboard";
 
 export const useFetchSalesData = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -70,6 +70,12 @@ export const useFetchSalesData = () => {
         const chartData = await fetchChartData(dateRange);
         if (chartData) {
           realData.chartData = chartData;
+        }
+
+        // 5. Fetch channel-specific metrics
+        const channelMetrics = await fetchChannelMetrics(dateRange);
+        if (channelMetrics) {
+          realData.channelMetrics = channelMetrics;
         }
       }
 
@@ -138,6 +144,138 @@ export const useFetchSalesData = () => {
       return chartData.sort((a, b) => a.date.localeCompare(b.date));
     } catch (error) {
       console.error("Error in fetchChartData:", error);
+      return null;
+    }
+  };
+
+  const fetchChannelMetrics = async (dateRange: DateRange): Promise<ChannelMetrics[] | null> => {
+    try {
+      // Fetch current period data by channel
+      const { data: currentPeriodData, error: currentError } = await supabase
+        .from("Sales")
+        .select("Channel, price, orderNumber, Profit")
+        .gte("date", dateRange.from!.toISOString().split('T')[0])
+        .lte("date", dateRange.to!.toISOString().split('T')[0]);
+        
+      if (currentError) {
+        console.error("Error fetching channel metrics:", currentError);
+        return null;
+      }
+
+      if (!currentPeriodData || currentPeriodData.length === 0) {
+        return [];
+      }
+
+      // Group by channel
+      const channelMap = new Map<string, { 
+        revenue: number, 
+        orders: Set<string>, 
+        profit: number 
+      }>();
+
+      currentPeriodData.forEach(sale => {
+        if (!sale.Channel) return;
+
+        if (!channelMap.has(sale.Channel)) {
+          channelMap.set(sale.Channel, {
+            revenue: 0,
+            orders: new Set<string>(),
+            profit: 0
+          });
+        }
+
+        const channelData = channelMap.get(sale.Channel)!;
+        channelData.revenue += (sale.price || 0);
+        if (sale.orderNumber) {
+          channelData.orders.add(sale.orderNumber);
+        }
+        channelData.profit += (sale.Profit || 0);
+      });
+
+      // Calculate previous period dates
+      const daysDiff = differenceInDays(dateRange.to!, dateRange.from!) + 1;
+      const prevPeriodEnd = subDays(dateRange.from!, 1);
+      const prevPeriodStart = subDays(prevPeriodEnd, daysDiff - 1);
+
+      // Fetch previous period data by channel
+      const { data: prevPeriodData, error: prevError } = await supabase
+        .from("Sales")
+        .select("Channel, price, orderNumber, Profit")
+        .gte("date", prevPeriodStart.toISOString().split('T')[0])
+        .lte("date", prevPeriodEnd.toISOString().split('T')[0]);
+        
+      if (prevError) {
+        console.error("Error fetching previous period channel metrics:", prevError);
+      }
+
+      // Process previous period data for comparison
+      const prevChannelMap = new Map<string, { 
+        revenue: number, 
+        orders: Set<string>, 
+        profit: number 
+      }>();
+
+      if (prevPeriodData && prevPeriodData.length > 0) {
+        prevPeriodData.forEach(sale => {
+          if (!sale.Channel) return;
+
+          if (!prevChannelMap.has(sale.Channel)) {
+            prevChannelMap.set(sale.Channel, {
+              revenue: 0,
+              orders: new Set<string>(),
+              profit: 0
+            });
+          }
+
+          const channelData = prevChannelMap.get(sale.Channel)!;
+          channelData.revenue += (sale.price || 0);
+          if (sale.orderNumber) {
+            channelData.orders.add(sale.orderNumber);
+          }
+          channelData.profit += (sale.Profit || 0);
+        });
+      }
+
+      // Convert map to array and calculate metrics
+      const channelMetrics: ChannelMetrics[] = Array.from(channelMap.entries()).map(([channel, data]) => {
+        const orderCount = data.orders.size;
+        const aov = orderCount > 0 ? data.revenue / orderCount : 0;
+        const marginPercentage = data.revenue > 0 ? (data.profit / data.revenue) * 100 : 0;
+
+        // Get previous period data for this channel
+        const prevData = prevChannelMap.get(channel);
+        const prevOrderCount = prevData?.orders.size || 0;
+        const prevRevenue = prevData?.revenue || 0;
+        const prevProfit = prevData?.profit || 0;
+        const prevAOV = prevOrderCount > 0 ? prevRevenue / prevOrderCount : 0;
+        const prevMarginPercentage = prevRevenue > 0 ? (prevProfit / prevRevenue) * 100 : 0;
+
+        // Calculate percentage changes
+        const revenueChange = prevRevenue > 0 ? ((data.revenue - prevRevenue) / prevRevenue) * 100 : 0;
+        const ordersChange = prevOrderCount > 0 ? ((orderCount - prevOrderCount) / prevOrderCount) * 100 : 0;
+        const aovChange = prevAOV > 0 ? ((aov - prevAOV) / prevAOV) * 100 : 0;
+        const contributionMarginChange = prevProfit > 0 ? ((data.profit - prevProfit) / prevProfit) * 100 : 0;
+        const marginPercentageChange = prevMarginPercentage > 0 ? ((marginPercentage - prevMarginPercentage) / prevMarginPercentage) * 100 : 0;
+
+        return {
+          name: channel,
+          revenue: data.revenue,
+          orders: orderCount,
+          aov,
+          contributionMargin: data.profit,
+          marginPercentage,
+          revenueChange,
+          ordersChange,
+          aovChange,
+          contributionMarginChange,
+          marginPercentageChange
+        };
+      });
+
+      // Sort channels by revenue in descending order
+      return channelMetrics.sort((a, b) => b.revenue - a.revenue);
+    } catch (error) {
+      console.error("Error in fetchChannelMetrics:", error);
       return null;
     }
   };
