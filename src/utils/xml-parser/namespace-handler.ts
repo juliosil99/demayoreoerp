@@ -3,6 +3,8 @@
  * Functions for handling XML namespaces
  */
 
+import { getElementWithAnyNamespace, getAttribute } from './xml-helpers';
+
 // Extract namespaces from the XML document
 export const extractNamespaces = (xmlDoc: Document): Record<string, string> => {
   const namespaces: Record<string, string> = {};
@@ -55,10 +57,7 @@ export const detectDocumentType = (xmlDoc: Document, namespaces: Record<string, 
     
     if (!comprobante) return 'unknown';
     
-    // Import helper function to get attributes and elements
-    const { getElementWithAnyNamespace, getAttribute } = require('./xml-helpers');
-    
-    // Check for tipo de comprobante attribute
+    // Get attributes and elements using imported helper functions
     const tipoComprobante = getAttribute(comprobante, "TipoDeComprobante");
     
     // Check for complementary nodes that indicate special document types
