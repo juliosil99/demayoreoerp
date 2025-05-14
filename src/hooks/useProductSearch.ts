@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +21,7 @@ export const useProductSearch = () => {
       if (!searchQuery) return [];
 
       try {
+        console.log(`Searching for products with term: "${searchQuery}"`);
         const query = supabase
           .from("invoice_products")
           .select(`
@@ -29,26 +31,34 @@ export const useProductSearch = () => {
               invoice_number,
               serie,
               invoice_date,
+              stamp_date,
               issuer_name,
               issuer_rfc,
               file_path,
+              filename,
               receiver_name,
-              receiver_rfc
+              receiver_rfc,
+              uuid
             )
           `)
           .ilike("description", `%${searchQuery}%`);
 
         // Add date range filter if applicable
         if (startDate) {
-          query.gte("invoices.invoice_date", startDate.toISOString().split("T")[0]);
+          const startDateStr = startDate.toISOString().split("T")[0];
+          console.log(`Adding start date filter: ${startDateStr}`);
+          query.gte("invoices.invoice_date", startDateStr);
         }
         if (endDate) {
-          query.lte("invoices.invoice_date", endDate.toISOString().split("T")[0]);
+          const endDateStr = endDate.toISOString().split("T")[0];
+          console.log(`Adding end date filter: ${endDateStr}`);
+          query.lte("invoices.invoice_date", endDateStr);
         }
 
         const { data, error } = await query;
 
         if (error) {
+          console.error("Database error searching products:", error);
           throw error;
         }
 
@@ -87,11 +97,17 @@ export const useProductSearch = () => {
         .eq("id", invoiceId)
         .single();
 
-      if (error || !invoice?.file_path) {
-        console.error("XML file path not found for invoice:", invoiceId, error);
-        throw new Error("No se encontró el archivo XML de la factura");
+      if (error) {
+        console.error("Error fetching invoice data:", error);
+        throw new Error("No se encontró la información de la factura");
+      }
+      
+      if (!invoice?.file_path) {
+        console.error("XML file path not found for invoice:", invoiceId);
+        throw new Error("No se encontró la ruta del archivo XML");
       }
 
+      console.log("Downloading file:", invoice.file_path);
       await downloadInvoiceFile(invoice.file_path, invoice.filename);
 
       toast({
@@ -102,7 +118,7 @@ export const useProductSearch = () => {
       console.error("Error downloading XML:", error);
       toast({
         title: "Error",
-        description: "No se pudo descargar el archivo XML.",
+        description: error instanceof Error ? error.message : "No se pudo descargar el archivo XML.",
         variant: "destructive",
       });
     }
@@ -112,30 +128,26 @@ export const useProductSearch = () => {
     try {
       console.log(`Initiating PDF generation for invoice ID: ${invoiceId}, RFC: ${issuerRfc}`);
       
-      if (!invoiceId || !issuerRfc) {
-        console.error("Missing required data:", { invoiceId, issuerRfc });
-        throw new Error("Faltan datos necesarios para generar el PDF");
+      if (!invoiceId) {
+        console.error("Missing invoice ID for PDF generation");
+        throw new Error("Falta el ID de la factura para generar el PDF");
       }
       
-      // Double-check the invoice exists and has minimum required fields
+      // Verify the invoice exists before attempting to generate PDF
       const { data: invoice, error: invoiceError } = await supabase
         .from("invoices")
-        .select("id, invoice_number, serie, invoice_date, uuid")
+        .select("id")
         .eq("id", invoiceId)
-        .single();
+        .maybeSingle();
         
-      if (invoiceError) {
+      if (invoiceError || !invoice) {
         console.error("Error verifying invoice existence:", invoiceError);
         throw new Error("No se pudo verificar la existencia de la factura");
       }
       
-      console.log("Invoice verification complete, proceeding with PDF generation:", {
-        hasNumber: !!invoice.invoice_number,
-        hasSerie: !!invoice.serie,
-        hasDate: !!invoice.invoice_date,
-        hasUuid: !!invoice.uuid
-      });
+      console.log("Invoice verified, proceeding with PDF generation");
       
+      // Generate the PDF with the improved generator function
       const result = await generateInvoicePdf(invoiceId, issuerRfc);
       
       if (!result.success) {
