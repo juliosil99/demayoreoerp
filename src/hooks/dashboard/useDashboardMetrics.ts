@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
-import { format, subDays } from "date-fns";
+import { format, subDays, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { DateRange } from "react-day-picker";
 import { DashboardMetrics, ChartDataPoint } from "@/types/dashboard";
@@ -68,9 +68,13 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
           return;
         }
 
-        // Fetch actual contribution margin data from Sales table
-        let contributionMargin = 0;
+        // Default to sample data
+        let realData: Partial<DashboardMetrics> = {};
+
         if (dateRange?.from && dateRange?.to) {
+          // Calculate the current period data
+          
+          // 1. Fetch contribution margin data
           const { data: salesData, error: salesError } = await supabase
             .from("Sales")
             .select("Profit")
@@ -78,21 +82,74 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
             .lte("date", dateRange.to.toISOString().split('T')[0]);
           
           if (salesError) {
-            console.error("Error fetching sales data:", salesError);
-            toast.error("Error al cargar datos de ventas");
+            console.error("Error fetching sales data for profits:", salesError);
+            toast.error("Error al cargar datos de ganancias");
           } else if (salesData) {
             // Calculate contribution margin by summing all Profit values
-            contributionMargin = salesData.reduce((sum, sale) => sum + (sale.Profit || 0), 0);
+            realData.contributionMargin = salesData.reduce((sum, sale) => sum + (sale.Profit || 0), 0);
+          }
+
+          // 2. Calculate Order Revenue from "price" column
+          const { data: revenueData, error: revenueError } = await supabase
+            .from("Sales")
+            .select("price")
+            .gte("date", dateRange.from.toISOString().split('T')[0])
+            .lte("date", dateRange.to.toISOString().split('T')[0]);
+
+          if (revenueError) {
+            console.error("Error fetching sales data for revenue:", revenueError);
+            toast.error("Error al cargar datos de ingresos");
+          } else if (revenueData) {
+            // Sum the price values
+            realData.orderRevenue = revenueData.reduce((sum, sale) => sum + (sale.price || 0), 0);
+            
+            // Count orders
+            realData.orders = revenueData.length;
+            
+            // Calculate Average Order Value if we have orders
+            if (realData.orders > 0) {
+              realData.aov = realData.orderRevenue / realData.orders;
+            }
+
+            // 3. Calculate the previous period for comparison
+            const daysDiff = differenceInDays(dateRange.to, dateRange.from) + 1;
+            const prevPeriodEnd = subDays(dateRange.from, 1);
+            const prevPeriodStart = subDays(prevPeriodEnd, daysDiff - 1);
+            
+            const { data: prevRevenueData, error: prevRevenueError } = await supabase
+              .from("Sales")
+              .select("price")
+              .gte("date", prevPeriodStart.toISOString().split('T')[0])
+              .lte("date", prevPeriodEnd.toISOString().split('T')[0]);
+            
+            if (!prevRevenueError && prevRevenueData) {
+              const prevRevenue = prevRevenueData.reduce((sum, sale) => sum + (sale.price || 0), 0);
+              const prevOrders = prevRevenueData.length;
+              const prevAOV = prevOrders > 0 ? prevRevenue / prevOrders : 0;
+              
+              // Calculate percentage changes
+              realData.revenueChange = prevRevenue > 0 
+                ? ((realData.orderRevenue - prevRevenue) / prevRevenue) * 100
+                : 0;
+                
+              realData.ordersChange = prevOrders > 0 
+                ? ((realData.orders - prevOrders) / prevOrders) * 100
+                : 0;
+                
+              realData.aovChange = prevAOV > 0 
+                ? ((realData.aov - prevAOV) / prevAOV) * 100
+                : 0;
+            }
           }
         }
 
-        // For now, let's generate remaining sample data
+        // Generate sample data for remaining metrics
         const sampleData = generateSampleData(dateRange);
         
-        // Merge actual contribution margin with sample data
+        // Merge real data with sample data, prioritizing real data
         setMetrics({
           ...sampleData,
-          contributionMargin
+          ...realData
         });
         
       } catch (error) {
