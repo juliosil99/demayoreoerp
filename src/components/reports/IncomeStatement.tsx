@@ -22,15 +22,10 @@ export const IncomeStatement: React.FC<IncomeStatementProps> = ({
   periodType,
   compareWithPreviousYear = false
 }) => {
-  // For now, we'll use dummy data while implementing the real report functionality
-  const [year, setYear] = React.useState<number>(2025);
-  const [period, setPeriod] = React.useState<number>(5); // May for 2025
-
   // Fetch the report data
   const { reportData, isLoading, error } = useFinancialReports('income_statement', {
+    periodId,
     periodType,
-    year,
-    period,
     compareWithPreviousYear
   });
 
@@ -58,25 +53,57 @@ export const IncomeStatement: React.FC<IncomeStatementProps> = ({
     );
   }
 
-  // For demo purposes, create some sample data
-  const dummyReportData = {
-    revenue: {
-      'Ventas': 150000,
-      'Servicios': 35000,
-      'Total Ingresos': 185000
-    },
-    expenses: {
-      'Costo de Ventas': 75000,
-      'Gastos Operativos': 45000,
-      'Gastos Administrativos': 20000,
-      'Total Gastos': 140000
-    },
-    summary: {
-      'Utilidad Bruta': 110000,
-      'Utilidad Operativa': 65000,
-      'Utilidad Neta': 45000
+  // Structure data for display
+  const prepareData = () => {
+    if (!reportData || !reportData.currentPeriod) {
+      return {
+        revenue: {
+          'Ventas': 0,
+          'Servicios': 0,
+          'Total Ingresos': 0
+        },
+        expenses: {
+          'Costo de Ventas': 0,
+          'Gastos Operativos': 0,
+          'Gastos Administrativos': 0,
+          'Total Gastos': 0
+        },
+        summary: {
+          'Utilidad Bruta': 0,
+          'Utilidad Operativa': 0,
+          'Utilidad Neta': 0
+        }
+      };
     }
+
+    const currentPeriodData = reportData.currentPeriod.data;
+    
+    // Extract revenue accounts
+    const revenue = {
+      'Ventas': currentPeriodData['revenue'] || 0,
+      'Servicios': currentPeriodData['service_revenue'] || 0
+    };
+    revenue['Total Ingresos'] = Object.values(revenue).reduce((sum, val) => sum + Number(val), 0);
+
+    // Extract expense accounts
+    const expenses = {
+      'Costo de Ventas': currentPeriodData['cost_of_sales'] || 0,
+      'Gastos Operativos': currentPeriodData['operating_expenses'] || 0,
+      'Gastos Administrativos': currentPeriodData['administrative_expenses'] || 0
+    };
+    expenses['Total Gastos'] = Object.values(expenses).reduce((sum, val) => sum + Number(val), 0);
+
+    // Calculate summary figures
+    const summary = {
+      'Utilidad Bruta': revenue['Total Ingresos'] - expenses['Costo de Ventas'],
+      'Utilidad Operativa': revenue['Total Ingresos'] - expenses['Costo de Ventas'] - expenses['Gastos Operativos'],
+      'Utilidad Neta': revenue['Total Ingresos'] - expenses['Total Gastos']
+    };
+
+    return { revenue, expenses, summary };
   };
+
+  const reportDataFormatted = prepareData();
 
   // Helper function to format currency
   const formatCurrency = (amount: number) => {
@@ -109,6 +136,53 @@ export const IncomeStatement: React.FC<IncomeStatementProps> = ({
     alert("Export functionality will be implemented soon");
   };
 
+  // Function to get previous period value if comparing
+  const getPreviousValue = (section: string, item: string) => {
+    if (!reportData?.previousPeriod) return 0;
+    
+    const prevData = reportData.previousPeriod.data;
+    let value = 0;
+    
+    if (section === 'revenue') {
+      if (item === 'Total Ingresos') {
+        value = (prevData['revenue'] || 0) + (prevData['service_revenue'] || 0);
+      } else if (item === 'Ventas') {
+        value = prevData['revenue'] || 0;
+      } else if (item === 'Servicios') {
+        value = prevData['service_revenue'] || 0;
+      }
+    } else if (section === 'expenses') {
+      if (item === 'Total Gastos') {
+        value = (prevData['cost_of_sales'] || 0) + 
+                (prevData['operating_expenses'] || 0) + 
+                (prevData['administrative_expenses'] || 0);
+      } else if (item === 'Costo de Ventas') {
+        value = prevData['cost_of_sales'] || 0;
+      } else if (item === 'Gastos Operativos') {
+        value = prevData['operating_expenses'] || 0;
+      } else if (item === 'Gastos Administrativos') {
+        value = prevData['administrative_expenses'] || 0;
+      }
+    } else if (section === 'summary') {
+      // Recalculate summary values for previous period
+      const prevRevenue = (prevData['revenue'] || 0) + (prevData['service_revenue'] || 0);
+      const prevCostOfSales = prevData['cost_of_sales'] || 0;
+      const prevOpEx = prevData['operating_expenses'] || 0;
+      const prevAdminEx = prevData['administrative_expenses'] || 0;
+      const prevTotalExpenses = prevCostOfSales + prevOpEx + prevAdminEx;
+      
+      if (item === 'Utilidad Bruta') {
+        value = prevRevenue - prevCostOfSales;
+      } else if (item === 'Utilidad Operativa') {
+        value = prevRevenue - prevCostOfSales - prevOpEx;
+      } else if (item === 'Utilidad Neta') {
+        value = prevRevenue - prevTotalExpenses;
+      }
+    }
+    
+    return value;
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -126,10 +200,10 @@ export const IncomeStatement: React.FC<IncomeStatementProps> = ({
         <TableHeader>
           <TableRow>
             <TableHead className="w-[40%]">Concepto</TableHead>
-            <TableHead className="text-right">{periodType === 'month' ? 'Mayo 2025' : 'Actual'}</TableHead>
+            <TableHead className="text-right">Actual</TableHead>
             {compareWithPreviousYear && (
               <>
-                <TableHead className="text-right">{periodType === 'month' ? 'Mayo 2024' : 'Año Anterior'}</TableHead>
+                <TableHead className="text-right">Año Anterior</TableHead>
                 <TableHead className="text-right">Variación</TableHead>
               </>
             )}
@@ -143,26 +217,34 @@ export const IncomeStatement: React.FC<IncomeStatementProps> = ({
             </TableCell>
           </TableRow>
           
-          {Object.entries(dummyReportData.revenue).map(([item, amount]) => (
-            <TableRow key={item}>
-              <TableCell className={item.includes('Total') ? "font-medium" : "pl-6"}>
-                {item}
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(amount)}
-              </TableCell>
-              {compareWithPreviousYear && (
-                <>
-                  <TableCell className="text-right">
-                    {formatCurrency(amount * 0.85)} {/* Dummy previous year data */}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span className="text-green-600">+17.65%</span> {/* Dummy change */}
-                  </TableCell>
-                </>
-              )}
-            </TableRow>
-          ))}
+          {Object.entries(reportDataFormatted.revenue).map(([item, amount]) => {
+            const previousAmount = compareWithPreviousYear ? getPreviousValue('revenue', item) : undefined;
+            const changePercent = compareWithPreviousYear ? calculateChange(Number(amount), previousAmount) : null;
+            const isPositiveChange = previousAmount !== undefined && Number(amount) > previousAmount;
+            
+            return (
+              <TableRow key={item}>
+                <TableCell className={item.includes('Total') ? "font-medium" : "pl-6"}>
+                  {item}
+                </TableCell>
+                <TableCell className="text-right">
+                  {formatCurrency(Number(amount))}
+                </TableCell>
+                {compareWithPreviousYear && (
+                  <>
+                    <TableCell className="text-right">
+                      {formatCurrency(previousAmount!)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={isPositiveChange ? "text-green-600" : "text-red-600"}>
+                        {isPositiveChange ? "+" : ""}{changePercent}
+                      </span>
+                    </TableCell>
+                  </>
+                )}
+              </TableRow>
+            );
+          })}
 
           {/* Expenses Section */}
           <TableRow className="bg-muted/50">
@@ -171,26 +253,35 @@ export const IncomeStatement: React.FC<IncomeStatementProps> = ({
             </TableCell>
           </TableRow>
           
-          {Object.entries(dummyReportData.expenses).map(([item, amount]) => (
-            <TableRow key={item}>
-              <TableCell className={item.includes('Total') ? "font-medium" : "pl-6"}>
-                {item}
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(amount)}
-              </TableCell>
-              {compareWithPreviousYear && (
-                <>
-                  <TableCell className="text-right">
-                    {formatCurrency(amount * 0.9)} {/* Dummy previous year data */}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span className="text-red-600">+11.11%</span> {/* Dummy change */}
-                  </TableCell>
-                </>
-              )}
-            </TableRow>
-          ))}
+          {Object.entries(reportDataFormatted.expenses).map(([item, amount]) => {
+            const previousAmount = compareWithPreviousYear ? getPreviousValue('expenses', item) : undefined;
+            const changePercent = compareWithPreviousYear ? calculateChange(Number(amount), previousAmount) : null;
+            // For expenses, higher values are negative
+            const isNegativeChange = previousAmount !== undefined && Number(amount) > previousAmount;
+            
+            return (
+              <TableRow key={item}>
+                <TableCell className={item.includes('Total') ? "font-medium" : "pl-6"}>
+                  {item}
+                </TableCell>
+                <TableCell className="text-right">
+                  {formatCurrency(Number(amount))}
+                </TableCell>
+                {compareWithPreviousYear && (
+                  <>
+                    <TableCell className="text-right">
+                      {formatCurrency(previousAmount!)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={isNegativeChange ? "text-red-600" : "text-green-600"}>
+                        {isNegativeChange ? "+" : ""}{changePercent}
+                      </span>
+                    </TableCell>
+                  </>
+                )}
+              </TableRow>
+            );
+          })}
 
           {/* Summary Section */}
           <TableRow className="bg-muted/50">
@@ -199,30 +290,43 @@ export const IncomeStatement: React.FC<IncomeStatementProps> = ({
             </TableCell>
           </TableRow>
           
-          {Object.entries(dummyReportData.summary).map(([item, amount]) => (
-            <TableRow key={item}>
-              <TableCell className="font-medium">{item}</TableCell>
-              <TableCell className="text-right font-medium">
-                {formatCurrency(amount)}
-              </TableCell>
-              {compareWithPreviousYear && (
-                <>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(amount * 0.8)} {/* Dummy previous year data */}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span className="text-green-600">+25.00%</span> {/* Dummy change */}
-                  </TableCell>
-                </>
-              )}
-            </TableRow>
-          ))}
+          {Object.entries(reportDataFormatted.summary).map(([item, amount]) => {
+            const previousAmount = compareWithPreviousYear ? getPreviousValue('summary', item) : undefined;
+            const changePercent = compareWithPreviousYear ? calculateChange(Number(amount), previousAmount) : null;
+            const isPositiveChange = previousAmount !== undefined && Number(amount) > previousAmount;
+            
+            return (
+              <TableRow key={item}>
+                <TableCell className="font-medium">{item}</TableCell>
+                <TableCell className="text-right font-medium">
+                  {formatCurrency(Number(amount))}
+                </TableCell>
+                {compareWithPreviousYear && (
+                  <>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(previousAmount!)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={isPositiveChange ? "text-green-600" : "text-red-600"}>
+                        {isPositiveChange ? "+" : ""}{changePercent}
+                      </span>
+                    </TableCell>
+                  </>
+                )}
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
       
-      <div className="mt-4 text-sm text-gray-500">
-        <p>Nota: Este reporte es preliminar. Los datos aquí mostrados son de muestra mientras implementamos la funcionalidad completa.</p>
-      </div>
+      {!reportData || Object.keys(reportData.currentPeriod?.data || {}).length === 0 ? (
+        <div className="mt-4 border border-yellow-200 bg-yellow-50 p-4 rounded-md">
+          <h3 className="text-sm font-medium text-yellow-800">No hay datos de cuentas</h3>
+          <p className="text-sm text-yellow-700 mt-1">
+            Para ver reportes financieros, necesita agregar saldos a sus cuentas para este período.
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 };

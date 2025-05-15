@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { FinancialReportOptions, ReportData } from "@/types/financial-reporting";
-import { format, subYears, parseISO } from "date-fns";
 
 export function useFinancialReports(
   reportType: 'income_statement' | 'balance_sheet' | 'cash_flow',
@@ -14,7 +13,7 @@ export function useFinancialReports(
 
   // Fetch report data
   const { data: reportData, isLoading, error } = useQuery({
-    queryKey: ['financial-report', reportType, user?.id, periodType, year, period, periodId],
+    queryKey: ['financial-report', reportType, user?.id, periodType, year, period, periodId, compareWithPreviousYear],
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
@@ -70,8 +69,6 @@ export function useFinancialReports(
           .eq('user_id', user.id)
           .eq('statement_type', reportType)
           .maybeSingle(); // Use maybeSingle to handle cases where no config exists yet
-
-        // If no config exists, we'll use a default one later
 
         // Transform balances into the report format
         const currentPeriodData: Record<string, number> = {};

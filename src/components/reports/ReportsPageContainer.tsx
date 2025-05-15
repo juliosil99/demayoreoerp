@@ -8,6 +8,8 @@ import { FinancialPeriodType } from "@/types/financial-reporting";
 import { PeriodControls } from "./components/PeriodControls";
 import { PeriodInfo } from "./components/PeriodInfo";
 import { ReportTabs } from "./components/ReportTabs";
+import { AccountBalanceEditor } from "./AccountBalanceEditor";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 
 export function ReportsPageContainer() {
@@ -18,6 +20,9 @@ export function ReportsPageContainer() {
   const [selectedPeriod, setSelectedPeriod] = React.useState<string | null>(null);
   const [compareWithPreviousYear, setCompareWithPreviousYear] = React.useState(false);
   
+  // State for account balance editor
+  const [isBalanceEditorOpen, setIsBalanceEditorOpen] = React.useState(false);
+  
   // Get financial periods
   const { 
     periods, 
@@ -25,7 +30,8 @@ export function ReportsPageContainer() {
     error: periodsError,
     initializePeriods,
     closePeriod,
-    getCurrentPeriod
+    getCurrentPeriod,
+    initializeAccountsForPeriod
   } = useFinancialPeriods(periodType);
   
   // Initialize periods if none exist
@@ -96,6 +102,25 @@ export function ReportsPageContainer() {
     setCompareWithPreviousYear(checked);
   };
   
+  // Handle opening balance editor
+  const handleOpenBalanceEditor = () => {
+    if (!selectedPeriod) {
+      toast({
+        title: "Error",
+        description: "Seleccione un período primero",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Initialize accounts for the selected period if they don't exist yet
+    if (currentPeriod && !currentPeriod.is_closed) {
+      initializeAccountsForPeriod(selectedPeriod);
+    }
+    
+    setIsBalanceEditorOpen(true);
+  };
+  
   // Show error if any
   if (periodsError) {
     return (
@@ -131,7 +156,20 @@ export function ReportsPageContainer() {
       />
       
       {/* Current Period Info */}
-      {currentPeriod && <PeriodInfo period={currentPeriod} />}
+      {currentPeriod && (
+        <div className="flex justify-between items-center">
+          <PeriodInfo period={currentPeriod} />
+          <Button 
+            onClick={handleOpenBalanceEditor}
+            disabled={!selectedPeriod || (currentPeriod && currentPeriod.is_closed)}
+            variant="outline"
+          >
+            {currentPeriod && currentPeriod.is_closed 
+              ? "Período cerrado" 
+              : "Editar Saldos de Cuentas"}
+          </Button>
+        </div>
+      )}
       
       {/* Report Tabs */}
       <ReportTabs
@@ -140,6 +178,14 @@ export function ReportsPageContainer() {
         periodType={periodType}
         compareWithPreviousYear={compareWithPreviousYear}
         periodsExist={!!periods && periods.length > 0}
+      />
+      
+      {/* Account Balance Editor */}
+      <AccountBalanceEditor 
+        isOpen={isBalanceEditorOpen}
+        onClose={() => setIsBalanceEditorOpen(false)}
+        periodId={selectedPeriod || ''}
+        period={currentPeriod}
       />
     </div>
   );

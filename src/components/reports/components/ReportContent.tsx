@@ -96,6 +96,7 @@ export function ReportContent({
           {periodId ? (
             <ChannelIncomeStatement 
               userId={userId} 
+              periodId={periodId}
             />
           ) : renderEmptyState()}
         </CardContent>

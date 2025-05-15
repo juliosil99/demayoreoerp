@@ -77,6 +77,19 @@ export function useFinancialPeriods(periodType: FinancialPeriodType) {
           if (error) throw error;
         }
         
+        // Initialize base chart of accounts if needed
+        const { count, error: countError } = await supabase
+          .from('chart_of_accounts')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+          
+        if (countError) throw countError;
+        
+        if (count === 0) {
+          // Initialize basic chart of accounts
+          await supabase.rpc('initialize_base_accounts', { p_user_id: user.id });
+        }
+        
         return true;
       } catch (error) {
         console.error('Error initializing periods:', error);
@@ -95,7 +108,90 @@ export function useFinancialPeriods(periodType: FinancialPeriodType) {
     onError: (error) => {
       toast({ 
         title: "Error", 
-        description: `No se pudieron crear los períodos: ${error.message}`,
+        description: `No se pudieron crear los períodos: ${(error as Error).message}`,
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Initialize account balances for a specific period
+  const { mutateAsync: initializeAccountsForPeriod } = useMutation({
+    mutationFn: async (periodId: string) => {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      try {
+        // Check if accounts already exist for this period
+        const { count, error: countError } = await supabase
+          .from('account_balances')
+          .select('*', { count: 'exact', head: true })
+          .eq('period_id', periodId)
+          .eq('user_id', user.id);
+          
+        if (countError) throw countError;
+        
+        if (count && count > 0) {
+          // Accounts already exist for this period
+          return { created: false, message: "Balances already exist" };
+        }
+        
+        // Get all accounts for the user
+        const { data: accounts, error: accountsError } = await supabase
+          .from('chart_of_accounts')
+          .select('id')
+          .eq('user_id', user.id);
+          
+        if (accountsError) throw accountsError;
+        
+        if (!accounts || accounts.length === 0) {
+          // Create base accounts first
+          await supabase.rpc('initialize_base_accounts', { p_user_id: user.id });
+          
+          // Get the accounts again
+          const { data: newAccounts, error: newAccountsError } = await supabase
+            .from('chart_of_accounts')
+            .select('id')
+            .eq('user_id', user.id);
+            
+          if (newAccountsError) throw newAccountsError;
+          
+          if (!newAccounts || newAccounts.length === 0) {
+            throw new Error('No se pudieron crear las cuentas base');
+          }
+          
+          accounts.push(...newAccounts);
+        }
+        
+        // Create balance entries with zero values for all accounts
+        const balanceEntries = accounts.map(account => ({
+          account_id: account.id,
+          period_id: periodId,
+          balance: 0,
+          user_id: user.id
+        }));
+        
+        const { error: insertError } = await supabase
+          .from('account_balances')
+          .insert(balanceEntries);
+          
+        if (insertError) throw insertError;
+        
+        return { created: true, message: "Account balances initialized" };
+      } catch (error) {
+        console.error('Error initializing account balances:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['account-balances']
+      });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Error", 
+        description: `No se pudieron inicializar los saldos: ${(error as Error).message}`,
         variant: "destructive"
       });
     }
@@ -127,7 +223,7 @@ export function useFinancialPeriods(periodType: FinancialPeriodType) {
     onError: (error) => {
       toast({ 
         title: "Error", 
-        description: `No se pudo cerrar el período: ${error.message}`,
+        description: `No se pudo cerrar el período: ${(error as Error).message}`,
         variant: "destructive"
       });
     }
@@ -156,6 +252,7 @@ export function useFinancialPeriods(periodType: FinancialPeriodType) {
     error,
     initializePeriods,
     closePeriod,
-    getCurrentPeriod
+    getCurrentPeriod,
+    initializeAccountsForPeriod
   };
 }

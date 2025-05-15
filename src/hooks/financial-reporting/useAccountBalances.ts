@@ -87,6 +87,9 @@ export function useAccountBalances(periodId?: string) {
       queryClient.invalidateQueries({
         queryKey: ['account-balances', periodId, user?.id]
       });
+      queryClient.invalidateQueries({
+        queryKey: ['financial-report']
+      });
       toast({
         title: 'Saldo actualizado',
         description: 'El saldo de la cuenta ha sido actualizado correctamente.'
