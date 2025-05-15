@@ -25,7 +25,7 @@ export function useFinancialPeriods(periodType: FinancialPeriodType) {
         .order('period', { ascending: false });
         
       if (error) throw error;
-      return data as FinancialPeriod[];
+      return data as unknown as FinancialPeriod[];
     },
     enabled: !!user?.id
   });
