@@ -6,15 +6,20 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
 interface HeaderProps {
   children?: React.ReactNode;
 }
+
 type Theme = "light" | "dark" | "blue";
+
 export function Header({
   children
 }: HeaderProps) {
   const {
-    signOut
+    signOut,
+    user
   } = useAuth();
   const navigate = useNavigate();
   const {
@@ -26,11 +31,58 @@ export function Header({
     }
     return "light";
   });
+  const [companyName, setCompanyName] = useState<string | null>("Goco ERP");
+
   useEffect(() => {
     const root = window.document.documentElement;
     root.setAttribute("data-theme", theme);
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  // Fetch company information when component mounts
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      if (!user?.id) return;
+      
+      try {
+        // First check if the user has a company they created
+        const { data: ownCompany, error: ownCompanyError } = await supabase
+          .from("companies")
+          .select("nombre")
+          .eq("user_id", user.id)
+          .maybeSingle();
+          
+        if (ownCompany?.nombre) {
+          setCompanyName(ownCompany.nombre);
+          return;
+        }
+        
+        // If no company created by user, check if they are part of a company
+        const { data: companyUser, error: companyUserError } = await supabase
+          .from("company_users")
+          .select("company_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+          
+        if (companyUser?.company_id) {
+          const { data: company } = await supabase
+            .from("companies")
+            .select("nombre")
+            .eq("id", companyUser.company_id)
+            .maybeSingle();
+            
+          if (company?.nombre) {
+            setCompanyName(company.nombre);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching company info:", error);
+      }
+    };
+    
+    fetchCompanyInfo();
+  }, [user]);
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -43,11 +95,12 @@ export function Header({
       });
     }
   };
+
   return <header className="bg-background border-b border-border px-4 py-3 md:px-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {children}
-          <h1 className="text-lg font-medium text-foreground">Goco ERP</h1>
+          <h1 className="text-lg font-medium text-foreground">{companyName}</h1>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <Button variant="ghost" size="icon" className="hidden md:inline-flex">
