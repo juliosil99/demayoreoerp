@@ -1,195 +1,243 @@
 
-import * as React from "react";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import React from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
+import { Download } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
-import { DateRange } from "react-day-picker";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CashFlowProps {
   userId?: string;
+  periodId: string;
+  periodType: 'day' | 'month' | 'quarter' | 'year';
+  compareWithPreviousYear?: boolean;
 }
 
-interface CashFlowData {
-  inflows: {
-    sales: number;
-    payments: number;
-    total: number;
-  };
-  outflows: {
-    expenses: number;
-    total: number;
-  };
-  netCashFlow: number;
-}
+export const CashFlow: React.FC<CashFlowProps> = ({
+  userId,
+  periodId,
+  periodType,
+  compareWithPreviousYear = false
+}) => {
+  // For now, we'll use dummy data while implementing the real report functionality
+  const isLoading = false;
+  const error = null;
 
-export function CashFlow({ userId }: CashFlowProps) {
-  const isMobile = useIsMobile();
-  const [loading, setLoading] = React.useState(false);
-  const [date, setDate] = React.useState<DateRange>({
-    from: new Date(),
-    to: new Date(),
-  });
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+      </div>
+    );
+  }
 
-  const { data: reportData, refetch: generateReport } = useQuery({
-    queryKey: ["cash-flow", date.from, date.to],
-    queryFn: async () => {
-      if (!userId || !date.from || !date.to) return null;
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          No se pudo cargar el flujo de efectivo. Por favor, intente de nuevo más tarde.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
-      // Fetch sales data (cash inflows)
-      const { data: salesData, error: salesError } = await supabase
-        .from("Sales")
-        .select("price")
-        .eq("statusPaid", "paid")
-        .gte("datePaid", format(date.from, "yyyy-MM-dd"))
-        .lte("datePaid", format(date.to, "yyyy-MM-dd"));
-
-      if (salesError) throw salesError;
-
-      // Fetch payments data (additional cash inflows)
-      const { data: paymentsData, error: paymentsError } = await supabase
-        .from("payments")
-        .select("amount")
-        .eq("status", "completed")
-        .gte("date", format(date.from, "yyyy-MM-dd"))
-        .lte("date", format(date.to, "yyyy-MM-dd"));
-
-      if (paymentsError) throw paymentsError;
-
-      // Fetch expenses data (cash outflows)
-      const { data: expensesData, error: expensesError } = await supabase
-        .from("expenses")
-        .select("amount")
-        .gte("date", format(date.from, "yyyy-MM-dd"))
-        .lte("date", format(date.to, "yyyy-MM-dd"));
-
-      if (expensesError) throw expensesError;
-
-      // Calculate totals
-      const salesTotal = salesData?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0;
-      const paymentsTotal = paymentsData?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
-      const expensesTotal = expensesData?.reduce((sum, expense) => sum + (expense.amount || 0), 0) || 0;
-
-      const totalInflows = salesTotal + paymentsTotal;
-      const totalOutflows = expensesTotal;
-      const netCashFlow = totalInflows - totalOutflows;
-
-      return {
-        inflows: {
-          sales: salesTotal,
-          payments: paymentsTotal,
-          total: totalInflows,
-        },
-        outflows: {
-          expenses: expensesTotal,
-          total: totalOutflows,
-        },
-        netCashFlow,
-      };
+  // For demo purposes, create some sample data
+  const dummyReportData = {
+    operating: {
+      'Utilidad Neta': 45000,
+      'Depreciación y Amortización': 15000,
+      'Cambios en Cuentas por Cobrar': -25000,
+      'Cambios en Inventario': -10000,
+      'Cambios en Cuentas por Pagar': 12000,
+      'Flujo Neto de Actividades Operativas': 37000
     },
-    enabled: false,
-  });
-
-  const handleGenerateReport = async () => {
-    setLoading(true);
-    try {
-      await generateReport();
-    } catch (error) {
-      console.error("Error generating report:", error);
-    } finally {
-      setLoading(false);
+    investing: {
+      'Compra de Activos Fijos': -45000,
+      'Venta de Activos': 15000,
+      'Inversiones Financieras': -5000,
+      'Flujo Neto de Actividades de Inversión': -35000
+    },
+    financing: {
+      'Préstamos Recibidos': 60000,
+      'Pagos de Préstamos': -25000,
+      'Dividendos Pagados': -15000,
+      'Flujo Neto de Actividades de Financiamiento': 20000
+    },
+    summary: {
+      'Incremento Neto en Efectivo': 22000,
+      'Efectivo al Inicio del Período': 128000,
+      'Efectivo al Final del Período': 150000
     }
   };
 
-  const formatAmount = (amount: number) => {
+  // Helper function to format currency
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
       currency: 'MXN'
     }).format(amount);
   };
 
+  // Handle export to Excel/PDF
+  const handleExport = () => {
+    // Implement export functionality
+    alert("Export functionality will be implemented soon");
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-        <div className="w-full sm:w-auto">
-          <DatePickerWithRange date={date} setDate={setDate} />
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h3 className="font-medium text-sm text-gray-500">Período:</h3>
+          <p className="font-medium">
+            {periodType === 'month' ? 'Mayo 2025' : periodType === 'quarter' ? 'Q2 2025' : periodType === 'year' ? '2025' : format(new Date(), 'dd/MM/yyyy')}
+          </p>
         </div>
-        <Button 
-          onClick={handleGenerateReport} 
-          disabled={loading}
-          className="w-full sm:w-auto"
-        >
-          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Generar Reporte
+        <Button variant="outline" size="sm" onClick={handleExport}>
+          <Download className="h-4 w-4 mr-2" />
+          Exportar
         </Button>
       </div>
-      <div className="min-h-[400px] p-2 sm:p-4 border rounded-lg">
-        {!reportData ? (
-          <p className="text-center text-muted-foreground">
-            Seleccione un rango de fechas y genere el reporte
-          </p>
-        ) : (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader className="py-3 sm:py-4">
-                <CardTitle className="text-sm sm:text-base">Entradas de Efectivo</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2 px-3 sm:p-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-xs sm:text-sm">Ventas Cobradas</span>
-                    <span className="font-medium text-green-600 text-xs sm:text-sm">{formatAmount(reportData.inflows.sales)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-xs sm:text-sm">Otros Pagos Recibidos</span>
-                    <span className="font-medium text-green-600 text-xs sm:text-sm">{formatAmount(reportData.inflows.payments)}</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="font-medium text-xs sm:text-sm">Total Entradas</span>
-                    <span className="font-medium text-green-600 text-xs sm:text-sm">{formatAmount(reportData.inflows.total)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader className="py-3 sm:py-4">
-                <CardTitle className="text-sm sm:text-base">Salidas de Efectivo</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2 px-3 sm:p-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-xs sm:text-sm">Gastos Pagados</span>
-                    <span className="font-medium text-red-500 text-xs sm:text-sm">({formatAmount(reportData.outflows.expenses)})</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="font-medium text-xs sm:text-sm">Total Salidas</span>
-                    <span className="font-medium text-red-500 text-xs sm:text-sm">({formatAmount(reportData.outflows.total)})</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="py-3 sm:py-4">
-                <CardTitle className="text-sm sm:text-base">Flujo Neto de Efectivo</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2 px-3 sm:p-4">
-                <div className="flex justify-between">
-                  <span className="font-bold text-xs sm:text-sm">Total</span>
-                  <span className={`font-bold text-xs sm:text-sm ${reportData.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatAmount(reportData.netCashFlow)}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[40%]">Concepto</TableHead>
+            <TableHead className="text-right">{periodType === 'month' ? 'Mayo 2025' : 'Actual'}</TableHead>
+            {compareWithPreviousYear && (
+              <>
+                <TableHead className="text-right">{periodType === 'month' ? 'Mayo 2024' : 'Año Anterior'}</TableHead>
+                <TableHead className="text-right">Variación</TableHead>
+              </>
+            )}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {/* Operating Activities Section */}
+          <TableRow className="bg-muted/50">
+            <TableCell colSpan={compareWithPreviousYear ? 4 : 2} className="font-medium">
+              ACTIVIDADES OPERATIVAS
+            </TableCell>
+          </TableRow>
+          
+          {Object.entries(dummyReportData.operating).map(([item, amount]) => (
+            <TableRow key={item}>
+              <TableCell className={item.includes('Flujo Neto') ? "font-medium" : "pl-6"}>
+                {item}
+              </TableCell>
+              <TableCell className="text-right">
+                {formatCurrency(amount)}
+              </TableCell>
+              {compareWithPreviousYear && (
+                <>
+                  <TableCell className="text-right">
+                    {formatCurrency(amount * 0.9)} {/* Dummy previous year data */}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="text-green-600">+11.11%</span> {/* Dummy change */}
+                  </TableCell>
+                </>
+              )}
+            </TableRow>
+          ))}
+          
+          {/* Investing Activities Section */}
+          <TableRow className="bg-muted/50">
+            <TableCell colSpan={compareWithPreviousYear ? 4 : 2} className="font-medium">
+              ACTIVIDADES DE INVERSIÓN
+            </TableCell>
+          </TableRow>
+          
+          {Object.entries(dummyReportData.investing).map(([item, amount]) => (
+            <TableRow key={item}>
+              <TableCell className={item.includes('Flujo Neto') ? "font-medium" : "pl-6"}>
+                {item}
+              </TableCell>
+              <TableCell className="text-right">
+                {formatCurrency(amount)}
+              </TableCell>
+              {compareWithPreviousYear && (
+                <>
+                  <TableCell className="text-right">
+                    {formatCurrency(amount * 1.2)} {/* Dummy previous year data */}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="text-green-600">-16.67%</span> {/* Dummy change */}
+                  </TableCell>
+                </>
+              )}
+            </TableRow>
+          ))}
+          
+          {/* Financing Activities Section */}
+          <TableRow className="bg-muted/50">
+            <TableCell colSpan={compareWithPreviousYear ? 4 : 2} className="font-medium">
+              ACTIVIDADES DE FINANCIAMIENTO
+            </TableCell>
+          </TableRow>
+          
+          {Object.entries(dummyReportData.financing).map(([item, amount]) => (
+            <TableRow key={item}>
+              <TableCell className={item.includes('Flujo Neto') ? "font-medium" : "pl-6"}>
+                {item}
+              </TableCell>
+              <TableCell className="text-right">
+                {formatCurrency(amount)}
+              </TableCell>
+              {compareWithPreviousYear && (
+                <>
+                  <TableCell className="text-right">
+                    {formatCurrency(amount * 0.8)} {/* Dummy previous year data */}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="text-green-600">+25.00%</span> {/* Dummy change */}
+                  </TableCell>
+                </>
+              )}
+            </TableRow>
+          ))}
+          
+          {/* Summary Section */}
+          <TableRow className="bg-muted/50">
+            <TableCell colSpan={compareWithPreviousYear ? 4 : 2} className="font-medium">
+              RESUMEN
+            </TableCell>
+          </TableRow>
+          
+          {Object.entries(dummyReportData.summary).map(([item, amount]) => (
+            <TableRow key={item}>
+              <TableCell className="font-medium">
+                {item}
+              </TableCell>
+              <TableCell className="text-right font-medium">
+                {formatCurrency(amount)}
+              </TableCell>
+              {compareWithPreviousYear && (
+                <>
+                  <TableCell className="text-right font-medium">
+                    {formatCurrency(amount * 0.85)} {/* Dummy previous year data */}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="text-green-600">+17.65%</span> {/* Dummy change */}
+                  </TableCell>
+                </>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      
+      <div className="mt-4 text-sm text-gray-500">
+        <p>Nota: Este reporte es preliminar. Los datos aquí mostrados son de muestra mientras implementamos la funcionalidad completa.</p>
       </div>
     </div>
   );
-}
+};
