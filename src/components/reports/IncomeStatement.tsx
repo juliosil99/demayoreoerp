@@ -26,7 +26,8 @@ export const IncomeStatement: React.FC<IncomeStatementProps> = ({
   const { reportData, isLoading, error } = useFinancialReports('income_statement', {
     periodId,
     periodType,
-    compareWithPreviousYear
+    compareWithPreviousYear,
+    year: 0 // Dummy value, won't be used since periodId is provided
   });
 
   if (isLoading) {

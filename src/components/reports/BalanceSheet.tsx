@@ -26,7 +26,8 @@ export const BalanceSheet: React.FC<BalanceSheetProps> = ({
   const { reportData, isLoading, error } = useFinancialReports('balance_sheet', {
     periodId,
     periodType,
-    compareWithPreviousYear
+    compareWithPreviousYear,
+    year: 0 // Dummy value, won't be used since periodId is provided
   });
 
   if (isLoading) {

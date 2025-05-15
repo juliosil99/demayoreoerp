@@ -38,7 +38,7 @@ export interface FinancialStatementConfig {
 export interface FinancialReportOptions {
   periodType: FinancialPeriodType;
   periodId?: string;
-  year: number;
+  year?: number;  // Made optional since we can use periodId instead
   period?: number;
   compareWithPreviousYear?: boolean;
 }

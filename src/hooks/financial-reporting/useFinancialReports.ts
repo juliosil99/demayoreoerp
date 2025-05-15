@@ -32,7 +32,7 @@ export function useFinancialReports(
             
           if (error) throw error;
           periodData = data;
-        } else {
+        } else if (year) {
           // Get the financial period by type, year, and period number
           const { data, error } = await supabase
             .from('financial_periods')
@@ -45,6 +45,8 @@ export function useFinancialReports(
             
           if (error) throw error;
           periodData = data;
+        } else {
+          throw new Error('Either periodId or year must be provided');
         }
         
         if (!periodData) throw new Error('Period not found');

@@ -25,8 +25,9 @@ export const CashFlow: React.FC<CashFlowProps> = ({
   // Fetch the report data
   const { reportData, isLoading, error } = useFinancialReports('cash_flow', {
     periodId,
-    periodType,
-    compareWithPreviousYear
+    periodType, 
+    compareWithPreviousYear,
+    year: 0 // Dummy value, won't be used since periodId is provided
   });
 
   if (isLoading) {
