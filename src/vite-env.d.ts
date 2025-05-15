@@ -2,8 +2,8 @@
 /// <reference types="vite/client" />
 
 // Supabase custom type augmentation for tables that don't exist in the generated types yet
-interface CustomSupabaseAugmentation {
-  Tables: {
+declare namespace Database {
+  interface Tables {
     financial_periods: {
       Row: {
         id: string;
@@ -43,6 +43,11 @@ interface CustomSupabaseAugmentation {
         user_id: string;
         created_at?: string;
         updated_at?: string;
+        chart_of_accounts?: {
+          name: string;
+          account_type: string;
+          code: string;
+        };
       };
       Insert: {
         id?: string;
@@ -58,7 +63,7 @@ interface CustomSupabaseAugmentation {
     financial_statement_configs: {
       Row: {
         id: string;
-        statement_type: string;
+        statement_type: 'income_statement' | 'balance_sheet' | 'cash_flow';
         name: string;
         config: {
           sections: {
@@ -73,7 +78,7 @@ interface CustomSupabaseAugmentation {
       };
       Insert: {
         id?: string;
-        statement_type: string;
+        statement_type: 'income_statement' | 'balance_sheet' | 'cash_flow';
         name: string;
         config: {
           sections: {
@@ -95,6 +100,5 @@ interface CustomSupabaseAugmentation {
         };
       };
     };
-  };
+  }
 }
-

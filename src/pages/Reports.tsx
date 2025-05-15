@@ -43,14 +43,18 @@ export default function Reports() {
   // Initialize periods if none exist
   React.useEffect(() => {
     if (periods && periods.length === 0) {
-      initializePeriods();
+      // No periods exist, let the user initialize them
+      toast({
+        title: "No hay períodos financieros",
+        description: "Haga clic en 'Crear Períodos' para inicializar los períodos financieros.",
+      });
     } else if (periods && periods.length > 0 && !selectedPeriod) {
       const currentPeriod = getCurrentPeriod();
       if (currentPeriod) {
         setSelectedPeriod(currentPeriod.id);
       }
     }
-  }, [periods, initializePeriods, getCurrentPeriod, selectedPeriod]);
+  }, [periods, getCurrentPeriod, selectedPeriod]);
   
   // Find the currently selected period object
   const currentPeriod = React.useMemo(() => {
@@ -67,6 +71,11 @@ export default function Reports() {
   // Handle period selection change
   const handlePeriodChange = (value: string) => {
     setSelectedPeriod(value);
+  };
+  
+  // Handle creating periods
+  const handleCreatePeriods = () => {
+    initializePeriods();
   };
   
   // Handle closing a period
@@ -151,19 +160,32 @@ export default function Reports() {
           {periodsLoading ? (
             <Skeleton className="h-10 w-full" />
           ) : (
-            <Select value={selectedPeriod || ''} onValueChange={handlePeriodChange}>
-              <SelectTrigger id="period-select">
-                <SelectValue placeholder="Seleccionar período" />
-              </SelectTrigger>
-              <SelectContent>
-                {periods && periods.map((period) => (
-                  <SelectItem key={period.id} value={period.id}>
-                    {formatPeriodLabel(period)}
-                    {period.is_closed ? ' (Cerrado)' : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <>
+              {periods && periods.length > 0 ? (
+                <Select value={selectedPeriod || ''} onValueChange={handlePeriodChange}>
+                  <SelectTrigger id="period-select">
+                    <SelectValue placeholder="Seleccionar período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {periods.map((period) => (
+                      <SelectItem key={period.id} value={period.id}>
+                        {formatPeriodLabel(period)}
+                        {period.is_closed ? ' (Cerrado)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Select disabled>
+                    <SelectTrigger id="period-select">
+                      <SelectValue placeholder="No hay períodos disponibles" />
+                    </SelectTrigger>
+                  </Select>
+                  <Button onClick={handleCreatePeriods}>Crear Períodos</Button>
+                </div>
+              )}
+            </>
           )}
         </div>
         
@@ -232,8 +254,10 @@ export default function Reports() {
                   compareWithPreviousYear={compareWithPreviousYear}
                 />
               ) : (
-                <p className="text-center text-gray-500">
-                  Seleccione un período para ver el estado de resultados
+                <p className="text-center text-gray-500 py-8">
+                  {periods && periods.length === 0 
+                    ? "No hay períodos financieros. Haga clic en 'Crear Períodos' para comenzar."
+                    : "Seleccione un período para ver el estado de resultados"}
                 </p>
               )}
             </CardContent>
@@ -254,8 +278,10 @@ export default function Reports() {
                   compareWithPreviousYear={compareWithPreviousYear}
                 />
               ) : (
-                <p className="text-center text-gray-500">
-                  Seleccione un período para ver el flujo de efectivo
+                <p className="text-center text-gray-500 py-8">
+                  {periods && periods.length === 0 
+                    ? "No hay períodos financieros. Haga clic en 'Crear Períodos' para comenzar."
+                    : "Seleccione un período para ver el flujo de efectivo"}
                 </p>
               )}
             </CardContent>
@@ -276,8 +302,10 @@ export default function Reports() {
                   compareWithPreviousYear={compareWithPreviousYear}
                 />
               ) : (
-                <p className="text-center text-gray-500">
-                  Seleccione un período para ver el balance general
+                <p className="text-center text-gray-500 py-8">
+                  {periods && periods.length === 0 
+                    ? "No hay períodos financieros. Haga clic en 'Crear Períodos' para comenzar."
+                    : "Seleccione un período para ver el balance general"}
                 </p>
               )}
             </CardContent>
@@ -296,8 +324,10 @@ export default function Reports() {
                   periodId={currentPeriod.id}
                 />
               ) : (
-                <p className="text-center text-gray-500">
-                  Seleccione un período para ver el estado de resultados por canal
+                <p className="text-center text-gray-500 py-8">
+                  {periods && periods.length === 0 
+                    ? "No hay períodos financieros. Haga clic en 'Crear Períodos' para comenzar."
+                    : "Seleccione un período para ver el estado de resultados por canal"}
                 </p>
               )}
             </CardContent>

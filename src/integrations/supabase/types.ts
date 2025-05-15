@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      account_balances: {
+        Row: {
+          account_id: string
+          balance: number
+          created_at: string | null
+          id: string
+          period_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          balance?: number
+          created_at?: string | null
+          id?: string
+          period_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          balance?: number
+          created_at?: string | null
+          id?: string
+          period_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_balances_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_balances_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "financial_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       account_transfers: {
         Row: {
           amount: number
@@ -926,6 +971,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      financial_periods: {
+        Row: {
+          closed_at: string | null
+          created_at: string | null
+          end_date: string
+          id: string
+          is_closed: boolean
+          period: number
+          period_type: string
+          start_date: string
+          updated_at: string | null
+          user_id: string
+          year: number
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string | null
+          end_date: string
+          id?: string
+          is_closed?: boolean
+          period: number
+          period_type: string
+          start_date: string
+          updated_at?: string | null
+          user_id: string
+          year: number
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          is_closed?: boolean
+          period?: number
+          period_type?: string
+          start_date?: string
+          updated_at?: string | null
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      financial_statement_configs: {
+        Row: {
+          config: Json
+          created_at: string | null
+          id: string
+          name: string
+          statement_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string | null
+          id?: string
+          name: string
+          statement_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string | null
+          id?: string
+          name?: string
+          statement_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       forecast_items: {
         Row: {
@@ -2021,6 +2138,22 @@ export type Database = {
       can_access_company_user: {
         Args: { user_id: string; company_id: string }
         Returns: boolean
+      }
+      create_annual_period: {
+        Args: { user_uuid: string; year_param: number }
+        Returns: undefined
+      }
+      create_daily_periods_for_month: {
+        Args: { user_uuid: string; year_param: number; month_param: number }
+        Returns: undefined
+      }
+      create_monthly_periods_for_year: {
+        Args: { user_uuid: string; year_param: number }
+        Returns: undefined
+      }
+      create_quarterly_periods_for_year: {
+        Args: { user_uuid: string; year_param: number }
+        Returns: undefined
       }
       find_invitation_by_token: {
         Args: { token_param: string }

@@ -31,7 +31,7 @@ export function useAccountBalances(periodId?: string) {
         .eq('user_id', user?.id);
         
       if (error) throw error;
-      return data as (AccountBalance & { chart_of_accounts: { name: string, account_type: string, code: string } })[];
+      return data as unknown as (AccountBalance & { chart_of_accounts: { name: string, account_type: string, code: string } })[];
     },
     enabled: !!periodId && !!user?.id
   });
@@ -39,43 +39,48 @@ export function useAccountBalances(periodId?: string) {
   // Create or update account balances
   const { mutateAsync: saveAccountBalance } = useMutation({
     mutationFn: async (data: AccountBalanceInput) => {
-      // Check if there's already an account balance record
-      const { data: existingBalance, error: fetchError } = await supabase
-        .from('account_balances')
-        .select('*')
-        .eq('account_id', data.account_id)
-        .eq('period_id', data.period_id)
-        .eq('user_id', user?.id)
-        .maybeSingle();
+      try {
+        // Check if there's already an account balance record
+        const { data: existingBalance, error: fetchError } = await supabase
+          .from('account_balances')
+          .select('*')
+          .eq('account_id', data.account_id)
+          .eq('period_id', data.period_id)
+          .eq('user_id', user?.id)
+          .maybeSingle();
+          
+        if (fetchError) throw fetchError;
         
-      if (fetchError) throw fetchError;
-      
-      if (existingBalance) {
-        // Update existing balance
-        const { data: updatedBalance, error: updateError } = await supabase
-          .from('account_balances')
-          .update({ balance: data.balance })
-          .eq('id', existingBalance.id)
-          .select()
-          .single();
-          
-        if (updateError) throw updateError;
-        return updatedBalance;
-      } else {
-        // Create new balance record
-        const { data: newBalance, error: insertError } = await supabase
-          .from('account_balances')
-          .insert([{
-            account_id: data.account_id,
-            period_id: data.period_id,
-            balance: data.balance,
-            user_id: user?.id
-          }])
-          .select()
-          .single();
-          
-        if (insertError) throw insertError;
-        return newBalance;
+        if (existingBalance) {
+          // Update existing balance
+          const { data: updatedBalance, error: updateError } = await supabase
+            .from('account_balances')
+            .update({ balance: data.balance })
+            .eq('id', existingBalance.id)
+            .select()
+            .single();
+            
+          if (updateError) throw updateError;
+          return updatedBalance;
+        } else {
+          // Create new balance record
+          const { data: newBalance, error: insertError } = await supabase
+            .from('account_balances')
+            .insert([{
+              account_id: data.account_id,
+              period_id: data.period_id,
+              balance: data.balance,
+              user_id: user?.id
+            }])
+            .select()
+            .single();
+            
+          if (insertError) throw insertError;
+          return newBalance;
+        }
+      } catch (error) {
+        console.error('Error saving account balance:', error);
+        throw error;
       }
     },
     onSuccess: () => {
@@ -90,7 +95,7 @@ export function useAccountBalances(periodId?: string) {
     onError: (error) => {
       toast({
         title: 'Error',
-        description: `No se pudo guardar el saldo: ${error.message}`,
+        description: `No se pudo guardar el saldo: ${(error as Error).message}`,
         variant: 'destructive'
       });
     }

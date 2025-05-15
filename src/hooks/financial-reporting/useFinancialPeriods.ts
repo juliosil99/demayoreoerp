@@ -37,37 +37,51 @@ export function useFinancialPeriods(periodType: FinancialPeriodType) {
         throw new Error('User not authenticated');
       }
       
-      // Call the appropriate function based on period type
-      let result;
-      
-      if (periodType === 'month') {
-        const { error } = await supabase.rpc('create_monthly_periods_for_year', {
-          user_uuid: user.id,
-          year_param: currentYear
-        });
-        if (error) throw error;
-      } else if (periodType === 'quarter') {
-        const { error } = await supabase.rpc('create_quarterly_periods_for_year', {
-          user_uuid: user.id,
-          year_param: currentYear
-        });
-        if (error) throw error;
-      } else if (periodType === 'year') {
-        const { error } = await supabase.rpc('create_annual_period', {
-          user_uuid: user.id,
-          year_param: currentYear
-        });
-        if (error) throw error;
-      } else if (periodType === 'day') {
-        const { error } = await supabase.rpc('create_daily_periods_for_month', {
-          user_uuid: user.id,
-          year_param: currentYear,
-          month_param: currentMonth
-        });
-        if (error) throw error;
+      try {
+        if (periodType === 'month') {
+          const { error } = await supabase.rpc(
+            'create_monthly_periods_for_year',
+            {
+              user_uuid: user.id,
+              year_param: currentYear
+            }
+          );
+          if (error) throw error;
+        } else if (periodType === 'quarter') {
+          const { error } = await supabase.rpc(
+            'create_quarterly_periods_for_year',
+            {
+              user_uuid: user.id,
+              year_param: currentYear
+            }
+          );
+          if (error) throw error;
+        } else if (periodType === 'year') {
+          const { error } = await supabase.rpc(
+            'create_annual_period',
+            {
+              user_uuid: user.id,
+              year_param: currentYear
+            }
+          );
+          if (error) throw error;
+        } else if (periodType === 'day') {
+          const { error } = await supabase.rpc(
+            'create_daily_periods_for_month',
+            {
+              user_uuid: user.id,
+              year_param: currentYear,
+              month_param: currentMonth
+            }
+          );
+          if (error) throw error;
+        }
+        
+        return true;
+      } catch (error) {
+        console.error('Error initializing periods:', error);
+        throw error;
       }
-      
-      return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
