@@ -1,3 +1,4 @@
+
 import { Bell, Settings, LogOut, User, Building2, Palette, Sun, Moon, Laptop, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,7 +47,7 @@ export function Header({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {children}
-          <h1 className="text-lg font-medium text-foreground">demayoreo</h1>
+          <h1 className="text-lg font-medium text-foreground">Goco ERP</h1>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <Button variant="ghost" size="icon" className="hidden md:inline-flex">
