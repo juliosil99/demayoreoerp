@@ -4,6 +4,7 @@ export { supabase } from "@/integrations/supabase/client";
 
 // Helper function to initialize financial periods for a new user
 export const initializeFinancialPeriods = async (userId: string) => {
+  const { supabase } = await import("@/integrations/supabase/client");
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
   

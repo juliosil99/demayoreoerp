@@ -2168,6 +2168,13 @@ export type Database = {
           status: string | null
         }[]
       }
+      get_channel_income_by_period: {
+        Args: { p_user_id: string; p_period_id: string }
+        Returns: {
+          channel: string
+          total: number
+        }[]
+      }
       has_page_access: {
         Args: { user_id: string; page: string }
         Returns: boolean
