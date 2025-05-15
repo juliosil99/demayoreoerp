@@ -55,7 +55,7 @@ export const Sidebar = () => {
   return (
     <aside className="bg-gray-900 text-white w-64 min-h-screen flex flex-col">
       <div className="p-4 border-b border-gray-800">
-        <h1 className="text-2xl font-semibold">ERP Lovable</h1>
+        <h1 className="text-2xl font-semibold">Goco ERP</h1>
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-2">
