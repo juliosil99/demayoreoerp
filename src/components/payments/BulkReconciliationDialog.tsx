@@ -14,15 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, Filter } from "lucide-react";
-import { PaymentSelector } from "./PaymentSelector"; // Import from the same directory
+import { Filter } from "lucide-react";
+import { PaymentSelector } from "@/components/payments/components/PaymentSelector"; // Using absolute import path
 import { useToast } from "@/hooks/use-toast";
 import { Payment } from "./PaymentForm";
 import { ReconciliationFilters } from "./components/ReconciliationFilters";
