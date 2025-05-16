@@ -18,11 +18,12 @@ import { PlusIcon, ImportIcon } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Database } from "@/integrations/supabase/types/base";
+import type { Expense } from "@/components/expenses/components/types";
 
-type Expense = Database['public']['Tables']['expenses']['Row'] & {
+type DatabaseExpense = Database['public']['Tables']['expenses']['Row'] & {
   bank_accounts: { name: string; currency: string };
   chart_of_accounts: { name: string; code: string };
-  contacts: { name: string } | null;
+  contacts: { name: string; type?: string } | null;
   expense_invoice_relations?: {
     invoice: {
       uuid: string;
@@ -63,7 +64,7 @@ export default function Expenses() {
           *,
           bank_accounts (name, currency),
           chart_of_accounts (name, code),
-          contacts (name),
+          contacts (name, type),
           expense_invoice_relations (
             invoice:invoices (uuid, invoice_number, file_path, filename, content_type)
           ),
@@ -103,7 +104,7 @@ export default function Expenses() {
         throw error;
       }
       
-      return data as unknown as Expense[];
+      return data as unknown as DatabaseExpense[];
     },
     enabled: !!user,
   });

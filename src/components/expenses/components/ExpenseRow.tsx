@@ -104,7 +104,7 @@ export function ExpenseRow({
       <TableCell>
         <ExpenseActions 
           expense={expense}
-          onDelete={handleDeleteClick}
+          onDelete={onDelete}
           onEdit={handleEditClick}
         />
       </TableCell>

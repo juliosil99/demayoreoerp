@@ -9,7 +9,7 @@ import type { Expense } from "./types";
 
 interface ExpenseActionsProps {
   expense: Expense;
-  onDelete: () => Promise<{ success: boolean; log: string[] } | void>;
+  onDelete: (expense: Expense) => Promise<{ success: boolean; log: string[] } | void>;
   onEdit: () => void;
 }
 
@@ -25,7 +25,7 @@ export function ExpenseActions({
 
   const handleDeleteClick = async () => {
     try {
-      const result = await onDelete();
+      const result = await onDelete(expense);
       if (result && 'success' in result && !result.success) {
         setDeletionLog(result.log);
         setIsLogOpen(true);
