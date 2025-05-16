@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +20,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string };
+  bank_accounts: { name: string; currency: string };
   chart_of_accounts: { name: string; code: string };
   contacts: { name: string } | null;
   expense_invoice_relations?: {
@@ -42,6 +43,7 @@ type Expense = Database['public']['Tables']['expenses']['Row'] & {
 type Filters = {
   supplier_id?: string;
   account_id?: number;
+  currency?: string;
   unreconciled?: boolean;
   from_payable?: boolean;
 };
@@ -59,7 +61,7 @@ export default function Expenses() {
         .from('expenses')
         .select(`
           *,
-          bank_accounts (name),
+          bank_accounts (name, currency),
           chart_of_accounts (name, code),
           contacts (name),
           expense_invoice_relations (
@@ -78,6 +80,10 @@ export default function Expenses() {
       
       if (filters.account_id) {
         query = query.eq('account_id', filters.account_id);
+      }
+      
+      if (filters.currency) {
+        query = query.eq('currency', filters.currency);
       }
       
       if (filters.unreconciled) {

@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Database } from "@/integrations/supabase/types/base";
 
 type Expense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string };
+  bank_accounts: { name: string; currency: string };
   chart_of_accounts: { name: string; code: string };
   contacts: { name: string } | null;
 };
@@ -23,7 +23,18 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
   // Use expenseData as fallback for initialData for backwards compatibility
   const dataToUse = initialData || expenseData;
   
-  const { formData, setFormData, isSubmitting, handleSubmit, setChartAccountId } = useExpenseForm(dataToUse, () => {
+  const { 
+    formData, 
+    setFormData, 
+    isSubmitting, 
+    handleSubmit, 
+    setChartAccountId,
+    accountCurrency,
+    handleAccountChange,
+    handleCurrencyChange,
+    handleExchangeRateChange,
+    handleOriginalAmountChange
+  } = useExpenseForm(dataToUse, () => {
     // Call onSuccess callback if provided - this handles dialog closing
     if (onSuccess) onSuccess();
   });
@@ -61,7 +72,12 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
         bankAccounts={bankAccounts}
         chartAccounts={chartAccounts}
         recipients={Array.isArray(recipients) ? recipients : []}
+        accountCurrency={accountCurrency}
         onRecipientSelect={handleRecipientSelect}
+        handleAccountChange={handleAccountChange}
+        handleCurrencyChange={handleCurrencyChange}
+        handleExchangeRateChange={handleExchangeRateChange}
+        handleOriginalAmountChange={handleOriginalAmountChange}
       />
 
       <div className="flex justify-end space-x-2">

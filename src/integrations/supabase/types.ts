@@ -846,9 +846,12 @@ export type Database = {
         Row: {
           amount: number | null
           created_at: string | null
+          currency: string
+          exchange_rate: number
           expense_id: string
           id: string
           invoice_id: number
+          original_amount: number | null
           paid_amount: number | null
           reconciled_amount: number | null
           tax_details: Json | null
@@ -856,9 +859,12 @@ export type Database = {
         Insert: {
           amount?: number | null
           created_at?: string | null
+          currency?: string
+          exchange_rate?: number
           expense_id: string
           id?: string
           invoice_id: number
+          original_amount?: number | null
           paid_amount?: number | null
           reconciled_amount?: number | null
           tax_details?: Json | null
@@ -866,9 +872,12 @@ export type Database = {
         Update: {
           amount?: number | null
           created_at?: string | null
+          currency?: string
+          exchange_rate?: number
           expense_id?: string
           id?: string
           invoice_id?: number
+          original_amount?: number | null
           paid_amount?: number | null
           reconciled_amount?: number | null
           tax_details?: Json | null
@@ -897,10 +906,13 @@ export type Database = {
           category: string | null
           chart_account_id: string
           created_at: string | null
+          currency: string
           date: string
           description: string
+          exchange_rate: number
           id: string
           notes: string | null
+          original_amount: number
           payment_method: string
           reconciled: boolean | null
           reconciliation_date: string | null
@@ -916,10 +928,13 @@ export type Database = {
           category?: string | null
           chart_account_id: string
           created_at?: string | null
+          currency?: string
           date: string
           description: string
+          exchange_rate?: number
           id?: string
           notes?: string | null
+          original_amount: number
           payment_method: string
           reconciled?: boolean | null
           reconciliation_date?: string | null
@@ -935,10 +950,13 @@ export type Database = {
           category?: string | null
           chart_account_id?: string
           created_at?: string | null
+          currency?: string
           date?: string
           description?: string
+          exchange_rate?: number
           id?: string
           notes?: string | null
+          original_amount?: number
           payment_method?: string
           reconciled?: boolean | null
           reconciliation_date?: string | null

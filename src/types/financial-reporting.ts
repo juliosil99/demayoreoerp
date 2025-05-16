@@ -41,6 +41,7 @@ export interface FinancialReportOptions {
   year?: number;  // Made optional since we can use periodId instead
   period?: number;
   compareWithPreviousYear?: boolean;
+  currency?: string; // Added currency option for reports
 }
 
 export interface ReportData {
@@ -48,10 +49,12 @@ export interface ReportData {
     startDate: string;
     endDate: string;
     data: Record<string, number>;
+    currency?: string; // Added currency for report data
   };
   previousPeriod?: {
     startDate: string;
     endDate: string;
     data: Record<string, number>;
+    currency?: string; // Added currency for report data
   };
 }

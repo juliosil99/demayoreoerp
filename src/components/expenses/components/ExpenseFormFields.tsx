@@ -12,7 +12,12 @@ interface ExpenseFormFieldsProps {
   bankAccounts: any[];
   chartAccounts: any[];
   recipients: any[];
+  accountCurrency?: string;
   onRecipientSelect?: (recipientId: string, defaultChartAccountId?: string) => void;
+  handleAccountChange?: (accountId: string) => void;
+  handleCurrencyChange?: (currency: string) => void;
+  handleExchangeRateChange?: (exchangeRate: string) => void;
+  handleOriginalAmountChange?: (originalAmount: string) => void;
 }
 
 export function ExpenseFormFields({
@@ -21,17 +26,30 @@ export function ExpenseFormFields({
   bankAccounts,
   chartAccounts,
   recipients,
+  accountCurrency = "MXN",
   onRecipientSelect,
+  handleAccountChange,
+  handleCurrencyChange,
+  handleExchangeRateChange,
+  handleOriginalAmountChange,
 }: ExpenseFormFieldsProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
-        <DateAmountFields formData={formData} setFormData={setFormData} />
+        <DateAmountFields 
+          formData={formData} 
+          setFormData={setFormData}
+          accountCurrency={accountCurrency}
+          handleCurrencyChange={handleCurrencyChange}
+          handleExchangeRateChange={handleExchangeRateChange}
+          handleOriginalAmountChange={handleOriginalAmountChange}
+        />
         <DescriptionAccountFields 
           formData={formData} 
           setFormData={setFormData}
           bankAccounts={bankAccounts}
           chartAccounts={chartAccounts}
+          handleAccountChange={handleAccountChange}
         />
         <PaymentRecipientFields 
           formData={formData} 
