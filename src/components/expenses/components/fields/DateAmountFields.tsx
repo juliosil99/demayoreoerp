@@ -52,6 +52,13 @@ export function DateAmountFields({
     });
   }, [formData.original_amount, formData.exchange_rate, formData.currency, setFormData]);
 
+  // Check if exchange rate field should be shown
+  const shouldShowExchangeRate = () => {
+    // Show when currencies don't match OR when neither currency is MXN
+    return formData.currency !== accountCurrency || 
+           (formData.currency !== "MXN" && accountCurrency !== "MXN");
+  };
+
   return (
     <>
       <div>
@@ -105,7 +112,7 @@ export function DateAmountFields({
             </Select>
           </div>
 
-          {formData.currency !== accountCurrency && (
+          {shouldShowExchangeRate() && (
             <div className="flex space-x-2 items-center">
               <Label htmlFor="exchange_rate" className="whitespace-nowrap text-xs">
                 Tipo de cambio:

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -113,7 +112,8 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
           ...prev,
           account_id: accountId,
           currency: data.currency,
-          exchange_rate: "1"
+          // Don't reset exchange rate to 1 when setting account currency
+          // Let the currency change handler determine the appropriate exchange rate
         }));
       }
     } catch (error) {
@@ -126,8 +126,9 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     setFormData(prev => {
       const newFormData = { ...prev, currency };
       
-      // If the currency matches the account currency, reset exchange rate to 1
-      if (currency === accountCurrency) {
+      // Only reset exchange rate to 1 if we're switching to MXN and the account is also in MXN
+      // In all other cases, keep the current exchange rate or provide a default
+      if (currency === "MXN" && accountCurrency === "MXN") {
         newFormData.exchange_rate = "1";
       }
       
