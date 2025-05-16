@@ -110,14 +110,30 @@ export function PaymentFormFields({
             onChange={(e) => setFormData({ ...formData, reference_number: e.target.value })}
           />
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label>Notas</Label>
-        <Input
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-        />
+        <div className="space-y-2">
+          <Label>Estado</Label>
+          <Select
+            value={formData.status}
+            onValueChange={(value) => setFormData({ ...formData, status: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="confirmed">Confirmado</SelectItem>
+              <SelectItem value="pending">Pendiente</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Notas</Label>
+          <Input
+            value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          />
+        </div>
       </div>
     </>
   );

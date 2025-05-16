@@ -1,6 +1,6 @@
 
 import { parseISO } from "date-fns";
-import { Pencil, Trash2 } from "lucide-react";
+import { Check, Clock, Pencil, Trash2 } from "lucide-react";
 import { Payment } from "@/components/payments/PaymentForm";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatCardDate } from "@/utils/formatters";
 
 type PaymentWithRelations = Payment & {
@@ -44,6 +45,7 @@ export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentT
             <TableHead>Cuenta</TableHead>
             <TableHead>Método de Pago</TableHead>
             <TableHead>Referencia</TableHead>
+            <TableHead>Estado</TableHead>
             <TableHead className="text-right">Monto</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
@@ -60,6 +62,26 @@ export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentT
                  payment.payment_method === 'check' ? 'Cheque' : 'Tarjeta de Crédito'}
               </TableCell>
               <TableCell>{payment.reference_number || '-'}</TableCell>
+              <TableCell>
+                <Badge 
+                  variant={payment.status === 'confirmed' ? 'default' : 'outline'} 
+                  className={payment.status === 'confirmed' ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border-amber-300'}
+                >
+                  <span className="flex items-center gap-1">
+                    {payment.status === 'confirmed' ? (
+                      <>
+                        <Check className="h-3 w-3" />
+                        Confirmado
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="h-3 w-3" />
+                        Pendiente
+                      </>
+                    )}
+                  </span>
+                </Badge>
+              </TableCell>
               <TableCell className="text-right">{formatCurrency(payment.amount)}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">

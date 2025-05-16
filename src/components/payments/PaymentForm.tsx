@@ -13,6 +13,7 @@ export type Payment = {
   sales_channel_id: string | null;
   account_id: number;
   notes?: string;
+  status?: 'confirmed' | 'pending';
 };
 
 interface PaymentFormProps {

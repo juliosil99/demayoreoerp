@@ -11,6 +11,9 @@ import { PaymentPagination } from "./components/PaymentPagination";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
+import { usePaymentQueries } from "@/components/payments/hooks/usePaymentQueries";
+import { PaymentFilters } from "./components/PaymentFilters";
+import { DateRange } from "react-day-picker";
 
 type PaymentWithRelations = Payment & {
   sales_channels: { name: string } | null;
@@ -24,9 +27,22 @@ export default function Payments() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 30;
 
+  // Filter states
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [salesChannelId, setSalesChannelId] = useState<string | undefined>(undefined);
+  const [accountId, setAccountId] = useState<string | undefined>(undefined);
+  const [status, setStatus] = useState<string | undefined>(undefined);
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
+
+  const { bankAccounts, salesChannels } = usePaymentQueries();
+
   const { data: payments, isLoading, totalCount } = usePaymentsQuery({
     page: currentPage,
-    pageSize: ITEMS_PER_PAGE
+    pageSize: ITEMS_PER_PAGE,
+    dateRange: isFilterApplied ? dateRange : undefined,
+    salesChannelId: isFilterApplied ? salesChannelId : undefined,
+    accountId: isFilterApplied ? accountId : undefined,
+    status: isFilterApplied ? status : undefined
   });
   
   const deletePaymentMutation = usePaymentDelete();
@@ -80,6 +96,7 @@ export default function Payments() {
       sales_channel_id: payment.sales_channel_id,
       account_id: Number(payment.account_id),
       notes: payment.notes,
+      status: payment.status || 'confirmed',
     };
     setPaymentToEdit(paymentData);
     setIsAddingPayment(true);
@@ -95,11 +112,40 @@ export default function Payments() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleApplyFilters = () => {
+    setCurrentPage(1); // Reset to first page when filters are applied
+    setIsFilterApplied(true);
+  };
+
+  const handleResetFilters = () => {
+    setDateRange(undefined);
+    setSalesChannelId(undefined);
+    setAccountId(undefined);
+    setStatus(undefined);
+    setCurrentPage(1);
+    setIsFilterApplied(false);
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <PaymentHeader 
         onOpenAddPayment={() => setIsAddingPayment(true)} 
         onOpenBulkReconciliation={() => setShowBulkReconciliation(true)} 
+      />
+
+      <PaymentFilters
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+        salesChannelId={salesChannelId}
+        setSalesChannelId={setSalesChannelId}
+        accountId={accountId}
+        setAccountId={setAccountId}
+        status={status}
+        setStatus={setStatus}
+        bankAccounts={bankAccounts || []}
+        salesChannels={salesChannels || []}
+        onResetFilters={handleResetFilters}
+        onApplyFilters={handleApplyFilters}
       />
 
       <PaymentFormDialog

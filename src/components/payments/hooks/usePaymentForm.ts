@@ -15,6 +15,7 @@ export type PaymentFormData = {
   payment_method: string;
   reference_number: string;
   notes: string;
+  status: string;
 };
 
 const initialFormData: PaymentFormData = {
@@ -25,6 +26,7 @@ const initialFormData: PaymentFormData = {
   payment_method: "cash",
   reference_number: "",
   notes: "",
+  status: "confirmed",
 };
 
 interface UsePaymentFormProps {
@@ -53,6 +55,7 @@ export function usePaymentForm({ onSuccess, paymentToEdit }: UsePaymentFormProps
         payment_method: paymentToEdit.payment_method,
         reference_number: paymentToEdit.reference_number || "",
         notes: paymentToEdit.notes || "",
+        status: paymentToEdit.status || "confirmed", // Default to confirmed for existing payments
       });
     }
   }, [paymentToEdit]);
@@ -71,6 +74,7 @@ export function usePaymentForm({ onSuccess, paymentToEdit }: UsePaymentFormProps
           payment_method: values.payment_method,
           reference_number: values.reference_number || null,
           notes: values.notes || null,
+          status: values.status,
         })
         .eq('id', values.id)
         .select()
@@ -105,6 +109,7 @@ export function usePaymentForm({ onSuccess, paymentToEdit }: UsePaymentFormProps
         payment_method: values.payment_method,
         reference_number: values.reference_number || null,
         notes: values.notes || null,
+        status: values.status,
       };
 
       const { data, error } = await supabase
