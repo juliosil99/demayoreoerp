@@ -17,41 +17,13 @@ export function ExpenseRow({
   onEdit,
 }: ExpenseRowProps) {
 
-  const handleEditClick = () => {
-    onEdit(expense);
-  };
-
-  const isFromPayable = !!expense.accounts_payable;
-  
-  const recipientType = expense.contacts?.type || 'supplier';
-  
-  const getRecipientDisplay = () => {
-    if (isFromPayable && expense.accounts_payable?.client?.name) {
-      return expense.accounts_payable.client.name;
-    }
-    
-    if (expense.contacts?.name) {
-      const name = expense.contacts.name;
-      if (recipientType === 'employee') {
-        return (
-          <>
-            {name} <Badge variant="outline" className="ml-1 text-xs">Empleado</Badge>
-          </>
-        );
-      }
-      return name;
-    }
-    
-    return '-';
-  };
-
   return (
-    <TableRow key={expense.id} className={isFromPayable ? "bg-gray-300" : "odd:bg-gray-300 even:bg-gray-300"}>
+    <TableRow key={expense.id} className={!!expense.accounts_payable ? "bg-gray-300" : "odd:bg-gray-300 even:bg-gray-300"}>
       <TableCell className="whitespace-nowrap">{formatCardDate(expense.date)}</TableCell>
       <TableCell>
         <div className="flex items-center gap-2 max-w-[250px] md:max-w-none">
           <span className="truncate">{expense.description}</span>
-          {isFromPayable && (
+          {!!expense.accounts_payable && (
             <Badge className="bg-blue-200 text-blue-800 rounded-full px-2 py-1 text-xs shrink-0">
               CxP
             </Badge>
@@ -100,9 +72,32 @@ export function ExpenseRow({
         <ExpenseActions 
           expense={expense}
           onDelete={onDelete}
-          onEdit={handleEditClick}
+          onEdit={() => onEdit(expense)}
         />
       </TableCell>
     </TableRow>
   );
+
+  function getRecipientDisplay() {
+    const isFromPayable = !!expense.accounts_payable;
+    const recipientType = expense.contacts?.type || 'supplier';
+    
+    if (isFromPayable && expense.accounts_payable?.client?.name) {
+      return expense.accounts_payable.client.name;
+    }
+    
+    if (expense.contacts?.name) {
+      const name = expense.contacts.name;
+      if (recipientType === 'employee') {
+        return (
+          <>
+            {name} <Badge variant="outline" className="ml-1 text-xs">Empleado</Badge>
+          </>
+        );
+      }
+      return name;
+    }
+    
+    return '-';
+  }
 }

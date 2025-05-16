@@ -38,7 +38,7 @@ type DatabaseExpense = Database['public']['Tables']['expenses']['Row'] & {
     client: {
       name: string;
     };
-  };
+  } | null;
 };
 
 type Filters = {
@@ -53,6 +53,9 @@ type Filters = {
 const mapDatabaseExpenseToExpense = (dbExpense: DatabaseExpense): Expense => {
   return {
     ...dbExpense,
+    // Explicitly map any fields that need special handling
+    accounts_payable: dbExpense.accounts_payable || null,
+    contacts: dbExpense.contacts || null
   };
 };
 
@@ -111,7 +114,7 @@ export default function Expenses() {
         throw error;
       }
       
-      return data as DatabaseExpense[];
+      return data as unknown as DatabaseExpense[];
     },
     enabled: !!user,
   });

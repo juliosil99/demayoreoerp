@@ -50,5 +50,5 @@ export type Expense = {
     client: {
       name: string;
     };
-  };
+  } | null;
 };
