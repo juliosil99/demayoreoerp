@@ -3,7 +3,6 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatCardDate, formatCurrency } from "@/utils/formatters";
 import { ExpenseActions } from "./ExpenseActions";
-import { useIsMobile } from "@/hooks/use-mobile";
 import type { Expense } from "./types";
 
 interface ExpenseRowProps {
@@ -17,10 +16,6 @@ export function ExpenseRow({
   onDelete,
   onEdit,
 }: ExpenseRowProps) {
-
-  const handleDeleteClick = async () => {
-    return onDelete(expense);
-  };
 
   const handleEditClick = () => {
     onEdit(expense);

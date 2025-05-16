@@ -49,13 +49,20 @@ type Filters = {
   from_payable?: boolean;
 };
 
+// Convert database expense to component expense
+const mapDatabaseExpenseToExpense = (dbExpense: DatabaseExpense): Expense => {
+  return {
+    ...dbExpense,
+  };
+};
+
 export default function Expenses() {
   const { user } = useAuth();
   const [filters, setFilters] = useState<Filters>({});
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const { data: expenses, isLoading, refetch } = useQuery({
+  const { data: dbExpenses, isLoading, refetch } = useQuery({
     queryKey: ["expenses", user?.id, filters],
     queryFn: async () => {
       let query = supabase
@@ -104,10 +111,13 @@ export default function Expenses() {
         throw error;
       }
       
-      return data as unknown as DatabaseExpense[];
+      return data as DatabaseExpense[];
     },
     enabled: !!user,
   });
+
+  // Map database expenses to component expenses
+  const expenses: Expense[] = (dbExpenses || []).map(mapDatabaseExpenseToExpense);
 
   const handleSuccess = useCallback(() => {
     refetch();
@@ -151,7 +161,7 @@ export default function Expenses() {
           <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
         </div>
         
-        <ExpenseList expenses={expenses || []} isLoading={isLoading} />
+        <ExpenseList expenses={expenses} isLoading={isLoading} />
       </div>
     </div>
   );

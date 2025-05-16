@@ -6,53 +6,9 @@ import { ExpensePagination } from "./components/ExpensePagination";
 import { StableExpenseEditDialog } from "./components/StableExpenseEditDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Expense } from "./components/types";
-import type { Database } from "@/integrations/supabase/types/base";
-
-// Convert database expense type to component expense type
-const mapDatabaseExpenseToComponentExpense = (dbExpense: Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string; currency: string };
-  chart_of_accounts: { name: string; code: string };
-  contacts: { name: string; type?: string } | null;
-  expense_invoice_relations?: {
-    invoice: {
-      uuid: string;
-      invoice_number: string;
-      file_path: string;
-      filename: string;
-      content_type?: string;
-    }
-  }[];
-  accounts_payable?: {
-    id: string;
-    client: {
-      name: string;
-    };
-  };
-}): Expense => ({
-  ...dbExpense,
-});
 
 interface ExpenseListProps {
-  expenses: Database['public']['Tables']['expenses']['Row'] & {
-    bank_accounts: { name: string; currency: string };
-    chart_of_accounts: { name: string; code: string };
-    contacts: { name: string; type?: string } | null;
-    expense_invoice_relations?: {
-      invoice: {
-        uuid: string;
-        invoice_number: string;
-        file_path: string;
-        filename: string;
-        content_type?: string;
-      }
-    }[];
-    accounts_payable?: {
-      id: string;
-      client: {
-        name: string;
-      };
-    };
-  }[];
+  expenses: Expense[];
   isLoading: boolean;
 }
 
@@ -64,12 +20,9 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   const itemsPerPage = isMobile ? 10 : 30;
   const { deleteError, handleDelete } = useExpenseDelete();
 
-  // Map database expenses to component expenses
-  const componentExpenses: Expense[] = expenses.map(mapDatabaseExpenseToComponentExpense);
-
   // Get paginated expenses
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedExpenses = componentExpenses.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedExpenses = expenses.slice(startIndex, startIndex + itemsPerPage);
 
   // Handle edit expense - set the expense and open the dialog
   const handleEditExpense = useCallback((expense: Expense) => {
