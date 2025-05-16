@@ -161,6 +161,8 @@ export default function Payments() {
         onSuccess={handleSuccess}
       />
 
+      {/* The BulkReconciliationDialog is now only rendered once, 
+          and is controlled by the state from the header button */}
       <BulkReconciliationDialog 
         open={showBulkReconciliation}
         onOpenChange={setShowBulkReconciliation}
