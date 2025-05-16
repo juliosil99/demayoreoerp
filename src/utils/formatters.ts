@@ -1,9 +1,8 @@
-
-export const formatCurrency = (amount: number | null) => {
+export const formatCurrency = (amount: number | null, currency: string = 'MXN') => {
   if (amount === null) return '-';
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
-    currency: 'MXN',
+    currency: currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
     useGrouping: true  // This enables comma separators
