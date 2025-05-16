@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   AlertDialog,
@@ -21,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Filter } from "lucide-react";
-import { PaymentSelector } from "./PaymentSelector";
+import { PaymentSelector } from "./components/PaymentSelector"; // Fixed import path
 import { useToast } from "@/hooks/use-toast";
 import { Payment } from "./PaymentForm";
 import { ReconciliationFilters } from "./components/ReconciliationFilters";
@@ -90,7 +91,7 @@ export function BulkReconciliationDialog({
   };
 
   const formattedPayment = {
-    status: 'confirmed'
+    status: 'confirmed' as const
   } as Payment;
 
   return (

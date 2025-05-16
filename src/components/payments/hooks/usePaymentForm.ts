@@ -1,32 +1,20 @@
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { Payment } from "../PaymentForm";
+import type { Payment } from "../PaymentForm";
 
 export type PaymentFormData = {
   date: string;
   amount: string;
-  sales_channel_id: string;
-  account_id: string;
   payment_method: string;
   reference_number: string;
+  sales_channel_id: string;
+  account_id: string;
   notes: string;
-  status: 'confirmed' | 'pending';
-};
-
-const initialFormData: PaymentFormData = {
-  date: format(new Date(), 'yyyy-MM-dd'),
-  amount: "",
-  sales_channel_id: "",
-  account_id: "",
-  payment_method: "cash",
-  reference_number: "",
-  notes: "",
-  status: "confirmed",
+  status: "confirmed" | "pending";
 };
 
 interface UsePaymentFormProps {
@@ -34,129 +22,107 @@ interface UsePaymentFormProps {
   paymentToEdit?: Payment | null;
 }
 
-export function usePaymentForm({ onSuccess, paymentToEdit }: UsePaymentFormProps = {}) {
+export const usePaymentForm = ({ onSuccess, paymentToEdit }: UsePaymentFormProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const initialFormData: PaymentFormData = {
+    date: paymentToEdit?.date || new Date().toISOString().split("T")[0],
+    amount: paymentToEdit?.amount?.toString() || "",
+    payment_method: paymentToEdit?.payment_method || "transfer",
+    reference_number: paymentToEdit?.reference_number || "",
+    sales_channel_id: paymentToEdit?.sales_channel_id || "",
+    account_id: paymentToEdit?.account_id?.toString() || "",
+    notes: paymentToEdit?.notes || "",
+    status: paymentToEdit?.status || "confirmed"
+  };
+  
   const [formData, setFormData] = useState<PaymentFormData>(initialFormData);
-
-  useEffect(() => {
-    if (paymentToEdit) {
-      // Ensure date is properly formatted for input (yyyy-MM-dd)
-      const formattedDate = paymentToEdit.date 
-        ? format(new Date(paymentToEdit.date), 'yyyy-MM-dd') 
-        : format(new Date(), 'yyyy-MM-dd');
+  
+  const createPaymentMutation = useMutation({
+    mutationFn: async (data: PaymentFormData) => {
+      if (!user) throw new Error("User not authenticated");
       
-      setFormData({
-        date: formattedDate,
-        amount: paymentToEdit.amount.toString(),
-        sales_channel_id: paymentToEdit.sales_channel_id || "",
-        account_id: paymentToEdit.account_id.toString(),
-        payment_method: paymentToEdit.payment_method,
-        reference_number: paymentToEdit.reference_number || "",
-        notes: paymentToEdit.notes || "",
-        status: paymentToEdit.status || "confirmed", // Default to confirmed for existing payments
-      });
-    }
-  }, [paymentToEdit]);
-
-  const updatePayment = useMutation({
-    mutationFn: async (values: PaymentFormData & { id: string }) => {
-      if (!user?.id) throw new Error("Usuario no autenticado");
-
-      const { data, error } = await supabase
+      const { data: result, error } = await supabase
         .from("payments")
-        .update({
-          date: values.date,
-          amount: parseFloat(values.amount),
-          sales_channel_id: values.sales_channel_id || null,
-          account_id: parseInt(values.account_id),
-          payment_method: values.payment_method,
-          reference_number: values.reference_number || null,
-          notes: values.notes || null,
-          status: values.status,
-        })
-        .eq('id', values.id)
-        .select()
-        .single();
-
+        .insert([
+          {
+            date: data.date,
+            amount: parseFloat(data.amount),
+            payment_method: data.payment_method,
+            reference_number: data.reference_number,
+            sales_channel_id: data.sales_channel_id || null,
+            account_id: parseInt(data.account_id, 10),
+            user_id: user.id,
+            notes: data.notes,
+            status: data.status
+          }
+        ])
+        .select();
+      
       if (error) throw error;
-      return data;
+      return result?.[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] });
-      queryClient.invalidateQueries({ queryKey: ["payments-count"] });
-      toast.success("Pago actualizado exitosamente");
-      setFormData(initialFormData);
-      onSuccess?.();
-    },
-    onError: (error) => {
-      console.error("Error al actualizar el pago:", error);
-      toast.error("Error al actualizar el pago");
-    },
-  });
-
-  const createPayment = useMutation({
-    mutationFn: async (values: PaymentFormData) => {
-      if (!user?.id) throw new Error("Usuario no autenticado");
-
-      const paymentData = {
-        user_id: user.id,
-        date: values.date,
-        amount: parseFloat(values.amount),
-        sales_channel_id: values.sales_channel_id || null,
-        account_id: parseInt(values.account_id),
-        payment_method: values.payment_method,
-        reference_number: values.reference_number || null,
-        notes: values.notes || null,
-        status: values.status,
-      };
-
-      const { data, error } = await supabase
-        .from("payments")
-        .insert([paymentData])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payments"] });
-      queryClient.invalidateQueries({ queryKey: ["payments-count"] });
       toast.success("Pago registrado exitosamente");
-      setFormData(initialFormData);
-      onSuccess?.();
+      if (onSuccess) onSuccess();
     },
     onError: (error) => {
-      console.error("Error al registrar el pago:", error);
+      console.error("Error creando el pago:", error);
       toast.error("Error al registrar el pago");
     },
   });
-
+  
+  const updatePaymentMutation = useMutation({
+    mutationFn: async (data: PaymentFormData) => {
+      if (!user || !paymentToEdit) throw new Error("User not authenticated or missing payment");
+      
+      const { data: result, error } = await supabase
+        .from("payments")
+        .update({
+          date: data.date,
+          amount: parseFloat(data.amount),
+          payment_method: data.payment_method,
+          reference_number: data.reference_number,
+          sales_channel_id: data.sales_channel_id || null,
+          account_id: parseInt(data.account_id, 10),
+          notes: data.notes,
+          status: data.status
+        })
+        .eq("id", paymentToEdit.id)
+        .select();
+      
+      if (error) throw error;
+      return result?.[0];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      toast.success("Pago actualizado exitosamente");
+      if (onSuccess) onSuccess();
+    },
+    onError: (error) => {
+      console.error("Error actualizando el pago:", error);
+      toast.error("Error al actualizar el pago");
+    },
+  });
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      toast.error("Por favor inicie sesión para realizar esta acción");
-      return;
-    }
-
     setIsSubmitting(true);
+    
     try {
       if (paymentToEdit) {
-        await updatePayment.mutateAsync({ ...formData, id: paymentToEdit.id });
+        await updatePaymentMutation.mutateAsync(formData);
       } else {
-        await createPayment.mutateAsync(formData);
+        await createPaymentMutation.mutateAsync(formData);
       }
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  return {
-    formData,
-    setFormData,
-    isSubmitting,
-    handleSubmit,
-  };
-}
+  
+  return { formData, setFormData, handleSubmit, isSubmitting };
+};

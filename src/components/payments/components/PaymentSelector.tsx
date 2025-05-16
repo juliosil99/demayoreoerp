@@ -42,7 +42,7 @@ export function PaymentSelector({
           bank_accounts (name),
           sales_channels (name)
         `)
-        .eq("status", "completed");
+        .eq("status", "confirmed");
 
       // We want payments without reconciled sales or with some sales not reconciled
       if (selectedChannel !== "all") {

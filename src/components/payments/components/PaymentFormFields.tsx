@@ -114,8 +114,8 @@ export function PaymentFormFields({
         <div className="space-y-2">
           <Label>Estado</Label>
           <Select
-            value={formData.status}
-            onValueChange={(value) => setFormData({ ...formData, status: value })}
+            value={formData.status as "confirmed" | "pending"}
+            onValueChange={(value: "confirmed" | "pending") => setFormData({ ...formData, status: value })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Seleccionar estado" />
