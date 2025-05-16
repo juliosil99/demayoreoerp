@@ -84,7 +84,7 @@ export function PaymentSelector({
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium">Seleccionar Pago</label>
-      <Select value={selectedPaymentId} onValueChange={onPaymentSelect}>
+      <Select value={selectedPaymentId || "none"} onValueChange={onPaymentSelect}>
         <SelectTrigger>
           <SelectValue placeholder="Selecciona un pago..." />
         </SelectTrigger>

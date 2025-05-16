@@ -15,7 +15,7 @@ export type PaymentFormData = {
   payment_method: string;
   reference_number: string;
   notes: string;
-  status: string;
+  status: 'confirmed' | 'pending';
 };
 
 const initialFormData: PaymentFormData = {

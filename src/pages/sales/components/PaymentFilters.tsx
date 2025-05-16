@@ -86,12 +86,15 @@ export function PaymentFilters({
               
               <div className="space-y-2">
                 <Label>Canal de Venta</Label>
-                <Select value={salesChannelId} onValueChange={(value) => setSalesChannelId(value || undefined)}>
+                <Select 
+                  value={salesChannelId || "all"} 
+                  onValueChange={(value) => setSalesChannelId(value === "all" ? undefined : value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Todos los canales" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los canales</SelectItem>
+                    <SelectItem value="all">Todos los canales</SelectItem>
                     {salesChannels?.map((channel) => (
                       <SelectItem key={channel.id} value={channel.id}>
                         {channel.name}
@@ -103,12 +106,15 @@ export function PaymentFilters({
               
               <div className="space-y-2">
                 <Label>Cuenta Bancaria</Label>
-                <Select value={accountId} onValueChange={(value) => setAccountId(value || undefined)}>
+                <Select 
+                  value={accountId || "all"} 
+                  onValueChange={(value) => setAccountId(value === "all" ? undefined : value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Todas las cuentas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las cuentas</SelectItem>
+                    <SelectItem value="all">Todas las cuentas</SelectItem>
                     {bankAccounts?.map((account) => (
                       <SelectItem key={account.id} value={account.id.toString()}>
                         {account.name}
@@ -120,12 +126,15 @@ export function PaymentFilters({
               
               <div className="space-y-2">
                 <Label>Estado</Label>
-                <Select value={status} onValueChange={(value) => setStatus(value || undefined)}>
+                <Select 
+                  value={status || "all"} 
+                  onValueChange={(value) => setStatus(value === "all" ? undefined : value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Todos los estados" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los estados</SelectItem>
+                    <SelectItem value="all">Todos los estados</SelectItem>
                     <SelectItem value="confirmed">Confirmados</SelectItem>
                     <SelectItem value="pending">Pendientes</SelectItem>
                   </SelectContent>

@@ -50,7 +50,8 @@ export function usePaymentsQuery({
         query = query.eq('sales_channel_id', salesChannelId);
       }
       if (accountId) {
-        query = query.eq('account_id', accountId);
+        // Convert accountId to number before using it in the query
+        query = query.eq('account_id', parseInt(accountId, 10));
       }
       if (status) {
         query = query.eq('status', status);
@@ -91,7 +92,8 @@ export function usePaymentsQuery({
         query = query.eq('sales_channel_id', salesChannelId);
       }
       if (accountId) {
-        query = query.eq('account_id', accountId);
+        // Convert accountId to number before using it in the query
+        query = query.eq('account_id', parseInt(accountId, 10));
       }
       if (status) {
         query = query.eq('status', status);
