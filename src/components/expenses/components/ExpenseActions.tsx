@@ -23,8 +23,10 @@ export function ExpenseActions({
   const [isLogOpen, setIsLogOpen] = useState(false);
   const isMobile = useIsMobile();
 
+  // Create a wrapper function that doesn't pass any parameters
   const handleDeleteClick = async () => {
     try {
+      // Call the onDelete with expense parameter inside this wrapper function
       const result = await onDelete(expense);
       if (result && 'success' in result && !result.success) {
         setDeletionLog(result.log);
@@ -50,7 +52,7 @@ export function ExpenseActions({
       <ExpenseDeleteDialog 
         isOpen={confirmOpen}
         onOpenChange={setConfirmOpen}
-        onDelete={handleDeleteClick}
+        onDelete={handleDeleteClick} // Pass the parameterless function here
       />
 
       <Dialog open={isLogOpen} onOpenChange={setIsLogOpen}>
