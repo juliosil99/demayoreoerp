@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Payment } from "@/components/payments/PaymentForm";
 import { BulkReconciliationDialog } from "@/components/payments/BulkReconciliationDialog";
@@ -161,8 +160,7 @@ export default function Payments() {
         onSuccess={handleSuccess}
       />
 
-      {/* The BulkReconciliationDialog is now only rendered once, 
-          and is controlled by the state from the header button */}
+      {/* BulkReconciliationDialog is now only rendered once */}
       <BulkReconciliationDialog 
         open={showBulkReconciliation}
         onOpenChange={setShowBulkReconciliation}

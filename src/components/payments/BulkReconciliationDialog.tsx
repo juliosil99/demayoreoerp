@@ -9,12 +9,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Filter } from "lucide-react";
 import { PaymentSelector } from "@/components/payments/components/PaymentSelector"; // Using absolute import path
 import { useToast } from "@/hooks/use-toast";
 import { Payment } from "./PaymentForm";
@@ -89,12 +87,7 @@ export function BulkReconciliationDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogTrigger asChild>
-        <Button variant="outline">
-          <Filter className="h-4 w-4 mr-2" />
-          Reconciliación Masiva
-        </Button>
-      </AlertDialogTrigger>
+      {/* Removing the trigger button - now controlled by parent component */}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Reconciliación Masiva de Ventas</AlertDialogTitle>
