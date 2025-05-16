@@ -4,6 +4,7 @@ import { Payment } from "@/components/payments/PaymentForm";
 import { BulkReconciliationDialog } from "@/components/payments/BulkReconciliationDialog";
 import { usePaymentsQuery } from "./hooks/usePaymentsQuery";
 import { usePaymentDelete } from "./hooks/usePaymentDelete";
+import { usePaymentStatusUpdate } from "./hooks/usePaymentStatusUpdate";
 import { PaymentTable } from "./components/PaymentTable";
 import { PaymentHeader } from "./components/PaymentHeader";
 import { PaymentFormDialog } from "./components/PaymentFormDialog";
@@ -46,6 +47,7 @@ export default function Payments() {
   });
   
   const deletePaymentMutation = usePaymentDelete();
+  const statusUpdateMutation = usePaymentStatusUpdate();
   const queryClient = useQueryClient();
   
   const bulkReconcileMutation = useMutation({
@@ -84,6 +86,10 @@ export default function Payments() {
     if (window.confirm("¿Estás seguro de que deseas eliminar este pago?")) {
       deletePaymentMutation.mutate(id);
     }
+  };
+
+  const handleStatusUpdate = (id: string, status: 'confirmed' | 'pending') => {
+    statusUpdateMutation.mutate({ paymentId: id, status });
   };
 
   const handleEdit = (payment: PaymentWithRelations) => {
@@ -166,6 +172,7 @@ export default function Payments() {
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onStatusUpdate={handleStatusUpdate}
       />
       
       <PaymentPagination

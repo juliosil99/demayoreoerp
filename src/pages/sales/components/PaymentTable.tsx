@@ -24,9 +24,16 @@ interface PaymentTableProps {
   isLoading: boolean;
   onEdit: (payment: PaymentWithRelations) => void;
   onDelete: (id: string) => void;
+  onStatusUpdate?: (id: string, status: 'confirmed' | 'pending') => void;
 }
 
-export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentTableProps) {
+export function PaymentTable({ 
+  payments, 
+  isLoading, 
+  onEdit, 
+  onDelete,
+  onStatusUpdate 
+}: PaymentTableProps) {
   if (isLoading) {
     return <div className="text-center py-4">Cargando pagos...</div>;
   }
@@ -85,6 +92,28 @@ export function PaymentTable({ payments, isLoading, onEdit, onDelete }: PaymentT
               <TableCell className="text-right">{formatCurrency(payment.amount)}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
+                  {onStatusUpdate && payment.status !== 'confirmed' && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onStatusUpdate(payment.id, 'confirmed')}
+                      className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                      title="Confirmar pago"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {onStatusUpdate && payment.status === 'confirmed' && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onStatusUpdate(payment.id, 'pending')}
+                      className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                      title="Marcar como pendiente"
+                    >
+                      <Clock className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
