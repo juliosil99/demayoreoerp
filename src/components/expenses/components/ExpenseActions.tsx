@@ -9,7 +9,7 @@ import type { Expense } from "./types";
 
 interface ExpenseActionsProps {
   expense: Expense;
-  onDelete: (expense: Expense) => Promise<{ success: boolean; log: string[] } | void>;
+  onDelete: () => Promise<{ success: boolean; log: string[] } | void>;
   onEdit: () => void;
 }
 
@@ -23,11 +23,9 @@ export function ExpenseActions({
   const [isLogOpen, setIsLogOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  // Create a wrapper function that doesn't pass any parameters
   const handleDeleteClick = async () => {
     try {
-      // Call the onDelete with expense parameter inside this wrapper function
-      const result = await onDelete(expense);
+      const result = await onDelete();
       if (result && 'success' in result && !result.success) {
         setDeletionLog(result.log);
         setIsLogOpen(true);
@@ -52,7 +50,7 @@ export function ExpenseActions({
       <ExpenseDeleteDialog 
         isOpen={confirmOpen}
         onOpenChange={setConfirmOpen}
-        onDelete={handleDeleteClick} // Pass the parameterless function here
+        onDelete={handleDeleteClick}
       />
 
       <Dialog open={isLogOpen} onOpenChange={setIsLogOpen}>

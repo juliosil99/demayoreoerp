@@ -17,6 +17,10 @@ export function ExpenseRow({
   onEdit,
 }: ExpenseRowProps) {
 
+  // Create wrapper functions to handle the proper signature
+  const handleDelete = () => onDelete(expense);
+  const handleEdit = () => onEdit(expense);
+
   return (
     <TableRow key={expense.id} className={!!expense.accounts_payable ? "bg-gray-300" : "odd:bg-gray-300 even:bg-gray-300"}>
       <TableCell className="whitespace-nowrap">{formatCardDate(expense.date)}</TableCell>
@@ -71,8 +75,8 @@ export function ExpenseRow({
       <TableCell>
         <ExpenseActions 
           expense={expense}
-          onDelete={onDelete}
-          onEdit={() => onEdit(expense)}
+          onDelete={handleDelete}
+          onEdit={handleEdit}
         />
       </TableCell>
     </TableRow>
