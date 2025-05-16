@@ -4,13 +4,7 @@ import { useExpenseForm } from "./hooks/useExpenseForm";
 import { useExpenseQueries } from "./hooks/useExpenseQueries";
 import { ExpenseFormFields } from "./components/ExpenseFormFields";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Database } from "@/integrations/supabase/types/base";
-
-type Expense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string; currency: string };
-  chart_of_accounts: { name: string; code: string };
-  contacts: { name: string } | null;
-};
+import type { Expense } from "./components/types";
 
 interface ExpenseFormProps {
   initialData?: Expense;

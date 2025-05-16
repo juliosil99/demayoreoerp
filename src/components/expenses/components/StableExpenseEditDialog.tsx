@@ -1,24 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { X } from "lucide-react";
-import type { Database } from "@/integrations/supabase/types/base";
-
-type Expense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string };
-  chart_of_accounts: { name: string; code: string };
-  contacts: { name: string } | null;
-  expense_invoice_relations?: {
-    invoice: {
-      uuid: string;
-      invoice_number: string;
-      file_path: string;
-      filename: string;
-      content_type?: string;
-    }
-  }[];
-};
+import type { Expense } from "./types";
 
 interface StableExpenseEditDialogProps {
   isOpen: boolean;

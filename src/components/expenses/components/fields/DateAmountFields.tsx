@@ -45,11 +45,12 @@ export function DateAmountFields({
       mxnAmount = (originalAmount * exchangeRate).toFixed(2);
     }
     
-    setFormData(prev => ({
-      ...prev,
+    // Make sure we pass the complete formData object with just the amount property updated
+    setFormData({
+      ...formData,
       amount: mxnAmount
-    }));
-  }, [formData.original_amount, formData.exchange_rate, formData.currency]);
+    });
+  }, [formData.original_amount, formData.exchange_rate, formData.currency, setFormData]);
 
   return (
     <>

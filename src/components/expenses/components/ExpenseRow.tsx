@@ -1,30 +1,10 @@
+
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatCardDate, formatCurrency } from "@/utils/formatters";
 import { ExpenseActions } from "./ExpenseActions";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { Database } from "@/integrations/supabase/types/base";
-
-type Expense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string };
-  chart_of_accounts: { name: string; code: string };
-  contacts: { name: string; type?: string } | null;
-  expense_invoice_relations?: {
-    invoice: {
-      uuid: string;
-      invoice_number: string;
-      file_path: string;
-      filename: string;
-      content_type?: string;
-    }
-  }[];
-  accounts_payable?: {
-    id: string;
-    client: {
-      name: string;
-    };
-  };
-};
+import type { Expense } from "./types";
 
 interface ExpenseRowProps {
   expense: Expense;
@@ -84,7 +64,16 @@ export function ExpenseRow({
         </div>
       </TableCell>
       <TableCell className="text-right font-medium whitespace-nowrap">
-        {formatCurrency(expense.amount)}
+        {expense.currency !== 'MXN' ? (
+          <>
+            {expense.currency} {formatCurrency(expense.original_amount, expense.currency)}
+            <div className="text-xs text-muted-foreground">
+              MXN {formatCurrency(expense.amount)}
+            </div>
+          </>
+        ) : (
+          formatCurrency(expense.amount)
+        )}
       </TableCell>
       <TableCell className="whitespace-nowrap">{expense.bank_accounts.name}</TableCell>
       <TableCell>

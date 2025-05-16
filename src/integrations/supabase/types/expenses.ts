@@ -17,6 +17,9 @@ export interface ExpensesTable {
     reconciled: boolean | null
     reconciliation_date: string | null
     reconciliation_type: string | null
+    currency: string
+    exchange_rate: number
+    original_amount: number
   }
   Insert: {
     id?: string
@@ -35,6 +38,9 @@ export interface ExpensesTable {
     reconciled?: boolean | null
     reconciliation_date?: string | null
     reconciliation_type?: string | null
+    currency?: string
+    exchange_rate?: number
+    original_amount: number
   }
   Update: {
     id?: string
@@ -53,5 +59,8 @@ export interface ExpensesTable {
     reconciled?: boolean | null
     reconciliation_date?: string | null
     reconciliation_type?: string | null
+    currency?: string
+    exchange_rate?: number
+    original_amount?: number
   }
 }
