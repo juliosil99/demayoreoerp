@@ -1,6 +1,7 @@
 
 import { BankAccount } from "@/components/banking/types";
-import { Transaction, TransactionRow } from "../TransactionRow";
+import { Transaction } from "../hooks/transaction-models";
+import { TransactionRowItem } from "./TransactionRowItem";
 import { TableBody } from "@/components/ui/table";
 import { useState, useEffect } from "react";
 
@@ -36,9 +37,10 @@ export function TransactionsList({ account, currentTransactions, currentPage }: 
     return (
       <TableBody>
         {currentTransactions.map((transaction) => (
-          <TransactionRow 
+          <TransactionRowItem 
             key={transaction.id} 
             transaction={transaction}
+            account={account}
           />
         ))}
       </TableBody>

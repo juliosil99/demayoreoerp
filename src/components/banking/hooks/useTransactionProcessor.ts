@@ -1,7 +1,7 @@
 
 import { useMemo } from "react";
 import { BankAccount } from "@/components/banking/types";
-import { Transaction } from "../TransactionRow";
+import { Transaction } from "./transaction-models";
 
 export const ITEMS_PER_PAGE = 30;
 
@@ -72,11 +72,19 @@ export function useTransactionProcessor(account: BankAccount | null, transaction
     // Process transactions after balance date (they will affect running balance)
     let runningBalance = initialBalance;
     const processedTransactionsAfter = sortedTransactionsAfter.map(transaction => {
+      // Calculate amount to add/subtract based on currency
+      let effectiveAmount = transaction.amount;
+      
+      // If transaction currency matches account currency and we have original_amount
+      if (transaction.original_currency === account.currency && transaction.original_amount !== undefined) {
+        effectiveAmount = transaction.original_amount;
+      }
+      
       // Update running balance based on transaction type
       if (transaction.type === 'in') {
-        runningBalance += transaction.amount;
+        runningBalance += effectiveAmount;
       } else {
-        runningBalance -= transaction.amount;
+        runningBalance -= effectiveAmount;
       }
       
       return {
