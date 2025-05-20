@@ -63,7 +63,7 @@ export function useFinancialReports(
 
         if (balancesError) throw balancesError;
 
-        // Get expenses for this period - with currency support
+        // Get expenses for this period - with currency support and handling returns properly
         const { data: expenses, error: expensesError } = await supabase
           .from('expenses')
           .select(`
@@ -109,7 +109,7 @@ export function useFinancialReports(
           });
         }
 
-        // Add expenses with proper currency handling
+        // Add expenses with proper currency handling and respect for negative values (refunds)
         if (expenses) {
           expenses.forEach(expense => {
             if (expense.chart_of_accounts) {
@@ -120,26 +120,29 @@ export function useFinancialReports(
               let amountInReportCurrency = 0;
               
               if (expense.currency === currency) {
-                // If expense is already in the requested currency, use original amount
+                // If expense is already in the requested currency, use original amount (preserving sign)
                 amountInReportCurrency = Number(expense.original_amount);
               } else {
-                // Otherwise convert using the stored exchange rate
-                amountInReportCurrency = Number(expense.amount); // This is already stored in MXN
+                // Otherwise convert using the stored exchange rate (preserving sign for refunds)
+                amountInReportCurrency = Number(expense.amount); // This is already stored in MXN with proper sign
                 
                 // If report currency is USD but the amount is in MXN, convert back
                 if (currency === 'USD' && expense.currency === 'MXN') {
                   // Use the inverse of the exchange rate if we're converting from MXN to USD
-                  amountInReportCurrency = Number(expense.amount) / Number(expense.exchange_rate || 1);
+                  // Preserve the sign (negative for refunds)
+                  const absAmount = Math.abs(Number(expense.amount));
+                  const convertedAbsAmount = absAmount / Number(expense.exchange_rate || 1);
+                  amountInReportCurrency = Number(expense.amount) < 0 ? -convertedAbsAmount : convertedAbsAmount;
                 }
               }
               
-              // Add to account type total
+              // Add to account type total - respecting the sign (refunds will subtract)
               if (!currentPeriodData[accountType]) {
                 currentPeriodData[accountType] = 0;
               }
               currentPeriodData[accountType] += amountInReportCurrency;
               
-              // Add to individual account
+              // Add to individual account - respecting the sign
               if (!currentPeriodData[accountKey]) {
                 currentPeriodData[accountKey] = 0;
               }
@@ -216,7 +219,7 @@ export function useFinancialReports(
                 previousPeriodData[accountKey] = Number(balance.balance);
               });
 
-              // Add expenses for previous period with currency handling
+              // Add expenses for previous period with currency handling and respect for negative values (refunds)
               if (!prevExpensesError && prevExpenses) {
                 prevExpenses.forEach(expense => {
                   if (expense.chart_of_accounts) {
@@ -227,13 +230,19 @@ export function useFinancialReports(
                     let amountInReportCurrency = 0;
                     
                     if (expense.currency === currency) {
+                      // If expense is already in the requested currency, use original amount (preserving sign)
                       amountInReportCurrency = Number(expense.original_amount);
                     } else {
-                      amountInReportCurrency = Number(expense.amount); // This is already in MXN
+                      // Otherwise convert using the stored exchange rate (preserving sign)
+                      amountInReportCurrency = Number(expense.amount); // This is already stored in MXN with proper sign
                       
                       // If report currency is USD but the amount is in MXN, convert back
                       if (currency === 'USD' && expense.currency === 'MXN') {
-                        amountInReportCurrency = Number(expense.amount) / Number(expense.exchange_rate || 1);
+                        // Use the inverse of the exchange rate if we're converting from MXN to USD
+                        // Preserve the sign (negative for refunds)
+                        const absAmount = Math.abs(Number(expense.amount));
+                        const convertedAbsAmount = absAmount / Number(expense.exchange_rate || 1);
+                        amountInReportCurrency = Number(expense.amount) < 0 ? -convertedAbsAmount : convertedAbsAmount;
                       }
                     }
                     
