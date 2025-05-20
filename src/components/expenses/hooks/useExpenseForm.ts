@@ -218,9 +218,10 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
         : originalAmount * exchangeRate;
       
       // Apply negative sign for returns/refunds
+      let finalOriginalAmount = originalAmount;
       if (values.isReturn) {
         amount = -Math.abs(amount);
-        originalAmount = -Math.abs(originalAmount);
+        finalOriginalAmount = -Math.abs(originalAmount);
       }
 
       const expenseData = {
@@ -228,7 +229,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
         date: values.date,
         description: values.description,
         amount: amount,
-        original_amount: originalAmount,
+        original_amount: finalOriginalAmount,
         account_id: parseInt(values.account_id),
         chart_account_id: values.chart_account_id,
         payment_method: values.payment_method,
