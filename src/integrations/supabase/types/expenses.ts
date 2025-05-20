@@ -20,6 +20,7 @@ export interface ExpensesTable {
     currency: string
     exchange_rate: number
     original_amount: number
+    isReturn?: boolean // Note: This is for UI only, not stored in DB
   }
   Insert: {
     id?: string

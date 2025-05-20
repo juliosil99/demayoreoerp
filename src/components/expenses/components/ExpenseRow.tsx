@@ -21,6 +21,9 @@ export function ExpenseRow({
   const handleDelete = () => onDelete(expense);
   const handleEdit = () => onEdit(expense);
 
+  // Check if this is a refund/return (negative amount)
+  const isReturn = expense.amount < 0;
+
   return (
     <TableRow key={expense.id} className={!!expense.accounts_payable ? "bg-gray-300" : "odd:bg-gray-300 even:bg-gray-300"}>
       <TableCell className="whitespace-nowrap">{formatCardDate(expense.date)}</TableCell>
@@ -32,18 +35,25 @@ export function ExpenseRow({
               CxP
             </Badge>
           )}
+          {isReturn && (
+            <Badge className="bg-red-200 text-red-800 rounded-full px-2 py-1 text-xs shrink-0">
+              Reembolso
+            </Badge>
+          )}
         </div>
       </TableCell>
       <TableCell className="text-right font-medium whitespace-nowrap">
         {expense.currency !== 'MXN' ? (
           <>
-            {expense.currency} {formatCurrency(expense.original_amount, expense.currency)}
-            <div className="text-xs text-muted-foreground">
-              MXN {formatCurrency(expense.amount)}
+            {expense.currency} {formatCurrency(Math.abs(expense.original_amount), expense.currency)}
+            <div className={`text-xs ${isReturn ? "text-red-600" : "text-muted-foreground"}`}>
+              {isReturn ? "- " : ""}MXN {formatCurrency(Math.abs(expense.amount))}
             </div>
           </>
         ) : (
-          formatCurrency(expense.amount)
+          <span className={isReturn ? "text-red-600" : ""}>
+            {isReturn ? "- " : ""}{formatCurrency(Math.abs(expense.amount))}
+          </span>
         )}
       </TableCell>
       <TableCell className="whitespace-nowrap">{expense.bank_accounts.name}</TableCell>

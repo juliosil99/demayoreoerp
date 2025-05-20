@@ -18,6 +18,7 @@ interface ExpenseFormFieldsProps {
   handleCurrencyChange?: (currency: string) => void;
   handleExchangeRateChange?: (exchangeRate: string) => void;
   handleOriginalAmountChange?: (originalAmount: string) => void;
+  handleReturnToggle?: (checked: boolean) => void;
 }
 
 export function ExpenseFormFields({
@@ -32,6 +33,7 @@ export function ExpenseFormFields({
   handleCurrencyChange,
   handleExchangeRateChange,
   handleOriginalAmountChange,
+  handleReturnToggle,
 }: ExpenseFormFieldsProps) {
   return (
     <div className="space-y-6">
@@ -43,6 +45,7 @@ export function ExpenseFormFields({
           handleCurrencyChange={handleCurrencyChange}
           handleExchangeRateChange={handleExchangeRateChange}
           handleOriginalAmountChange={handleOriginalAmountChange}
+          handleReturnToggle={handleReturnToggle}
         />
         <DescriptionAccountFields 
           formData={formData} 

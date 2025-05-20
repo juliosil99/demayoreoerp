@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -26,6 +27,7 @@ export type ExpenseFormData = {
   category: string;
   currency: string;
   exchange_rate: string;
+  isReturn: boolean; // New field to track if this is a return/refund
 };
 
 const initialFormData: ExpenseFormData = {
@@ -42,6 +44,7 @@ const initialFormData: ExpenseFormData = {
   category: "",
   currency: "MXN",
   exchange_rate: "1",
+  isReturn: false, // Default to false
 };
 
 export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void) {
@@ -61,11 +64,15 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       const day = String(rawDate.getUTCDate()).padStart(2, '0');
       const formattedDate = `${year}-${month}-${day}`;
       
+      // Determine if this is a return based on the amount
+      const isReturn = initialExpense.amount < 0;
+      const originalAmount = Math.abs(initialExpense.original_amount || initialExpense.amount).toString();
+      
       setFormData({
         date: formattedDate,
         description: initialExpense.description,
-        amount: initialExpense.amount.toString(),
-        original_amount: initialExpense.original_amount?.toString() || initialExpense.amount.toString(),
+        amount: Math.abs(initialExpense.amount).toString(), // Store absolute value
+        original_amount: originalAmount,
         account_id: initialExpense.account_id.toString(),
         chart_account_id: initialExpense.chart_account_id,
         payment_method: initialExpense.payment_method,
@@ -75,6 +82,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
         category: initialExpense.category || "",
         currency: initialExpense.currency || "MXN",
         exchange_rate: initialExpense.exchange_rate?.toString() || "1",
+        isReturn: isReturn, // Set based on amount
       });
 
       // Get the account currency
@@ -89,6 +97,14 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     setFormData(prev => ({
       ...prev,
       chart_account_id: chartAccountId
+    }));
+  };
+
+  // Function to handle return toggle
+  const handleReturnToggle = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      isReturn: checked
     }));
   };
 
@@ -195,14 +211,21 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
 
       const originalAmount = parseFloat(values.original_amount);
       const exchangeRate = parseFloat(values.exchange_rate);
+      
       // Calculate the MXN amount if currency is not MXN
-      const amount = values.currency === "MXN" 
+      let amount = values.currency === "MXN" 
         ? originalAmount 
         : originalAmount * exchangeRate;
+      
+      // Apply negative sign for returns/refunds
+      if (values.isReturn) {
+        amount = -Math.abs(amount);
+        originalAmount = -Math.abs(originalAmount);
+      }
 
       const expenseData = {
         user_id: user.id,
-        date: values.date, // This is already in YYYY-MM-DD format from the input
+        date: values.date,
         description: values.description,
         amount: amount,
         original_amount: originalAmount,
@@ -240,7 +263,11 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      toast.success(initialExpense ? "Gasto actualizado exitosamente" : "Gasto creado exitosamente");
+      
+      // Update success message based on if this is a return/refund
+      const actionText = initialExpense ? "actualizado" : "creado";
+      const typeText = formData.isReturn ? "Reembolso" : "Gasto";
+      toast.success(`${typeText} ${actionText} exitosamente`);
       
       if (!initialExpense) {
         setFormData({...initialFormData});
@@ -272,7 +299,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       return;
     }
 
-    if (!formData.original_amount || parseFloat(formData.original_amount) <= 0) {
+    if (!formData.original_amount || parseFloat(formData.original_amount) === 0) {
       toast.error("Por favor ingresa un monto válido");
       return;
     }
@@ -292,5 +319,6 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
     handleCurrencyChange,
     handleExchangeRateChange,
     handleOriginalAmountChange,
+    handleReturnToggle, // New function for handling returns
   };
 }

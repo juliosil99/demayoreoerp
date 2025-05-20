@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/select";
 import type { ExpenseFormData } from "../../hooks/useExpenseForm";
 import { useEffect } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 interface DateAmountFieldsProps {
   formData: ExpenseFormData;
@@ -18,6 +21,7 @@ interface DateAmountFieldsProps {
   handleCurrencyChange?: (currency: string) => void;
   handleExchangeRateChange?: (exchangeRate: string) => void;
   handleOriginalAmountChange?: (originalAmount: string) => void;
+  handleReturnToggle?: (checked: boolean) => void;
 }
 
 export function DateAmountFields({ 
@@ -26,7 +30,8 @@ export function DateAmountFields({
   accountCurrency = "MXN",
   handleCurrencyChange,
   handleExchangeRateChange,
-  handleOriginalAmountChange
+  handleOriginalAmountChange,
+  handleReturnToggle
 }: DateAmountFieldsProps) {
   // Calculate MXN amount when currency, exchange rate, or original amount changes
   useEffect(() => {
@@ -59,6 +64,18 @@ export function DateAmountFields({
            (formData.currency !== "MXN" && accountCurrency !== "MXN");
   };
 
+  // Determine if this is a return based on isReturn flag
+  const isReturn = formData.isReturn;
+
+  // Handle return toggle
+  const toggleReturn = (checked: boolean) => {
+    if (handleReturnToggle) {
+      handleReturnToggle(checked);
+    } else {
+      setFormData({ ...formData, isReturn: checked });
+    }
+  };
+
   return (
     <>
       <div>
@@ -73,7 +90,30 @@ export function DateAmountFields({
       </div>
 
       <div>
-        <Label htmlFor="original_amount">Monto</Label>
+        <div className="flex items-center justify-between mb-2">
+          <Label htmlFor="original_amount">Monto</Label>
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="return-toggle" className="text-sm text-muted-foreground">
+              Reembolso
+            </Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Activar para registrar un reembolso o devolución</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Switch
+              id="return-toggle"
+              checked={isReturn}
+              onCheckedChange={toggleReturn}
+            />
+          </div>
+        </div>
+
         <div className="flex flex-col space-y-2">
           <div className="flex space-x-2">
             <Input
@@ -90,7 +130,7 @@ export function DateAmountFields({
                 }
               }}
               required
-              className="flex-grow"
+              className={`flex-grow ${isReturn ? "border-red-300 text-red-600" : ""}`}
             />
             <Select 
               value={formData.currency} 
@@ -137,7 +177,8 @@ export function DateAmountFields({
 
           {formData.currency !== "MXN" && parseFloat(formData.original_amount) > 0 && (
             <div className="text-xs text-muted-foreground">
-              Equivalente: MXN ${parseFloat(formData.amount).toFixed(2)}
+              Equivalente: MXN ${parseFloat(formData.amount).toFixed(2)} 
+              {isReturn && <span className="text-red-600"> (reembolso)</span>}
             </div>
           )}
         </div>

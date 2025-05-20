@@ -27,7 +27,8 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
     handleAccountChange,
     handleCurrencyChange,
     handleExchangeRateChange,
-    handleOriginalAmountChange
+    handleOriginalAmountChange,
+    handleReturnToggle
   } = useExpenseForm(dataToUse, () => {
     // Call onSuccess callback if provided - this handles dialog closing
     if (onSuccess) onSuccess();
@@ -58,6 +59,13 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
     }
   };
 
+  // Determine label based on if this is a return
+  const submitButtonText = isSubmitting 
+    ? "Guardando..." 
+    : dataToUse 
+      ? (formData.isReturn ? "Actualizar Reembolso" : "Actualizar Gasto")
+      : (formData.isReturn ? "Crear Reembolso" : "Crear Gasto");
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <ExpenseFormFields
@@ -72,6 +80,7 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
         handleCurrencyChange={handleCurrencyChange}
         handleExchangeRateChange={handleExchangeRateChange}
         handleOriginalAmountChange={handleOriginalAmountChange}
+        handleReturnToggle={handleReturnToggle}
       />
 
       <div className="flex justify-end space-x-2">
@@ -81,7 +90,7 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
           </Button>
         )}
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Guardando..." : dataToUse ? "Actualizar Gasto" : "Crear Gasto"}
+          {submitButtonText}
         </Button>
       </div>
     </form>
