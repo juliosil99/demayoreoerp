@@ -15,6 +15,7 @@ export type PaymentFormData = {
   account_id: string;
   notes: string;
   status: "confirmed" | "pending";
+  isReturn?: boolean; // New field to track if this is a return
 };
 
 interface UsePaymentFormProps {
@@ -28,6 +29,7 @@ export const usePaymentForm = ({ onSuccess, paymentToEdit }: UsePaymentFormProps
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Initialize with isReturn field based on amount
   const initialFormData: PaymentFormData = {
     date: paymentToEdit?.date || new Date().toISOString().split("T")[0],
     amount: paymentToEdit?.amount?.toString() || "",
@@ -36,7 +38,8 @@ export const usePaymentForm = ({ onSuccess, paymentToEdit }: UsePaymentFormProps
     sales_channel_id: paymentToEdit?.sales_channel_id || "",
     account_id: paymentToEdit?.account_id?.toString() || "",
     notes: paymentToEdit?.notes || "",
-    status: paymentToEdit?.status || "confirmed"
+    status: paymentToEdit?.status || "confirmed",
+    isReturn: paymentToEdit ? paymentToEdit.amount < 0 : false
   };
   
   const [formData, setFormData] = useState<PaymentFormData>(initialFormData);
@@ -67,7 +70,11 @@ export const usePaymentForm = ({ onSuccess, paymentToEdit }: UsePaymentFormProps
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] });
-      toast.success("Pago registrado exitosamente");
+      // Show appropriate toast based on if this is a return or not
+      const isReturn = parseFloat(formData.amount) < 0;
+      toast.success(isReturn 
+        ? "Devolución registrada exitosamente" 
+        : "Pago registrado exitosamente");
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
@@ -100,7 +107,11 @@ export const usePaymentForm = ({ onSuccess, paymentToEdit }: UsePaymentFormProps
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] });
-      toast.success("Pago actualizado exitosamente");
+      // Show appropriate toast based on if this is a return or not
+      const isReturn = parseFloat(formData.amount) < 0;
+      toast.success(isReturn 
+        ? "Devolución actualizada exitosamente" 
+        : "Pago actualizado exitosamente");
       if (onSuccess) onSuccess();
     },
     onError: (error) => {

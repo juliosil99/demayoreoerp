@@ -8,7 +8,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import type { PaymentFormData } from "../hooks/usePaymentForm";
+import { InfoCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PaymentFormFieldsProps {
   formData: PaymentFormData;
@@ -23,6 +26,23 @@ export function PaymentFormFields({
   bankAccounts,
   salesChannels,
 }: PaymentFormFieldsProps) {
+  // Handle toggling return/refund state
+  const handleReturnToggle = (checked: boolean) => {
+    const currentAmount = parseFloat(formData.amount) || 0;
+    const newAmount = checked
+      ? Math.abs(currentAmount) * -1 // Make negative for returns
+      : Math.abs(currentAmount);     // Make positive for regular payments
+    
+    setFormData({ 
+      ...formData, 
+      amount: newAmount.toString(),
+      isReturn: checked 
+    });
+  };
+
+  // Determine if this is a return based on amount value
+  const isReturn = formData.isReturn || parseFloat(formData.amount) < 0;
+
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
@@ -37,12 +57,44 @@ export function PaymentFormFields({
         </div>
 
         <div className="space-y-2">
-          <Label>Monto</Label>
+          <div className="flex items-center justify-between">
+            <Label>Monto</Label>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="return-toggle" className="text-sm text-muted-foreground">
+                Devolución
+              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <InfoCircle className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Activar para registrar una devolución de dinero</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Switch
+                id="return-toggle"
+                checked={isReturn}
+                onCheckedChange={handleReturnToggle}
+              />
+            </div>
+          </div>
           <Input
             type="number"
             step="0.01"
             value={formData.amount}
-            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              const absValue = Math.abs(parseFloat(newValue) || 0);
+              // Apply negative sign if this is a return
+              const finalValue = isReturn ? -absValue : absValue;
+              setFormData({ 
+                ...formData, 
+                amount: finalValue.toString()
+              });
+            }}
+            className={isReturn ? "border-red-300 text-red-600" : ""}
             required
           />
         </div>

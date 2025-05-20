@@ -7,7 +7,7 @@ import { PaymentFormFields } from "./components/PaymentFormFields";
 export type Payment = {
   id: string;
   date: string;
-  amount: number;
+  amount: number; // Can be positive (payment) or negative (return)
   payment_method: string;
   reference_number: string | null;
   sales_channel_id: string | null;
@@ -39,7 +39,11 @@ export function PaymentForm({ onSuccess, paymentToEdit }: PaymentFormProps) {
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Procesando..." : paymentToEdit ? "Actualizar Pago" : "Registrar Pago"}
+          {isSubmitting 
+            ? "Procesando..." 
+            : paymentToEdit 
+              ? (parseFloat(formData.amount) < 0 ? "Actualizar Devolución" : "Actualizar Pago") 
+              : (parseFloat(formData.amount) < 0 ? "Registrar Devolución" : "Registrar Pago")}
         </Button>
       </div>
     </form>
