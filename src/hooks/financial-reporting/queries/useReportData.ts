@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { FinancialReportOptions, ReportData } from "@/types/financial-reporting";
+import { processReportData } from "../utils/dataProcessor";
 
 /**
  * Hook for fetching financial report data
