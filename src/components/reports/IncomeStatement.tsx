@@ -1,4 +1,4 @@
 
-import { IncomeStatement } from "./income-statement/IncomeStatement";
+import { IncomeStatement } from "./income-statement";
 
 export { IncomeStatement };

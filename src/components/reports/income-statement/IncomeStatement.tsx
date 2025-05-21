@@ -1,13 +1,11 @@
 
 import React from "react";
 import { useFinancialReports } from "@/hooks/financial-reporting/useFinancialReports";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { IncomeStatementTable } from "./IncomeStatementTable";
-import { DateRangeInfo } from "./components/DateRangeInfo";
 import { IncomeStatementProps } from "./types";
 import { prepareReportData } from "./utils";
+import { IncomeStatementLoading } from "./components/IncomeStatementLoading";
+import { IncomeStatementError } from "./components/IncomeStatementError";
+import { IncomeStatementContent } from "./components/IncomeStatementContent";
 
 export const IncomeStatement: React.FC<IncomeStatementProps> = ({
   userId,
@@ -24,48 +22,22 @@ export const IncomeStatement: React.FC<IncomeStatementProps> = ({
   });
 
   if (isLoading) {
-    return (
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-8 w-full" />
-      </div>
-    );
+    return <IncomeStatementLoading />;
   }
 
   if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          No se pudo cargar el estado de resultados. Por favor, intente de nuevo más tarde.
-        </AlertDescription>
-      </Alert>
-    );
+    return <IncomeStatementError error={error} />;
   }
 
   // Format data for display
   const formattedData = prepareReportData(reportData);
 
-  // Handle export to Excel/PDF
-  const handleExport = () => {
-    // Implement export functionality
-    alert("Export functionality will be implemented soon");
-  };
-
   return (
-    <div>
-      <DateRangeInfo reportData={reportData} onExport={handleExport} />
-      
-      <IncomeStatementTable 
-        reportData={reportData}
-        formattedData={formattedData} 
-        compareWithPreviousYear={compareWithPreviousYear} 
-      />
-    </div>
+    <IncomeStatementContent 
+      reportData={reportData}
+      formattedData={formattedData}
+      compareWithPreviousYear={compareWithPreviousYear}
+    />
   );
 };
 
