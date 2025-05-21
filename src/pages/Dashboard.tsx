@@ -12,6 +12,7 @@ import { ChannelMetricsSection } from "@/components/dashboard/sections/ChannelMe
 import { StateDistributionSection } from "@/components/dashboard/sections/StateDistributionSection";
 import { ChannelDistributionSection } from "@/components/dashboard/sections/ChannelDistributionSection";
 import { SkuChannelSearchBox } from "@/components/dashboard/sections/SkuChannelSearchBox";
+import { TopSkusByUnitsSection } from "@/components/dashboard/sections/TopSkusByUnitsSection";
 
 const Dashboard = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -51,8 +52,11 @@ const Dashboard = () => {
       {/* Channel Metrics Section */}
       <ChannelMetricsSection channelMetrics={metrics.channelMetrics || []} />
 
-      {/* SKU Channel Search Box - New Section */}
+      {/* SKU Channel Search Box */}
       <SkuChannelSearchBox dateRange={dateRange} />
+      
+      {/* Top SKUs By Units Section - New */}
+      <TopSkusByUnitsSection dateRange={dateRange} />
     </div>
   );
 };
