@@ -1,0 +1,33 @@
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { format } from "date-fns";
+import { DateRangeInfoProps } from "../types";
+
+export const DateRangeInfo: React.FC<DateRangeInfoProps> = ({ reportData, onExport }) => {
+  // Format the date range for display
+  const getDateRangeText = () => {
+    if (!reportData?.currentPeriod) {
+      return 'Período seleccionado';
+    }
+
+    const startDate = new Date(reportData.currentPeriod.startDate);
+    const endDate = new Date(reportData.currentPeriod.endDate);
+    
+    return `${format(startDate, 'dd/MM/yyyy')} - ${format(endDate, 'dd/MM/yyyy')}`;
+  };
+
+  return (
+    <div className="flex justify-between items-center mb-4">
+      <div>
+        <h3 className="font-medium text-sm text-gray-500">Período:</h3>
+        <p className="font-medium">{getDateRangeText()}</p>
+      </div>
+      <Button variant="outline" size="sm" onClick={onExport}>
+        <Download className="h-4 w-4 mr-2" />
+        Exportar
+      </Button>
+    </div>
+  );
+};
