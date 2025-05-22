@@ -102,15 +102,28 @@ export async function checkReconciliationTriggers() {
 
 /**
  * Manual calculation of reconciliation amounts as a fallback
+ * Improved to better detect payments that need repair
  */
 export async function manualRecalculateReconciliation(paymentId: string) {
   try {
     console.log("Manually recalculating reconciliation for payment:", paymentId);
     
+    // Get payment details first
+    const { data: paymentData, error: paymentError } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('id', paymentId)
+      .single();
+      
+    if (paymentError) {
+      console.error("Error fetching payment details:", paymentError);
+      return { success: false, error: paymentError.message };
+    }
+    
     // Get all sales for this payment
     const { data: salesData, error: salesError } = await supabase
       .from('Sales')
-      .select('id, price')
+      .select('id, price, orderNumber')
       .eq('reconciliation_id', paymentId);
       
     if (salesError) {
@@ -124,7 +137,37 @@ export async function manualRecalculateReconciliation(paymentId: string) {
     const totalAmount = salesData?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0;
     const salesCount = salesData?.length || 0;
     
-    // Update the payment record
+    // Check if repair is needed by comparing with current values
+    const needsRepair = salesCount > 0 && (
+      paymentData.reconciled_amount !== totalAmount || 
+      paymentData.reconciled_count !== salesCount || 
+      !paymentData.is_reconciled
+    );
+    
+    if (!needsRepair) {
+      console.log("Payment does not need repair:", { 
+        id: paymentId,
+        currentAmount: paymentData.reconciled_amount,
+        calculatedAmount: totalAmount,
+        currentCount: paymentData.reconciled_count,
+        calculatedCount: salesCount
+      });
+      return { 
+        success: true, 
+        needsRepair: false,
+        message: "El pago ya está correctamente reconciliado"
+      };
+    }
+    
+    console.log("Repairing payment:", { 
+      id: paymentId,
+      currentAmount: paymentData.reconciled_amount,
+      calculatedAmount: totalAmount,
+      currentCount: paymentData.reconciled_count,
+      calculatedCount: salesCount
+    });
+    
+    // Update the payment record with correct values
     const { data: updateResult, error: updateError } = await supabase
       .from('payments')
       .update({
@@ -140,11 +183,27 @@ export async function manualRecalculateReconciliation(paymentId: string) {
       return { success: false, error: updateError.message };
     }
     
+    // Also update any sales that might be missing payment date
+    const { error: salesUpdateError } = await supabase
+      .from('Sales')
+      .update({
+        "statusPaid": 'cobrado',
+        "datePaid": paymentData.date
+      })
+      .eq('reconciliation_id', paymentId)
+      .is("datePaid", null);
+      
+    if (salesUpdateError) {
+      console.warn("Warning: Could not update sales dates:", salesUpdateError);
+    }
+    
     return { 
-      success: true, 
+      success: true,
+      needsRepair: true,
       data: updateResult,
       reconciled_amount: totalAmount,
-      reconciled_count: salesCount
+      reconciled_count: salesCount,
+      sales: salesData?.map(s => s.orderNumber).join(', ')
     };
   } catch (error) {
     console.error("Error in manual recalculation:", error);

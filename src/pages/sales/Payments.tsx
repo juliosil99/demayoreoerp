@@ -22,8 +22,14 @@ function Payments() {
 
   const { handleDelete, handleStatusUpdate, handleReconcile } = usePaymentActions(refetch);
 
-  const { triggerStatus, isVerifyingDatabase, verifyDatabaseConfiguration, handleRepairReconciliations } = 
-    useSystemVerification(payments);
+  const { 
+    triggerStatus, 
+    isVerifyingDatabase, 
+    isRepairing,
+    repairablePayments,
+    verifyDatabaseConfiguration, 
+    handleRepairReconciliations 
+  } = useSystemVerification(payments);
     
   const { dialogs, handlers } = PaymentDialogs({ onReconcile: handleReconcile, onRefresh: refetch });
 
@@ -37,6 +43,8 @@ function Payments() {
       <SystemStatusAlert 
         triggerStatus={triggerStatus}
         isVerifyingDatabase={isVerifyingDatabase}
+        isRepairing={isRepairing}
+        repairablePayments={repairablePayments}
         onVerify={verifyDatabaseConfiguration}
         onRepair={handleRepairReconciliations}
       />

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 interface SystemStatusAlertProps {
   triggerStatus: any;
   isVerifyingDatabase: boolean;
+  isRepairing?: boolean;
+  repairablePayments?: string[];
   onVerify: () => void;
   onRepair: () => void;
 }
@@ -13,16 +15,30 @@ interface SystemStatusAlertProps {
 export function SystemStatusAlert({
   triggerStatus,
   isVerifyingDatabase,
+  isRepairing = false,
+  repairablePayments = [],
   onVerify,
   onRepair
 }: SystemStatusAlertProps) {
-  // If verification is still pending or was successful with all triggers present
-  if (!triggerStatus || isVerifyingDatabase || 
+  // Si la verificación está en proceso, mostrar mensaje de carga
+  if (isVerifyingDatabase) {
+    return (
+      <Alert variant="default">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Verificando configuración de la base de datos...
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  // Si no hay estado de triggers o la verificación fue exitosa con todos los triggers presentes, no mostrar nada
+  if (!triggerStatus || 
       (triggerStatus.success && triggerStatus.hasPaymentTrigger && triggerStatus.hasSalesTrigger)) {
     return null;
   }
 
-  // If the verification system is in degraded mode but not actually failing
+  // Si el sistema está en modo degradado pero no realmente fallando
   if (triggerStatus.degradedMode) {
     return (
       <Alert variant="default">
@@ -37,9 +53,9 @@ export function SystemStatusAlert({
               variant="secondary" 
               size="sm" 
               onClick={onRepair}
-              disabled={isVerifyingDatabase}
+              disabled={isVerifyingDatabase || isRepairing}
             >
-              Reparar reconciliaciones
+              {isRepairing ? "Reparando..." : "Reparar reconciliaciones"}
             </Button>
           </div>
         </AlertDescription>
@@ -47,7 +63,7 @@ export function SystemStatusAlert({
     );
   }
 
-  // If there's an issue with the triggers or verification failed
+  // Si hay problemas con los triggers o la verificación falló
   return (
     <Alert variant="warning">
       <AlertTriangle className="h-4 w-4" />
@@ -58,13 +74,15 @@ export function SystemStatusAlert({
           {!triggerStatus.success && " No se pudo verificar el estado de los triggers."}
           {triggerStatus.success && !triggerStatus.hasPaymentTrigger && " Falta el trigger para actualizaciones de pagos."}
           {triggerStatus.success && !triggerStatus.hasSalesTrigger && " Falta el trigger para actualizaciones de ventas."}
+          {repairablePayments && repairablePayments.length > 0 && 
+            ` Se encontraron ${repairablePayments.length} pagos que podrían necesitar reparación.`}
         </span>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={onVerify}
-            disabled={isVerifyingDatabase}
+            disabled={isVerifyingDatabase || isRepairing}
           >
             Verificar
           </Button>
@@ -72,9 +90,9 @@ export function SystemStatusAlert({
             variant="secondary" 
             size="sm" 
             onClick={onRepair}
-            disabled={isVerifyingDatabase}
+            disabled={isVerifyingDatabase || isRepairing}
           >
-            Reparar reconciliaciones
+            {isRepairing ? "Reparando..." : "Reparar reconciliaciones"}
           </Button>
         </div>
       </AlertDescription>
