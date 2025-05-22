@@ -111,6 +111,7 @@ export default function Expenses() {
       const { data, error } = await query;
 
       if (error) {
+        console.error("Error fetching expenses:", error);
         throw error;
       }
       

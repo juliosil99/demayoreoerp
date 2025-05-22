@@ -25,7 +25,7 @@ export function ExpenseRow({
   const isReturn = expense.amount < 0;
 
   return (
-    <TableRow key={expense.id} className={!!expense.accounts_payable ? "bg-gray-300" : "odd:bg-gray-300 even:bg-gray-300"}>
+    <TableRow key={expense.id} className={!!expense.accounts_payable ? "bg-gray-50" : "odd:bg-white even:bg-gray-50"}>
       <TableCell className="whitespace-nowrap">{formatCardDate(expense.date)}</TableCell>
       <TableCell>
         <div className="flex items-center gap-2 max-w-[250px] md:max-w-none">
@@ -97,7 +97,11 @@ export function ExpenseRow({
     const recipientType = expense.contacts?.type || 'supplier';
     
     if (isFromPayable && expense.accounts_payable?.client?.name) {
-      return expense.accounts_payable.client.name;
+      return (
+        <>
+          {expense.accounts_payable.client.name} <Badge variant="outline" className="ml-1 text-xs">CxP</Badge>
+        </>
+      );
     }
     
     if (expense.contacts?.name) {
