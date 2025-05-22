@@ -12,6 +12,7 @@ import {
 import { Search, Filter, FilterX } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { SalesChannelsTable } from "@/integrations/supabase/types/sales-channels";
 
 interface ReconciliationFiltersProps {
   selectedChannel: string;
@@ -21,6 +22,7 @@ interface ReconciliationFiltersProps {
   dateRange: DateRange | undefined;
   onDateRangeChange: (range: DateRange | undefined) => void;
   onReset: () => void;
+  salesChannels?: SalesChannelsTable['Row'][];
 }
 
 export function ReconciliationFilters({
@@ -31,6 +33,7 @@ export function ReconciliationFilters({
   dateRange,
   onDateRangeChange,
   onReset,
+  salesChannels = [],
 }: ReconciliationFiltersProps) {
   return (
     <div className="space-y-4 p-4 border rounded-md bg-background">
@@ -51,10 +54,9 @@ export function ReconciliationFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los canales</SelectItem>
-              <SelectItem value="Amazon">Amazon</SelectItem>
-              <SelectItem value="Mercado Libre">Mercado Libre</SelectItem>
-              <SelectItem value="Shopify">Shopify</SelectItem>
-              <SelectItem value="Walmart">Walmart</SelectItem>
+              {salesChannels.map((channel) => (
+                <SelectItem key={channel.id} value={channel.id}>{channel.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
