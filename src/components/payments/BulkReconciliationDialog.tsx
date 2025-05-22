@@ -83,7 +83,7 @@ export function BulkReconciliationDialog({
       toast({
         title: "Advertencia",
         description: "Faltan algunos triggers de reconciliación. Se utilizará un método alternativo de cálculo.",
-        variant: "warning",
+        variant: "default",
       });
     }
   };

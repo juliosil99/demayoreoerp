@@ -63,7 +63,7 @@ function Payments() {
         toast({
           title: "Advertencia de configuración",
           description: "La configuración de reconciliación automática no está completa",
-          variant: "warning",
+          variant: "default",
         });
         
         // Check reconciled payments that might need recalculation
@@ -75,7 +75,7 @@ function Payments() {
           toast({
             title: "Reparación disponible",
             description: `Se encontraron ${paymentIds.length} pagos reconciliados con montos incorrectos que pueden ser reparados`,
-            variant: "warning",
+            variant: "default",
           });
         }
       }
@@ -114,7 +114,7 @@ function Payments() {
       toast({
         title: "Reparación completada",
         description: `Se repararon ${repaired} pagos de ${paymentIds.length}`,
-        variant: "success",
+        variant: "default",
       });
       
       // Refresh the data
@@ -192,7 +192,7 @@ function Payments() {
       />
       
       {triggerStatus && (!triggerStatus.success || !triggerStatus.hasPaymentTrigger || !triggerStatus.hasSalesTrigger) && (
-        <Alert variant="warning">
+        <Alert variant="default">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
             <span>

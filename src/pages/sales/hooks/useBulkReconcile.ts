@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { checkReconciliationTriggers } from "@/integrations/supabase/triggers";
 
 export interface BulkReconcileParams {
   salesIds: number[];
@@ -144,13 +145,16 @@ export function useBulkReconcile() {
         }
 
         // Check if database triggers exist
-        const { data: triggers, error: triggersError } = await supabase
-          .rpc('list_triggers_for_table', { table_name: 'Sales' });
-          
-        if (triggersError) {
-          console.log("Error checking triggers:", triggersError);
-        } else {
+        console.log("Checking for triggers on Sales table");
+        const { data: triggerStatus } = await checkReconciliationTriggers();
+        
+        if (!triggerStatus?.success) {
+          console.log("Could not verify triggers, using direct Supabase query as fallback");
+          // Use a direct query as fallback (casts for TypeScript)
+          const { data: triggers } = await supabase.rpc('list_triggers_for_table' as any, { table_name: 'Sales' });
           console.log("Triggers on Sales table:", triggers);
+        } else {
+          console.log("Trigger check results:", triggerStatus);
         }
         
         console.log("=== RECONCILIATION DEBUG END ===");

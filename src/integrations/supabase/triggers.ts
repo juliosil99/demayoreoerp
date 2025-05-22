@@ -6,11 +6,17 @@ import { supabase } from "./client";
  */
 export async function checkReconciliationTriggers() {
   try {
-    const { data, error } = await supabase.rpc('list_triggers_for_reconciliation');
+    // Use a custom RPC call with any type to handle non-standard functions
+    const { data, error } = await supabase.rpc('list_triggers_for_reconciliation' as any);
     
     if (error) {
       console.error("Error checking triggers:", error);
       return { success: false, error: error.message };
+    }
+    
+    if (!data || !Array.isArray(data)) {
+      console.error("No trigger data returned or data is not an array");
+      return { success: false, error: "Invalid data format from database" };
     }
     
     return { 
