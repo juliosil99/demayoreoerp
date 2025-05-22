@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateRange } from "react-day-picker";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { RefreshCw } from "lucide-react";
 
 interface ReconciliationFiltersProps {
@@ -70,11 +70,10 @@ export function ReconciliationFilters({
         
         <div>
           <Label className="mb-2 block font-medium">Rango de Fechas</Label>
-          <DateRangePicker
-            value={dateRange}
-            onChange={onDateRangeChange}
-            placeholder="Seleccionar fechas"
-            align="start"
+          <DatePickerWithRange
+            date={dateRange}
+            setDate={onDateRangeChange}
+            className="w-full"
           />
         </div>
       </div>
