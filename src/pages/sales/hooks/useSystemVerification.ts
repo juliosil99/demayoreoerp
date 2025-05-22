@@ -2,9 +2,17 @@
 import { useState, useEffect } from "react";
 import { checkReconciliationTriggers, manualRecalculateReconciliation } from "@/integrations/supabase/triggers";
 import { useToast } from "@/hooks/use-toast";
-import { Payment } from "@/components/payments/PaymentForm";
 
-export function useSystemVerification(payments?: Payment[]) {
+// Update the import path to correctly reference the Payment type
+import type { Payment } from "@/components/payments/PaymentForm";
+
+// Extend the Payment type to include the properties we need
+interface PaymentWithReconciliation extends Payment {
+  is_reconciled?: boolean;
+  reconciled_amount?: number;
+}
+
+export function useSystemVerification(payments?: PaymentWithReconciliation[]) {
   const [triggerStatus, setTriggerStatus] = useState<any>(null);
   const [isVerifyingDatabase, setIsVerifyingDatabase] = useState(false);
   const { toast } = useToast();
