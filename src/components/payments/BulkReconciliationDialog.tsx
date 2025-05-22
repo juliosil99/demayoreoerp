@@ -21,6 +21,7 @@ import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
 import { ReconciliationConfirmDialog } from "./components/ReconciliationConfirmDialog";
 import { ReconciliationTable } from "./components/ReconciliationTable";
 import { usePaymentQueries } from "./hooks/usePaymentQueries";
+import { checkReconciliationTriggers, manualRecalculateReconciliation } from "@/integrations/supabase/triggers";
 
 interface BulkReconciliationDialogProps {
   open: boolean;
@@ -35,6 +36,8 @@ export function BulkReconciliationDialog({
 }: BulkReconciliationDialogProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [selectedSales, setSelectedSales] = useState<number[]>([]);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [triggerStatus, setTriggerStatus] = useState<any>(null);
   const { toast } = useToast();
   const { salesChannels } = usePaymentQueries();
 
@@ -57,8 +60,33 @@ export function BulkReconciliationDialog({
   useEffect(() => {
     if (!open) {
       setSelectedSales([]);
+      setTriggerStatus(null);
+    } else {
+      // Check triggers when dialog opens
+      checkTriggers();
     }
   }, [open]);
+
+  const checkTriggers = async () => {
+    setIsVerifying(true);
+    const result = await checkReconciliationTriggers();
+    setTriggerStatus(result);
+    setIsVerifying(false);
+    
+    if (!result.success) {
+      toast({
+        title: "Advertencia",
+        description: "No se pudieron verificar los triggers de reconciliación. El proceso de reconciliación puede no funcionar correctamente.",
+        variant: "destructive",
+      });
+    } else if (!result.hasPaymentTrigger || !result.hasSalesTrigger) {
+      toast({
+        title: "Advertencia",
+        description: "Faltan algunos triggers de reconciliación. Se utilizará un método alternativo de cálculo.",
+        variant: "warning",
+      });
+    }
+  };
 
   const handleSelectSale = (id: number) => {
     setSelectedSales(prev => 
@@ -87,11 +115,30 @@ export function BulkReconciliationDialog({
       return;
     }
 
+    console.log("Trigger status before reconciliation:", triggerStatus);
     setShowConfirmDialog(true);
   };
 
-  const confirmReconciliation = () => {
+  const confirmReconciliation = async () => {
+    // Perform the reconciliation
     onReconcile({ salesIds: selectedSales, paymentId: selectedPaymentId });
+    
+    // If triggers appear to be missing, use manual calculation as a fallback
+    if (triggerStatus && (!triggerStatus.hasPaymentTrigger || !triggerStatus.hasSalesTrigger)) {
+      console.log("Using manual reconciliation fallback due to missing triggers");
+      
+      // Allow some time for the initial reconciliation to complete
+      setTimeout(async () => {
+        const result = await manualRecalculateReconciliation(selectedPaymentId);
+        if (result.success) {
+          toast({
+            title: "Reconciliación manual completada",
+            description: `Reconciliación: ${result.reconciled_count} ventas por ${result.reconciled_amount}`,
+          });
+        }
+      }, 2000);
+    }
+    
     setShowConfirmDialog(false);
   };
 
@@ -110,6 +157,17 @@ export function BulkReconciliationDialog({
             <AlertDialogTitle>Reconciliación Masiva de Ventas</AlertDialogTitle>
             <AlertDialogDescription>
               Selecciona un pago y los IDs de las ventas a reconciliar.
+              {isVerifying && <span className="block mt-2 text-amber-500">Verificando configuración de reconciliación...</span>}
+              {triggerStatus && !triggerStatus.success && 
+                <span className="block mt-2 text-red-500">
+                  Advertencia: No se pudieron verificar los triggers de la base de datos.
+                </span>
+              }
+              {triggerStatus && triggerStatus.success && !triggerStatus.hasPaymentTrigger && 
+                <span className="block mt-2 text-amber-500">
+                  Advertencia: No se encontró el trigger de actualización de pagos. Se usará un método alternativo.
+                </span>
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -159,7 +217,21 @@ export function BulkReconciliationDialog({
 
           <AlertDialogFooter className="mt-4">
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleReconcile}>Reconciliar</AlertDialogAction>
+            <AlertDialogAction onClick={handleReconcile}>
+              {triggerStatus && (!triggerStatus.hasPaymentTrigger || !triggerStatus.hasSalesTrigger) 
+                ? "Reconciliar (modo manual)" 
+                : "Reconciliar"}
+            </AlertDialogAction>
+            {triggerStatus && (!triggerStatus.success || !triggerStatus.hasPaymentTrigger || !triggerStatus.hasSalesTrigger) && (
+              <Button 
+                variant="outline" 
+                className="ml-2" 
+                onClick={checkTriggers}
+                disabled={isVerifying}
+              >
+                Verificar DB
+              </Button>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
