@@ -1,152 +1,139 @@
 
 import { useState } from "react";
-import { Payment } from "@/components/payments/PaymentForm";
-import { BulkReconciliationDialog } from "@/components/payments/BulkReconciliationDialog";
-import { usePaymentsQuery } from "./hooks/usePaymentsQuery";
-import { usePaymentDelete } from "./hooks/usePaymentDelete";
-import { usePaymentStatusUpdate } from "./hooks/usePaymentStatusUpdate";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
+import { PaymentFormDialog } from "./components/PaymentFormDialog";
 import { PaymentTable } from "./components/PaymentTable";
 import { PaymentHeader } from "./components/PaymentHeader";
-import { PaymentFormDialog } from "./components/PaymentFormDialog";
-import { PaymentPagination } from "./components/PaymentPagination";
 import { PaymentFilters } from "./components/PaymentFilters";
-import { DateRange } from "react-day-picker";
+import { PaymentPagination } from "./components/PaymentPagination";
+import { usePaymentsQuery } from "./hooks/usePaymentsQuery";
+import { Payment } from "@/components/payments/PaymentForm";
+import { usePaymentDelete } from "./hooks/usePaymentDelete";
+import { usePaymentStatusUpdate } from "./hooks/usePaymentStatusUpdate";
+import { BulkReconciliationDialog } from "@/components/payments/BulkReconciliationDialog";
 import { useBulkReconcile } from "./hooks/useBulkReconcile";
-import { usePaymentQueries } from "@/components/payments/hooks/usePaymentQueries";
+import { ReconciledSalesDialog } from "./components/ReconciledSalesDialog";
 
-type PaymentWithRelations = Payment & {
-  sales_channels: { name: string } | null;
-  bank_accounts: { name: string };
-};
+function Payments() {
+  const [formOpen, setFormOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [reconciliationOpen, setReconciliationOpen] = useState(false);
+  const [reconciledDialogOpen, setReconciledDialogOpen] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
 
-export default function Payments() {
-  const [isAddingPayment, setIsAddingPayment] = useState(false);
-  const [showBulkReconciliation, setShowBulkReconciliation] = useState(false);
-  const [paymentToEdit, setPaymentToEdit] = useState<Payment | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 30;
+  const {
+    payments,
+    isLoading,
+    pagination,
+    filters,
+    updateFilters,
+    setPagination,
+    refetch,
+  } = usePaymentsQuery();
 
-  // Filter states
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [salesChannelId, setSalesChannelId] = useState<string | undefined>(undefined);
-  const [accountId, setAccountId] = useState<string | undefined>(undefined);
-  const [status, setStatus] = useState<string | undefined>(undefined);
-  const [isFilterApplied, setIsFilterApplied] = useState(false);
+  const { mutateAsync: deletePayment } = usePaymentDelete();
+  const { mutateAsync: updatePaymentStatus } = usePaymentStatusUpdate();
+  const { mutateAsync: bulkReconcile } = useBulkReconcile();
 
-  const { bankAccounts, salesChannels } = usePaymentQueries();
+  const handleEdit = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setFormOpen(true);
+  };
 
-  const { data: payments, isLoading, totalCount } = usePaymentsQuery({
-    page: currentPage,
-    pageSize: ITEMS_PER_PAGE,
-    dateRange: isFilterApplied ? dateRange : undefined,
-    salesChannelId: isFilterApplied ? salesChannelId : undefined,
-    accountId: isFilterApplied ? accountId : undefined,
-    status: isFilterApplied ? status : undefined
-  });
-  
-  const deletePaymentMutation = usePaymentDelete();
-  const statusUpdateMutation = usePaymentStatusUpdate();
-  const bulkReconcileMutation = useBulkReconcile();
-
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este pago?")) {
-      deletePaymentMutation.mutate(id);
+      await deletePayment(id);
+      refetch();
     }
   };
 
-  const handleStatusUpdate = (id: string, status: 'confirmed' | 'pending') => {
-    statusUpdateMutation.mutate({ paymentId: id, status });
+  const handleStatusUpdate = async (id: string, status: 'confirmed' | 'pending') => {
+    await updatePaymentStatus({ id, status });
+    refetch();
   };
 
-  const handleEdit = (payment: PaymentWithRelations) => {
-    const paymentData: Payment = {
-      id: payment.id,
-      date: payment.date,
-      amount: payment.amount,
-      payment_method: payment.payment_method,
-      reference_number: payment.reference_number,
-      sales_channel_id: payment.sales_channel_id,
-      account_id: Number(payment.account_id),
-      notes: payment.notes,
-      status: payment.status || 'confirmed',
-    };
-    setPaymentToEdit(paymentData);
-    setIsAddingPayment(true);
+  const handleFormClose = (shouldRefresh: boolean = false) => {
+    setFormOpen(false);
+    setSelectedPayment(null);
+    if (shouldRefresh) {
+      refetch();
+    }
   };
 
-  const handleSuccess = () => {
-    setIsAddingPayment(false);
-    setPaymentToEdit(null);
+  const handleReconcile = async ({ salesIds, paymentId }: { salesIds: number[], paymentId: string }) => {
+    await bulkReconcile({ salesIds, paymentId });
+    setReconciliationOpen(false);
+    refetch();
   };
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleViewReconciled = (paymentId: string) => {
+    setSelectedPaymentId(paymentId);
+    setReconciledDialogOpen(true);
   };
 
-  const handleApplyFilters = () => {
-    setCurrentPage(1); // Reset to first page when filters are applied
-    setIsFilterApplied(true);
-  };
-
-  const handleResetFilters = () => {
-    setDateRange(undefined);
-    setSalesChannelId(undefined);
-    setAccountId(undefined);
-    setStatus(undefined);
-    setCurrentPage(1);
-    setIsFilterApplied(false);
+  const showReconciledFilter = (value: boolean | 'all') => {
+    updateFilters({
+      ...filters,
+      isReconciled: value
+    });
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <PaymentHeader 
-        onOpenAddPayment={() => setIsAddingPayment(true)} 
-        onOpenBulkReconciliation={() => setShowBulkReconciliation(true)} 
-      />
+    <div className="container py-6 space-y-6">
+      <PaymentHeader onReconcile={() => setReconciliationOpen(true)} />
 
-      <PaymentFilters
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-        salesChannelId={salesChannelId}
-        setSalesChannelId={setSalesChannelId}
-        accountId={accountId}
-        setAccountId={setAccountId}
-        status={status}
-        setStatus={setStatus}
-        bankAccounts={bankAccounts || []}
-        salesChannels={salesChannels || []}
-        onResetFilters={handleResetFilters}
-        onApplyFilters={handleApplyFilters}
-      />
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex justify-between mb-6">
+            <PaymentFilters 
+              filters={filters} 
+              onChangeFilters={updateFilters} 
+              onToggleReconciled={showReconciledFilter}
+            />
+            <Button onClick={() => setFormOpen(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Nuevo Pago
+            </Button>
+          </div>
+
+          <PaymentTable 
+            payments={payments} 
+            isLoading={isLoading} 
+            onEdit={handleEdit} 
+            onDelete={handleDelete} 
+            onStatusUpdate={handleStatusUpdate}
+            onViewReconciled={handleViewReconciled}
+          />
+
+          <PaymentPagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={(page) => setPagination({ ...pagination, page })}
+          />
+        </CardContent>
+      </Card>
 
       <PaymentFormDialog
-        open={isAddingPayment}
-        onOpenChange={setIsAddingPayment}
-        paymentToEdit={paymentToEdit}
-        onSuccess={handleSuccess}
+        open={formOpen}
+        onOpenChange={handleFormClose}
+        payment={selectedPayment}
       />
 
-      <BulkReconciliationDialog 
-        open={showBulkReconciliation}
-        onOpenChange={setShowBulkReconciliation}
-        onReconcile={bulkReconcileMutation.mutate}
+      <BulkReconciliationDialog
+        open={reconciliationOpen}
+        onOpenChange={setReconciliationOpen}
+        onReconcile={handleReconcile}
       />
 
-      <PaymentTable
-        payments={payments}
-        isLoading={isLoading}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onStatusUpdate={handleStatusUpdate}
-      />
-      
-      <PaymentPagination
-        totalItems={totalCount}
-        itemsPerPage={ITEMS_PER_PAGE}
-        currentPage={currentPage}
-        onPageChange={handlePageChange}
+      <ReconciledSalesDialog
+        open={reconciledDialogOpen}
+        onOpenChange={setReconciledDialogOpen}
+        paymentId={selectedPaymentId}
       />
     </div>
   );
 }
+
+export default Payments;

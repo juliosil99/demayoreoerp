@@ -1,158 +1,155 @@
 
 import { useState } from "react";
-import { Filter } from "lucide-react";
+import { CalendarIcon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { DateRange } from "react-day-picker";
 import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+
+type PaymentFilter = {
+  search: string;
+  date?: Date;
+  paymentMethod: "all" | "cash" | "transfer" | "credit_card" | "check";
+  isReconciled: boolean | "all";
+};
 
 interface PaymentFiltersProps {
-  dateRange: DateRange | undefined;
-  setDateRange: (range: DateRange | undefined) => void;
-  salesChannelId: string | undefined;
-  setSalesChannelId: (id: string | undefined) => void;
-  accountId: string | undefined;
-  setAccountId: (id: string | undefined) => void;
-  status: string | undefined;
-  setStatus: (status: string | undefined) => void;
-  bankAccounts: any[];
-  salesChannels: any[];
-  onResetFilters: () => void;
-  onApplyFilters: () => void;
+  filters: PaymentFilter;
+  onChangeFilters: (filters: PaymentFilter) => void;
+  onToggleReconciled: (value: boolean | "all") => void;
 }
 
 export function PaymentFilters({
-  dateRange,
-  setDateRange,
-  salesChannelId,
-  setSalesChannelId,
-  accountId,
-  setAccountId,
-  status,
-  setStatus,
-  bankAccounts,
-  salesChannels,
-  onResetFilters,
-  onApplyFilters
+  filters,
+  onChangeFilters,
+  onToggleReconciled,
 }: PaymentFiltersProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [date, setDate] = useState<Date | undefined>(filters.date);
 
-  // Count active filters
-  const activeFilters = [
-    dateRange?.from,
-    salesChannelId,
-    accountId,
-    status
-  ].filter(Boolean).length;
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChangeFilters({
+      ...filters,
+      search: e.target.value,
+    });
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    setDate(date);
+    onChangeFilters({
+      ...filters,
+      date,
+    });
+  };
+
+  const handlePaymentMethodChange = (value: string) => {
+    onChangeFilters({
+      ...filters,
+      paymentMethod: value as PaymentFilter["paymentMethod"],
+    });
+  };
+
+  const handleReconciledChange = (value: string) => {
+    const reconciledValue = 
+      value === "all" ? "all" : 
+      value === "true" ? true : 
+      false;
+    
+    onToggleReconciled(reconciledValue);
+  };
 
   return (
-    <div className="mb-6 space-y-2">
-      <div className="flex items-center justify-between">
-        <Button 
-          variant="outline" 
-          className="flex items-center gap-2"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <Filter className="h-4 w-4" />
-          <span>Filtros</span>
-          {activeFilters > 0 && (
-            <span className="ml-1 rounded-full bg-primary w-5 h-5 text-xs flex items-center justify-center text-white">
-              {activeFilters}
-            </span>
-          )}
-        </Button>
+    <div className="flex flex-col sm:flex-row gap-3">
+      <div className="relative w-full sm:w-64">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar pagos..."
+          className="pl-8"
+          value={filters.search}
+          onChange={handleSearchChange}
+        />
       </div>
 
-      {isExpanded && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Rango de Fechas</Label>
-                <DatePickerWithRange date={dateRange} setDate={setDateRange} />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Canal de Venta</Label>
-                <Select 
-                  value={salesChannelId || "all"} 
-                  onValueChange={(value) => setSalesChannelId(value === "all" ? undefined : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos los canales" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los canales</SelectItem>
-                    {salesChannels?.map((channel) => (
-                      <SelectItem key={channel.id} value={channel.id}>
-                        {channel.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Cuenta Bancaria</Label>
-                <Select 
-                  value={accountId || "all"} 
-                  onValueChange={(value) => setAccountId(value === "all" ? undefined : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todas las cuentas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas las cuentas</SelectItem>
-                    {bankAccounts?.map((account) => (
-                      <SelectItem key={account.id} value={account.id.toString()}>
-                        {account.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Estado</Label>
-                <Select 
-                  value={status || "all"} 
-                  onValueChange={(value) => setStatus(value === "all" ? undefined : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos los estados" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los estados</SelectItem>
-                    <SelectItem value="confirmed">Confirmados</SelectItem>
-                    <SelectItem value="pending">Pendientes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+      <div className="flex gap-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full sm:w-auto justify-start text-left font-normal",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date ? format(date, "PPP", { locale: es }) : "Seleccionar fecha"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={handleDateSelect}
+              initialFocus
+              locale={es}
+            />
+          </PopoverContent>
+        </Popover>
 
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={onResetFilters}>
-                Limpiar Filtros
-              </Button>
-              <Button onClick={onApplyFilters}>
-                Aplicar Filtros
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        <Select
+          value={filters.paymentMethod}
+          onValueChange={handlePaymentMethodChange}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Método de pago" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="cash">Efectivo</SelectItem>
+              <SelectItem value="transfer">Transferencia</SelectItem>
+              <SelectItem value="credit_card">Tarjeta de Crédito</SelectItem>
+              <SelectItem value="check">Cheque</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={
+            filters.isReconciled === "all"
+              ? "all"
+              : filters.isReconciled === true
+              ? "true"
+              : "false"
+          }
+          onValueChange={handleReconciledChange}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Estado de reconciliación" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="true">Reconciliados</SelectItem>
+              <SelectItem value="false">No reconciliados</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }

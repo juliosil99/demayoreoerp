@@ -1,77 +1,67 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Payment } from "@/components/payments/PaymentForm";
-import { DateRange } from "react-day-picker";
-import { format } from "date-fns";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Payment } from '@/components/payments/PaymentForm';
 
 type PaymentWithRelations = Payment & {
   sales_channels: { name: string } | null;
   bank_accounts: { name: string };
+  is_reconciled?: boolean;
+  reconciled_amount?: number;
+  reconciled_count?: number;
 };
 
-type UsePaymentsQueryProps = {
-  page?: number;
-  pageSize?: number;
-  dateRange?: DateRange;
-  salesChannelId?: string;
-  accountId?: string;
-  status?: string;
+type PaymentFilter = {
+  search: string;
+  date?: Date;
+  paymentMethod: 'all' | 'cash' | 'transfer' | 'credit_card' | 'check';
+  isReconciled: boolean | 'all';
 };
 
-export function usePaymentsQuery({
-  page = 1,
-  pageSize = 30,
-  dateRange,
-  salesChannelId,
-  accountId,
-  status,
-}: UsePaymentsQueryProps = {}) {
+type PaginationState = {
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+const DEFAULT_PAGINATION: PaginationState = {
+  page: 1,
+  pageSize: 10,
+  totalPages: 1,
+};
+
+const DEFAULT_FILTERS: PaymentFilter = {
+  search: '',
+  date: undefined,
+  paymentMethod: 'all',
+  isReconciled: 'all',
+};
+
+export function usePaymentsQuery() {
   const { user } = useAuth();
-  
-  // For counting total items with filters
-  const countQuery = useQuery({
-    queryKey: ["payments-count", user?.id, dateRange, salesChannelId, accountId, status],
-    queryFn: async () => {
-      let query = supabase
+  const [payments, setPayments] = useState<PaymentWithRelations[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
+  const [filters, setFilters] = useState<PaymentFilter>(DEFAULT_FILTERS);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+
+  const fetchPayments = async () => {
+    setIsLoading(true);
+    if (!user) {
+      setPayments([]);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Create base query for count
+      let countQuery = supabase
         .from('payments')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user!.id);
+        .eq('user_id', user.id);
 
-      // Apply filters
-      if (dateRange?.from) {
-        query = query.gte('date', format(dateRange.from, 'yyyy-MM-dd'));
-      }
-      if (dateRange?.to) {
-        query = query.lte('date', format(dateRange.to, 'yyyy-MM-dd'));
-      }
-      if (salesChannelId) {
-        query = query.eq('sales_channel_id', salesChannelId);
-      }
-      if (accountId) {
-        // Convert accountId to number before using it in the query
-        query = query.eq('account_id', parseInt(accountId, 10));
-      }
-      if (status) {
-        query = query.eq('status', status);
-      }
-
-      const { count, error } = await query;
-
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: !!user,
-  });
-
-  // For getting paginated data with filters
-  const paymentsQuery = useQuery({
-    queryKey: ["payments", user?.id, page, pageSize, dateRange, salesChannelId, accountId, status],
-    queryFn: async () => {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-
+      // Create base query for data
       let query = supabase
         .from('payments')
         .select(`
@@ -79,41 +69,87 @@ export function usePaymentsQuery({
           sales_channels (name),
           bank_accounts (name)
         `)
-        .eq('user_id', user!.id);
+        .eq('user_id', user.id);
 
       // Apply filters
-      if (dateRange?.from) {
-        query = query.gte('date', format(dateRange.from, 'yyyy-MM-dd'));
-      }
-      if (dateRange?.to) {
-        query = query.lte('date', format(dateRange.to, 'yyyy-MM-dd'));
-      }
-      if (salesChannelId) {
-        query = query.eq('sales_channel_id', salesChannelId);
-      }
-      if (accountId) {
-        // Convert accountId to number before using it in the query
-        query = query.eq('account_id', parseInt(accountId, 10));
-      }
-      if (status) {
-        query = query.eq('status', status);
+      if (filters.search) {
+        const searchFilter = `%${filters.search.toLowerCase()}%`;
+        query = query.or(`reference_number.ilike.${searchFilter},bank_accounts.name.ilike.${searchFilter},sales_channels.name.ilike.${searchFilter}`);
+        countQuery = countQuery.or(`reference_number.ilike.${searchFilter}`);
       }
 
-      // Apply order and pagination
-      query = query.order('date', { ascending: false }).range(from, to);
+      if (filters.date) {
+        const dateStr = filters.date.toISOString().split('T')[0];
+        query = query.eq('date', dateStr);
+        countQuery = countQuery.eq('date', dateStr);
+      }
 
-      const { data, error } = await query;
+      if (filters.paymentMethod !== 'all') {
+        query = query.eq('payment_method', filters.paymentMethod);
+        countQuery = countQuery.eq('payment_method', filters.paymentMethod);
+      }
 
-      if (error) throw error;
-      return data as unknown as PaymentWithRelations[];
-    },
-    enabled: !!user,
-  });
+      // Apply reconciliation filter
+      if (filters.isReconciled !== 'all') {
+        query = query.eq('is_reconciled', filters.isReconciled === true);
+        countQuery = countQuery.eq('is_reconciled', filters.isReconciled === true);
+      }
+
+      // Apply pagination
+      const from = (pagination.page - 1) * pagination.pageSize;
+      const to = from + pagination.pageSize - 1;
+
+      // Get count
+      const { count, error: countError } = await countQuery;
+      
+      if (countError) {
+        throw countError;
+      }
+      
+      setTotalRecords(count || 0);
+
+      // Get paginated data
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        throw error;
+      }
+
+      setPayments(data as PaymentWithRelations[]);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      setPayments([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPayments();
+  }, [user, pagination.page, pagination.pageSize, filters]);
+
+  useEffect(() => {
+    // When filters change, reset to page 1
+    setPagination(prev => ({
+      ...prev,
+      page: 1,
+      totalPages: Math.max(1, Math.ceil(totalRecords / prev.pageSize)),
+    }));
+  }, [filters, totalRecords]);
+
+  const updateFilters = (newFilters: PaymentFilter) => {
+    setFilters(newFilters);
+  };
 
   return {
-    data: paymentsQuery.data || [],
-    isLoading: paymentsQuery.isLoading || countQuery.isLoading,
-    totalCount: countQuery.data || 0,
-    error: paymentsQuery.error || countQuery.error,
+    payments,
+    isLoading,
+    pagination,
+    filters,
+    updateFilters,
+    setPagination,
+    refetch: fetchPayments,
   };
 }

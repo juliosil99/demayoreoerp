@@ -1,6 +1,6 @@
 
 import { parseISO } from "date-fns";
-import { Check, Clock, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { Check, Clock, Pencil, Trash2, RefreshCw, FileText } from "lucide-react";
 import { Payment } from "@/components/payments/PaymentForm";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,9 @@ import { formatCurrency, formatCardDate } from "@/utils/formatters";
 type PaymentWithRelations = Payment & {
   sales_channels: { name: string } | null;
   bank_accounts: { name: string };
+  is_reconciled?: boolean;
+  reconciled_amount?: number;
+  reconciled_count?: number;
 };
 
 interface PaymentTableProps {
@@ -25,6 +28,7 @@ interface PaymentTableProps {
   onEdit: (payment: PaymentWithRelations) => void;
   onDelete: (id: string) => void;
   onStatusUpdate?: (id: string, status: 'confirmed' | 'pending') => void;
+  onViewReconciled?: (paymentId: string) => void;
 }
 
 export function PaymentTable({ 
@@ -32,7 +36,8 @@ export function PaymentTable({
   isLoading, 
   onEdit, 
   onDelete,
-  onStatusUpdate 
+  onStatusUpdate,
+  onViewReconciled 
 }: PaymentTableProps) {
   if (isLoading) {
     return <div className="text-center py-4">Cargando pagos...</div>;
@@ -53,6 +58,7 @@ export function PaymentTable({
             <TableHead>Método de Pago</TableHead>
             <TableHead>Referencia</TableHead>
             <TableHead>Estado</TableHead>
+            <TableHead>Reconciliación</TableHead>
             <TableHead>Tipo</TableHead>
             <TableHead className="text-right">Monto</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
@@ -62,6 +68,12 @@ export function PaymentTable({
           {payments.map((payment) => {
             // Check if this is a return (negative amount)
             const isReturn = payment.amount < 0;
+            
+            // Reconciliation info
+            const isReconciled = payment.is_reconciled;
+            const reconciledAmount = payment.reconciled_amount || 0;
+            const reconciledCount = payment.reconciled_count || 0;
+            const isPartiallyReconciled = isReconciled && reconciledAmount < Math.abs(payment.amount);
             
             return (
               <TableRow key={payment.id}>
@@ -95,6 +107,31 @@ export function PaymentTable({
                   </Badge>
                 </TableCell>
                 <TableCell>
+                  {isReconciled ? (
+                    <div className="space-y-1">
+                      <Badge 
+                        variant="outline" 
+                        className={isPartiallyReconciled 
+                          ? "bg-amber-50 text-amber-800 border-amber-300"
+                          : "bg-green-50 text-green-800 border-green-300"
+                        }
+                      >
+                        <span className="flex items-center gap-1">
+                          <Check className="h-3 w-3" />
+                          {isPartiallyReconciled ? 'Parcial' : 'Completo'}
+                        </span>
+                      </Badge>
+                      <div className="text-xs text-muted-foreground">
+                        {reconciledCount} {reconciledCount === 1 ? 'venta' : 'ventas'} ({formatCurrency(reconciledAmount)})
+                      </div>
+                    </div>
+                  ) : (
+                    <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-300">
+                      Sin reconciliar
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
                   {isReturn ? (
                     <Badge 
                       variant="outline" 
@@ -118,6 +155,17 @@ export function PaymentTable({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
+                    {onViewReconciled && isReconciled && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onViewReconciled(payment.id)}
+                        className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        title="Ver ventas reconciliadas"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    )}
                     {onStatusUpdate && payment.status !== 'confirmed' && (
                       <Button
                         variant="ghost"

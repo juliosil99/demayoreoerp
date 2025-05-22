@@ -37,6 +37,28 @@ export function useBulkReconcile() {
 
       if (salesError) throw salesError;
 
+      // Calculate the total amount and count of reconciled sales
+      const { data: salesData, error: salesDataError } = await supabase
+        .from('Sales')
+        .select('price')
+        .eq('reconciliation_id', paymentId);
+
+      if (salesDataError) throw salesDataError;
+
+      const totalAmount = salesData.reduce((sum, sale) => sum + (sale.price || 0), 0);
+      
+      // Update the payment record to mark it as reconciled
+      const { error: updateError } = await supabase
+        .from('payments')
+        .update({
+          is_reconciled: true,
+          reconciled_amount: totalAmount,
+          reconciled_count: salesData.length
+        })
+        .eq('id', paymentId);
+
+      if (updateError) throw updateError;
+
       return { success: true };
     },
     onSuccess: () => {

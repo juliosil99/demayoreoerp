@@ -1665,8 +1665,11 @@ export type Database = {
           created_at: string | null
           date: string
           id: string
+          is_reconciled: boolean | null
           notes: string | null
           payment_method: string
+          reconciled_amount: number | null
+          reconciled_count: number | null
           reference_number: string | null
           sales_channel_id: string | null
           status: string | null
@@ -1679,8 +1682,11 @@ export type Database = {
           created_at?: string | null
           date: string
           id?: string
+          is_reconciled?: boolean | null
           notes?: string | null
           payment_method: string
+          reconciled_amount?: number | null
+          reconciled_count?: number | null
           reference_number?: string | null
           sales_channel_id?: string | null
           status?: string | null
@@ -1693,8 +1699,11 @@ export type Database = {
           created_at?: string | null
           date?: string
           id?: string
+          is_reconciled?: boolean | null
           notes?: string | null
           payment_method?: string
+          reconciled_amount?: number | null
+          reconciled_count?: number | null
           reference_number?: string | null
           sales_channel_id?: string | null
           status?: string | null
