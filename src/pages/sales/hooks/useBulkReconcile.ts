@@ -146,9 +146,9 @@ export function useBulkReconcile() {
 
         // Check if database triggers exist
         console.log("Checking for triggers on Sales table");
-        const { data: triggerStatus } = await checkReconciliationTriggers();
+        const triggerStatus = await checkReconciliationTriggers();
         
-        if (!triggerStatus?.success) {
+        if (!triggerStatus || !triggerStatus.success) {
           console.log("Could not verify triggers, using direct Supabase query as fallback");
           // Use a direct query as fallback (casts for TypeScript)
           const { data: triggers } = await supabase.rpc('list_triggers_for_table' as any, { table_name: 'Sales' });
