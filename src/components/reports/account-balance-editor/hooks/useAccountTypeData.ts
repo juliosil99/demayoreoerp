@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
@@ -11,6 +11,14 @@ interface AccountData {
   name: string;
   account_type: string;
 }
+
+const accountTypeFilters = {
+  assets: ['asset', 'current_asset', 'fixed_asset'],
+  liabilities: ['liability', 'current_liability', 'long_term_liability'],
+  equity: ['equity'],
+  revenue: ['revenue'],
+  expenses: ['expense']
+};
 
 export function useAccountTypeData(accountType: string, periodId: string) {
   const { user } = useAuth();
@@ -104,40 +112,19 @@ export function useAccountTypeData(accountType: string, periodId: string) {
     }
   };
   
-  // Filter accounts by type
-  const filteredAccounts = (() => {
-    if (accountsLoading) return [];
-    
-    if (accountType === 'assets') {
-      return accounts.filter(acc => 
-        acc.account_type === 'asset' || 
-        acc.account_type === 'current_asset' || 
-        acc.account_type === 'fixed_asset'
-      );
+  // Filter accounts by type using the predefined filters
+  const filteredAccounts = useMemo(() => {
+    if (accountsLoading || !accountType || !accounts.length) {
+      return [];
     }
     
-    if (accountType === 'liabilities') {
-      return accounts.filter(acc => 
-        acc.account_type === 'liability' || 
-        acc.account_type === 'current_liability' || 
-        acc.account_type === 'long_term_liability'
-      );
+    const filters = accountTypeFilters[accountType as keyof typeof accountTypeFilters];
+    if (!filters) {
+      return [];
     }
     
-    if (accountType === 'equity') {
-      return accounts.filter(acc => acc.account_type === 'equity');
-    }
-    
-    if (accountType === 'revenue') {
-      return accounts.filter(acc => acc.account_type === 'revenue');
-    }
-    
-    if (accountType === 'expenses') {
-      return accounts.filter(acc => acc.account_type === 'expense');
-    }
-    
-    return [];
-  })();
+    return accounts.filter(acc => filters.includes(acc.account_type));
+  }, [accounts, accountType, accountsLoading]);
   
   return {
     accounts: filteredAccounts,

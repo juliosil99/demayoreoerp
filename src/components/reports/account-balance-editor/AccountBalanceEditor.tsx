@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FinancialPeriod } from "@/types/financial-reporting";
 import { AccountBalanceTabContent } from "./components/AccountBalanceTabContent";
+import { PeriodInfoPanel } from "./components/PeriodInfoPanel";
 
 interface AccountBalanceEditorProps {
   isOpen: boolean;
@@ -39,18 +40,9 @@ export const AccountBalanceEditor: React.FC<AccountBalanceEditorProps> = ({
         <DialogHeader>
           <DialogTitle>Editar Saldos de Cuentas</DialogTitle>
           <DialogDescription>
-            {period ? `Período: ${period.period_type === 'month' ? 'Mes' : 
-                      period.period_type === 'quarter' ? 'Trimestre' : 
-                      period.period_type === 'year' ? 'Año' : 'Día'} 
-                      ${period.period} de ${period.year}` : 'Cargando período...'}
+            <PeriodInfoPanel period={period} isPeriodClosed={isPeriodClosed} />
           </DialogDescription>
         </DialogHeader>
-
-        {isPeriodClosed && (
-          <div className="bg-yellow-50 border border-yellow-200 p-2 rounded-md mb-4">
-            <p className="text-yellow-800 text-sm">Este período está cerrado. Los saldos no pueden ser modificados.</p>
-          </div>
-        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-5 mb-4">
