@@ -1,156 +1,74 @@
 
-import { Skeleton } from "@/components/ui/skeleton";
-import { UnreconciledSale } from "../hooks/useBulkReconciliation";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info, Download } from "lucide-react";
-import { formatCurrency } from "@/utils/formatters";
-import { downloadReconciliationDetails } from "../utils/reconciliationExport";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
+import { formatDate, formatCurrency } from "@/utils/formatters";
+import type { UnreconciledSale } from "../hooks/useBulkReconciliation";
 
 interface ReconciliationTableProps {
-  sales?: UnreconciledSale[];
+  sales: UnreconciledSale[];
   isLoading: boolean;
   selectedSales: number[];
   onSelectSale: (id: number) => void;
 }
 
-export function ReconciliationTable({ 
-  sales, 
+export function ReconciliationTable({
+  sales,
   isLoading,
   selectedSales,
-  onSelectSale 
+  onSelectSale
 }: ReconciliationTableProps) {
   if (isLoading) {
-    return <Skeleton className="h-32 w-full" />;
+    return <div className="my-4 text-center">Cargando ventas sin reconciliar...</div>;
   }
 
   if (!sales || sales.length === 0) {
-    return (
-      <Alert variant="default" className="bg-muted/50">
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          No hay ventas sin reconciliar que coincidan con los filtros.
-        </AlertDescription>
-      </Alert>
-    );
+    return <div className="my-4 text-center">No se encontraron ventas sin reconciliar con los filtros aplicados.</div>;
   }
 
-  const totalSales = sales.length;
-  const totalAmount = sales.reduce((sum, sale) => sum + (sale.price || 0), 0);
-  const totalCommissions = sales.reduce((sum, sale) => sum + (sale.comission || 0), 0);
-  const totalShipping = sales.reduce((sum, sale) => sum + (sale.shipping || 0), 0);
-  const netAmount = totalAmount - totalCommissions - totalShipping;
-  
-  const invoices = sales.filter(sale => !sale.type || sale.type === 'invoice').length;
-  const creditNotes = sales.filter(sale => sale.type === 'credit_note').length;
-
-  const handleDownloadSummary = () => {
-    downloadReconciliationDetails(sales);
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Resumen de Reconciliación</h3>
-        <Button variant="outline" onClick={handleDownloadSummary}>
-          <Download className="h-4 w-4 mr-2" />
-          Descargar Detalle
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 border rounded-md bg-background">
-          <div className="text-sm text-muted-foreground">Documentos a Reconciliar</div>
-          <div className="text-2xl font-bold">{totalSales}</div>
-          <div className="text-sm text-muted-foreground mt-2">
-            {invoices} facturas / {creditNotes} notas de crédito
-          </div>
-        </div>
-        <div className="p-4 border rounded-md bg-background">
-          <div className="text-sm text-muted-foreground">Monto Bruto</div>
-          <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Antes de comisiones y envíos
-          </div>
-        </div>
-        <div className="p-4 border rounded-md bg-background">
-          <div className="text-sm text-muted-foreground">Monto Neto</div>
-          <div className="text-2xl font-bold">{formatCurrency(netAmount)}</div>
-          <div className="text-sm text-muted-foreground mt-2">
-            Después de {formatCurrency(totalCommissions)} en comisiones
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]"></TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead>Orden</TableHead>
-              <TableHead>Canal</TableHead>
-              <TableHead className="text-right">Monto</TableHead>
-              <TableHead className="text-right">Comisión</TableHead>
-              <TableHead className="text-right">Envío</TableHead>
-              <TableHead className="text-right">Neto</TableHead>
+    <div className="my-4 border rounded-md overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-12">
+              <Checkbox
+                checked={sales.length > 0 && selectedSales.length === sales.length}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    onSelectSale(sales.map(sale => sale.id) as unknown as number);
+                  } else {
+                    onSelectSale([] as unknown as number);
+                  }
+                }}
+              />
+            </TableHead>
+            <TableHead>ID</TableHead>
+            <TableHead>Fecha</TableHead>
+            <TableHead>Canal</TableHead>
+            <TableHead>No. Orden</TableHead>
+            <TableHead>Producto</TableHead>
+            <TableHead className="text-right">Monto</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sales.map((sale) => (
+            <TableRow key={sale.id} className="hover:bg-muted/30">
+              <TableCell>
+                <Checkbox
+                  checked={selectedSales.includes(sale.id)}
+                  onCheckedChange={() => onSelectSale(sale.id)}
+                />
+              </TableCell>
+              <TableCell>{sale.id}</TableCell>
+              <TableCell>{formatDate(sale.date || "")}</TableCell>
+              <TableCell>{sale.Channel}</TableCell>
+              <TableCell>{sale.orderNumber}</TableCell>
+              <TableCell>{sale.productName}</TableCell>
+              <TableCell className="text-right">{formatCurrency(sale.price || 0)}</TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sales.slice(0, 10).map((sale) => {
-              const isSelected = selectedSales.includes(sale.id);
-              
-              return (
-                <TableRow 
-                  key={sale.id}
-                  className={cn(
-                    isSelected && "bg-muted/50",
-                    isSelected && sale.price && sale.price < 0 && "bg-red-50"
-                  )}
-                >
-                  <TableCell>
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => onSelectSale(sale.id)}
-                    />
-                  </TableCell>
-                  <TableCell>{sale.date}</TableCell>
-                  <TableCell>{sale.orderNumber}</TableCell>
-                  <TableCell>{sale.Channel}</TableCell>
-                  <TableCell 
-                    className={cn(
-                      "text-right",
-                      sale.price && sale.price < 0 && "text-red-600 font-medium"
-                    )}
-                  >
-                    {formatCurrency(sale.price)}
-                  </TableCell>
-                  <TableCell className="text-right">{formatCurrency(sale.comission)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(sale.shipping)}</TableCell>
-                  <TableCell 
-                    className={cn(
-                      "text-right",
-                      sale.price && sale.price < 0 && "text-red-600 font-medium"
-                    )}
-                  >
-                    {formatCurrency((sale.price || 0) - (sale.comission || 0) - (sale.shipping || 0))}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

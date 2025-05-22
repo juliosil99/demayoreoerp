@@ -1,18 +1,11 @@
 
-import { useState } from "react";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, Filter, FilterX } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateRange } from "react-day-picker";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { SalesChannelsTable } from "@/integrations/supabase/types/sales-channels";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { RefreshCw } from "lucide-react";
 
 interface ReconciliationFiltersProps {
   selectedChannel: string;
@@ -22,7 +15,7 @@ interface ReconciliationFiltersProps {
   dateRange: DateRange | undefined;
   onDateRangeChange: (range: DateRange | undefined) => void;
   onReset: () => void;
-  salesChannels?: SalesChannelsTable['Row'][];
+  salesChannels: any[];
 }
 
 export function ReconciliationFilters({
@@ -33,50 +26,56 @@ export function ReconciliationFilters({
   dateRange,
   onDateRangeChange,
   onReset,
-  salesChannels = [],
+  salesChannels
 }: ReconciliationFiltersProps) {
   return (
-    <div className="space-y-4 p-4 border rounded-md bg-background">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Filtros de Reconciliación</h3>
-        <Button variant="ghost" size="sm" onClick={onReset}>
-          <FilterX className="h-4 w-4 mr-2" />
-          Limpiar Filtros
+    <div className="space-y-4">
+      <div className="flex justify-between">
+        <h3 className="text-lg font-medium">Filtros de búsqueda</h3>
+        <Button variant="outline" size="sm" onClick={onReset}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Reiniciar
         </Button>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Canal</label>
-          <Select value={selectedChannel} onValueChange={onChannelChange}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label className="mb-2 block font-medium">Canal</Label>
+          <Select 
+            value={selectedChannel} 
+            onValueChange={onChannelChange}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Seleccionar canal" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los canales</SelectItem>
               {salesChannels.map((channel) => (
-                <SelectItem key={channel.id} value={channel.id}>{channel.name}</SelectItem>
+                <SelectItem key={channel.value} value={channel.value}>
+                  {channel.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Números de Orden</label>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por número de orden"
-              value={orderNumbers}
-              onChange={(e) => onOrderNumbersChange(e.target.value)}
-              className="pl-8"
-            />
-          </div>
+        
+        <div>
+          <Label className="mb-2 block font-medium">Números de Orden</Label>
+          <Input
+            placeholder="Ej: ORD-001, ORD-002"
+            value={orderNumbers}
+            onChange={(e) => onOrderNumbersChange(e.target.value)}
+          />
         </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Rango de Fechas</label>
-          <DatePickerWithRange date={dateRange} setDate={onDateRangeChange} />
+        
+        <div>
+          <Label className="mb-2 block font-medium">Rango de Fechas</Label>
+          <DateRangePicker
+            value={dateRange}
+            onChange={onDateRangeChange}
+            placeholder="Seleccionar fechas"
+            align="start"
+          />
         </div>
       </div>
     </div>

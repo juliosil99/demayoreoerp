@@ -10,27 +10,32 @@ export function useTriggerVerification() {
 
   const checkTriggers = async () => {
     setIsVerifying(true);
-    const result = await checkReconciliationTriggers();
-    setTriggerStatus(result);
-    setIsVerifying(false);
-    
-    if (!result || !result.success) {
+    try {
+      const result = await checkReconciliationTriggers();
+      setTriggerStatus(result);
+      
+      if (!result.success) {
+        toast({
+          title: "Error de verificación",
+          description: "No se pudieron verificar los triggers de reconciliación",
+          variant: "destructive",
+        });
+      } else if (!result.hasPaymentTrigger || !result.hasSalesTrigger) {
+        toast({
+          title: "Advertencia",
+          description: "La configuración de reconciliación automática no está completa",
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      console.error("Error checking triggers:", error);
       toast({
-        title: "Advertencia",
-        description: "No se pudieron verificar los triggers de reconciliación. El proceso de reconciliación puede no funcionar correctamente.",
+        title: "Error",
+        description: "Error al verificar la configuración",
         variant: "destructive",
       });
-    } else if (!result.hasPaymentTrigger || !result.hasSalesTrigger) {
-      toast({
-        description: "Faltan algunos triggers de reconciliación. Se utilizará un método alternativo de cálculo.",
-        variant: "warning",
-      });
-    } else {
-      toast({
-        title: "Sistema verificado",
-        description: "La configuración de reconciliación funciona correctamente.",
-        variant: "success"
-      });
+    } finally {
+      setIsVerifying(false);
     }
   };
 
