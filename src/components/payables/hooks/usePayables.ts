@@ -6,6 +6,10 @@ import { useDeletePayable } from "./useDeletePayable";
 import { useFetchPayables, PayableStatusFilter } from "./useFetchPayables";
 import { UpdatePayableParams } from "./useUpdatePayable";
 
+/**
+ * Hook that provides all payable-related functionality
+ * @param statusFilter - Filter for payable status (pending, paid, all)
+ */
 export function usePayables(statusFilter: PayableStatusFilter = "pending") {
   const { data: payables, isLoading } = useFetchPayables(statusFilter);
   const createPayable = useCreatePayable();

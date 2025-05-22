@@ -3,6 +3,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { markPayableAsPaid } from "./services/payableService";
 
+/**
+ * Hook for marking a payable as paid
+ * Creates an expense record and updates the payable status
+ */
 export function useMarkPayableAsPaid() {
   const queryClient = useQueryClient();
 
