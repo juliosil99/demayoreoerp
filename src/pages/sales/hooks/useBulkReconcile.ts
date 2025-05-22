@@ -6,14 +6,7 @@ import { toast } from "sonner";
 
 export interface BulkReconcileParams {
   salesIds: number[];
-  paymentData: {
-    date: string;
-    amount: number;
-    account_id: number;
-    payment_method: string;
-    reference_number?: string;
-    sales_channel_id?: string;
-  };
+  paymentId: string;
 }
 
 export function useBulkReconcile() {
@@ -21,35 +14,30 @@ export function useBulkReconcile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ salesIds, paymentData }: BulkReconcileParams) => {
+    mutationFn: async ({ salesIds, paymentId }: BulkReconcileParams) => {
       if (!user) throw new Error("User not authenticated");
 
-      // First create the payment record
+      // Update all the sales records with the payment reference
       const { data: payment, error: paymentError } = await supabase
         .from('payments')
-        .insert([{
-          ...paymentData,
-          user_id: user.id,
-          status: 'completed'
-        }])
-        .select()
+        .select('date')
+        .eq('id', paymentId)
         .single();
 
       if (paymentError) throw paymentError;
 
-      // Then update all the sales records with the payment reference
       const { error: salesError } = await supabase
         .from('Sales')
         .update({ 
-          reconciliation_id: payment.id,
+          reconciliation_id: paymentId,
           statusPaid: 'cobrado',
-          datePaid: paymentData.date
+          datePaid: payment.date
         })
         .in('id', salesIds);
 
       if (salesError) throw salesError;
 
-      return payment;
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] });

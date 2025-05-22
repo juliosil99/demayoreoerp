@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Payment } from "@/components/payments/PaymentForm";
 import { BulkReconciliationDialog } from "@/components/payments/BulkReconciliationDialog";
@@ -8,12 +9,10 @@ import { PaymentTable } from "./components/PaymentTable";
 import { PaymentHeader } from "./components/PaymentHeader";
 import { PaymentFormDialog } from "./components/PaymentFormDialog";
 import { PaymentPagination } from "./components/PaymentPagination";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import { toast } from "@/hooks/use-toast";
-import { usePaymentQueries } from "@/components/payments/hooks/usePaymentQueries";
 import { PaymentFilters } from "./components/PaymentFilters";
 import { DateRange } from "react-day-picker";
+import { useBulkReconcile } from "./hooks/useBulkReconcile";
+import { usePaymentQueries } from "@/components/payments/hooks/usePaymentQueries";
 
 type PaymentWithRelations = Payment & {
   sales_channels: { name: string } | null;
@@ -47,39 +46,7 @@ export default function Payments() {
   
   const deletePaymentMutation = usePaymentDelete();
   const statusUpdateMutation = usePaymentStatusUpdate();
-  const queryClient = useQueryClient();
-  
-  const bulkReconcileMutation = useMutation({
-    mutationFn: async ({ salesIds, paymentId }: { salesIds: number[], paymentId: string }) => {
-      const { error: salesError } = await supabase
-        .from('Sales')
-        .update({ 
-          reconciliation_id: paymentId,
-          statusPaid: 'cobrado',
-          datePaid: new Date().toISOString().split('T')[0]
-        })
-        .in('id', salesIds);
-
-      if (salesError) throw salesError;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payments"] });
-      queryClient.invalidateQueries({ queryKey: ["unreconciled"] });
-      toast({
-        title: "Ventas reconciliadas exitosamente",
-        description: "Las ventas han sido vinculadas al pago seleccionado"
-      });
-      setShowBulkReconciliation(false);
-    },
-    onError: (error) => {
-      console.error("Error en reconciliación:", error);
-      toast({
-        title: "Error al reconciliar las ventas",
-        description: "No se pudieron vincular las ventas al pago",
-        variant: "destructive"
-      });
-    }
-  });
+  const bulkReconcileMutation = useBulkReconcile();
 
   const handleDelete = (id: string) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este pago?")) {
@@ -160,7 +127,6 @@ export default function Payments() {
         onSuccess={handleSuccess}
       />
 
-      {/* BulkReconciliationDialog is now only rendered once */}
       <BulkReconciliationDialog 
         open={showBulkReconciliation}
         onOpenChange={setShowBulkReconciliation}

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,10 +13,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PaymentSelector } from "@/components/payments/components/PaymentSelector"; // Using absolute import path
+import { PaymentSelector } from "@/components/payments/components/PaymentSelector"; 
 import { useToast } from "@/hooks/use-toast";
 import { Payment } from "./PaymentForm";
 import { ReconciliationFilters } from "./components/ReconciliationFilters";
+import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
+import { ReconciliationConfirmDialog } from "./components/ReconciliationConfirmDialog";
+import { ReconciliationTable } from "./components/ReconciliationTable";
 
 interface BulkReconciliationDialogProps {
   open: boolean;
@@ -29,33 +32,38 @@ export function BulkReconciliationDialog({
   onOpenChange,
   onReconcile,
 }: BulkReconciliationDialogProps) {
-  const [selectedPaymentId, setSelectedPaymentId] = useState<string | undefined>(undefined);
-  const [selectedChannel, setSelectedChannel] = useState("all");
-  const [orderNumbers, setOrderNumbers] = useState("");
-  const [dateRange, setDateRange] = useState<undefined>();
-  const [salesIds, setSalesIds] = useState<number[]>([]);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [selectedSales, setSelectedSales] = useState<number[]>([]);
   const { toast } = useToast();
 
-  const handlePaymentSelect = (paymentId: string) => {
-    setSelectedPaymentId(paymentId);
-  };
+  // Use the custom hook to manage the bulk reconciliation state
+  const {
+    selectedChannel,
+    setSelectedChannel,
+    orderNumbers,
+    setOrderNumbers,
+    selectedPaymentId,
+    setSelectedPaymentId,
+    dateRange,
+    setDateRange,
+    unreconciled,
+    isLoading,
+    resetFilters
+  } = useBulkReconciliation(open);
 
-  const handleChannelChange = (channel: string) => {
-    setSelectedChannel(channel);
-  };
+  // Reset selected sales when dialog opens or closes
+  useEffect(() => {
+    if (!open) {
+      setSelectedSales([]);
+    }
+  }, [open]);
 
-  const handleOrderNumbersChange = (orders: string) => {
-    setOrderNumbers(orders);
-  };
-
-  const handleDateRangeChange = (range: any) => {
-    setDateRange(range);
-  };
-
-  const handleResetFilters = () => {
-    setSelectedChannel("all");
-    setOrderNumbers("");
-    setDateRange(undefined);
+  const handleSelectSale = (id: number) => {
+    setSelectedSales(prev => 
+      prev.includes(id) 
+        ? prev.filter(saleId => saleId !== id) 
+        : [...prev, id]
+    );
   };
 
   const handleReconcile = () => {
@@ -68,53 +76,62 @@ export function BulkReconciliationDialog({
       return;
     }
 
-    if (!salesIds.length) {
+    if (selectedSales.length === 0) {
       toast({
         title: "Error",
-        description: "Por favor, introduce los IDs de las ventas a reconciliar.",
+        description: "Por favor, selecciona al menos una venta para reconciliar.",
         variant: "destructive",
       });
       return;
     }
 
-    onReconcile({ salesIds, paymentId: selectedPaymentId });
-    onOpenChange(false);
+    setShowConfirmDialog(true);
   };
 
-  const formattedPayment = {
-    status: 'confirmed' as const
-  } as Payment;
+  const confirmReconciliation = () => {
+    onReconcile({ salesIds: selectedSales, paymentId: selectedPaymentId });
+    setShowConfirmDialog(false);
+  };
+
+  // Calculate total amount from selected sales
+  const totalSelectedAmount = unreconciled
+    ? unreconciled
+        .filter(sale => selectedSales.includes(sale.id))
+        .reduce((sum, sale) => sum + (sale.price || 0), 0)
+    : 0;
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      {/* Removing the trigger button - now controlled by parent component */}
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Reconciliación Masiva de Ventas</AlertDialogTitle>
-          <AlertDialogDescription>
-            Selecciona un pago y los IDs de las ventas a reconciliar.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+    <>
+      <AlertDialog open={open} onOpenChange={onOpenChange}>
+        <AlertDialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reconciliación Masiva de Ventas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Selecciona un pago y los IDs de las ventas a reconciliar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
-        <ReconciliationFilters
-          selectedChannel={selectedChannel}
-          onChannelChange={handleChannelChange}
-          orderNumbers={orderNumbers}
-          onOrderNumbersChange={handleOrderNumbersChange}
-          dateRange={dateRange}
-          onDateRangeChange={handleDateRangeChange}
-          onReset={handleResetFilters}
-        />
+          <ReconciliationFilters
+            selectedChannel={selectedChannel}
+            onChannelChange={setSelectedChannel}
+            orderNumbers={orderNumbers}
+            onOrderNumbersChange={setOrderNumbers}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            onReset={resetFilters}
+          />
 
-        <PaymentSelector
-          selectedPaymentId={selectedPaymentId}
-          onPaymentSelect={handlePaymentSelect}
-          selectedChannel={selectedChannel}
-        />
+          <div className="my-4">
+            <Label className="mb-2 block font-medium">Seleccionar Pago</Label>
+            <PaymentSelector
+              selectedPaymentId={selectedPaymentId}
+              onPaymentSelect={setSelectedPaymentId}
+              selectedChannel={selectedChannel}
+            />
+          </div>
 
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="salesIds">IDs de Ventas (separados por comas)</Label>
+          <div className="my-4">
+            <Label className="mb-2 block font-medium" htmlFor="salesIds">IDs de Ventas (separados por comas)</Label>
             <Input
               id="salesIds"
               placeholder="Ej: 123,456,789"
@@ -123,17 +140,34 @@ export function BulkReconciliationDialog({
                   .split(",")
                   .map((id) => parseInt(id.trim(), 10))
                   .filter((id) => !isNaN(id));
-                setSalesIds(ids);
+                setSelectedSales(ids);
               }}
             />
           </div>
-        </div>
 
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleReconcile}>Reconciliar</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          {unreconciled && unreconciled.length > 0 && (
+            <ReconciliationTable 
+              sales={unreconciled}
+              isLoading={isLoading}
+              selectedSales={selectedSales}
+              onSelectSale={handleSelectSale}
+            />
+          )}
+
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleReconcile}>Reconciliar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <ReconciliationConfirmDialog 
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        onConfirm={confirmReconciliation}
+        selectedCount={selectedSales.length}
+        totalAmount={totalSelectedAmount}
+      />
+    </>
   );
 }
