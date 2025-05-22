@@ -1,5 +1,5 @@
 
-import { AlertTriangle, CheckCircle2, WifiOff } from "lucide-react";
+import { AlertTriangle, CheckCircle2, WifiOff, Info, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface TriggerStatusAlertProps {
@@ -14,6 +14,7 @@ export function TriggerStatusAlert({
   if (isVerifying) {
     return (
       <Alert variant="default">
+        <Info className="h-4 w-4" />
         <AlertDescription>Verificando configuración de la base de datos...</AlertDescription>
       </Alert>
     );
@@ -26,6 +27,7 @@ export function TriggerStatusAlert({
         <WifiOff className="h-4 w-4" />
         <AlertDescription>
           No se pudo verificar los triggers de reconciliación. El sistema continuará funcionando en modo manual.
+          {triggerStatus.degradedMode && " La verificación no está disponible en este momento."}
         </AlertDescription>
       </Alert>
     );
@@ -38,7 +40,7 @@ export function TriggerStatusAlert({
 
   if (!triggerStatus.hasPaymentTrigger || !triggerStatus.hasSalesTrigger) {
     return (
-      <Alert variant="default">
+      <Alert variant="warning">
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
           Advertencia: La configuración de reconciliación automática no está completa.
@@ -53,7 +55,7 @@ export function TriggerStatusAlert({
   }
 
   return (
-    <Alert variant="default" className="bg-green-50 border-green-200">
+    <Alert variant="success" className="bg-green-50 border-green-200">
       <CheckCircle2 className="h-4 w-4 text-green-500" />
       <AlertDescription className="text-green-700">
         La configuración de reconciliación automática está completa y funcionando correctamente.

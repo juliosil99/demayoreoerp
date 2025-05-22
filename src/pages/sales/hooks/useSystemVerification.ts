@@ -25,11 +25,20 @@ export function useSystemVerification(payments?: PaymentWithReconciliation[]) {
       setTriggerStatus(result);
       
       if (!result.success) {
-        toast({
-          title: "Advertencia del sistema",
-          description: "No se pudieron verificar los triggers de reconciliación en la base de datos",
-          variant: "destructive",
-        });
+        // Different messaging depending on the nature of the failure
+        if (result.degradedMode) {
+          toast({
+            title: "Modo verificación limitado",
+            description: "El sistema funcionará en modo manual de reconciliación",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Advertencia del sistema",
+            description: "No se pudieron verificar los triggers de reconciliación en la base de datos",
+            variant: "destructive",
+          });
+        }
       } else if (!result.hasPaymentTrigger || !result.hasSalesTrigger) {
         toast({
           title: "Advertencia de configuración",
@@ -52,6 +61,11 @@ export function useSystemVerification(payments?: PaymentWithReconciliation[]) {
       }
     } catch (error) {
       console.error("Error verificando configuración:", error);
+      setTriggerStatus({
+        success: false,
+        error: String(error),
+        degradedMode: true
+      });
     } finally {
       setIsVerifyingDatabase(false);
     }

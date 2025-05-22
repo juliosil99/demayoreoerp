@@ -28,36 +28,49 @@ serve(async (req) => {
     
     console.log("Executing list_triggers_for_reconciliation RPC function...")
     
-    // Execute the SQL to inspect triggers
-    const { data, error } = await supabaseClient.rpc('list_triggers_for_reconciliation')
-    
-    if (error) {
-      console.error("RPC function error:", error)
-      throw error
+    try {
+      // Execute the SQL to inspect triggers
+      const { data, error } = await supabaseClient.rpc('list_triggers_for_reconciliation')
+      
+      if (error) {
+        console.error("RPC function error:", error)
+        throw error
+      }
+      
+      console.log(`Found ${data?.length || 0} triggers`)
+      
+      const hasPaymentTrigger = data?.some((t) => 
+        t.trigger_name?.toLowerCase().includes('payment') && 
+        t.event_manipulation === 'UPDATE'
+      ) || false
+      
+      const hasSalesTrigger = data?.some((t) => 
+        t.trigger_name?.toLowerCase().includes('sale') && 
+        t.event_manipulation === 'UPDATE'
+      ) || false
+      
+      // Return the triggers data
+      return new Response(JSON.stringify({ 
+        success: true, 
+        data,
+        hasPaymentTrigger,
+        hasSalesTrigger
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      })
+    } catch (rpcError) {
+      console.error("RPC call error:", rpcError)
+      // Return a more graceful error for RPC failures
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: String(rpcError),
+        message: "Database function error: The SQL function exists but encountered an error"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Return 200 with error info in body instead of 500 to avoid fallback loops
+      })
     }
-    
-    console.log(`Found ${data?.length || 0} triggers`)
-    
-    const hasPaymentTrigger = data?.some((t) => 
-      t.trigger_name?.toLowerCase().includes('payment') && 
-      t.event_manipulation === 'UPDATE'
-    )
-    
-    const hasSalesTrigger = data?.some((t) => 
-      t.trigger_name?.toLowerCase().includes('sale') && 
-      t.event_manipulation === 'UPDATE'
-    )
-    
-    // Return the triggers data
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data,
-      hasPaymentTrigger,
-      hasSalesTrigger
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    })
   } catch (error) {
     console.error("Edge function error:", error)
     return new Response(JSON.stringify({ 
@@ -66,7 +79,7 @@ serve(async (req) => {
       message: "Failed to check database triggers" 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500, // Return 500 instead of 400 to better indicate server error
+      status: 200, // Return 200 with error info in body instead of 500
     })
   }
 })

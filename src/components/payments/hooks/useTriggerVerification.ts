@@ -16,11 +16,20 @@ export function useTriggerVerification() {
       setTriggerStatus(result);
       
       if (!result.success) {
-        toast({
-          title: "Error de verificación",
-          description: "No se pudieron verificar los triggers de reconciliación",
-          variant: "destructive",
-        });
+        // If verification failed but we're in degraded mode, show a different message
+        if (result.degradedMode) {
+          toast({
+            title: "Modo de verificación limitado",
+            description: "La verificación de triggers no está disponible. El sistema funcionará en modo manual.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Error de verificación",
+            description: "No se pudieron verificar los triggers de reconciliación",
+            variant: "destructive",
+          });
+        }
       } else if (!result.hasPaymentTrigger || !result.hasSalesTrigger) {
         toast({
           title: "Advertencia",
@@ -30,6 +39,12 @@ export function useTriggerVerification() {
       }
     } catch (error) {
       console.error("Error checking triggers:", error);
+      setTriggerStatus({
+        success: false,
+        error: String(error),
+        degradedMode: true
+      });
+      
       toast({
         title: "Error",
         description: "Error al verificar la configuración",

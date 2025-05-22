@@ -28,46 +28,65 @@ export async function checkReconciliationTriggers() {
         throw new Error("Invalid response from edge function");
       }
       
+      // Handle the case where the function returned success:false
+      if (data && !data.success) {
+        console.warn("Edge function reported failure:", data.message || data.error);
+        throw new Error(data.message || "Edge function reported failure");
+      }
+      
       return { 
         success: true, 
         data: data.data,
-        hasPaymentTrigger: data.hasPaymentTrigger,
-        hasSalesTrigger: data.hasSalesTrigger
+        hasPaymentTrigger: data.hasPaymentTrigger || false,
+        hasSalesTrigger: data.hasSalesTrigger || false
       };
     } catch (edgeFunctionError) {
       // Second attempt: Fall back to direct RPC call
       console.log("Edge function failed, falling back to RPC call...", edgeFunctionError);
       
-      const { data: rpcData, error: rpcError } = await supabase.rpc('list_triggers_for_reconciliation');
-      
-      if (rpcError) {
-        console.error("Both edge function and RPC fallback failed:", rpcError);
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('list_triggers_for_reconciliation');
+        
+        if (rpcError) {
+          console.error("Both edge function and RPC fallback failed:", rpcError);
+          return { 
+            success: false, 
+            error: `Trigger verification failed: ${rpcError.message || String(edgeFunctionError)}`,
+            usedFallback: true 
+          };
+        }
+        
+        // Process the data similar to how the edge function would
+        const hasPaymentTrigger = rpcData?.some((t: any) => 
+          t.trigger_name?.toLowerCase().includes('payment') && 
+          t.event_manipulation === 'UPDATE'
+        ) || false;
+        
+        const hasSalesTrigger = rpcData?.some((t: any) => 
+          t.trigger_name?.toLowerCase().includes('sale') && 
+          t.event_manipulation === 'UPDATE'
+        ) || false;
+        
+        console.log("RPC fallback succeeded, using direct database response");
+        
         return { 
-          success: false, 
-          error: `Trigger verification failed: ${rpcError.message || String(edgeFunctionError)}` 
+          success: true, 
+          data: rpcData,
+          hasPaymentTrigger,
+          hasSalesTrigger,
+          usedFallback: true
+        };
+      } catch (rpcFallbackError) {
+        // If both attempts fail, return a helpful error with degraded mode indicator
+        console.error("Both verification methods failed:", rpcFallbackError);
+        return {
+          success: false,
+          error: String(rpcFallbackError),
+          hasPaymentTrigger: false,
+          hasSalesTrigger: false,
+          degradedMode: true
         };
       }
-      
-      // Process the data similar to how the edge function would
-      const hasPaymentTrigger = rpcData.some((t: any) => 
-        t.trigger_name?.toLowerCase().includes('payment') && 
-        t.event_manipulation === 'UPDATE'
-      );
-      
-      const hasSalesTrigger = rpcData.some((t: any) => 
-        t.trigger_name?.toLowerCase().includes('sale') && 
-        t.event_manipulation === 'UPDATE'
-      );
-      
-      console.log("RPC fallback succeeded, using direct database response");
-      
-      return { 
-        success: true, 
-        data: rpcData,
-        hasPaymentTrigger,
-        hasSalesTrigger,
-        usedFallback: true
-      };
     }
   } catch (error) {
     console.error("Error in trigger check:", error);
@@ -75,7 +94,8 @@ export async function checkReconciliationTriggers() {
       success: false, 
       error: String(error),
       hasPaymentTrigger: false,
-      hasSalesTrigger: false
+      hasSalesTrigger: false,
+      degradedMode: true
     };
   }
 }
