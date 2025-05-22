@@ -1,5 +1,5 @@
 
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, WifiOff } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface TriggerStatusAlertProps {
@@ -19,19 +19,21 @@ export function TriggerStatusAlert({
     );
   }
 
-  if (!triggerStatus) {
-    return null;
-  }
-
-  if (!triggerStatus.success) {
+  // If there's an error but it's just the verification feature that's broken
+  if (triggerStatus?.error && !triggerStatus.success) {
     return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
+      <Alert variant="default">
+        <WifiOff className="h-4 w-4" />
         <AlertDescription>
-          No se pudieron verificar los triggers de reconciliación en la base de datos
+          No se pudo verificar los triggers de reconciliación. El sistema continuará funcionando en modo manual.
         </AlertDescription>
       </Alert>
     );
+  }
+
+  // Regular status displays when verification worked
+  if (!triggerStatus) {
+    return null;
   }
 
   if (!triggerStatus.hasPaymentTrigger || !triggerStatus.hasSalesTrigger) {
@@ -44,6 +46,7 @@ export function TriggerStatusAlert({
           {!triggerStatus.hasSalesTrigger && " Falta el trigger para actualizaciones de ventas."}
           <br />
           La reconciliación funcionará en modo manual.
+          {triggerStatus.usedFallback && " (Utilizando método de verificación alternativo)"}
         </AlertDescription>
       </Alert>
     );
@@ -54,6 +57,7 @@ export function TriggerStatusAlert({
       <CheckCircle2 className="h-4 w-4 text-green-500" />
       <AlertDescription className="text-green-700">
         La configuración de reconciliación automática está completa y funcionando correctamente.
+        {triggerStatus.usedFallback && " (Verificado mediante método alternativo)"}
       </AlertDescription>
     </Alert>
   );
