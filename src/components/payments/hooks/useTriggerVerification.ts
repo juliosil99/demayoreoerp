@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { checkReconciliationTriggers } from "@/integrations/supabase/triggers";
 
@@ -8,7 +8,8 @@ export function useTriggerVerification() {
   const [triggerStatus, setTriggerStatus] = useState<any>(null);
   const { toast } = useToast();
 
-  const checkTriggers = async () => {
+  // Use useCallback to memoize the function and prevent it from changing on each render
+  const checkTriggers = useCallback(async () => {
     setIsVerifying(true);
     try {
       const result = await checkReconciliationTriggers();
@@ -37,7 +38,7 @@ export function useTriggerVerification() {
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [toast]); // Only toast is a dependency now
 
   return {
     isVerifying,

@@ -49,16 +49,16 @@ export function BulkReconciliationDialog({
     resetFilters
   } = useBulkReconciliation(open);
 
-  // Reset selected sales when dialog opens or closes
+  // Reset selected sales when dialog opens or closes and check triggers when it opens
   useEffect(() => {
     if (!open) {
       setSelectedSales([]);
       setTriggerStatus(null);
     } else {
-      // Check triggers when dialog opens
+      // Check triggers when dialog opens (only once)
       checkTriggers();
     }
-  }, [open, checkTriggers, setTriggerStatus]);
+  }, [open]); // Remove checkTriggers and setTriggerStatus from dependencies
 
   const handleReconcile = () => {
     if (!selectedPaymentId) {

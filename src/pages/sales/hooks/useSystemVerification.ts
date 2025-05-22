@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { checkReconciliationTriggers, manualRecalculateReconciliation } from "@/integrations/supabase/triggers";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,12 +17,8 @@ export function useSystemVerification(payments?: PaymentWithReconciliation[]) {
   const [isVerifyingDatabase, setIsVerifyingDatabase] = useState(false);
   const { toast } = useToast();
 
-  // Perform a system check when component loads
-  useEffect(() => {
-    verifyDatabaseConfiguration();
-  }, []);
-
-  const verifyDatabaseConfiguration = async () => {
+  // Memoize the verification function to prevent it from changing on every render
+  const verifyDatabaseConfiguration = useCallback(async () => {
     setIsVerifyingDatabase(true);
     try {
       const result = await checkReconciliationTriggers();
@@ -59,7 +55,12 @@ export function useSystemVerification(payments?: PaymentWithReconciliation[]) {
     } finally {
       setIsVerifyingDatabase(false);
     }
-  };
+  }, [toast, payments]); // Only depend on toast and payments
+
+  // Perform a system check when component loads
+  useEffect(() => {
+    verifyDatabaseConfiguration();
+  }, [verifyDatabaseConfiguration]);
 
   const handleRepairReconciliations = async () => {
     try {
