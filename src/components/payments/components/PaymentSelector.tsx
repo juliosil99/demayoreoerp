@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -8,13 +8,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect } from "react";
-import { formatCurrency, formatCardDate } from "@/utils/formatters";
 
 interface PaymentSelectorProps {
   selectedPaymentId?: string;
-  onPaymentSelect: (paymentId: string) => void;
+  onPaymentSelect: (id: string) => void;
   selectedChannel: string;
 }
 
@@ -23,81 +20,59 @@ export function PaymentSelector({
   onPaymentSelect,
   selectedChannel,
 }: PaymentSelectorProps) {
-  const [paymentsExist, setPaymentsExist] = useState(true);
-
   const { data: payments, isLoading } = useQuery({
-    queryKey: ["unreconciled-payments", selectedChannel],
+    queryKey: ["payments-for-reconciliation", selectedChannel],
     queryFn: async () => {
-      console.log("Fetching payments for channel:", selectedChannel);
-      
       let query = supabase
         .from("payments")
         .select(`
           id,
-          amount,
           date,
-          status,
-          sales_channel_id,
+          amount,
           reference_number,
-          bank_accounts (name),
-          sales_channels (name)
+          sales_channels(name)
         `)
-        .eq("status", "confirmed");
-
-      // We want payments without reconciled sales or with some sales not reconciled
+        .order("date", { ascending: false });
+      
+      // Apply channel filter if not "all"
       if (selectedChannel !== "all") {
         query = query.eq("sales_channel_id", selectedChannel);
       }
 
       const { data, error } = await query;
-      
-      if (error) {
-        console.error("Error fetching payments:", error);
-        throw error;
-      }
-      
-      console.log("Fetched payments:", data);
+      if (error) throw error;
       return data;
     },
-    enabled: true,
   });
 
-  useEffect(() => {
-    setPaymentsExist(Boolean(payments?.length));
-  }, [payments]);
-
   if (isLoading) {
-    return <Skeleton className="h-10 w-full" />;
-  }
-
-  if (!paymentsExist) {
     return (
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Seleccionar Pago</label>
-        <div className="h-10 px-3 py-2 border border-input rounded-md flex items-center text-sm text-muted-foreground">
-          No hay pagos disponibles para reconciliar
-        </div>
-      </div>
+      <Select disabled>
+        <SelectTrigger>
+          <SelectValue placeholder="Cargando pagos..." />
+        </SelectTrigger>
+      </Select>
     );
   }
 
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium">Seleccionar Pago</label>
-      <Select value={selectedPaymentId || "none"} onValueChange={onPaymentSelect}>
-        <SelectTrigger>
-          <SelectValue placeholder="Selecciona un pago..." />
-        </SelectTrigger>
-        <SelectContent>
-          {payments?.map((payment) => (
+    <Select value={selectedPaymentId} onValueChange={onPaymentSelect}>
+      <SelectTrigger>
+        <SelectValue placeholder="Seleccionar un pago" />
+      </SelectTrigger>
+      <SelectContent>
+        {payments?.length ? (
+          payments.map((payment) => (
             <SelectItem key={payment.id} value={payment.id}>
-              {formatCurrency(payment.amount)} - {formatCardDate(payment.date)} - 
-              {payment.reference_number ? ` Ref: ${payment.reference_number} - ` : ''}
-              {payment.sales_channels?.name || "Sin canal"}
+              {new Date(payment.date).toLocaleDateString()} - {payment.reference_number || "Sin referencia"} - ${payment.amount.toFixed(2)} {payment.sales_channels?.name ? `(${payment.sales_channels.name})` : ""}
             </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+          ))
+        ) : (
+          <SelectItem value="none" disabled>
+            No hay pagos disponibles
+          </SelectItem>
+        )}
+      </SelectContent>
+    </Select>
   );
 }

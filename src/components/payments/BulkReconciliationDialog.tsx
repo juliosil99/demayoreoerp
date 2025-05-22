@@ -20,6 +20,7 @@ import { ReconciliationFilters } from "./components/ReconciliationFilters";
 import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
 import { ReconciliationConfirmDialog } from "./components/ReconciliationConfirmDialog";
 import { ReconciliationTable } from "./components/ReconciliationTable";
+import { usePaymentQueries } from "./hooks/usePaymentQueries";
 
 interface BulkReconciliationDialogProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function BulkReconciliationDialog({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [selectedSales, setSelectedSales] = useState<number[]>([]);
   const { toast } = useToast();
+  const { salesChannels } = usePaymentQueries();
 
   // Use the custom hook to manage the bulk reconciliation state
   const {
@@ -119,6 +121,7 @@ export function BulkReconciliationDialog({
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             onReset={resetFilters}
+            salesChannels={salesChannels || []}
           />
 
           <div className="my-4">
