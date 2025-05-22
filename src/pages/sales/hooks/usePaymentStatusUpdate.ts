@@ -8,16 +8,16 @@ export function usePaymentStatusUpdate() {
 
   return useMutation({
     mutationFn: async ({ 
-      paymentId, 
+      id, 
       status 
     }: { 
-      paymentId: string; 
+      id: string; 
       status: 'confirmed' | 'pending' 
     }) => {
       const { data, error } = await supabase
         .from('payments')
         .update({ status })
-        .eq('id', paymentId)
+        .eq('id', id)
         .select()
         .single();
 

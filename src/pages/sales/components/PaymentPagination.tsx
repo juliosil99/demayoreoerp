@@ -9,20 +9,16 @@ import {
 } from "@/components/ui/pagination";
 
 interface PaymentPaginationProps {
-  totalItems: number;
-  itemsPerPage: number;
   currentPage: number;
+  totalPages: number;
   onPageChange: (page: number) => void;
 }
 
 export function PaymentPagination({
-  totalItems,
-  itemsPerPage,
   currentPage,
+  totalPages,
   onPageChange,
 }: PaymentPaginationProps) {
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
   // Don't render pagination if there's only one page
   if (totalPages <= 1) return null;
   

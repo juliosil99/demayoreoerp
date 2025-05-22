@@ -12,7 +12,7 @@ interface PaymentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   paymentToEdit: Payment | null;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 export function PaymentFormDialog({ 

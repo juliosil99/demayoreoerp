@@ -82,7 +82,10 @@ function Payments() {
 
   return (
     <div className="container py-6 space-y-6">
-      <PaymentHeader onReconcile={() => setReconciliationOpen(true)} />
+      <PaymentHeader 
+        onOpenBulkReconciliation={() => setReconciliationOpen(true)} 
+        onOpenAddPayment={() => setFormOpen(true)} 
+      />
 
       <Card>
         <CardContent className="p-6">
@@ -118,7 +121,8 @@ function Payments() {
       <PaymentFormDialog
         open={formOpen}
         onOpenChange={handleFormClose}
-        payment={selectedPayment}
+        paymentToEdit={selectedPayment}
+        onSuccess={() => refetch()}
       />
 
       <BulkReconciliationDialog
