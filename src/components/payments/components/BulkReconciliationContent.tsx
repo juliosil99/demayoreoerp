@@ -20,7 +20,7 @@ interface BulkReconciliationContentProps {
   selectedPaymentId: string | undefined;
   setSelectedPaymentId: (id: string) => void;
   selectedSales: number[];
-  setSelectedSales: (ids: number[]) => void;
+  setSelectedSales: (ids: number[] | ((prev: number[]) => number[])) => void;
   unreconciled: any[] | undefined;
   isLoading: boolean;
   isVerifying: boolean;
