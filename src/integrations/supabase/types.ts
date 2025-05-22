@@ -2214,6 +2214,26 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      list_triggers_for_reconciliation: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          trigger_name: string
+          event_manipulation: string
+          event_object_schema: string
+          event_object_table: string
+          action_statement: string
+        }[]
+      }
+      list_triggers_for_table: {
+        Args: { table_name: string }
+        Returns: {
+          trigger_name: string
+          event_manipulation: string
+          event_object_schema: string
+          event_object_table: string
+          action_statement: string
+        }[]
+      }
       process_existing_invoices: {
         Args: Record<PropertyKey, never>
         Returns: undefined

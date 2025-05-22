@@ -21,3 +21,6 @@ verify_jwt = true
 
 [functions.sat-captcha]
 verify_jwt = true
+
+[functions.check-triggers]
+verify_jwt = true

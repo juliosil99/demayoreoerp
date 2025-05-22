@@ -3,33 +3,30 @@ import { supabase } from "./client";
 
 /**
  * Checks for the existence of necessary triggers for the reconciliation process
+ * Uses the check-triggers edge function to query the database
  */
 export async function checkReconciliationTriggers() {
   try {
-    // Use a custom RPC call with any type to handle non-standard functions
-    const { data, error } = await supabase.rpc('list_triggers_for_reconciliation' as any);
+    // Call the edge function instead of using RPC
+    const { data, error } = await supabase.functions.invoke("check-triggers", {
+      method: "POST"
+    });
     
     if (error) {
       console.error("Error checking triggers:", error);
       return { success: false, error: error.message };
     }
     
-    if (!data || !Array.isArray(data)) {
-      console.error("No trigger data returned or data is not an array");
-      return { success: false, error: "Invalid data format from database" };
+    if (!data || !data.data || !Array.isArray(data.data)) {
+      console.error("No trigger data returned or data is not in expected format");
+      return { success: false, error: "Invalid data format from edge function" };
     }
     
     return { 
       success: true, 
-      data,
-      hasPaymentTrigger: data.some((t: any) => 
-        t.trigger_name?.toLowerCase().includes('payment') && 
-        t.event_manipulation === 'UPDATE'
-      ),
-      hasSalesTrigger: data.some((t: any) => 
-        t.trigger_name?.toLowerCase().includes('sale') && 
-        t.event_manipulation === 'UPDATE'
-      )
+      data: data.data,
+      hasPaymentTrigger: data.hasPaymentTrigger,
+      hasSalesTrigger: data.hasSalesTrigger
     };
   } catch (error) {
     console.error("Error in trigger check:", error);
