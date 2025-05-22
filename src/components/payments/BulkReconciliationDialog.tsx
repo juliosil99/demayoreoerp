@@ -2,26 +2,20 @@
 import { useState, useEffect } from "react";
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { PaymentSelector } from "@/components/payments/components/PaymentSelector"; 
 import { useToast } from "@/hooks/use-toast";
-import { Payment } from "./PaymentForm";
-import { ReconciliationFilters } from "./components/ReconciliationFilters";
-import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
+import { manualRecalculateReconciliation } from "@/integrations/supabase/triggers";
 import { ReconciliationConfirmDialog } from "./components/ReconciliationConfirmDialog";
-import { ReconciliationTable } from "./components/ReconciliationTable";
 import { usePaymentQueries } from "./hooks/usePaymentQueries";
-import { checkReconciliationTriggers, manualRecalculateReconciliation } from "@/integrations/supabase/triggers";
+import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
+import { useTriggerVerification } from "./hooks/useTriggerVerification";
+import { DialogActions } from "./components/DialogActions";
+import { BulkReconciliationContent } from "./components/BulkReconciliationContent";
 
 interface BulkReconciliationDialogProps {
   open: boolean;
@@ -36,10 +30,9 @@ export function BulkReconciliationDialog({
 }: BulkReconciliationDialogProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [selectedSales, setSelectedSales] = useState<number[]>([]);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [triggerStatus, setTriggerStatus] = useState<any>(null);
   const { toast } = useToast();
   const { salesChannels } = usePaymentQueries();
+  const { isVerifying, triggerStatus, checkTriggers, setTriggerStatus } = useTriggerVerification();
 
   // Use the custom hook to manage the bulk reconciliation state
   const {
@@ -65,36 +58,7 @@ export function BulkReconciliationDialog({
       // Check triggers when dialog opens
       checkTriggers();
     }
-  }, [open]);
-
-  const checkTriggers = async () => {
-    setIsVerifying(true);
-    const result = await checkReconciliationTriggers();
-    setTriggerStatus(result);
-    setIsVerifying(false);
-    
-    if (!result.success) {
-      toast({
-        title: "Advertencia",
-        description: "No se pudieron verificar los triggers de reconciliación. El proceso de reconciliación puede no funcionar correctamente.",
-        variant: "destructive",
-      });
-    } else if (!result.hasPaymentTrigger || !result.hasSalesTrigger) {
-      toast({
-        title: "Advertencia",
-        description: "Faltan algunos triggers de reconciliación. Se utilizará un método alternativo de cálculo.",
-        variant: "default",
-      });
-    }
-  };
-
-  const handleSelectSale = (id: number) => {
-    setSelectedSales(prev => 
-      prev.includes(id) 
-        ? prev.filter(saleId => saleId !== id) 
-        : [...prev, id]
-    );
-  };
+  }, [open, checkTriggers, setTriggerStatus]);
 
   const handleReconcile = () => {
     if (!selectedPaymentId) {
@@ -157,81 +121,35 @@ export function BulkReconciliationDialog({
             <AlertDialogTitle>Reconciliación Masiva de Ventas</AlertDialogTitle>
             <AlertDialogDescription>
               Selecciona un pago y los IDs de las ventas a reconciliar.
-              {isVerifying && <span className="block mt-2 text-amber-500">Verificando configuración de reconciliación...</span>}
-              {triggerStatus && !triggerStatus.success && 
-                <span className="block mt-2 text-red-500">
-                  Advertencia: No se pudieron verificar los triggers de la base de datos.
-                </span>
-              }
-              {triggerStatus && triggerStatus.success && !triggerStatus.hasPaymentTrigger && 
-                <span className="block mt-2 text-amber-500">
-                  Advertencia: No se encontró el trigger de actualización de pagos. Se usará un método alternativo.
-                </span>
-              }
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <ReconciliationFilters
+          <BulkReconciliationContent
             selectedChannel={selectedChannel}
-            onChannelChange={setSelectedChannel}
+            setSelectedChannel={setSelectedChannel}
             orderNumbers={orderNumbers}
-            onOrderNumbersChange={setOrderNumbers}
+            setOrderNumbers={setOrderNumbers}
             dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            onReset={resetFilters}
+            setDateRange={setDateRange}
+            resetFilters={resetFilters}
             salesChannels={salesChannels || []}
+            selectedPaymentId={selectedPaymentId}
+            setSelectedPaymentId={setSelectedPaymentId}
+            selectedSales={selectedSales}
+            setSelectedSales={setSelectedSales}
+            unreconciled={unreconciled}
+            isLoading={isLoading}
+            isVerifying={isVerifying}
+            triggerStatus={triggerStatus}
           />
 
-          <div className="my-4">
-            <Label className="mb-2 block font-medium">Seleccionar Pago</Label>
-            <PaymentSelector
-              selectedPaymentId={selectedPaymentId}
-              onPaymentSelect={setSelectedPaymentId}
-              selectedChannel={selectedChannel}
-            />
-          </div>
-
-          <div className="my-4">
-            <Label className="mb-2 block font-medium" htmlFor="salesIds">IDs de Ventas (separados por comas)</Label>
-            <Input
-              id="salesIds"
-              placeholder="Ej: 123,456,789"
-              onChange={(e) => {
-                const ids = e.target.value
-                  .split(",")
-                  .map((id) => parseInt(id.trim(), 10))
-                  .filter((id) => !isNaN(id));
-                setSelectedSales(ids);
-              }}
-            />
-          </div>
-
-          {unreconciled && unreconciled.length > 0 && (
-            <ReconciliationTable 
-              sales={unreconciled}
-              isLoading={isLoading}
-              selectedSales={selectedSales}
-              onSelectSale={handleSelectSale}
-            />
-          )}
-
           <AlertDialogFooter className="mt-4">
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleReconcile}>
-              {triggerStatus && (!triggerStatus.hasPaymentTrigger || !triggerStatus.hasSalesTrigger) 
-                ? "Reconciliar (modo manual)" 
-                : "Reconciliar"}
-            </AlertDialogAction>
-            {triggerStatus && (!triggerStatus.success || !triggerStatus.hasPaymentTrigger || !triggerStatus.hasSalesTrigger) && (
-              <Button 
-                variant="outline" 
-                className="ml-2" 
-                onClick={checkTriggers}
-                disabled={isVerifying}
-              >
-                Verificar DB
-              </Button>
-            )}
+            <DialogActions
+              onReconcile={handleReconcile}
+              checkTriggers={checkTriggers}
+              isVerifying={isVerifying}
+              triggerStatus={triggerStatus}
+            />
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
