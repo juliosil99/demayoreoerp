@@ -50,25 +50,7 @@ export function useFileUpload({
       console.log("File size:", file.size);
       console.log("Target path:", filePath);
 
-      // First, check if the bucket exists
-      const { data: buckets, error: bucketError } = await supabase.storage
-        .listBuckets();
-        
-      if (bucketError) {
-        console.error("Error listing buckets:", bucketError);
-        throw new Error(`Error checking storage buckets: ${bucketError.message}`);
-      }
-      
-      const invoiceFilesBucketExists = buckets?.some(bucket => bucket.name === 'invoice_files');
-      
-      if (!invoiceFilesBucketExists) {
-        console.error("The 'invoice_files' bucket does not exist");
-        throw new Error("Storage bucket 'invoice_files' does not exist. Please contact system administrator.");
-      }
-      
-      console.log("Confirmed 'invoice_files' bucket exists");
-
-      // Upload the actual file to 'invoice_files' bucket first
+      // Upload the file directly without bucket existence check
       const { data: uploadData, error: storageError } = await supabase.storage
         .from('invoice_files')
         .upload(filePath, file, {
@@ -117,22 +99,6 @@ export function useFileUpload({
 
       console.log("Database record created successfully:", fileRecord.id);
       
-      // Now verify the file exists in storage
-      const { data: fileCheck, error: fileCheckError } = await supabase.storage
-        .from('invoice_files')
-        .list(user.id, {
-          search: uniqueFilename
-        });
-        
-      if (fileCheckError) {
-        console.error("Error verifying file existence:", fileCheckError);
-      } else if (!fileCheck || fileCheck.length === 0) {
-        console.error("File verification failed - file was not found after upload");
-        throw new Error("File upload appeared successful but verification failed. Please try again.");
-      } else {
-        console.log("File verified in storage:", fileCheck[0]?.name);
-      }
-
       setUploadSuccess(true);
       console.log("Upload process completed successfully");
       
