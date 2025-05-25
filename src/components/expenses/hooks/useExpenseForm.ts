@@ -30,6 +30,8 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
   const [formData, setFormData] = useState<ExpenseFormData>({...initialFormData});
   const [accountCurrency, setAccountCurrency] = useState<string>("MXN"); 
 
+  console.log("useExpenseForm initialized with onSuccess:", !!onSuccess);
+
   // Initialize form data if editing an existing expense
   useFormInitializer(initialExpense, setFormData, setAccountCurrency);
 
@@ -56,6 +58,7 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Form submit started");
     
     if (!user) {
       alert("Por favor inicia sesión para realizar esta acción");
@@ -72,8 +75,17 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
       return;
     }
 
+    console.log("Form validation passed, setting isSubmitting to true");
     setIsSubmitting(true);
-    await createOrUpdateExpense.mutateAsync(formData);
+    
+    try {
+      console.log("Calling mutation with formData:", formData);
+      await createOrUpdateExpense.mutateAsync(formData);
+      console.log("Mutation completed successfully");
+    } catch (error) {
+      console.error("Error in form submission:", error);
+      setIsSubmitting(false);
+    }
   };
 
   return {

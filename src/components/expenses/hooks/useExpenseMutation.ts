@@ -18,6 +18,8 @@ export function useExpenseMutation(
 
   return useMutation({
     mutationFn: async (values: ExpenseFormData) => {
+      console.log("Starting expense mutation with values:", values);
+      
       if (!user?.id) throw new Error("User not authenticated");
 
       const originalAmount = parseFloat(values.original_amount);
@@ -52,6 +54,8 @@ export function useExpenseMutation(
         exchange_rate: exchangeRate,
       };
 
+      console.log("Expense data to save:", expenseData);
+
       if (initialExpense) {
         const { data, error } = await supabase
           .from("expenses")
@@ -60,7 +64,11 @@ export function useExpenseMutation(
           .select('*, bank_accounts (name, currency), chart_of_accounts (name, code), contacts (name)')
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error updating expense:", error);
+          throw error;
+        }
+        console.log("Expense updated successfully:", data);
         return data;
       } else {
         const { data, error } = await supabase
@@ -69,30 +77,52 @@ export function useExpenseMutation(
           .select('*, bank_accounts (name, currency), chart_of_accounts (name, code), contacts (name)')
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error creating expense:", error);
+          throw error;
+        }
+        console.log("Expense created successfully:", data);
         return data;
       }
     },
     onSuccess: (data) => {
+      console.log("Mutation onSuccess called with data:", data);
+      
+      // Invalidate queries first
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      console.log("Queries invalidated");
       
       // Update success message based on if this is a return/refund
       const actionText = initialExpense ? "actualizado" : "creado";
       const typeText = formData.isReturn ? "Reembolso" : "Gasto";
       toast.success(`${typeText} ${actionText} exitosamente`);
+      console.log("Toast shown");
       
+      // Reset form if creating new expense
       if (!initialExpense) {
+        console.log("Resetting form data");
         setFormData({...initialFormData});
       }
       
-      if (onSuccess) {
-        onSuccess();
-      }
-      
+      // Set submitting to false
+      console.log("Setting isSubmitting to false");
       setIsSubmitting(false);
+      
+      // Call the success callback last
+      if (onSuccess) {
+        console.log("Calling onSuccess callback");
+        try {
+          onSuccess();
+          console.log("onSuccess callback completed successfully");
+        } catch (error) {
+          console.error("Error in onSuccess callback:", error);
+        }
+      } else {
+        console.log("No onSuccess callback provided");
+      }
     },
     onError: (error: Error) => {
-      console.error("Error saving expense:", error);
+      console.error("Mutation onError called with error:", error);
       toast.error("Error al procesar el gasto. Por favor, intenta de nuevo.");
       setIsSubmitting(false);
     },

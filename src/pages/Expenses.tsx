@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,6 +64,8 @@ export default function Expenses() {
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
 
+  console.log("Expenses component rendered, dialog open:", open);
+
   const { data: dbExpenses, isLoading, refetch } = useQuery({
     queryKey: ["expenses", user?.id, filters],
     queryFn: async () => {
@@ -124,9 +125,17 @@ export default function Expenses() {
   const expenses: Expense[] = (dbExpenses || []).map(mapDatabaseExpenseToExpense);
 
   const handleSuccess = useCallback(() => {
+    console.log("handleSuccess callback called");
     refetch();
+    console.log("Data refetched, closing dialog");
     setOpen(false);
+    console.log("Dialog state set to false");
   }, [refetch]);
+
+  const handleDialogOpenChange = (newOpen: boolean) => {
+    console.log("Dialog open change requested:", newOpen);
+    setOpen(newOpen);
+  };
 
   return (
     <div className="container mx-auto py-4 md:py-6 px-2 md:px-6 space-y-4 md:space-y-6">
@@ -140,7 +149,7 @@ export default function Expenses() {
             </Button>
           </ExpenseImporter>
 
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
               <Button variant="default" className="bg-white text-black border border-gray-300 hover:bg-gray-100 w-full sm:w-auto">
                 <PlusIcon className="w-4 h-4 mr-2" />
@@ -153,7 +162,10 @@ export default function Expenses() {
               </DialogHeader>
               <ExpenseForm 
                 onSuccess={handleSuccess} 
-                onClose={() => setOpen(false)} 
+                onClose={() => {
+                  console.log("ExpenseForm onClose called");
+                  setOpen(false);
+                }} 
               />
             </DialogContent>
           </Dialog>
