@@ -2,7 +2,6 @@
 import { usePaymentDelete } from "./usePaymentDelete";
 import { usePaymentStatusUpdate } from "./usePaymentStatusUpdate";
 import { useBulkReconcile } from "./useBulkReconcile";
-import { Payment } from "@/components/payments/PaymentForm";
 import { useToast } from "@/hooks/use-toast";
 
 export function usePaymentActions(onRefresh: () => void) {
@@ -24,17 +23,25 @@ export function usePaymentActions(onRefresh: () => void) {
   };
   
   const handleReconcile = async ({ salesIds, paymentId }: { salesIds: number[], paymentId: string }) => {
-    console.log(`Starting reconciliation of ${salesIds.length} sales with payment ${paymentId}`);
+    console.log(`Ejecutando reconciliación: ${salesIds.length} ventas con pago ${paymentId}`);
     
     try {
       const result = await bulkReconcile({ salesIds, paymentId });
-      console.log("Reconciliation result:", result);
+      console.log("Reconciliación exitosa:", result);
+      
+      // Refrescar los datos después de la reconciliación
       onRefresh();
+      
+      toast({
+        title: "Reconciliación completada",
+        description: `${result.reconciled_count} ventas reconciliadas por $${result.reconciled_amount.toLocaleString()}`,
+      });
+      
     } catch (error) {
       console.error("Error en reconciliación:", error);
       toast({
         title: "Error de reconciliación",
-        description: "Se produjo un error durante el proceso de reconciliación. Consulte la consola para más detalles.",
+        description: "No se pudo completar la reconciliación. Consulta la consola para más detalles.",
         variant: "destructive",
       });
     }

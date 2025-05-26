@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { checkReconciliationTriggers } from "@/integrations/supabase/triggers";
 
 export interface BulkReconcileParams {
   salesIds: number[];
@@ -18,11 +17,11 @@ export function useBulkReconcile() {
     mutationFn: async ({ salesIds, paymentId }: BulkReconcileParams) => {
       if (!user) throw new Error("User not authenticated");
 
-      console.log("=== RECONCILIATION DEBUG START ===");
-      console.log(`Reconciling ${salesIds.length} sales with payment ID: ${paymentId}`);
+      console.log("=== INICIANDO RECONCILIACIÓN MASIVA ===");
+      console.log(`Reconciliando ${salesIds.length} ventas con pago ID: ${paymentId}`);
       
       try {
-        // Get payment details first for logging and verification
+        // 1. Obtener detalles del pago
         const { data: payment, error: paymentError } = await supabase
           .from('payments')
           .select('date, amount, is_reconciled')
@@ -30,153 +29,146 @@ export function useBulkReconcile() {
           .single();
 
         if (paymentError) {
-          console.error("Error fetching payment:", paymentError);
+          console.error("Error obteniendo pago:", paymentError);
           throw paymentError;
         }
 
-        console.log("Payment before reconciliation:", payment);
+        console.log("Pago antes de reconciliación:", payment);
         
-        // Verify the sales records exist before updating them
+        // 2. Verificar ventas antes de la actualización
         const { data: salesBefore, error: salesBeforeError } = await supabase
           .from('Sales')
-          .select('id, price, statusPaid')
+          .select('id, price, statusPaid, reconciliation_id')
           .in('id', salesIds);
 
         if (salesBeforeError) {
-          console.error("Error fetching sales records:", salesBeforeError);
+          console.error("Error obteniendo ventas:", salesBeforeError);
           throw salesBeforeError;
         }
 
-        console.log("Sales records before update:", salesBefore);
+        console.log("Ventas antes de actualizar:", salesBefore);
         
-        // Check if any sales are already reconciled
-        const alreadyReconciled = salesBefore?.filter(sale => sale.statusPaid === 'cobrado');
-        if (alreadyReconciled && alreadyReconciled.length > 0) {
-          console.log("WARNING: Some sales are already marked as reconciled:", alreadyReconciled);
-        }
-
-        // Update all the sales records with the payment reference
-        console.log("Updating sales with reconciliation_id:", paymentId);
-        const { data: updateResult, error: salesError } = await supabase
+        // 3. ACTUALIZAR SALES: reconciliation_id, statusPaid, datePaid
+        console.log("Actualizando ventas con reconciliation_id:", paymentId);
+        const { data: salesUpdateResult, error: salesError } = await supabase
           .from('Sales')
           .update({ 
             reconciliation_id: paymentId,
             statusPaid: 'cobrado',
             datePaid: payment.date
           })
-          .in('id', salesIds);
+          .in('id', salesIds)
+          .select('id, price, statusPaid, reconciliation_id, datePaid');
 
         if (salesError) {
-          console.error("Error updating sales records:", salesError);
+          console.error("Error actualizando ventas:", salesError);
           throw salesError;
         }
         
-        console.log("Sales update result:", updateResult);
+        console.log("Resultado actualización ventas:", salesUpdateResult);
         
-        // Verify the sales records were updated successfully
+        // 4. Verificar que las ventas se actualizaron correctamente
         const { data: salesAfter, error: salesAfterError } = await supabase
           .from('Sales')
           .select('id, price, statusPaid, reconciliation_id, datePaid')
           .in('id', salesIds);
 
         if (salesAfterError) {
-          console.error("Error fetching updated sales records:", salesAfterError);
+          console.error("Error verificando ventas actualizadas:", salesAfterError);
           throw salesAfterError;
         }
 
-        console.log("Sales records after update:", salesAfter);
+        console.log("Ventas después de actualizar:", salesAfter);
         
-        // Check if all sales have the correct reconciliation_id
-        const correctlyReconciled = salesAfter?.filter(sale => sale.reconciliation_id === paymentId);
-        console.log(`${correctlyReconciled?.length} of ${salesIds.length} sales correctly reconciled`);
+        // 5. Calcular totales para el pago
+        const totalAmount = salesAfter?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0;
+        const salesCount = salesAfter?.length || 0;
         
-        // Calculate the total amount and count of reconciled sales directly
-        const { data: salesData, error: salesDataError } = await supabase
-          .from('Sales')
-          .select('price')
-          .eq('reconciliation_id', paymentId);
-
-        if (salesDataError) {
-          console.error("Error calculating reconciled totals:", salesDataError);
-          throw salesDataError;
-        }
-
-        const totalAmount = salesData?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0;
-        const salesCount = salesData?.length || 0;
+        console.log(`Totales calculados: ${totalAmount} (${salesCount} ventas)`);
         
-        console.log(`Calculated reconciled amount: ${totalAmount}, count: ${salesCount}`);
-        
-        // Update the payment record to mark it as reconciled
-        console.log("Updating payment record with reconciliation data:");
-        console.log({
+        // 6. ACTUALIZAR PAYMENTS: is_reconciled, reconciled_amount, reconciled_count
+        console.log("Actualizando pago con datos de reconciliación:");
+        const paymentUpdateData = {
           is_reconciled: true,
           reconciled_amount: totalAmount,
           reconciled_count: salesCount
-        });
+        };
+        console.log("Datos a actualizar en pago:", paymentUpdateData);
         
         const { data: updatedPayment, error: updateError } = await supabase
           .from('payments')
-          .update({
-            is_reconciled: true,
-            reconciled_amount: totalAmount,
-            reconciled_count: salesCount
-          })
+          .update(paymentUpdateData)
           .eq('id', paymentId)
-          .select();
+          .select('id, is_reconciled, reconciled_amount, reconciled_count');
 
         if (updateError) {
-          console.error("Error updating payment record:", updateError);
+          console.error("Error actualizando pago:", updateError);
           throw updateError;
         }
         
-        console.log("Updated payment record:", updatedPayment);
+        console.log("Pago actualizado:", updatedPayment);
 
-        // Final verification - check if triggers might have run by getting latest payment data
+        // 7. Verificación final
         const { data: finalPayment, error: finalPaymentError } = await supabase
           .from('payments')
-          .select('*')
+          .select('id, is_reconciled, reconciled_amount, reconciled_count')
           .eq('id', paymentId)
           .single();
           
         if (finalPaymentError) {
-          console.error("Error fetching final payment state:", finalPaymentError);
+          console.error("Error en verificación final del pago:", finalPaymentError);
         } else {
-          console.log("Final payment state after all operations:", finalPayment);
+          console.log("Estado final del pago:", finalPayment);
         }
 
-        // Check if database triggers exist
-        console.log("Checking for triggers on Sales table");
-        const triggerStatus = await checkReconciliationTriggers();
-        
-        if (!triggerStatus || !triggerStatus.success) {
-          console.log("Could not verify triggers, using direct Supabase query as fallback");
-          // Use a direct query as fallback (casts for TypeScript)
-          const { data: triggers } = await supabase.rpc('list_triggers_for_table' as any, { table_name: 'Sales' });
-          console.log("Triggers on Sales table:", triggers);
+        // 8. Verificar ventas finales
+        const { data: finalSales, error: finalSalesError } = await supabase
+          .from('Sales')
+          .select('id, statusPaid, reconciliation_id, datePaid')
+          .in('id', salesIds);
+          
+        if (finalSalesError) {
+          console.error("Error en verificación final de ventas:", finalSalesError);
         } else {
-          console.log("Trigger check results:", triggerStatus);
+          console.log("Estado final de ventas:", finalSales);
         }
         
-        console.log("=== RECONCILIATION DEBUG END ===");
+        console.log("=== RECONCILIACIÓN COMPLETADA EXITOSAMENTE ===");
         
         return { 
           success: true,
           reconciled_amount: totalAmount,
-          reconciled_count: salesCount
+          reconciled_count: salesCount,
+          updated_sales: salesAfter,
+          updated_payment: updatedPayment
         };
       } catch (error) {
-        console.error("=== RECONCILIATION ERROR ===", error);
+        console.error("=== ERROR EN RECONCILIACIÓN ===", error);
         throw error;
       }
     },
     onSuccess: (data) => {
+      console.log("Mutation onSuccess - Invalidando consultas y mostrando toast");
+      
+      // Invalidar todas las consultas relacionadas
       queryClient.invalidateQueries({ queryKey: ["payments"] });
       queryClient.invalidateQueries({ queryKey: ["unreconciled"] });
-      toast.success(`Ventas reconciliadas exitosamente: ${data.reconciled_count} ventas por ${data.reconciled_amount}`);
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
+      
+      toast.success(
+        `Reconciliación exitosa: ${data.reconciled_count} ventas por $${data.reconciled_amount.toLocaleString()}`
+      );
+      
+      console.log("Reconciliación completada:", {
+        ventas_actualizadas: data.updated_sales?.length,
+        pago_actualizado: data.updated_payment?.[0]?.id,
+        monto_total: data.reconciled_amount,
+        cantidad_ventas: data.reconciled_count
+      });
     },
     onError: (error) => {
-      console.error("Error en reconciliación:", error);
-      toast.error("Error al reconciliar las ventas");
+      console.error("Error en mutation de reconciliación:", error);
+      toast.error("Error al reconciliar las ventas. Revisa la consola para más detalles.");
     }
   });
 }

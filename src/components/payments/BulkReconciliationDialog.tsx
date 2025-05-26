@@ -9,11 +9,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { manualRecalculateReconciliation } from "@/integrations/supabase/triggers";
 import { ReconciliationConfirmDialog } from "./components/ReconciliationConfirmDialog";
 import { usePaymentQueries } from "./hooks/usePaymentQueries";
 import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
-import { useTriggerVerification } from "./hooks/useTriggerVerification";
 import { DialogActions } from "./components/DialogActions";
 import { BulkReconciliationContent } from "./components/BulkReconciliationContent";
 
@@ -32,7 +30,6 @@ export function BulkReconciliationDialog({
   const [selectedSales, setSelectedSales] = useState<number[]>([]);
   const { toast } = useToast();
   const { salesChannels } = usePaymentQueries();
-  const { isVerifying, triggerStatus, checkTriggers, setTriggerStatus } = useTriggerVerification();
 
   // Use the custom hook to manage the bulk reconciliation state
   const {
@@ -49,16 +46,12 @@ export function BulkReconciliationDialog({
     resetFilters
   } = useBulkReconciliation(open);
 
-  // Reset selected sales when dialog opens or closes and check triggers when it opens
+  // Reset selected sales when dialog opens or closes
   useEffect(() => {
     if (!open) {
       setSelectedSales([]);
-      setTriggerStatus(null);
-    } else {
-      // Check triggers when dialog opens (only once)
-      checkTriggers();
     }
-  }, [open]); // Remove checkTriggers and setTriggerStatus from dependencies
+  }, [open]);
 
   const handleReconcile = () => {
     if (!selectedPaymentId) {
@@ -79,29 +72,23 @@ export function BulkReconciliationDialog({
       return;
     }
 
-    console.log("Trigger status before reconciliation:", triggerStatus);
+    console.log("Iniciando reconciliación:", {
+      paymentId: selectedPaymentId,
+      salesCount: selectedSales.length,
+      salesIds: selectedSales
+    });
+    
     setShowConfirmDialog(true);
   };
 
   const confirmReconciliation = async () => {
-    // Perform the reconciliation
-    onReconcile({ salesIds: selectedSales, paymentId: selectedPaymentId });
+    console.log("Confirmando reconciliación masiva:", {
+      salesIds: selectedSales,
+      paymentId: selectedPaymentId
+    });
     
-    // If triggers appear to be missing, use manual calculation as a fallback
-    if (triggerStatus && (!triggerStatus.hasPaymentTrigger || !triggerStatus.hasSalesTrigger)) {
-      console.log("Using manual reconciliation fallback due to missing triggers");
-      
-      // Allow some time for the initial reconciliation to complete
-      setTimeout(async () => {
-        const result = await manualRecalculateReconciliation(selectedPaymentId);
-        if (result.success) {
-          toast({
-            title: "Reconciliación manual completada",
-            description: `Reconciliación: ${result.reconciled_count} ventas por ${result.reconciled_amount}`,
-          });
-        }
-      }, 2000);
-    }
+    // Realizar la reconciliación
+    onReconcile({ salesIds: selectedSales, paymentId: selectedPaymentId });
     
     setShowConfirmDialog(false);
   };
@@ -139,16 +126,16 @@ export function BulkReconciliationDialog({
             setSelectedSales={setSelectedSales}
             unreconciled={unreconciled}
             isLoading={isLoading}
-            isVerifying={isVerifying}
-            triggerStatus={triggerStatus}
+            isVerifying={false}
+            triggerStatus={null}
           />
 
           <AlertDialogFooter className="mt-4">
             <DialogActions
               onReconcile={handleReconcile}
-              checkTriggers={checkTriggers}
-              isVerifying={isVerifying}
-              triggerStatus={triggerStatus}
+              isVerifying={false}
+              triggerStatus={null}
+              showTriggerCheck={false}
             />
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -3,10 +3,8 @@ import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { PaymentHeader } from "./components/PaymentHeader";
 import { PaymentsContent } from "./components/PaymentsContent";
-import { SystemStatusAlert } from "./components/SystemStatusAlert";
 import { usePaymentsQuery } from "./hooks/usePaymentsQuery";
 import { usePaymentActions } from "./hooks/usePaymentActions";
-import { useSystemVerification } from "./hooks/useSystemVerification";
 import { PaymentDialogs } from "./components/PaymentDialogs";
 
 function Payments() {
@@ -21,15 +19,6 @@ function Payments() {
   } = usePaymentsQuery();
 
   const { handleDelete, handleStatusUpdate, handleReconcile } = usePaymentActions(refetch);
-
-  const { 
-    triggerStatus, 
-    isVerifyingDatabase, 
-    isRepairing,
-    repairablePayments,
-    verifyDatabaseConfiguration, 
-    handleRepairReconciliations 
-  } = useSystemVerification(payments);
     
   const { dialogs, handlers } = PaymentDialogs({ onReconcile: handleReconcile, onRefresh: refetch });
 
@@ -38,15 +27,6 @@ function Payments() {
       <PaymentHeader 
         onOpenBulkReconciliation={handlers.handleReconciliationOpen} 
         onOpenAddPayment={handlers.handleFormOpen} 
-      />
-      
-      <SystemStatusAlert 
-        triggerStatus={triggerStatus}
-        isVerifyingDatabase={isVerifyingDatabase}
-        isRepairing={isRepairing}
-        repairablePayments={repairablePayments}
-        onVerify={verifyDatabaseConfiguration}
-        onRepair={handleRepairReconciliations}
       />
 
       <PaymentsContent
