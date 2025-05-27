@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,8 +65,6 @@ export default function Expenses() {
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  console.log("Expenses component rendered, dialog open:", open);
-
   const { data: dbExpenses, isLoading, refetch } = useQuery({
     queryKey: ["expenses", user?.id, filters],
     queryFn: async () => {
@@ -125,15 +124,11 @@ export default function Expenses() {
   const expenses: Expense[] = (dbExpenses || []).map(mapDatabaseExpenseToExpense);
 
   const handleSuccess = useCallback(() => {
-    console.log("handleSuccess callback called");
     refetch();
-    console.log("Data refetched, closing dialog");
     setOpen(false);
-    console.log("Dialog state set to false");
   }, [refetch]);
 
   const handleDialogOpenChange = (newOpen: boolean) => {
-    console.log("Dialog open change requested:", newOpen);
     setOpen(newOpen);
   };
 
@@ -163,7 +158,6 @@ export default function Expenses() {
               <ExpenseForm 
                 onSuccess={handleSuccess} 
                 onClose={() => {
-                  console.log("ExpenseForm onClose called");
                   setOpen(false);
                 }} 
               />

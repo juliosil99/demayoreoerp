@@ -11,18 +11,6 @@ interface TransactionRowItemProps {
 }
 
 export function TransactionRowItem({ transaction, account }: TransactionRowItemProps) {
-  // Validación crítica para transferencias del 16 de mayo
-  if (transaction.date === '2025-05-16' && transaction.source === 'transfer') {
-    console.log(`DEBUG - RENDERIZANDO transferencia del 16 mayo:`, {
-      id: transaction.id,
-      amount: transaction.amount,
-      type: transaction.type,
-      source: transaction.source,
-      runningBalance: transaction.runningBalance,
-      account: account.currency
-    });
-  }
-
   // Format amount with commas and 2 decimal places
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -72,19 +60,8 @@ export function TransactionRowItem({ transaction, account }: TransactionRowItemP
   // Use account currency for displaying amounts
   const currencySymbol = account.currency === 'USD' ? '$' : '$';
 
-  // CRÍTICO: Usar directamente transaction.amount sin conversiones adicionales
+  // Usar directamente transaction.amount sin conversiones adicionales
   const displayAmount = Math.abs(transaction.amount);
-
-  // Validación adicional para transferencias del 16 de mayo
-  if (transaction.date === '2025-05-16' && transaction.source === 'transfer') {
-    console.log(`DEBUG - DISPLAY VALUES para transferencia del 16 mayo:`, {
-      'transaction.amount': transaction.amount,
-      'displayAmount': displayAmount,
-      'transaction.type': transaction.type,
-      'currencySymbol': currencySymbol,
-      'account.currency': account.currency
-    });
-  }
 
   return (
     <TableRow className={rowOpacity}>

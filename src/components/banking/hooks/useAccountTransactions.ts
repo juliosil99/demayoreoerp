@@ -47,12 +47,6 @@ export function useAccountTransactions(accountId: number | null) {
       const transfersFromFormatted = transformTransfersFromToTransactions(transfersFrom, accountCurrency);
       const transfersToFormatted = transformTransfersToToTransactions(transfersTo, accountCurrency);
 
-      // Log específico para gastos USD
-      const usdExpenses = expensesFormatted.filter(e => e.source === 'expense');
-      if (usdExpenses.length > 0) {
-        console.log(`DEBUG - Gastos transformados para cuenta ${accountId} (${accountCurrency}):`, usdExpenses);
-      }
-
       // Combine all transactions and sort by date
       const allTransactions = sortTransactionsByDate([
         ...expensesFormatted,
@@ -60,8 +54,6 @@ export function useAccountTransactions(accountId: number | null) {
         ...transfersFromFormatted,
         ...transfersToFormatted
       ]);
-
-      console.log(`DEBUG - Todas las transacciones para cuenta ${accountId}:`, allTransactions);
 
       return allTransactions;
     },
