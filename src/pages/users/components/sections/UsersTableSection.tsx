@@ -1,7 +1,7 @@
 
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
-import { UsersTable } from "../UsersTable";
+import { SimplifiedUsersTable } from "../SimplifiedUsersTable";
 import { Profile, UserPermissions } from "../../types";
 
 interface UsersTableSectionProps {
@@ -19,8 +19,7 @@ export function UsersTableSection({
 }: UsersTableSectionProps) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Listen for window resize to toggle mobile view
-  React.useEffect(() => {
+  useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -35,11 +34,10 @@ export function UsersTableSection({
         <CardTitle className="text-base sm:text-lg">Usuarios de la Empresa</CardTitle>
       </CardHeader>
       <CardContent className="p-3 sm:p-4">
-        <UsersTable
+        <SimplifiedUsersTable
           profiles={profiles}
           userPermissions={userPermissions}
           onRoleChange={onRoleChange}
-          isMobile={isMobile}
           currentUserId={currentUserId}
         />
       </CardContent>

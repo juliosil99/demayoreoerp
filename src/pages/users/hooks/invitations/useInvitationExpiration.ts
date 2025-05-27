@@ -1,4 +1,5 @@
 
+import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -24,18 +25,19 @@ export function useInvitationExpiration() {
   };
 
   // Check for expired invitations every 5 minutes
-  useQuery({
+  const { data: success } = useQuery({
     queryKey: ["invitation-expiration-check"],
     queryFn: checkAndMarkExpired,
     refetchInterval: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
-    onSuccess: (success) => {
-      if (success) {
-        // Invalidate invitations query to refresh the list
-        queryClient.invalidateQueries({ queryKey: ["invitations"] });
-      }
-    }
   });
+
+  // Invalidate invitations query when check succeeds
+  React.useEffect(() => {
+    if (success) {
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
+    }
+  }, [success, queryClient]);
 
   const manualCheck = async () => {
     const success = await checkAndMarkExpired();
