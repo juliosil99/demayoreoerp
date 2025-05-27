@@ -11,6 +11,16 @@ interface TransactionRowItemProps {
 }
 
 export function TransactionRowItem({ transaction, account }: TransactionRowItemProps) {
+  // Log específico para la transferencia del 16 de mayo en el renderizado
+  if (transaction.date === '2025-05-16' && transaction.source === 'transfer' && transaction.type === 'in') {
+    console.log(`DEBUG - Renderizando transferencia del 16 mayo:`, {
+      transaction,
+      account,
+      transactionAmount: transaction.amount,
+      accountCurrency: account.currency
+    });
+  }
+
   // Format amount with commas and 2 decimal places
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
