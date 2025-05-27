@@ -9,7 +9,7 @@ import { ExpenseData, PaymentData, TransferData } from "./transaction-types";
 export async function fetchExpenses(accountId: number, userId: string): Promise<ExpenseData[]> {
   const { data, error } = await supabase
     .from('expenses')
-    .select('id, date, description, amount, reference_number, chart_accounts:chart_account_id(name)')
+    .select('id, date, description, amount, reference_number, currency, exchange_rate, original_amount, chart_accounts:chart_account_id(name)')
     .eq('account_id', accountId)
     .eq('user_id', userId)
     .order('date', { ascending: false });

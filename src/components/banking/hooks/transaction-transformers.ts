@@ -1,4 +1,3 @@
-
 import { 
   AccountTransaction, 
   ExpenseData, 
@@ -9,17 +8,37 @@ import {
 /**
  * Transforms expense data into the unified transaction format
  */
-export function transformExpensesToTransactions(expenses: ExpenseData[]): AccountTransaction[] {
-  return expenses.map(expense => ({
-    id: expense.id,
-    date: expense.date,
-    description: expense.description,
-    amount: expense.amount,
-    type: 'out' as const,
-    reference: expense.reference_number || '-',
-    source: 'expense' as const,
-    source_id: expense.id
-  }));
+export function transformExpensesToTransactions(
+  expenses: ExpenseData[], 
+  accountCurrency: string = 'MXN'
+): AccountTransaction[] {
+  return expenses.map(expense => {
+    const expenseCurrency = expense.currency || 'MXN';
+    const isSameCurrency = expenseCurrency === accountCurrency;
+    
+    // Use original_amount when expense currency matches account currency
+    // Use amount (converted) when currencies are different
+    const displayAmount = isSameCurrency && expense.original_amount 
+      ? expense.original_amount 
+      : expense.amount;
+    
+    console.log(`DEBUG - Transforming expense ${expense.id}: currency=${expenseCurrency}, accountCurrency=${accountCurrency}, amount=${expense.amount}, original_amount=${expense.original_amount}, displayAmount=${displayAmount}`);
+    
+    return {
+      id: expense.id,
+      date: expense.date,
+      description: expense.description,
+      amount: displayAmount,
+      type: 'out' as const,
+      reference: expense.reference_number || '-',
+      source: 'expense' as const,
+      source_id: expense.id,
+      // Include exchange info for cross-currency expenses
+      exchange_rate: !isSameCurrency && expense.exchange_rate ? expense.exchange_rate : undefined,
+      original_amount: !isSameCurrency && expense.original_amount ? expense.original_amount : undefined,
+      original_currency: !isSameCurrency ? expenseCurrency : undefined
+    };
+  });
 }
 
 /**

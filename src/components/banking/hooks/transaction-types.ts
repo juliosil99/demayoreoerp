@@ -28,6 +28,9 @@ export interface ExpenseData {
   description: string;
   amount: number;
   reference_number: string | null;
+  currency?: string;
+  exchange_rate?: number;
+  original_amount?: number;
   chart_accounts?: {
     name: string;
   } | null;

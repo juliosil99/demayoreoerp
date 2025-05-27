@@ -42,15 +42,15 @@ export function useAccountTransactions(accountId: number | null) {
       ]);
 
       // Transform each transaction type to the unified format
-      const expensesFormatted = transformExpensesToTransactions(expenses);
+      const expensesFormatted = transformExpensesToTransactions(expenses, accountCurrency);
       const paymentsFormatted = transformPaymentsToTransactions(payments);
       const transfersFromFormatted = transformTransfersFromToTransactions(transfersFrom, accountCurrency);
       const transfersToFormatted = transformTransfersToToTransactions(transfersTo, accountCurrency);
 
-      // Log específico para la transferencia del 16 de mayo
-      const mayTransfer = transfersToFormatted.find(t => t.date === '2025-05-16');
-      if (mayTransfer) {
-        console.log(`DEBUG - Transferencia del 16 mayo DESPUÉS de transformación:`, mayTransfer);
+      // Log específico para gastos USD
+      const usdExpenses = expensesFormatted.filter(e => e.source === 'expense');
+      if (usdExpenses.length > 0) {
+        console.log(`DEBUG - Gastos transformados para cuenta ${accountId} (${accountCurrency}):`, usdExpenses);
       }
 
       // Combine all transactions and sort by date
@@ -60,12 +60,6 @@ export function useAccountTransactions(accountId: number | null) {
         ...transfersFromFormatted,
         ...transfersToFormatted
       ]);
-
-      // Log específico después de combinar
-      const mayTransferAfterCombine = allTransactions.find(t => t.date === '2025-05-16' && t.source === 'transfer');
-      if (mayTransferAfterCombine) {
-        console.log(`DEBUG - Transferencia del 16 mayo DESPUÉS de combinar:`, mayTransferAfterCombine);
-      }
 
       console.log(`DEBUG - Todas las transacciones para cuenta ${accountId}:`, allTransactions);
 
