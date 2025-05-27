@@ -7,17 +7,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Profile, UserPermissions, availablePages } from "../types";
+import { Profile, UserPermissions } from "../types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Shield, User, Eye, DollarSign, BarChart3 } from "lucide-react";
 
 interface UsersTableProps {
   profiles: Profile[] | null;
   userPermissions: { [key: string]: UserPermissions };
-  onPermissionChange: (userId: string, page: string, checked: boolean) => void;
   onRoleChange: (userId: string, role: 'admin' | 'user') => void;
   isMobile?: boolean;
   currentUserId?: string;
@@ -26,7 +25,6 @@ interface UsersTableProps {
 export const UsersTable = memo(function UsersTable({ 
   profiles, 
   userPermissions, 
-  onPermissionChange, 
   onRoleChange,
   isMobile = false,
   currentUserId
@@ -35,58 +33,85 @@ export const UsersTable = memo(function UsersTable({
     return <div className="text-center p-6 text-muted-foreground">No hay usuarios disponibles</div>
   }
 
+  const getPermissionIcon = (permission: keyof UserPermissions) => {
+    switch (permission) {
+      case 'canManageUsers': return <Shield className="h-4 w-4" />;
+      case 'canViewExpenses': return <DollarSign className="h-4 w-4" />;
+      case 'canViewSales': return <Eye className="h-4 w-4" />;
+      case 'canViewDashboard': return <BarChart3 className="h-4 w-4" />;
+      default: return <User className="h-4 w-4" />;
+    }
+  };
+
+  const getPermissionLabel = (permission: keyof UserPermissions) => {
+    switch (permission) {
+      case 'canManageUsers': return 'Gestionar Usuarios';
+      case 'canViewExpenses': return 'Ver Gastos';
+      case 'canViewSales': return 'Ver Ventas';
+      case 'canViewDashboard': return 'Ver Dashboard';
+      default: return permission;
+    }
+  };
+
   if (isMobile) {
     return (
       <div className="space-y-4">
-        {profiles?.map((profile) => (
-          <Card key={profile.id} className={`mb-4 ${profile.id === currentUserId ? 'border-primary' : ''}`}>
-            <CardContent className="p-4">
-              <div className="flex justify-between items-center mb-2">
-                <div className="font-medium text-sm">{profile.email}</div>
-                {profile.id === currentUserId && (
-                  <Badge variant="outline" className="ml-2">Tú</Badge>
-                )}
-              </div>
-              
-              <div className="text-xs text-muted-foreground mb-2">
-                {profile.company ? `Empresa: ${profile.company.nombre}` : 'Sin empresa asignada'}
-              </div>
-              
-              <div className="mb-3">
-                <label className="text-xs text-muted-foreground mb-1 block">Rol:</label>
-                <Select
-                  value={userPermissions[profile.id]?.role || 'user'}
-                  onValueChange={(value) => onRoleChange(profile.id, value as 'admin' | 'user')}
-                  disabled={profile.id === currentUserId}
-                >
-                  <SelectTrigger className="w-full text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">Usuario</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2 mt-3">
-                <div className="text-xs font-medium text-muted-foreground">Permisos:</div>
-                {availablePages.map((page) => (
-                  <div key={page.path} className="flex items-center justify-between">
-                    <span className="text-sm">{page.label}</span>
-                    <Checkbox
-                      checked={userPermissions[profile.id]?.pages[page.path] || false}
-                      onCheckedChange={(checked) => 
-                        onPermissionChange(profile.id, page.path, checked as boolean)
-                      }
-                      disabled={profile.id === currentUserId && userPermissions[profile.id]?.role === 'admin'}
-                    />
+        {profiles?.map((profile) => {
+          const permissions = userPermissions[profile.id];
+          return (
+            <Card key={profile.id} className={`mb-4 ${profile.id === currentUserId ? 'border-primary' : ''}`}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{profile.email}</div>
+                    {profile.id === currentUserId && (
+                      <Badge variant="outline" className="mt-1">Tú</Badge>
+                    )}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  <Badge variant={permissions?.role === 'admin' ? 'default' : 'secondary'}>
+                    {permissions?.role === 'admin' ? 'Administrador' : 'Usuario'}
+                  </Badge>
+                </div>
+                
+                <div className="text-xs text-muted-foreground mb-3">
+                  {profile.company ? `Empresa: ${profile.company.nombre}` : 'Sin empresa asignada'}
+                </div>
+                
+                <div className="mb-3">
+                  <label className="text-xs text-muted-foreground mb-1 block">Rol:</label>
+                  <Select
+                    value={permissions?.role || 'user'}
+                    onValueChange={(value) => onRoleChange(profile.id, value as 'admin' | 'user')}
+                    disabled={profile.id === currentUserId}
+                  >
+                    <SelectTrigger className="w-full text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">Usuario</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground">Permisos:</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['canManageUsers', 'canViewExpenses', 'canViewSales', 'canViewDashboard'] as const).map((permission) => (
+                      <div key={permission} className="flex items-center gap-1">
+                        {getPermissionIcon(permission)}
+                        <span className="text-xs">{getPermissionLabel(permission)}</span>
+                        <div className={`w-2 h-2 rounded-full ml-auto ${
+                          permissions?.[permission] ? 'bg-green-500' : 'bg-gray-300'
+                        }`} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     );
   }
@@ -99,51 +124,51 @@ export const UsersTable = memo(function UsersTable({
             <TableHead>Usuario</TableHead>
             <TableHead>Empresa</TableHead>
             <TableHead>Rol</TableHead>
-            {availablePages.map((page) => (
-              <TableHead key={page.path} className="text-center whitespace-nowrap">{page.label}</TableHead>
-            ))}
+            <TableHead className="text-center">Gestionar Usuarios</TableHead>
+            <TableHead className="text-center">Ver Gastos</TableHead>
+            <TableHead className="text-center">Ver Ventas</TableHead>
+            <TableHead className="text-center">Ver Dashboard</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {profiles?.map((profile) => (
-            <TableRow key={profile.id} className={profile.id === currentUserId ? 'bg-muted/30' : ''}>
-              <TableCell className="whitespace-nowrap">
-                <div className="flex items-center gap-2">
-                  {profile.email}
-                  {profile.id === currentUserId && (
-                    <Badge variant="outline" className="ml-2">Tú</Badge>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>{profile.company?.nombre || 'Sin empresa'}</TableCell>
-              <TableCell>
-                <Select
-                  value={userPermissions[profile.id]?.role || 'user'}
-                  onValueChange={(value) => onRoleChange(profile.id, value as 'admin' | 'user')}
-                  disabled={profile.id === currentUserId}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">Usuario</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                  </SelectContent>
-                </Select>
-              </TableCell>
-              {availablePages.map((page) => (
-                <TableCell key={page.path} className="text-center">
-                  <Checkbox
-                    checked={userPermissions[profile.id]?.pages[page.path] || false}
-                    onCheckedChange={(checked) => 
-                      onPermissionChange(profile.id, page.path, checked as boolean)
-                    }
-                    disabled={profile.id === currentUserId && userPermissions[profile.id]?.role === 'admin'}
-                  />
+          {profiles?.map((profile) => {
+            const permissions = userPermissions[profile.id];
+            return (
+              <TableRow key={profile.id} className={profile.id === currentUserId ? 'bg-muted/30' : ''}>
+                <TableCell className="whitespace-nowrap">
+                  <div className="flex items-center gap-2">
+                    {profile.email}
+                    {profile.id === currentUserId && (
+                      <Badge variant="outline">Tú</Badge>
+                    )}
+                  </div>
                 </TableCell>
-              ))}
-            </TableRow>
-          ))}
+                <TableCell>{profile.company?.nombre || 'Sin empresa'}</TableCell>
+                <TableCell>
+                  <Select
+                    value={permissions?.role || 'user'}
+                    onValueChange={(value) => onRoleChange(profile.id, value as 'admin' | 'user')}
+                    disabled={profile.id === currentUserId}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">Usuario</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                {(['canManageUsers', 'canViewExpenses', 'canViewSales', 'canViewDashboard'] as const).map((permission) => (
+                  <TableCell key={permission} className="text-center">
+                    <div className={`w-3 h-3 rounded-full mx-auto ${
+                      permissions?.[permission] ? 'bg-green-500' : 'bg-gray-300'
+                    }`} />
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
