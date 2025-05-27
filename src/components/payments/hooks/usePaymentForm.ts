@@ -29,6 +29,8 @@ export const usePaymentForm = ({ onSuccess, paymentToEdit }: UsePaymentFormProps
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  console.log("usePaymentForm initialized:", { hasOnSuccess: !!onSuccess, hasPaymentToEdit: !!paymentToEdit });
+  
   // Initialize with isReturn field based on amount
   const initialFormData: PaymentFormData = {
     date: paymentToEdit?.date || new Date().toISOString().split("T")[0],
@@ -46,6 +48,7 @@ export const usePaymentForm = ({ onSuccess, paymentToEdit }: UsePaymentFormProps
   
   const createPaymentMutation = useMutation({
     mutationFn: async (data: PaymentFormData) => {
+      console.log("usePaymentForm: Creating payment with data:", data);
       if (!user) throw new Error("User not authenticated");
       
       const { data: result, error } = await supabase
@@ -65,26 +68,49 @@ export const usePaymentForm = ({ onSuccess, paymentToEdit }: UsePaymentFormProps
         ])
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error("usePaymentForm: Error creating payment:", error);
+        throw error;
+      }
+      console.log("usePaymentForm: Payment created successfully:", result?.[0]);
       return result?.[0];
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("usePaymentForm: Create mutation onSuccess called with data:", data);
+      
+      // Invalidate queries first
       queryClient.invalidateQueries({ queryKey: ["payments"] });
+      console.log("usePaymentForm: Queries invalidated");
+      
       // Show appropriate toast based on if this is a return or not
       const isReturn = parseFloat(formData.amount) < 0;
       toast.success(isReturn 
         ? "Devolución registrada exitosamente" 
         : "Pago registrado exitosamente");
-      if (onSuccess) onSuccess();
+      console.log("usePaymentForm: Toast shown");
+      
+      // Call the success callback
+      if (onSuccess) {
+        console.log("usePaymentForm: Calling onSuccess callback");
+        try {
+          onSuccess();
+          console.log("usePaymentForm: onSuccess callback completed successfully");
+        } catch (error) {
+          console.error("usePaymentForm: Error in onSuccess callback:", error);
+        }
+      } else {
+        console.log("usePaymentForm: No onSuccess callback provided");
+      }
     },
     onError: (error) => {
-      console.error("Error creando el pago:", error);
+      console.error("usePaymentForm: Create mutation error:", error);
       toast.error("Error al registrar el pago");
     },
   });
   
   const updatePaymentMutation = useMutation({
     mutationFn: async (data: PaymentFormData) => {
+      console.log("usePaymentForm: Updating payment with data:", data);
       if (!user || !paymentToEdit) throw new Error("User not authenticated or missing payment");
       
       const { data: result, error } = await supabase
@@ -102,35 +128,61 @@ export const usePaymentForm = ({ onSuccess, paymentToEdit }: UsePaymentFormProps
         .eq("id", paymentToEdit.id)
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error("usePaymentForm: Error updating payment:", error);
+        throw error;
+      }
+      console.log("usePaymentForm: Payment updated successfully:", result?.[0]);
       return result?.[0];
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("usePaymentForm: Update mutation onSuccess called with data:", data);
+      
+      // Invalidate queries first
       queryClient.invalidateQueries({ queryKey: ["payments"] });
+      console.log("usePaymentForm: Queries invalidated");
+      
       // Show appropriate toast based on if this is a return or not
       const isReturn = parseFloat(formData.amount) < 0;
       toast.success(isReturn 
         ? "Devolución actualizada exitosamente" 
         : "Pago actualizado exitosamente");
-      if (onSuccess) onSuccess();
+      console.log("usePaymentForm: Toast shown");
+      
+      // Call the success callback
+      if (onSuccess) {
+        console.log("usePaymentForm: Calling onSuccess callback");
+        try {
+          onSuccess();
+          console.log("usePaymentForm: onSuccess callback completed successfully");
+        } catch (error) {
+          console.error("usePaymentForm: Error in onSuccess callback:", error);
+        }
+      } else {
+        console.log("usePaymentForm: No onSuccess callback provided");
+      }
     },
     onError: (error) => {
-      console.error("Error actualizando el pago:", error);
+      console.error("usePaymentForm: Update mutation error:", error);
       toast.error("Error al actualizar el pago");
     },
   });
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("usePaymentForm: handleSubmit called");
     setIsSubmitting(true);
     
     try {
       if (paymentToEdit) {
+        console.log("usePaymentForm: Updating existing payment");
         await updatePaymentMutation.mutateAsync(formData);
       } else {
+        console.log("usePaymentForm: Creating new payment");
         await createPaymentMutation.mutateAsync(formData);
       }
     } finally {
+      console.log("usePaymentForm: Setting isSubmitting to false");
       setIsSubmitting(false);
     }
   };
