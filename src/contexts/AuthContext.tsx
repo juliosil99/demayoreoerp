@@ -36,31 +36,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     // Get initial session
-    console.log("AuthProvider: Getting initial session...");
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("AuthProvider: Initial session:", session ? "Found" : "Not found");
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        console.log("AuthProvider: Initial user ID:", session.user.id);
-        console.log("AuthProvider: Initial user email:", session.user.email);
         checkAdminStatus(session.user.id);
       }
     });
 
     // Listen for auth changes
-    console.log("AuthProvider: Setting up auth state change listener");
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("AuthProvider: Auth state changed, event:", _event);
-      console.log("AuthProvider: New session:", session ? "Found" : "Not found");
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        console.log("AuthProvider: User ID after auth change:", session.user.id);
-        console.log("AuthProvider: User email after auth change:", session.user.email);
         checkAdminStatus(session.user.id);
       } else {
         setIsAdmin(false);
@@ -68,7 +59,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Si la sesión existe pero no hay token de actualización, cerrar sesión
       if (session && !session.refresh_token) {
-        console.log("AuthProvider: Session has no refresh token, signing out");
         await supabase.auth.signOut();
         setSession(null);
         setUser(null);
@@ -80,28 +70,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    console.log("AuthProvider: Signing in user:", email);
     const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     
     if (error) {
-      console.error("AuthProvider: Sign in error:", error);
       throw error;
     }
     
-    console.log("AuthProvider: Sign in successful, session:", data.session ? "Found" : "Not found");
-    
     // Verificar que tenemos un token de actualización válido
     if (!data.session?.refresh_token) {
-      console.error("AuthProvider: No refresh token in session");
       throw new Error("No se pudo obtener un token de actualización válido");
     }
   };
 
   const signUp = async (email: string, password: string) => {
-    console.log("AuthProvider: Signing up user:", email);
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -110,20 +94,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
     if (error) {
-      console.error("AuthProvider: Sign up error:", error);
       throw error;
     }
-    console.log("AuthProvider: Sign up successful");
   };
 
   const signOut = async () => {
-    console.log("AuthProvider: Signing out user");
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error("AuthProvider: Sign out error:", error);
       throw error;
     }
-    console.log("AuthProvider: Sign out successful");
     setSession(null);
     setUser(null);
     setIsAdmin(false);
@@ -131,17 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateEmail = async (newEmail: string) => {
     try {
-      console.log("AuthProvider: Updating email to:", newEmail);
       const { error } = await supabase.auth.updateUser({ 
         email: newEmail,
       });
       
       if (error) {
-        console.error("AuthProvider: Update email error:", error);
         throw error;
       }
 
-      console.log("AuthProvider: Email update successful");
       toast.success("Se ha enviado un enlace de confirmación a tu nuevo correo electrónico");
     } catch (error: any) {
       toast.error(error.message);
