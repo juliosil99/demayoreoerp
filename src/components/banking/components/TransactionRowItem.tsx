@@ -19,6 +19,14 @@ export function TransactionRowItem({ transaction, account }: TransactionRowItemP
       transactionAmount: transaction.amount,
       accountCurrency: account.currency
     });
+    
+    // Log específico del valor que se va a mostrar
+    console.log(`DEBUG - Valor que se va a mostrar:`, {
+      'transaction.amount': transaction.amount,
+      'Math.abs(transaction.amount)': Math.abs(transaction.amount),
+      'transaction.original_amount': transaction.original_amount,
+      'transaction.exchange_rate': transaction.exchange_rate
+    });
   }
 
   // Format amount with commas and 2 decimal places
