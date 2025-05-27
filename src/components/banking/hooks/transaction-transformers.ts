@@ -90,15 +90,16 @@ export function transformTransfersToToTransactions(
     
     console.log(`DEBUG - Transfer TO ${transfer.id}: amount_from=${transfer.amount_from}, amount_to=${transfer.amount_to}, fromCurrency=${fromCurrency}, accountCurrency=${accountCurrency}, isCrossCurrency=${isCrossCurrency}`);
     
-    // Para transferencias entrantes, siempre usar amount_to (que está en la moneda de la cuenta destino)
+    // CRÍTICO: Para transferencias entrantes, SIEMPRE usar amount_to (moneda de destino)
+    // y asegurar que el tipo sea 'in'
     const result = {
       id: transfer.id,
       date: transfer.date,
       description: isCrossCurrency 
         ? `Transferencia de ${fromAccountName} (${fromCurrency})`
         : `Transferencia de ${fromAccountName}`,
-      amount: transfer.amount_to, // Siempre usar amount_to para entrantes
-      type: 'in' as const,
+      amount: transfer.amount_to, // SIEMPRE usar amount_to para entrantes
+      type: 'in' as const, // SIEMPRE 'in' para transferencias entrantes
       reference: transfer.reference_number || '-',
       source: 'transfer' as const,
       source_id: transfer.id,
@@ -106,6 +107,20 @@ export function transformTransfersToToTransactions(
       original_amount: isCrossCurrency ? transfer.amount_from : undefined,
       original_currency: isCrossCurrency ? fromCurrency : undefined
     };
+    
+    // Validación crítica para transferencias del 16 de mayo
+    if (transfer.date === '2025-05-16') {
+      console.log(`DEBUG - VALIDACIÓN transferencia TO del 16 mayo:`, {
+        transferId: transfer.id,
+        amount_to: transfer.amount_to,
+        amount_from: transfer.amount_from,
+        resultAmount: result.amount,
+        resultType: result.type,
+        fromCurrency,
+        accountCurrency,
+        isCrossCurrency
+      });
+    }
     
     console.log(`DEBUG - Resultado final para transfer TO ${transfer.id}:`, result);
     return result;

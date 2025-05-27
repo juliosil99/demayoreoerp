@@ -13,6 +13,10 @@ export function useTransactionProcessor(account: BankAccount | null, transaction
     // Log de entrada para rastrear datos
     console.log(`DEBUG - useTransactionProcessor entrada para cuenta ${account.id}:`, transactions);
     
+    // Validación crítica: verificar que las transferencias TO tengan tipo 'in'
+    const transfersTo = transactions.filter(t => t.source === 'transfer' && t.type === 'in');
+    console.log(`DEBUG - Transferencias TO (entrantes) encontradas:`, transfersTo);
+    
     // Create a copy of transactions with initial balance included
     const allTransactions = [...transactions];
     
@@ -35,12 +39,23 @@ export function useTransactionProcessor(account: BankAccount | null, transaction
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
     
-    // Log específico para la transferencia del 16 de mayo antes del procesamiento
-    const mayTransferBeforeProcessing = sortedTransactions.find(t => 
-      t.date === '2025-05-16' && t.source === 'transfer' && t.type === 'in'
+    // Validación específica para la transferencia del 16 de mayo
+    const mayTransfer = sortedTransactions.find(t => 
+      t.date === '2025-05-16' && t.source === 'transfer'
     );
-    if (mayTransferBeforeProcessing) {
-      console.log(`DEBUG - Transferencia del 16 mayo ANTES de procesar balance:`, mayTransferBeforeProcessing);
+    if (mayTransfer) {
+      console.log(`DEBUG - CRÍTICO - Transferencia del 16 mayo en sortedTransactions:`, {
+        id: mayTransfer.id,
+        amount: mayTransfer.amount,
+        type: mayTransfer.type,
+        source: mayTransfer.source,
+        description: mayTransfer.description
+      });
+      
+      // VERIFICACIÓN: la transferencia DEBE ser tipo 'in' con monto 1506.22
+      if (mayTransfer.type !== 'in' || mayTransfer.amount !== 1506.22) {
+        console.error(`ERROR - Transferencia del 16 mayo tiene valores incorrectos:`, mayTransfer);
+      }
     }
     
     const balanceDate = account.balance_date ? new Date(account.balance_date) : new Date();
@@ -83,23 +98,19 @@ export function useTransactionProcessor(account: BankAccount | null, transaction
     // Process transactions after balance date (they will affect running balance)
     let runningBalance = initialBalance;
     const processedTransactionsAfter = sortedTransactionsAfter.map(transaction => {
-      // Log específico para la transferencia del 16 de mayo durante el cálculo del balance
-      if (transaction.date === '2025-05-16' && transaction.source === 'transfer' && transaction.type === 'in') {
-        console.log(`DEBUG - Procesando transferencia del 16 mayo - ANTES del cálculo:`, {
-          transaction,
-          currentRunningBalance: runningBalance,
-          accountCurrency: account.currency
+      // Validación específica para transferencias entrantes
+      if (transaction.source === 'transfer' && transaction.type === 'in') {
+        console.log(`DEBUG - Procesando transferencia entrante:`, {
+          id: transaction.id,
+          date: transaction.date,
+          amount: transaction.amount,
+          type: transaction.type,
+          currentRunningBalance: runningBalance
         });
       }
       
-      // Calculate amount to add/subtract based on currency
+      // Para transferencias, usar directamente el amount sin conversiones adicionales
       let effectiveAmount = transaction.amount;
-      
-      // If transaction currency matches account currency and we have original_amount
-      if (transaction.original_currency === account.currency && transaction.original_amount !== undefined) {
-        effectiveAmount = transaction.original_amount;
-        console.log(`DEBUG - Usando original_amount para transacción ${transaction.id}: ${effectiveAmount} (original: ${transaction.amount})`);
-      }
       
       // Update running balance based on transaction type
       if (transaction.type === 'in') {
@@ -115,11 +126,14 @@ export function useTransactionProcessor(account: BankAccount | null, transaction
       };
       
       // Log específico para la transferencia del 16 de mayo después del cálculo
-      if (transaction.date === '2025-05-16' && transaction.source === 'transfer' && transaction.type === 'in') {
-        console.log(`DEBUG - Transferencia del 16 mayo DESPUÉS del cálculo:`, {
-          processedTransaction,
+      if (transaction.date === '2025-05-16' && transaction.source === 'transfer') {
+        console.log(`DEBUG - FINAL - Transferencia del 16 mayo procesada:`, {
+          id: transaction.id,
+          originalAmount: transaction.amount,
           effectiveAmount,
-          newRunningBalance: runningBalance
+          type: transaction.type,
+          newRunningBalance: runningBalance,
+          processedTransaction
         });
       }
       
@@ -165,12 +179,18 @@ export function useTransactionProcessor(account: BankAccount | null, transaction
       }
     }
     
-    // Log final para la transferencia del 16 de mayo
+    // Validación final para la transferencia del 16 de mayo
     const finalMayTransfer = finalTransactions.find(t => 
-      t.date === '2025-05-16' && t.source === 'transfer' && t.type === 'in'
+      t.date === '2025-05-16' && t.source === 'transfer'
     );
     if (finalMayTransfer) {
-      console.log(`DEBUG - Transferencia del 16 mayo RESULTADO FINAL:`, finalMayTransfer);
+      console.log(`DEBUG - RESULTADO FINAL transferencia del 16 mayo:`, {
+        id: finalMayTransfer.id,
+        amount: finalMayTransfer.amount,
+        type: finalMayTransfer.type,
+        runningBalance: finalMayTransfer.runningBalance,
+        description: finalMayTransfer.description
+      });
     }
     
     return finalTransactions;
