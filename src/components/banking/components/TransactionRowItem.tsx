@@ -11,24 +11,6 @@ interface TransactionRowItemProps {
 }
 
 export function TransactionRowItem({ transaction, account }: TransactionRowItemProps) {
-  // Log específico para la transferencia del 16 de mayo en el renderizado
-  if (transaction.date === '2025-05-16' && transaction.source === 'transfer' && transaction.type === 'in') {
-    console.log(`DEBUG - Renderizando transferencia del 16 mayo:`, {
-      transaction,
-      account,
-      transactionAmount: transaction.amount,
-      accountCurrency: account.currency
-    });
-    
-    // Log específico del valor que se va a mostrar
-    console.log(`DEBUG - Valor que se va a mostrar:`, {
-      'transaction.amount': transaction.amount,
-      'Math.abs(transaction.amount)': Math.abs(transaction.amount),
-      'transaction.original_amount': transaction.original_amount,
-      'transaction.exchange_rate': transaction.exchange_rate
-    });
-  }
-
   // Format amount with commas and 2 decimal places
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -75,8 +57,11 @@ export function TransactionRowItem({ transaction, account }: TransactionRowItemP
 
   const formattedDate = formatTransactionDate(transaction.date);
   
-  // Use account currency for displaying amounts - NO conversion needed
+  // Use account currency for displaying amounts
   const currencySymbol = account.currency === 'USD' ? '$' : '$';
+
+  // The transaction.amount is already in the correct currency for this account
+  const displayAmount = Math.abs(transaction.amount);
 
   return (
     <TableRow className={rowOpacity}>
@@ -113,7 +98,7 @@ export function TransactionRowItem({ transaction, account }: TransactionRowItemP
             : 'text-red-600'
       }`}>
         {transaction.isInitialBalance ? '' : transaction.type === 'in' ? '+' : '-'}
-        {currencySymbol}{formatAmount(Math.abs(transaction.amount))} {account.currency}
+        {currencySymbol}{formatAmount(displayAmount)} {account.currency}
       </TableCell>
       <TableCell className="text-right font-semibold whitespace-nowrap">
         {transaction.runningBalance !== null
