@@ -50,18 +50,19 @@ export function transformTransfersFromToTransactions(
     const toCurrency = transfer.bank_accounts?.currency || 'MXN';
     const isCrossCurrency = toCurrency !== accountCurrency;
     
+    // Para transferencias salientes, siempre usar amount_from (que está en la moneda de la cuenta origen)
     return {
       id: transfer.id,
       date: transfer.date,
       description: isCrossCurrency 
         ? `Transferencia a ${toAccountName} (${toCurrency})`
         : `Transferencia a ${toAccountName}`,
-      amount: transfer.amount_from,
+      amount: transfer.amount_from, // Siempre usar amount_from para salientes
       type: 'out' as const,
       reference: transfer.reference_number || '-',
       source: 'transfer' as const,
       source_id: transfer.id,
-      exchange_rate: transfer.exchange_rate || undefined,
+      exchange_rate: isCrossCurrency ? transfer.exchange_rate || undefined : undefined,
       original_amount: isCrossCurrency ? transfer.amount_to : undefined,
       original_currency: isCrossCurrency ? toCurrency : undefined
     };
@@ -80,18 +81,19 @@ export function transformTransfersToToTransactions(
     const fromCurrency = transfer.bank_accounts?.currency || 'MXN';
     const isCrossCurrency = fromCurrency !== accountCurrency;
     
+    // Para transferencias entrantes, siempre usar amount_to (que está en la moneda de la cuenta destino)
     return {
       id: transfer.id,
       date: transfer.date,
       description: isCrossCurrency 
         ? `Transferencia de ${fromAccountName} (${fromCurrency})`
         : `Transferencia de ${fromAccountName}`,
-      amount: transfer.amount_to,
+      amount: transfer.amount_to, // Siempre usar amount_to para entrantes
       type: 'in' as const,
       reference: transfer.reference_number || '-',
       source: 'transfer' as const,
       source_id: transfer.id,
-      exchange_rate: transfer.exchange_rate || undefined,
+      exchange_rate: isCrossCurrency ? transfer.exchange_rate || undefined : undefined,
       original_amount: isCrossCurrency ? transfer.amount_from : undefined,
       original_currency: isCrossCurrency ? fromCurrency : undefined
     };

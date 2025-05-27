@@ -57,7 +57,7 @@ export function TransactionRowItem({ transaction, account }: TransactionRowItemP
 
   const formattedDate = formatTransactionDate(transaction.date);
   
-  // Use account currency for displaying amounts
+  // Use account currency for displaying amounts - NO conversion needed
   const currencySymbol = account.currency === 'USD' ? '$' : '$';
 
   return (
@@ -78,8 +78,8 @@ export function TransactionRowItem({ transaction, account }: TransactionRowItemP
           <div className="text-xs text-gray-500 mt-1">
             Tipo de cambio: {transaction.exchange_rate.toFixed(4)} 
             {transaction.type === 'in' 
-              ? ` (${formatAmount(transaction.original_amount)} ${transaction.original_currency})` 
-              : ` (${formatAmount(transaction.original_amount)} ${transaction.original_currency})`
+              ? ` (de ${formatAmount(transaction.original_amount)} ${transaction.original_currency})` 
+              : ` (a ${formatAmount(transaction.original_amount)} ${transaction.original_currency})`
             }
           </div>
         )}
@@ -95,16 +95,11 @@ export function TransactionRowItem({ transaction, account }: TransactionRowItemP
             : 'text-red-600'
       }`}>
         {transaction.isInitialBalance ? '' : transaction.type === 'in' ? '+' : '-'}
-        {currencySymbol}{formatAmount(Math.abs(
-          // If account currency matches transaction original currency, use original amount
-          (account.currency === transaction.original_currency && transaction.original_amount) 
-            ? transaction.original_amount 
-            : transaction.amount
-        ))}
+        {currencySymbol}{formatAmount(Math.abs(transaction.amount))} {account.currency}
       </TableCell>
       <TableCell className="text-right font-semibold whitespace-nowrap">
         {transaction.runningBalance !== null
-          ? `${currencySymbol}${formatAmount(Math.abs(transaction.runningBalance || 0))}`
+          ? `${currencySymbol}${formatAmount(Math.abs(transaction.runningBalance || 0))} ${account.currency}`
           : ''}
       </TableCell>
     </TableRow>
