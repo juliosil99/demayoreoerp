@@ -22,7 +22,9 @@ export function useDeleteInvitation() {
 
       return invitationId;
     },
-    onSuccess: () => {
+    onSuccess: (deletedId) => {
+      console.log("Successfully deleted invitation:", deletedId);
+      // Invalidate and refetch invitations to update the UI
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
       toast.success("Invitación eliminada exitosamente");
     },

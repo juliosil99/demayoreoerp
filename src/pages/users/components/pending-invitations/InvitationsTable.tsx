@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { UserInvitation } from "../../types";
 import { InvitationRow } from "./InvitationRow";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export interface InvitationsTableProps {
   invitations: UserInvitation[] | null;
@@ -31,20 +31,25 @@ export function InvitationsTable({
   const handleResend = (invitation: UserInvitation) => {
     setCurrentResendingId(invitation.id);
     onResend(invitation);
-    // Reset the ID after a timeout in case the request fails
-    setTimeout(() => {
-      setCurrentResendingId(null);
-    }, 5000);
   };
 
   const handleDelete = (invitation: UserInvitation) => {
     setCurrentDeletingId(invitation.id);
     onDelete(invitation);
-    // Reset the ID after a timeout in case the request fails
-    setTimeout(() => {
-      setCurrentDeletingId(null);
-    }, 5000);
   };
+
+  // Reset states when operations complete
+  useEffect(() => {
+    if (!isResending) {
+      setCurrentResendingId(null);
+    }
+  }, [isResending]);
+
+  useEffect(() => {
+    if (!isDeleting) {
+      setCurrentDeletingId(null);
+    }
+  }, [isDeleting]);
   
   if (!invitations || invitations.length === 0) {
     return <p className="text-center py-4 text-muted-foreground">No hay invitaciones pendientes</p>;

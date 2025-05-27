@@ -33,6 +33,13 @@ export function PendingInvitations() {
     }
   };
 
+  const handleDialogClose = (open: boolean) => {
+    setDeleteDialogOpen(open);
+    if (!open) {
+      setInvitationToDelete(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="mb-8">
@@ -67,7 +74,7 @@ export function PendingInvitations() {
 
       <DeleteInvitationDialog
         open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        onOpenChange={handleDialogClose}
         invitation={invitationToDelete}
         onConfirm={handleDeleteConfirm}
         isDeleting={isDeleting}
