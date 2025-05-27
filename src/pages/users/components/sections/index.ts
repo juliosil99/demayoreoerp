@@ -1,4 +1,4 @@
 
-export * from "./UserInvitationSection";
-export * from "./PendingInvitationsSection";
-export * from "./UsersTableSection";
+export { UserInvitationSection } from './UserInvitationSection';
+export { PendingInvitationsSection } from './PendingInvitationsSection';
+export { UsersTableSection } from './UsersTableSection';

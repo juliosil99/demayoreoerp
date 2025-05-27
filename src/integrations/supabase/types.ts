@@ -2096,6 +2096,7 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           email: string
+          expires_at: string
           id: string
           invitation_token: string | null
           invited_by: string
@@ -2106,6 +2107,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           email: string
+          expires_at?: string
           id?: string
           invitation_token?: string | null
           invited_by: string
@@ -2116,6 +2118,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           email?: string
+          expires_at?: string
           id?: string
           invitation_token?: string | null
           invited_by?: string
@@ -2188,6 +2191,7 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           email: string
+          expires_at: string
           id: string
           invitation_token: string | null
           invited_by: string
@@ -2201,6 +2205,10 @@ export type Database = {
           channel: string
           total: number
         }[]
+      }
+      has_company_permission: {
+        Args: { user_id: string; permission_type: string }
+        Returns: boolean
       }
       has_page_access: {
         Args: { user_id: string; page: string }
@@ -2233,6 +2241,14 @@ export type Database = {
           event_object_table: string
           action_statement: string
         }[]
+      }
+      mark_expired_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      migrate_page_permissions_to_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       process_existing_invoices: {
         Args: Record<PropertyKey, never>

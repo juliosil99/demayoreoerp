@@ -1,43 +1,11 @@
 
-import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { UserPermissions } from "../../types";
+import { UserPermissions, rolePermissions } from "../../types";
 
 export function usePermissionMutations(setUserPermissions: React.Dispatch<React.SetStateAction<{ [key: string]: UserPermissions }>>) {
   const queryClient = useQueryClient();
-
-  const handlePermissionChange = async (userId: string, page: string, checked: boolean) => {
-    try {
-      const { error } = await supabase
-        .from("page_permissions")
-        .upsert({
-          user_id: userId,
-          page_path: page,
-          can_access: checked
-        });
-
-      if (error) throw error;
-
-      setUserPermissions(prev => ({
-        ...prev,
-        [userId]: {
-          ...prev[userId],
-          pages: {
-            ...prev[userId]?.pages,
-            [page]: checked
-          }
-        }
-      }));
-
-      queryClient.invalidateQueries({ queryKey: ["page-permissions"] });
-      toast.success("Permisos actualizados correctamente");
-    } catch (error: any) {
-      console.error("Error updating permissions:", error);
-      toast.error("Error al actualizar permisos: " + error.message);
-    }
-  };
 
   const handleRoleChange = async (userId: string, role: 'admin' | 'user') => {
     try {
@@ -73,21 +41,24 @@ export function usePermissionMutations(setUserPermissions: React.Dispatch<React.
         if (error) throw error;
       }
 
+      // Update local state with role-based permissions
+      const newPermissions = rolePermissions[role];
       setUserPermissions(prev => ({
         ...prev,
         [userId]: {
           ...prev[userId],
-          role: role
+          role: role,
+          ...newPermissions
         }
       }));
 
       queryClient.invalidateQueries({ queryKey: ["company-users"] });
-      toast.success("Rol actualizado correctamente");
+      toast.success(`Rol actualizado a ${role === 'admin' ? 'Administrador' : 'Usuario'}`);
     } catch (error: any) {
       console.error("Error updating role:", error);
       toast.error("Error al actualizar rol: " + error.message);
     }
   };
 
-  return { handlePermissionChange, handleRoleChange };
+  return { handleRoleChange };
 }

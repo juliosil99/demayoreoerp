@@ -17,9 +17,9 @@ export function InvitationStatusBadge({ status, expiresAt }: InvitationStatusBad
           const expiration = new Date(expiresAt);
           const hoursUntilExpiration = (expiration.getTime() - now.getTime()) / (1000 * 60 * 60);
           
-          if (hoursUntilExpiration < 24 && hoursUntilExpiration > 0) {
+          if (hoursUntilExpiration < 24) {
             return {
-              variant: "secondary" as const,
+              variant: "destructive" as const,
               icon: AlertCircle,
               text: "Expira pronto",
               className: "bg-orange-100 text-orange-800 border-orange-300"
