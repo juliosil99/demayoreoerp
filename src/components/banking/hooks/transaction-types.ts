@@ -45,7 +45,7 @@ export interface PaymentData {
   } | null;
 }
 
-// Type for raw transfer data from database
+// Type for raw transfer data from database - Updated to include from_account
 export interface TransferData {
   id: string;
   date: string;
@@ -57,6 +57,11 @@ export interface TransferData {
   to_account_id?: number;
   from_account_id?: number;
   bank_accounts?: {
+    name: string;
+    currency: string;
+  } | null;
+  // Additional field for incoming transfers
+  from_account?: {
     name: string;
     currency: string;
   } | null;

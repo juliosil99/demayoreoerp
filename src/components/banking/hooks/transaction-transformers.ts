@@ -45,10 +45,14 @@ export function transformTransfersFromToTransactions(
   transfers: TransferData[], 
   accountCurrency: string
 ): AccountTransaction[] {
+  console.log(`DEBUG - Transformando transferencias FROM, account currency: ${accountCurrency}`);
+  
   return transfers.map(transfer => {
     const toAccountName = transfer.bank_accounts?.name || 'otra cuenta';
     const toCurrency = transfer.bank_accounts?.currency || 'MXN';
     const isCrossCurrency = toCurrency !== accountCurrency;
+    
+    console.log(`DEBUG - Transfer FROM ${transfer.id}: amount_from=${transfer.amount_from}, amount_to=${transfer.amount_to}, toCurrency=${toCurrency}, isCrossCurrency=${isCrossCurrency}`);
     
     // Para transferencias salientes, siempre usar amount_from (que está en la moneda de la cuenta origen)
     return {
@@ -76,13 +80,18 @@ export function transformTransfersToToTransactions(
   transfers: TransferData[], 
   accountCurrency: string
 ): AccountTransaction[] {
+  console.log(`DEBUG - Transformando transferencias TO, account currency: ${accountCurrency}`);
+  
   return transfers.map(transfer => {
-    const fromAccountName = transfer.bank_accounts?.name || 'otra cuenta';
-    const fromCurrency = transfer.bank_accounts?.currency || 'MXN';
+    // Usar from_account en lugar de bank_accounts para transferencias entrantes
+    const fromAccountName = (transfer as any).from_account?.name || transfer.bank_accounts?.name || 'otra cuenta';
+    const fromCurrency = (transfer as any).from_account?.currency || transfer.bank_accounts?.currency || 'MXN';
     const isCrossCurrency = fromCurrency !== accountCurrency;
     
+    console.log(`DEBUG - Transfer TO ${transfer.id}: amount_from=${transfer.amount_from}, amount_to=${transfer.amount_to}, fromCurrency=${fromCurrency}, accountCurrency=${accountCurrency}, isCrossCurrency=${isCrossCurrency}`);
+    
     // Para transferencias entrantes, siempre usar amount_to (que está en la moneda de la cuenta destino)
-    return {
+    const result = {
       id: transfer.id,
       date: transfer.date,
       description: isCrossCurrency 
@@ -97,6 +106,9 @@ export function transformTransfersToToTransactions(
       original_amount: isCrossCurrency ? transfer.amount_from : undefined,
       original_currency: isCrossCurrency ? fromCurrency : undefined
     };
+    
+    console.log(`DEBUG - Resultado final para transfer TO ${transfer.id}:`, result);
+    return result;
   });
 }
 

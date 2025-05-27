@@ -67,6 +67,7 @@ export async function fetchTransfersFrom(accountId: number, userId: string): Pro
     throw error;
   }
 
+  console.log(`DEBUG - Transferencias FROM para cuenta ${accountId}:`, data);
   return data || [];
 }
 
@@ -85,7 +86,7 @@ export async function fetchTransfersTo(accountId: number, userId: string): Promi
       reference_number, 
       notes, 
       from_account_id,
-      bank_accounts!account_transfers_from_account_id_fkey(name, currency)
+      from_account:bank_accounts!account_transfers_from_account_id_fkey(name, currency)
     `)
     .eq('to_account_id', accountId)
     .eq('user_id', userId)
@@ -96,6 +97,7 @@ export async function fetchTransfersTo(accountId: number, userId: string): Promi
     throw error;
   }
 
+  console.log(`DEBUG - Transferencias TO para cuenta ${accountId}:`, data);
   return data || [];
 }
 
@@ -114,5 +116,6 @@ export async function fetchAccountCurrency(accountId: number): Promise<string> {
     throw error;
   }
 
+  console.log(`DEBUG - Moneda de la cuenta ${accountId}:`, data?.currency);
   return data?.currency || 'MXN';
 }
