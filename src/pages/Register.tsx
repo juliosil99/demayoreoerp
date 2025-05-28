@@ -8,12 +8,26 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { AlertTriangle } from "lucide-react";
 
+interface InvitationData {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  expires_at: string;
+  company_id?: string;
+  invited_by: string;
+  companies?: {
+    id: string;
+    nombre: string;
+  } | null;
+}
+
 export default function Register() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [verifyingToken, setVerifyingToken] = useState(true);
-  const [invitation, setInvitation] = useState<any>(null);
+  const [invitation, setInvitation] = useState<InvitationData | null>(null);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const token = searchParams.get("token");
@@ -32,10 +46,13 @@ export default function Register() {
     try {
       console.log("Verifying invitation token:", token);
       
-      // Use explicit UUID to text conversion for comparison
+      // Use explicit text conversion for UUID comparison
       const { data: invitation, error } = await supabase
         .from("user_invitations")
-        .select("*, companies:company_id(id, nombre)")
+        .select(`
+          *,
+          companies:company_id(id, nombre)
+        `)
         .eq("invitation_token::text", token)
         .maybeSingle();
 
