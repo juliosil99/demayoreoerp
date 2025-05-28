@@ -97,7 +97,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "ERP Sistema <noreply@demayoreo.com>",
+        from: "ERP Sistema <onboarding@resend.dev>",
         to: [invitation.email],
         subject: `Invitación a unirse a ${companyName}`,
         html: emailContent,
