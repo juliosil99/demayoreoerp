@@ -4,6 +4,7 @@ export interface Profile {
   email: string;
   first_name?: string;
   last_name?: string;
+  created_at?: string;
   company?: {
     id: string;
     nombre: string;

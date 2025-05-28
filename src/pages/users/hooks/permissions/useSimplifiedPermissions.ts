@@ -36,7 +36,10 @@ export function useSimplifiedPermissions() {
           acc.push(profile);
         } else {
           // Keep the most recent profile if duplicates exist
-          if (profile.created_at && existing.created_at && profile.created_at > existing.created_at) {
+          const profileDate = profile.created_at ? new Date(profile.created_at) : new Date(0);
+          const existingDate = existing.created_at ? new Date(existing.created_at) : new Date(0);
+          
+          if (profileDate > existingDate) {
             const index = acc.indexOf(existing);
             acc[index] = profile;
           }
@@ -78,7 +81,10 @@ export function useSimplifiedPermissions() {
         acc.push(profile);
       } else {
         // Keep the most recent profile if duplicates exist
-        if (profile.created_at && existing.created_at && profile.created_at > existing.created_at) {
+        const profileDate = profile.created_at ? new Date(profile.created_at) : new Date(0);
+        const existingDate = existing.created_at ? new Date(existing.created_at) : new Date(0);
+        
+        if (profileDate > existingDate) {
           const index = acc.indexOf(existing);
           acc[index] = profile;
         }
