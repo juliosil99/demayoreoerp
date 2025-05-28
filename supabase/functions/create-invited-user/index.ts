@@ -83,11 +83,28 @@ serve(async (req) => {
       throw new Error('No se pudo procesar el usuario')
     }
 
+    // Actualizar o crear el perfil del usuario con el email
+    console.log(`Actualizando perfil para usuario: ${user.id}`)
+    const { error: profileError } = await supabaseClient
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        email: user.email
+      }, {
+        onConflict: 'id'
+      })
+
+    if (profileError) {
+      console.error('Error actualizando perfil:', profileError)
+      // No fallar por esto, continuar el proceso
+    } else {
+      console.log('Perfil actualizado exitosamente')
+    }
+
     // Si el rol es admin, asegurar que tenga el rol en user_roles
     if (role === 'admin') {
       console.log(`Asignando rol de admin a: ${user.id}`)
       
-      // Primero intentar insertar, si falla (ya existe), actualizar
       const { error: roleError } = await supabaseClient
         .from('user_roles')
         .upsert({

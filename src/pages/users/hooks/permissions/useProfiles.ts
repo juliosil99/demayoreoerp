@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -47,20 +48,51 @@ export function useProfiles() {
         return acc;
       }, []);
       
-      // Step 2: For each unique profile, fetch company information separately
+      // Step 2: Get all company_users relationships to include users without profiles
+      const { data: companyUsersData, error: companyUsersError } = await supabase
+        .from("company_users")
+        .select(`
+          user_id,
+          role,
+          company:companies(id, nombre)
+        `);
+
+      if (companyUsersError) {
+        console.error("Error fetching company users:", companyUsersError);
+      }
+
+      // Step 3: Merge profiles with company users data
+      const allUserIds = new Set([
+        ...uniqueProfiles.map(p => p.id),
+        ...(companyUsersData || []).map(cu => cu.user_id)
+      ]);
+
       const profilesWithCompany = await Promise.all(
-        uniqueProfiles.map(async (profile) => {
-          // Get company information from company_users and companies tables
-          const { data: companyData } = await supabase
-            .from("company_users")
-            .select("company:companies(id, nombre)")
-            .eq("user_id", profile.id)
-            .maybeSingle();
+        Array.from(allUserIds).map(async (userId) => {
+          // Find existing profile or create placeholder
+          let profile = uniqueProfiles.find(p => p.id === userId);
+          if (!profile) {
+            // For users in company_users but not in profiles, try to get from auth.users
+            console.log(`Profile not found for user ${userId}, fetching from auth`);
+            
+            // Get user email from auth if possible (this requires admin access)
+            const companyUser = companyUsersData?.find(cu => cu.user_id === userId);
+            
+            profile = {
+              id: userId,
+              email: null, // Will be updated when user logs in
+              first_name: null,
+              last_name: null,
+              created_at: new Date().toISOString()
+            };
+          }
           
-          // Return profile with company information
+          // Get company information from company_users
+          const companyUser = companyUsersData?.find(cu => cu.user_id === userId);
+          
           return {
             ...profile,
-            company: companyData?.company || null
+            company: companyUser?.company || null
           };
         })
       );

@@ -57,10 +57,12 @@ export function useRegistrationSubmit() {
         if (relationError) {
           console.error("Error creando/actualizando relación empresa-usuario:", relationError);
           // No fallar por esto, continuar el proceso
+        } else {
+          console.log("Relación empresa-usuario creada/actualizada exitosamente");
         }
       }
 
-      // Actualizar estado de invitación a completado
+      // CRÍTICO: Actualizar estado de invitación a completado
       const { error: updateError } = await supabase
         .from("user_invitations")
         .update({ status: "completed" })
@@ -68,10 +70,12 @@ export function useRegistrationSubmit() {
 
       if (updateError) {
         console.error("Error actualizando estado de invitación:", updateError);
-        // No fallar por esto, continuar el proceso
+        // No fallar por esto, pero es importante para la sincronización
+      } else {
+        console.log("Estado de invitación actualizado a completado");
       }
 
-      // Crear log de finalización
+      // Crear log de finalización exitosa
       const { error: logError } = await supabase.from("invitation_logs").insert({
         invitation_id: invitation.id,
         status: "completed",
@@ -80,7 +84,9 @@ export function useRegistrationSubmit() {
       });
 
       if (logError) {
-        console.error("Error creando log:", logError);
+        console.error("Error creando log de completado:", logError);
+      } else {
+        console.log("Log de completado creado exitosamente");
       }
 
       // Iniciar sesión con el usuario
