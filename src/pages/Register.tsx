@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -47,14 +48,13 @@ export default function Register() {
     try {
       console.log("Verifying invitation token:", token);
       
-      // Simplified query without complex joins
-      const { data: invitationResponse, error } = await supabase
+      // Using explicit any type to avoid TypeScript inference issues
+      const { data: rawInvitationData, error } = await supabase
         .from("user_invitations")
         .select("*")
-        .eq("invitation_token::text", token)
-        .maybeSingle();
+        .eq("invitation_token::text", token) as { data: any, error: any };
 
-      console.log("Token verification result:", { invitationResponse, error });
+      console.log("Token verification result:", { rawInvitationData, error });
 
       if (error) {
         console.error("Error verifying token:", error);
@@ -63,15 +63,26 @@ export default function Register() {
         return;
       }
       
-      if (!invitationResponse) {
+      if (!rawInvitationData) {
         setTokenError("Token de invitación no encontrado o inválido");
         setVerifyingToken(false);
         return;
       }
       
+      // Manually map the raw data to our simple interface
+      const invitationData: SimpleInvitationData = {
+        id: rawInvitationData.id,
+        email: rawInvitationData.email,
+        role: rawInvitationData.role,
+        status: rawInvitationData.status,
+        expires_at: rawInvitationData.expires_at,
+        company_id: rawInvitationData.company_id,
+        invited_by: rawInvitationData.invited_by
+      };
+      
       // Check if the invitation is still pending
-      if (invitationResponse.status !== "pending") {
-        if (invitationResponse.status === "completed") {
+      if (invitationData.status !== "pending") {
+        if (invitationData.status === "completed") {
           setTokenError("Esta invitación ya ha sido utilizada");
         } else {
           setTokenError("Esta invitación ha expirado");
@@ -82,7 +93,7 @@ export default function Register() {
 
       // Check if invitation has expired
       const now = new Date();
-      const expiresAt = new Date(invitationResponse.expires_at);
+      const expiresAt = new Date(invitationData.expires_at);
       if (now > expiresAt) {
         setTokenError("Esta invitación ha expirado");
         
@@ -90,22 +101,21 @@ export default function Register() {
         await supabase
           .from("user_invitations")
           .update({ status: "expired" })
-          .eq("id", invitationResponse.id);
+          .eq("id", invitationData.id);
         
         setVerifyingToken(false);
         return;
       }
 
       // Set the invitation data
-      setInvitation(invitationResponse);
+      setInvitation(invitationData);
 
       // Fetch company data separately if company_id exists
-      if (invitationResponse.company_id) {
+      if (invitationData.company_id) {
         const { data: companyData, error: companyError } = await supabase
           .from("companies")
           .select("nombre")
-          .eq("id", invitationResponse.company_id)
-          .maybeSingle();
+          .eq("id", invitationData.company_id) as { data: any, error: any };
 
         if (!companyError && companyData) {
           setCompanyName(companyData.nombre);
