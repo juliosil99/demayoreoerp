@@ -1,4 +1,3 @@
-
 // Email utility functions for the send-invitation edge function
 
 /**
@@ -153,7 +152,7 @@ export interface SupabaseClient {
 }
 
 /**
- * Verifies that a token exists in the database
+ * Verifies that a token exists in the database using explicit text conversion
  */
 export async function verifyTokenInDatabase(supabase: SupabaseClient, token: string): Promise<void> {
   console.log("Verifying token in database:", token);
@@ -161,7 +160,7 @@ export async function verifyTokenInDatabase(supabase: SupabaseClient, token: str
   const { data: tokenCheck, error: tokenCheckError } = await supabase
     .from("user_invitations")
     .select("id")
-    .eq("invitation_token", token)
+    .eq("invitation_token::text", token)
     .maybeSingle();
     
   if (tokenCheckError) {
