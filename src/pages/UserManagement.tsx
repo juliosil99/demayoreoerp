@@ -1,10 +1,11 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw, Info } from "lucide-react";
+import { AlertCircle, RefreshCw, Info, Sync } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSimplifiedPermissions } from "./users/hooks/permissions/useSimplifiedPermissions";
 import { useInvitationExpiration } from "./users/hooks/invitations/useInvitationExpiration";
+import { useInvitationSync } from "./users/hooks/invitations/useInvitationSync";
 import {
   UserInvitationSection,
   PendingInvitationsSection,
@@ -25,8 +26,18 @@ export default function UserManagement() {
     refetchData
   } = useSimplifiedPermissions();
 
+  const { syncInvitationStatuses, isSyncing } = useInvitationSync();
+
   // Initialize invitation expiration checking
   useInvitationExpiration();
+
+  const handleSyncInvitations = async () => {
+    await syncInvitationStatuses();
+    // Refrescar datos después de la sincronización
+    if (refetchData) {
+      refetchData();
+    }
+  };
 
   if (isLoading) {
     return (
@@ -101,13 +112,24 @@ export default function UserManagement() {
     <div className="container mx-auto p-2 sm:py-6">
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Administración de Usuarios</h1>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={refetchData}
-        >
-          <RefreshCw className="mr-2 h-4 w-4" /> Actualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleSyncInvitations}
+            disabled={isSyncing}
+          >
+            <Sync className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={refetchData}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Actualizar
+          </Button>
+        </div>
       </div>
       
       <UserInvitationSection />

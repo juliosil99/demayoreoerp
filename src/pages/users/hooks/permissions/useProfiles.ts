@@ -17,29 +17,29 @@ export function useProfiles() {
   } = useQuery({
     queryKey: ["profiles"],
     queryFn: async () => {
-      console.log("Fetching profiles...");
+      console.log("🔍 Obteniendo perfiles...");
       
-      // Step 1: Fetch all profiles
+      // Paso 1: Obtener todos los perfiles
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("*")
         .order('created_at', { ascending: false });
 
       if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
+        console.error("❌ Error obteniendo perfiles:", profilesError);
         toast.error("Error al cargar perfiles: " + profilesError.message);
         throw profilesError;
       }
       
-      console.log("Profiles fetched successfully:", profilesData);
+      console.log("✅ Perfiles obtenidos:", profilesData);
       
-      // Filter out duplicates based on email (keep most recent)
+      // Filtrar duplicados basados en email (mantener el más reciente)
       const uniqueProfiles = profilesData.reduce((acc: any[], profile) => {
         const existing = acc.find(p => p.email === profile.email && profile.email);
         if (!existing) {
           acc.push(profile);
         } else {
-          // Keep the most recent profile
+          // Mantener el perfil más reciente
           if (profile.created_at > existing.created_at) {
             const index = acc.indexOf(existing);
             acc[index] = profile;
@@ -48,7 +48,7 @@ export function useProfiles() {
         return acc;
       }, []);
       
-      // Step 2: Get all company_users relationships to include users without profiles
+      // Paso 2: Obtener todas las relaciones company_users e invitaciones para incluir usuarios sin perfiles completos
       const { data: companyUsersData, error: companyUsersError } = await supabase
         .from("company_users")
         .select(`
@@ -58,10 +58,25 @@ export function useProfiles() {
         `);
 
       if (companyUsersError) {
-        console.error("Error fetching company users:", companyUsersError);
+        console.error("❌ Error obteniendo usuarios de empresa:", companyUsersError);
       }
 
-      // Step 3: Merge profiles with company users data
+      // Paso 3: Obtener invitaciones para correlacionar emails con usuarios sin perfil
+      const { data: invitationsData, error: invitationsError } = await supabase
+        .from("user_invitations")
+        .select("email, status")
+        .eq("status", "completed");
+
+      if (invitationsError) {
+        console.error("❌ Error obteniendo invitaciones:", invitationsError);
+      }
+
+      // Paso 4: Crear un mapa de emails completados
+      const completedInvitationEmails = new Set(
+        invitationsData?.map(inv => inv.email) || []
+      );
+
+      // Paso 5: Obtener todos los IDs de usuario únicos
       const allUserIds = new Set([
         ...uniqueProfiles.map(p => p.id),
         ...(companyUsersData || []).map(cu => cu.user_id)
@@ -69,25 +84,56 @@ export function useProfiles() {
 
       const profilesWithCompany = await Promise.all(
         Array.from(allUserIds).map(async (userId) => {
-          // Find existing profile or create placeholder
+          // Buscar perfil existente
           let profile = uniqueProfiles.find(p => p.id === userId);
+          
           if (!profile) {
-            // For users in company_users but not in profiles, try to get from auth.users
-            console.log(`Profile not found for user ${userId}, fetching from auth`);
+            // Para usuarios en company_users pero no en profiles, crear placeholder
+            console.log(`⚠️ Perfil no encontrado para usuario ${userId}, creando placeholder`);
             
-            // Get user email from auth if possible (this requires admin access)
+            // Intentar obtener email de invitaciones completadas para este usuario
             const companyUser = companyUsersData?.find(cu => cu.user_id === userId);
+            let emailFromInvitation = null;
+            
+            // Si encontramos el usuario en company_users, buscar su email en invitaciones
+            if (companyUser) {
+              // Buscar en invitaciones completadas que puedan corresponder a este usuario
+              const matchingInvitation = invitationsData?.find(inv => 
+                completedInvitationEmails.has(inv.email)
+              );
+              emailFromInvitation = matchingInvitation?.email || null;
+            }
             
             profile = {
               id: userId,
-              email: null, // Will be updated when user logs in
+              email: emailFromInvitation,
               first_name: null,
               last_name: null,
               created_at: new Date().toISOString()
             };
+
+            // Si tenemos email, intentar actualizar el perfil en la base de datos
+            if (emailFromInvitation) {
+              console.log(`📝 Actualizando perfil con email para usuario ${userId}:`, emailFromInvitation);
+              const { error: updateError } = await supabase
+                .from("profiles")
+                .upsert({
+                  id: userId,
+                  email: emailFromInvitation
+                }, {
+                  onConflict: 'id'
+                });
+
+              if (updateError) {
+                console.error("❌ Error actualizando perfil:", updateError);
+              } else {
+                console.log("✅ Perfil actualizado con email");
+                profile.email = emailFromInvitation;
+              }
+            }
           }
           
-          // Get company information from company_users
+          // Obtener información de la empresa desde company_users
           const companyUser = companyUsersData?.find(cu => cu.user_id === userId);
           
           return {
@@ -97,12 +143,12 @@ export function useProfiles() {
         })
       );
       
-      console.log("Profiles with company info:", profilesWithCompany);
+      console.log("✅ Perfiles con información de empresa:", profilesWithCompany);
       return profilesWithCompany as Profile[];
     },
     retry: 1,
     retryDelay: 1000,
-    staleTime: 5000, // Cache for 5 seconds to reduce unnecessary requests
+    staleTime: 5000,
   });
 
   return { profiles, isLoading, currentUserId, error, refetch };

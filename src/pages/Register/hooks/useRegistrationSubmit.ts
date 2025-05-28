@@ -24,9 +24,10 @@ export function useRegistrationSubmit() {
     try {
       setLoading(true);
 
-      console.log("Procesando registro para usuario:", invitation.email);
+      console.log("🔄 Iniciando proceso de registro para:", invitation.email);
       
-      // Crear/actualizar usuario usando la función admin
+      // Paso 1: Crear/actualizar usuario usando la función admin
+      console.log("📞 Llamando a función create-invited-user...");
       const { data: adminAuthData, error: adminAuthError } = await supabase.functions.invoke('create-invited-user', {
         body: {
           email: invitation.email,
@@ -36,70 +37,158 @@ export function useRegistrationSubmit() {
       });
 
       if (adminAuthError || !adminAuthData) {
-        console.error("Error procesando usuario:", adminAuthError || "No data returned");
+        console.error("❌ Error en función create-invited-user:", adminAuthError || "No data returned");
         throw adminAuthError || new Error("Error al procesar el usuario");
       }
 
-      console.log("Usuario procesado exitosamente:", adminAuthData);
+      console.log("✅ Usuario procesado exitosamente:", adminAuthData);
 
-      // Crear relación company_user si la invitación tiene company_id
-      if (invitation.company_id) {
-        const { error: relationError } = await supabase
-          .from("company_users")
+      // Paso 2: Verificar que el usuario tenga perfil con email
+      console.log("🔍 Verificando perfil del usuario...");
+      const { data: profile, error: profileCheckError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", adminAuthData.user.id)
+        .single();
+
+      if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+        console.error("❌ Error verificando perfil:", profileCheckError);
+      }
+
+      // Si no tiene email en el perfil, actualizarlo
+      if (!profile?.email) {
+        console.log("📝 Actualizando email en perfil...");
+        const { error: profileUpdateError } = await supabase
+          .from("profiles")
           .upsert({
-            company_id: invitation.company_id,
-            user_id: adminAuthData.user.id,
-            role: invitation.role
+            id: adminAuthData.user.id,
+            email: invitation.email
           }, {
-            onConflict: 'user_id,company_id'
+            onConflict: 'id'
           });
-          
-        if (relationError) {
-          console.error("Error creando/actualizando relación empresa-usuario:", relationError);
-          // No fallar por esto, continuar el proceso
+
+        if (profileUpdateError) {
+          console.error("❌ Error actualizando perfil:", profileUpdateError);
         } else {
-          console.log("Relación empresa-usuario creada/actualizada exitosamente");
+          console.log("✅ Perfil actualizado con email");
         }
       }
 
-      // CRÍTICO: Actualizar estado de invitación a completado
-      const { error: updateError } = await supabase
+      // Paso 3: Crear relación company_user si la invitación tiene company_id
+      if (invitation.company_id) {
+        console.log("🏢 Verificando relación empresa-usuario...");
+        const { data: existingRelation, error: relationCheckError } = await supabase
+          .from("company_users")
+          .select("*")
+          .eq("user_id", adminAuthData.user.id)
+          .eq("company_id", invitation.company_id)
+          .maybeSingle();
+
+        if (relationCheckError) {
+          console.error("❌ Error verificando relación empresa-usuario:", relationCheckError);
+        }
+
+        if (!existingRelation) {
+          const { error: relationError } = await supabase
+            .from("company_users")
+            .insert({
+              company_id: invitation.company_id,
+              user_id: adminAuthData.user.id,
+              role: invitation.role
+            });
+            
+          if (relationError) {
+            console.error("❌ Error creando relación empresa-usuario:", relationError);
+          } else {
+            console.log("✅ Relación empresa-usuario creada exitosamente");
+          }
+        } else {
+          console.log("✅ Relación empresa-usuario ya existe");
+        }
+      }
+
+      // Paso 4: CRÍTICO - Verificar y actualizar estado de invitación
+      console.log("🔍 Verificando estado de invitación...");
+      const { data: currentInvitation, error: invitationCheckError } = await supabase
         .from("user_invitations")
-        .update({ status: "completed" })
-        .eq("id", invitation.id);
+        .select("*")
+        .eq("id", invitation.id)
+        .single();
 
-      if (updateError) {
-        console.error("Error actualizando estado de invitación:", updateError);
-        // No fallar por esto, pero es importante para la sincronización
-      } else {
-        console.log("Estado de invitación actualizado a completado");
+      if (invitationCheckError) {
+        console.error("❌ Error verificando invitación:", invitationCheckError);
       }
 
-      // Crear log de finalización exitosa
-      const { error: logError } = await supabase.from("invitation_logs").insert({
-        invitation_id: invitation.id,
-        status: "completed",
-        error_message: null,
-        attempted_by: adminAuthData.user.id
-      });
+      if (currentInvitation?.status !== "completed") {
+        console.log("🔄 Actualizando estado de invitación a completado...");
+        const { error: updateError } = await supabase
+          .from("user_invitations")
+          .update({ status: "completed" })
+          .eq("id", invitation.id);
 
-      if (logError) {
-        console.error("Error creando log de completado:", logError);
+        if (updateError) {
+          console.error("❌ Error actualizando estado de invitación:", updateError);
+          // Intentar una vez más
+          console.log("🔄 Reintentando actualización de invitación...");
+          const { error: retryError } = await supabase
+            .from("user_invitations")
+            .update({ status: "completed" })
+            .eq("id", invitation.id);
+          
+          if (retryError) {
+            console.error("❌ Error en segundo intento:", retryError);
+          } else {
+            console.log("✅ Invitación actualizada en segundo intento");
+          }
+        } else {
+          console.log("✅ Estado de invitación actualizado a completado");
+        }
       } else {
-        console.log("Log de completado creado exitosamente");
+        console.log("✅ Invitación ya estaba marcada como completada");
       }
 
-      // Iniciar sesión con el usuario
+      // Paso 5: Crear log de finalización exitosa si no existe
+      console.log("📝 Verificando log de completado...");
+      const { data: existingLog, error: logCheckError } = await supabase
+        .from("invitation_logs")
+        .select("*")
+        .eq("invitation_id", invitation.id)
+        .eq("status", "completed")
+        .maybeSingle();
+
+      if (logCheckError) {
+        console.error("❌ Error verificando log:", logCheckError);
+      }
+
+      if (!existingLog) {
+        const { error: logError } = await supabase.from("invitation_logs").insert({
+          invitation_id: invitation.id,
+          status: "completed",
+          error_message: null,
+          attempted_by: adminAuthData.user.id
+        });
+
+        if (logError) {
+          console.error("❌ Error creando log de completado:", logError);
+        } else {
+          console.log("✅ Log de completado creado exitosamente");
+        }
+      } else {
+        console.log("✅ Log de completado ya existe");
+      }
+
+      // Paso 6: Iniciar sesión con el usuario
+      console.log("🔐 Iniciando sesión...");
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: invitation.email,
         password: password,
       });
 
       if (signInError) {
-        console.error("Error iniciando sesión:", signInError);
+        console.error("❌ Error iniciando sesión:", signInError);
         const message = adminAuthData.isNewUser 
           ? "Usuario creado exitosamente. Por favor, inicia sesión manualmente."
-          : "Contraseña actualizada exitosamente. Por favor, inicia sesión manualmente.";
+          : "Registro actualizado exitosamente. Por favor, inicia sesión manualmente.";
         toast.success(message);
         navigate("/login");
         return;
@@ -109,10 +198,12 @@ export function useRegistrationSubmit() {
         ? "Registro completado exitosamente"
         : "Registro actualizado exitosamente";
       
+      console.log("🎉 Proceso de registro completado exitosamente");
       toast.success(successMessage);
       navigate("/dashboard");
+      
     } catch (error: any) {
-      console.error("Error en registro:", error);
+      console.error("❌ Error en registro:", error);
       toast.error(error.message || "Error al completar el registro");
       
       // Crear log de error
@@ -124,7 +215,7 @@ export function useRegistrationSubmit() {
           attempted_by: invitation.invited_by
         });
       } catch (logError) {
-        console.error("Error creando log de error:", logError);
+        console.error("❌ Error creando log de error:", logError);
       }
     } finally {
       setLoading(false);
