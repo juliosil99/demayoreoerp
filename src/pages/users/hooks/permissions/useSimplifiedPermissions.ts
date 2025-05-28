@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { UserPermissions, Profile, rolePermissions } from "../../types";
 import { useProfiles } from "./useProfiles";
@@ -30,8 +29,23 @@ export function useSimplifiedPermissions() {
       console.log("Building simplified user permissions map...");
       const permissionsMap: { [key: string]: UserPermissions } = {};
       
-      // Initialize with all users
-      profiles.forEach(profile => {
+      // Filter out potential duplicates by email and ensure unique entries
+      const uniqueProfiles = profiles.reduce((acc: Profile[], profile) => {
+        const existing = acc.find(p => p.email === profile.email);
+        if (!existing) {
+          acc.push(profile);
+        } else {
+          // Keep the most recent profile if duplicates exist
+          if (profile.created_at && existing.created_at && profile.created_at > existing.created_at) {
+            const index = acc.indexOf(existing);
+            acc[index] = profile;
+          }
+        }
+        return acc;
+      }, []);
+
+      // Initialize with unique users only
+      uniqueProfiles.forEach(profile => {
         const companyUser = companyUsers.find(cu => cu.user_id === profile.id);
         const role = companyUser?.role || 'user';
         const basePermissions = rolePermissions[role];
@@ -58,7 +72,19 @@ export function useSimplifiedPermissions() {
   };
 
   return {
-    profiles,
+    profiles: profiles?.reduce((acc: Profile[], profile) => {
+      const existing = acc.find(p => p.email === profile.email);
+      if (!existing) {
+        acc.push(profile);
+      } else {
+        // Keep the most recent profile if duplicates exist
+        if (profile.created_at && existing.created_at && profile.created_at > existing.created_at) {
+          const index = acc.indexOf(existing);
+          acc[index] = profile;
+        }
+      }
+      return acc;
+    }, []) || [],
     isLoading,
     error,
     userPermissions,
