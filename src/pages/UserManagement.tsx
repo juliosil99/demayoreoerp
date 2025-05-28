@@ -1,7 +1,7 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw, Info, Sync } from "lucide-react";
+import { AlertCircle, RefreshCw, Info, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSimplifiedPermissions } from "./users/hooks/permissions/useSimplifiedPermissions";
 import { useInvitationExpiration } from "./users/hooks/invitations/useInvitationExpiration";
@@ -119,7 +119,7 @@ export default function UserManagement() {
             onClick={handleSyncInvitations}
             disabled={isSyncing}
           >
-            <Sync className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            <RotateCcw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
             {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
           </Button>
           <Button 
