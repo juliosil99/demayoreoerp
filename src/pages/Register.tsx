@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { AlertTriangle } from "lucide-react";
 
-interface InvitationData {
+interface SimpleInvitationData {
   id: string;
   email: string;
   role: string;
@@ -16,10 +15,11 @@ interface InvitationData {
   expires_at: string;
   company_id?: string;
   invited_by: string;
-  companies?: {
-    id: string;
-    nombre: string;
-  } | null;
+}
+
+interface CompanyData {
+  id: string;
+  nombre: string;
 }
 
 export default function Register() {
@@ -27,7 +27,8 @@ export default function Register() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [verifyingToken, setVerifyingToken] = useState(true);
-  const [invitation, setInvitation] = useState<InvitationData | null>(null);
+  const [invitation, setInvitation] = useState<SimpleInvitationData | null>(null);
+  const [companyName, setCompanyName] = useState<string | null>(null);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const token = searchParams.get("token");
@@ -46,17 +47,14 @@ export default function Register() {
     try {
       console.log("Verifying invitation token:", token);
       
-      // Use explicit text conversion for UUID comparison
-      const { data: invitation, error } = await supabase
+      // Simplified query without complex joins
+      const { data: invitationResponse, error } = await supabase
         .from("user_invitations")
-        .select(`
-          *,
-          companies:company_id(id, nombre)
-        `)
+        .select("*")
         .eq("invitation_token::text", token)
         .maybeSingle();
 
-      console.log("Token verification result:", { invitation, error });
+      console.log("Token verification result:", { invitationResponse, error });
 
       if (error) {
         console.error("Error verifying token:", error);
@@ -65,15 +63,15 @@ export default function Register() {
         return;
       }
       
-      if (!invitation) {
+      if (!invitationResponse) {
         setTokenError("Token de invitación no encontrado o inválido");
         setVerifyingToken(false);
         return;
       }
       
       // Check if the invitation is still pending
-      if (invitation.status !== "pending") {
-        if (invitation.status === "completed") {
+      if (invitationResponse.status !== "pending") {
+        if (invitationResponse.status === "completed") {
           setTokenError("Esta invitación ya ha sido utilizada");
         } else {
           setTokenError("Esta invitación ha expirado");
@@ -84,7 +82,7 @@ export default function Register() {
 
       // Check if invitation has expired
       const now = new Date();
-      const expiresAt = new Date(invitation.expires_at);
+      const expiresAt = new Date(invitationResponse.expires_at);
       if (now > expiresAt) {
         setTokenError("Esta invitación ha expirado");
         
@@ -92,13 +90,28 @@ export default function Register() {
         await supabase
           .from("user_invitations")
           .update({ status: "expired" })
-          .eq("id", invitation.id);
+          .eq("id", invitationResponse.id);
         
         setVerifyingToken(false);
         return;
       }
 
-      setInvitation(invitation);
+      // Set the invitation data
+      setInvitation(invitationResponse);
+
+      // Fetch company data separately if company_id exists
+      if (invitationResponse.company_id) {
+        const { data: companyData, error: companyError } = await supabase
+          .from("companies")
+          .select("nombre")
+          .eq("id", invitationResponse.company_id)
+          .maybeSingle();
+
+        if (!companyError && companyData) {
+          setCompanyName(companyData.nombre);
+        }
+      }
+
       setVerifyingToken(false);
     } catch (error) {
       console.error("Error verifying token:", error);
@@ -246,9 +259,9 @@ export default function Register() {
           <p className="text-gray-500">
             Bienvenido {invitation?.email}.
           </p>
-          {invitation?.companies?.nombre && (
+          {companyName && (
             <p className="text-sm font-medium">
-              Estás siendo invitado a unirte a la empresa: <span className="text-primary">{invitation.companies.nombre}</span>
+              Estás siendo invitado a unirte a la empresa: <span className="text-primary">{companyName}</span>
             </p>
           )}
           <p className="text-gray-500 mt-2">
