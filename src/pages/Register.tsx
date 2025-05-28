@@ -48,13 +48,12 @@ export default function Register() {
     try {
       console.log("Verifying invitation token:", token);
       
-      // Using explicit any type to avoid TypeScript inference issues
-      const { data: rawInvitationData, error } = await supabase
-        .from("user_invitations")
-        .select("*")
-        .eq("invitation_token::text", token) as { data: any, error: any };
+      // Use the existing database function to avoid type issues
+      const { data: invitationData, error } = await supabase.rpc('find_invitation_by_token', {
+        token_param: token
+      });
 
-      console.log("Token verification result:", { rawInvitationData, error });
+      console.log("Token verification result:", { invitationData, error });
 
       if (error) {
         console.error("Error verifying token:", error);
@@ -63,26 +62,29 @@ export default function Register() {
         return;
       }
       
-      if (!rawInvitationData) {
+      if (!invitationData || invitationData.length === 0) {
         setTokenError("Token de invitación no encontrado o inválido");
         setVerifyingToken(false);
         return;
       }
       
+      // Get the first invitation from the array
+      const rawInvitation = invitationData[0];
+      
       // Manually map the raw data to our simple interface
-      const invitationData: SimpleInvitationData = {
-        id: rawInvitationData.id,
-        email: rawInvitationData.email,
-        role: rawInvitationData.role,
-        status: rawInvitationData.status,
-        expires_at: rawInvitationData.expires_at,
-        company_id: rawInvitationData.company_id,
-        invited_by: rawInvitationData.invited_by
+      const mappedInvitation: SimpleInvitationData = {
+        id: rawInvitation.id,
+        email: rawInvitation.email,
+        role: rawInvitation.role,
+        status: rawInvitation.status,
+        expires_at: rawInvitation.expires_at,
+        company_id: rawInvitation.company_id,
+        invited_by: rawInvitation.invited_by
       };
       
       // Check if the invitation is still pending
-      if (invitationData.status !== "pending") {
-        if (invitationData.status === "completed") {
+      if (mappedInvitation.status !== "pending") {
+        if (mappedInvitation.status === "completed") {
           setTokenError("Esta invitación ya ha sido utilizada");
         } else {
           setTokenError("Esta invitación ha expirado");
@@ -93,7 +95,7 @@ export default function Register() {
 
       // Check if invitation has expired
       const now = new Date();
-      const expiresAt = new Date(invitationData.expires_at);
+      const expiresAt = new Date(mappedInvitation.expires_at);
       if (now > expiresAt) {
         setTokenError("Esta invitación ha expirado");
         
@@ -101,21 +103,22 @@ export default function Register() {
         await supabase
           .from("user_invitations")
           .update({ status: "expired" })
-          .eq("id", invitationData.id);
+          .eq("id", mappedInvitation.id);
         
         setVerifyingToken(false);
         return;
       }
 
       // Set the invitation data
-      setInvitation(invitationData);
+      setInvitation(mappedInvitation);
 
       // Fetch company data separately if company_id exists
-      if (invitationData.company_id) {
+      if (mappedInvitation.company_id) {
         const { data: companyData, error: companyError } = await supabase
           .from("companies")
           .select("nombre")
-          .eq("id", invitationData.company_id) as { data: any, error: any };
+          .eq("id", mappedInvitation.company_id)
+          .single();
 
         if (!companyError && companyData) {
           setCompanyName(companyData.nombre);
