@@ -19,10 +19,13 @@ serve(async (req) => {
     )
 
     const { email, password, role } = await req.json()
-    console.log(`Creando usuario invitado: ${email}, rol: ${role}`)
+    console.log(`Procesando usuario: ${email}, rol: ${role}`)
 
-    // Primero creamos el usuario con email_confirm: true
-    const { data: { user }, error: createError } = await supabaseClient.auth.admin.createUser({
+    let user = null
+    let isNewUser = false
+
+    // Intentar crear el usuario
+    const { data: createData, error: createError } = await supabaseClient.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -30,35 +33,86 @@ serve(async (req) => {
     })
 
     if (createError) {
-      console.error('Error creando usuario:', createError)
-      throw createError
+      // Si el error es que el usuario ya existe
+      if (createError.message?.includes('already been registered') || createError.status === 422) {
+        console.log(`Usuario ya existe, actualizando contraseña para: ${email}`)
+        
+        // Obtener el usuario existente
+        const { data: existingUsers, error: listError } = await supabaseClient.auth.admin.listUsers()
+        
+        if (listError) {
+          console.error('Error obteniendo usuarios existentes:', listError)
+          throw listError
+        }
+
+        const existingUser = existingUsers.users.find(u => u.email === email)
+        
+        if (!existingUser) {
+          console.error('Usuario no encontrado después de error de duplicado')
+          throw new Error('Usuario no encontrado')
+        }
+
+        // Actualizar la contraseña del usuario existente
+        const { data: updateData, error: updateError } = await supabaseClient.auth.admin.updateUserById(
+          existingUser.id,
+          {
+            password: password,
+            user_metadata: { role }
+          }
+        )
+
+        if (updateError) {
+          console.error('Error actualizando contraseña del usuario:', updateError)
+          throw updateError
+        }
+
+        user = updateData.user
+        console.log(`Contraseña actualizada exitosamente para usuario: ${user.id}`)
+      } else {
+        console.error('Error creando usuario:', createError)
+        throw createError
+      }
+    } else {
+      user = createData.user
+      isNewUser = true
+      console.log(`Usuario creado exitosamente: ${user.id}`)
     }
-    
+
     if (!user) {
-      console.error('No se pudo crear el usuario, no se devolvió user')
-      throw new Error('No se pudo crear el usuario')
+      console.error('No se pudo obtener el usuario')
+      throw new Error('No se pudo procesar el usuario')
     }
 
-    console.log(`Usuario creado exitosamente: ${user.id}`)
-
-    // Si el rol es admin, insertamos en user_roles
+    // Si el rol es admin, asegurar que tenga el rol en user_roles
     if (role === 'admin') {
       console.log(`Asignando rol de admin a: ${user.id}`)
+      
+      // Primero intentar insertar, si falla (ya existe), actualizar
       const { error: roleError } = await supabaseClient
         .from('user_roles')
-        .insert({
+        .upsert({
           user_id: user.id,
           role: 'admin'
+        }, {
+          onConflict: 'user_id,role'
         })
 
       if (roleError) {
         console.error('Error asignando rol de admin:', roleError)
-        throw roleError
+        // No fallar por esto, continuar el proceso
       }
     }
 
+    const responseMessage = isNewUser 
+      ? 'Usuario creado exitosamente' 
+      : 'Usuario actualizado exitosamente'
+
     return new Response(
-      JSON.stringify({ user }),
+      JSON.stringify({ 
+        user,
+        message: responseMessage,
+        isNewUser
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 

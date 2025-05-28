@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -141,9 +140,9 @@ export default function Register() {
     try {
       setLoading(true);
 
-      console.log("Creating user with email:", invitation.email);
+      console.log("Procesando registro para usuario:", invitation.email);
       
-      // Create user using admin function
+      // Crear/actualizar usuario usando la función admin
       const { data: adminAuthData, error: adminAuthError } = await supabase.functions.invoke('create-invited-user', {
         body: {
           email: invitation.email,
@@ -153,40 +152,42 @@ export default function Register() {
       });
 
       if (adminAuthError || !adminAuthData) {
-        console.error("Error creating user:", adminAuthError || "No data returned");
-        throw adminAuthError || new Error("Error al crear el usuario");
+        console.error("Error procesando usuario:", adminAuthError || "No data returned");
+        throw adminAuthError || new Error("Error al procesar el usuario");
       }
 
-      console.log("User created successfully:", adminAuthData);
+      console.log("Usuario procesado exitosamente:", adminAuthData);
 
-      // Create company_user relationship if invitation has company_id
+      // Crear relación company_user si la invitación tiene company_id
       if (invitation.company_id) {
         const { error: relationError } = await supabase
           .from("company_users")
-          .insert({
+          .upsert({
             company_id: invitation.company_id,
             user_id: adminAuthData.user.id,
             role: invitation.role
+          }, {
+            onConflict: 'user_id,company_id'
           });
           
         if (relationError) {
-          console.error("Error creating company-user relationship:", relationError);
-          throw relationError;
+          console.error("Error creando/actualizando relación empresa-usuario:", relationError);
+          // No fallar por esto, continuar el proceso
         }
       }
 
-      // Update invitation status to completed
+      // Actualizar estado de invitación a completado
       const { error: updateError } = await supabase
         .from("user_invitations")
         .update({ status: "completed" })
         .eq("id", invitation.id);
 
       if (updateError) {
-        console.error("Error updating invitation status:", updateError);
-        throw updateError;
+        console.error("Error actualizando estado de invitación:", updateError);
+        // No fallar por esto, continuar el proceso
       }
 
-      // Log the completion
+      // Crear log de finalización
       const { error: logError } = await supabase.from("invitation_logs").insert({
         invitation_id: invitation.id,
         status: "completed",
@@ -195,29 +196,36 @@ export default function Register() {
       });
 
       if (logError) {
-        console.error("Error creating log:", logError);
+        console.error("Error creando log:", logError);
       }
 
-      // Sign in the newly created user
+      // Iniciar sesión con el usuario
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: invitation.email,
         password: password,
       });
 
       if (signInError) {
-        console.error("Error signing in:", signInError);
-        toast.error("Usuario creado pero hubo un error al iniciar sesión. Por favor, inicia sesión manualmente.");
+        console.error("Error iniciando sesión:", signInError);
+        const message = adminAuthData.isNewUser 
+          ? "Usuario creado exitosamente. Por favor, inicia sesión manualmente."
+          : "Contraseña actualizada exitosamente. Por favor, inicia sesión manualmente.";
+        toast.success(message);
         navigate("/login");
         return;
       }
 
-      toast.success("Registro completado exitosamente");
+      const successMessage = adminAuthData.isNewUser 
+        ? "Registro completado exitosamente"
+        : "Registro actualizado exitosamente";
+      
+      toast.success(successMessage);
       navigate("/dashboard");
     } catch (error: any) {
-      console.error("Error in registration:", error);
+      console.error("Error en registro:", error);
       toast.error(error.message || "Error al completar el registro");
       
-      // Log the error
+      // Crear log de error
       try {
         await supabase.from("invitation_logs").insert({
           invitation_id: invitation.id,
@@ -226,7 +234,7 @@ export default function Register() {
           attempted_by: invitation.invited_by
         });
       } catch (logError) {
-        console.error("Error creating error log:", logError);
+        console.error("Error creando log de error:", logError);
       }
     } finally {
       setLoading(false);
@@ -300,7 +308,7 @@ export default function Register() {
             className="w-full"
             disabled={loading}
           >
-            {loading ? "Registrando..." : "Completar registro"}
+            {loading ? "Procesando..." : "Completar registro"}
           </Button>
         </form>
       </div>
