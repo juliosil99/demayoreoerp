@@ -51,78 +51,112 @@ export function useGranularPermissions() {
     queryFn: async () => {
       console.log("🔍 Obteniendo usuarios con permisos granulares...");
       
-      // Paso 1: Obtener perfiles con información de empresa
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select(`
-          id,
-          email,
-          first_name,
-          last_name,
-          company:companies!left(id, nombre)
-        `)
-        .order('created_at', { ascending: false });
+      try {
+        // Paso 1: Obtener el usuario actual para determinar su empresa
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error("❌ Error obteniendo usuario actual:", userError);
+          throw userError;
+        }
 
-      if (profilesError) {
-        console.error("❌ Error obteniendo perfiles:", profilesError);
-        throw profilesError;
-      }
+        // Paso 2: Obtener la empresa del usuario actual
+        const { data: currentUserCompany, error: companyError } = await supabase
+          .from("company_users")
+          .select("company_id")
+          .eq("user_id", userData.user.id)
+          .single();
 
-      console.log("✅ Perfiles obtenidos:", profiles);
+        if (companyError) {
+          console.error("❌ Error obteniendo empresa del usuario actual:", companyError);
+          throw new Error("No se pudo obtener la empresa del usuario actual");
+        }
 
-      // Paso 2: Obtener permisos para todos los usuarios
-      const { data: permissions, error: permissionsError } = await supabase
-        .from("user_permissions")
-        .select("user_id, permission_name, can_access");
+        // Paso 3: Obtener todos los usuarios de la misma empresa
+        const { data: companyUsers, error: companyUsersError } = await supabase
+          .from("company_users")
+          .select("user_id, role")
+          .eq("company_id", currentUserCompany.company_id);
 
-      if (permissionsError) {
-        console.error("❌ Error obteniendo permisos:", permissionsError);
-        throw permissionsError;
-      }
+        if (companyUsersError) {
+          console.error("❌ Error obteniendo usuarios de la empresa:", companyUsersError);
+          throw companyUsersError;
+        }
 
-      console.log("✅ Permisos obtenidos:", permissions);
+        // Paso 4: Obtener información de empresa
+        const { data: company, error: companyInfoError } = await supabase
+          .from("companies")
+          .select("id, nombre")
+          .eq("id", currentUserCompany.company_id)
+          .single();
 
-      // Paso 3: Obtener roles de company_users
-      const { data: companyUsers, error: companyUsersError } = await supabase
-        .from("company_users")
-        .select("user_id, role");
+        if (companyInfoError) {
+          console.error("❌ Error obteniendo información de la empresa:", companyInfoError);
+          throw companyInfoError;
+        }
 
-      if (companyUsersError) {
-        console.error("❌ Error obteniendo roles:", companyUsersError);
-      }
+        // Paso 5: Obtener perfiles de los usuarios
+        const userIds = companyUsers.map(cu => cu.user_id);
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, email, first_name, last_name")
+          .in("id", userIds)
+          .order('created_at', { ascending: false });
 
-      // Paso 4: Combinar datos
-      const usersWithPermissions: UserWithPermissions[] = profiles.map(profile => {
-        const userPermissions = permissions?.filter(p => p.user_id === profile.id) || [];
-        const companyUser = companyUsers?.find(cu => cu.user_id === profile.id);
-        
-        // Crear mapa de permisos con valores por defecto
-        const permissionsMap: { [key: string]: boolean } = {};
-        AVAILABLE_PERMISSIONS.forEach(perm => {
-          const userPerm = userPermissions.find(up => up.permission_name === perm);
-          permissionsMap[perm] = userPerm?.can_access || false;
+        if (profilesError) {
+          console.error("❌ Error obteniendo perfiles:", profilesError);
+          throw profilesError;
+        }
+
+        console.log("✅ Perfiles obtenidos:", profiles);
+
+        // Paso 6: Obtener permisos para todos los usuarios
+        const { data: permissions, error: permissionsError } = await supabase
+          .from("user_permissions")
+          .select("user_id, permission_name, can_access")
+          .in("user_id", userIds);
+
+        if (permissionsError) {
+          console.error("❌ Error obteniendo permisos:", permissionsError);
+          throw permissionsError;
+        }
+
+        console.log("✅ Permisos obtenidos:", permissions);
+
+        // Paso 7: Combinar datos
+        const usersWithPermissions: UserWithPermissions[] = profiles.map(profile => {
+          const userPermissions = permissions?.filter(p => p.user_id === profile.id) || [];
+          const companyUser = companyUsers?.find(cu => cu.user_id === profile.id);
+          
+          // Crear mapa de permisos con valores por defecto
+          const permissionsMap: { [key: string]: boolean } = {};
+          AVAILABLE_PERMISSIONS.forEach(perm => {
+            const userPerm = userPermissions.find(up => up.permission_name === perm);
+            permissionsMap[perm] = userPerm?.can_access || false;
+          });
+
+          const permissionsArray: GranularPermission[] = AVAILABLE_PERMISSIONS.map(perm => ({
+            permission_name: perm,
+            can_access: permissionsMap[perm]
+          }));
+
+          return {
+            id: profile.id,
+            email: profile.email || '',
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            company: company,
+            permissions: permissionsArray,
+            role: companyUser?.role === 'admin' ? 'admin' : 'user'
+          };
         });
 
-        const permissionsArray: GranularPermission[] = AVAILABLE_PERMISSIONS.map(perm => ({
-          permission_name: perm,
-          can_access: permissionsMap[perm]
-        }));
+        console.log("✅ Usuarios con permisos combinados:", usersWithPermissions);
+        return usersWithPermissions;
 
-        return {
-          id: profile.id,
-          email: profile.email || '',
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          company: Array.isArray(profile.company) 
-            ? profile.company[0] 
-            : profile.company,
-          permissions: permissionsArray,
-          role: companyUser?.role === 'admin' ? 'admin' : 'user'
-        };
-      });
-
-      console.log("✅ Usuarios con permisos combinados:", usersWithPermissions);
-      return usersWithPermissions;
+      } catch (error: any) {
+        console.error("❌ Error en la consulta de permisos granulares:", error);
+        throw new Error(`Error al cargar permisos: ${error.message || 'Error desconocido'}`);
+      }
     },
     retry: 1,
     retryDelay: 1000,
