@@ -166,15 +166,27 @@ export function useGranularPermissions() {
     try {
       console.log(`🔄 Actualizando rol para usuario ${userId}: ${role}`);
       
+      // Primero obtener la empresa del usuario actual
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const { data: currentUserCompany, error: companyError } = await supabase
+        .from("company_users")
+        .select("company_id")
+        .eq("user_id", userData.user.id)
+        .single();
+
+      if (companyError) {
+        console.error("❌ Error obteniendo empresa del usuario actual:", companyError);
+        throw companyError;
+      }
+
       // Actualizar rol en company_users
       const { error } = await supabase
         .from("company_users")
-        .upsert({
-          user_id: userId,
-          role: role
-        }, {
-          onConflict: 'user_id'
-        });
+        .update({ role: role })
+        .eq("user_id", userId)
+        .eq("company_id", currentUserCompany.company_id);
 
       if (error) {
         console.error("❌ Error actualizando rol:", error);
