@@ -74,73 +74,53 @@ export function PaymentRecipientFields({ formData, setFormData, recipients, onRe
   };
 
   return (
-    <>
+    <div className="space-y-2">
+      <Label>Destinatario del Pago</Label>
       <div className="space-y-2">
-        <Label>Método de Pago</Label>
+        <Input
+          type="text"
+          placeholder="Buscar proveedor o empleado..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
         <Select
-          value={formData.payment_method}
-          onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
+          value={formData.supplier_id || "none"}
+          onValueChange={handleRecipientChange}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Seleccionar método de pago" />
+            <SelectValue placeholder="Seleccionar destinatario" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="cash">Efectivo</SelectItem>
-            <SelectItem value="transfer">Transferencia</SelectItem>
-            <SelectItem value="check">Cheque</SelectItem>
-            <SelectItem value="credit_card">Tarjeta de Crédito</SelectItem>
+            <SelectItem value="none">Ninguno</SelectItem>
+            
+            {groupedRecipients.supplier.length > 0 && (
+              <>
+                <SelectItem value="supplier_group" disabled className="font-semibold">Proveedores</SelectItem>
+                {groupedRecipients.supplier.map((supplier) => (
+                  <SelectItem key={supplier.id} value={String(supplier.id)}>
+                    {supplier.name}
+                  </SelectItem>
+                ))}
+              </>
+            )}
+            
+            {groupedRecipients.employee.length > 0 && (
+              <>
+                <SelectItem value="employee_group" disabled className="font-semibold">Empleados</SelectItem>
+                {groupedRecipients.employee.map((employee) => (
+                  <SelectItem key={employee.id} value={String(employee.id)}>
+                    {employee.name}
+                  </SelectItem>
+                ))}
+              </>
+            )}
+            
+            {filteredRecipients.length === 0 && (
+              <SelectItem value="no_results" disabled>No se encontraron resultados</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
-
-      <div className="space-y-2">
-        <Label>Destinatario del Pago</Label>
-        <div className="space-y-2">
-          <Input
-            type="text"
-            placeholder="Buscar proveedor o empleado..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Select
-            value={formData.supplier_id || "none"}
-            onValueChange={handleRecipientChange}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar destinatario" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Ninguno</SelectItem>
-              
-              {groupedRecipients.supplier.length > 0 && (
-                <>
-                  <SelectItem value="supplier_group" disabled className="font-semibold">Proveedores</SelectItem>
-                  {groupedRecipients.supplier.map((supplier) => (
-                    <SelectItem key={supplier.id} value={String(supplier.id)}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </>
-              )}
-              
-              {groupedRecipients.employee.length > 0 && (
-                <>
-                  <SelectItem value="employee_group" disabled className="font-semibold">Empleados</SelectItem>
-                  {groupedRecipients.employee.map((employee) => (
-                    <SelectItem key={employee.id} value={String(employee.id)}>
-                      {employee.name}
-                    </SelectItem>
-                  ))}
-                </>
-              )}
-              
-              {filteredRecipients.length === 0 && (
-                <SelectItem value="no_results" disabled>No se encontraron resultados</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }
