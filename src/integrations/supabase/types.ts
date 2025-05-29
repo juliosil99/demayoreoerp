@@ -2135,6 +2135,33 @@ export type Database = {
           },
         ]
       }
+      user_permissions: {
+        Row: {
+          can_access: boolean
+          created_at: string
+          id: string
+          permission_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_access?: boolean
+          created_at?: string
+          id?: string
+          permission_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_access?: boolean
+          created_at?: string
+          id?: string
+          permission_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -2214,8 +2241,16 @@ export type Database = {
         Args: { user_id: string; page: string }
         Returns: boolean
       }
+      has_permission: {
+        Args: { user_id: string; permission_name: string }
+        Returns: boolean
+      }
       initialize_base_accounts: {
         Args: { p_user_id: string }
+        Returns: undefined
+      }
+      initialize_user_permissions: {
+        Args: { target_user_id: string; role_name?: string }
         Returns: undefined
       }
       is_admin: {
