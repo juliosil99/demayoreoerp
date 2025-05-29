@@ -57,28 +57,50 @@ const SidebarGroup = ({ title, children, isOpen = false }: any) => {
 
 export const ProtectedSidebar = () => {
   const location = useLocation();
-  const { canAccessPage } = usePagePermissions();
+  const { canAccessPage, isLoading, isAdmin } = usePagePermissions();
   const isActive = (path: string) => location.pathname === path;
 
+  // Mostrar loading mientras cargamos permisos
+  if (isLoading) {
+    return (
+      <aside className="bg-gray-900 text-white w-64 min-h-screen flex flex-col">
+        <div className="p-4 border-b border-gray-800">
+          <h1 className="text-2xl font-semibold">Goco ERP</h1>
+        </div>
+        <div className="flex-1 overflow-auto p-4 space-y-2">
+          <div className="animate-pulse space-y-2">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-8 bg-gray-800 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
+  // Debug: mostrar información de permisos para admins
+  const showDebugInfo = isAdmin && process.env.NODE_ENV === 'development';
+
   // Filtrar elementos del sidebar basado en permisos
-  const menuItems = [
-    {
-      condition: canAccessPage('/dashboard'),
-      component: (
-        <SidebarItem
-          key="dashboard"
-          to="/dashboard"
-          icon={LayoutDashboard}
-          label="Dashboard"
-          isActive={isActive('/dashboard')}
-        />
-      )
-    }
-  ];
+  const menuItems = [];
+
+  // Dashboard
+  if (canAccessPage('/dashboard')) {
+    menuItems.push(
+      <SidebarItem
+        key="dashboard"
+        to="/dashboard"
+        icon={LayoutDashboard}
+        label="Dashboard"
+        isActive={isActive('/dashboard')}
+      />
+    );
+  }
 
   // Grupo de Ventas
-  const salesItems = [
-    canAccessPage('/sales') && (
+  const salesItems = [];
+  if (canAccessPage('/sales')) {
+    salesItems.push(
       <SidebarItem
         key="sales"
         to="/sales"
@@ -86,8 +108,10 @@ export const ProtectedSidebar = () => {
         label="Ventas"
         isActive={isActive('/sales')}
       />
-    ),
-    canAccessPage('/sales/payments') && (
+    );
+  }
+  if (canAccessPage('/sales/payments')) {
+    salesItems.push(
       <SidebarItem
         key="payments"
         to="/sales/payments"
@@ -95,12 +119,13 @@ export const ProtectedSidebar = () => {
         label="Pagos"
         isActive={isActive('/sales/payments')}
       />
-    )
-  ].filter(Boolean);
+    );
+  }
 
   // Grupo de Facturas
-  const invoiceItems = [
-    canAccessPage('/sales/invoices') && (
+  const invoiceItems = [];
+  if (canAccessPage('/sales/invoices')) {
+    invoiceItems.push(
       <SidebarItem
         key="invoices"
         to="/sales/invoices"
@@ -108,8 +133,10 @@ export const ProtectedSidebar = () => {
         label="Facturas"
         isActive={isActive('/sales/invoices')}
       />
-    ),
-    canAccessPage('/product-search') && (
+    );
+  }
+  if (canAccessPage('/product-search')) {
+    invoiceItems.push(
       <SidebarItem
         key="product-search"
         to="/product-search"
@@ -117,8 +144,10 @@ export const ProtectedSidebar = () => {
         label="Buscar Productos"
         isActive={isActive('/product-search')}
       />
-    ),
-    canAccessPage('/pdf-templates') && (
+    );
+  }
+  if (canAccessPage('/pdf-templates')) {
+    invoiceItems.push(
       <SidebarItem
         key="pdf-templates"
         to="/pdf-templates"
@@ -126,12 +155,13 @@ export const ProtectedSidebar = () => {
         label="Plantillas PDF"
         isActive={isActive('/pdf-templates')}
       />
-    )
-  ].filter(Boolean);
+    );
+  }
 
   // Grupo de Finanzas
-  const financeItems = [
-    canAccessPage('/expenses') && (
+  const financeItems = [];
+  if (canAccessPage('/expenses')) {
+    financeItems.push(
       <SidebarItem
         key="expenses"
         to="/expenses"
@@ -139,8 +169,10 @@ export const ProtectedSidebar = () => {
         label="Gastos"
         isActive={isActive('/expenses')}
       />
-    ),
-    canAccessPage('/expenses/reconciliation') && (
+    );
+  }
+  if (canAccessPage('/expenses/reconciliation')) {
+    financeItems.push(
       <SidebarItem
         key="reconciliation"
         to="/expenses/reconciliation"
@@ -148,8 +180,10 @@ export const ProtectedSidebar = () => {
         label="Conciliación"
         isActive={isActive('/expenses/reconciliation')}
       />
-    ),
-    canAccessPage('/expenses/receivables') && (
+    );
+  }
+  if (canAccessPage('/expenses/receivables')) {
+    financeItems.push(
       <SidebarItem
         key="receivables"
         to="/expenses/receivables"
@@ -157,8 +191,10 @@ export const ProtectedSidebar = () => {
         label="Por Cobrar"
         isActive={isActive('/expenses/receivables')}
       />
-    ),
-    canAccessPage('/expenses/payables') && (
+    );
+  }
+  if (canAccessPage('/expenses/payables')) {
+    financeItems.push(
       <SidebarItem
         key="payables"
         to="/expenses/payables"
@@ -166,8 +202,10 @@ export const ProtectedSidebar = () => {
         label="Por Pagar"
         isActive={isActive('/expenses/payables')}
       />
-    ),
-    canAccessPage('/accounting/banking') && (
+    );
+  }
+  if (canAccessPage('/accounting/banking')) {
+    financeItems.push(
       <SidebarItem
         key="banking"
         to="/accounting/banking"
@@ -175,8 +213,10 @@ export const ProtectedSidebar = () => {
         label="Bancos"
         isActive={isActive('/accounting/banking')}
       />
-    ),
-    canAccessPage('/accounting/transfers') && (
+    );
+  }
+  if (canAccessPage('/accounting/transfers')) {
+    financeItems.push(
       <SidebarItem
         key="transfers"
         to="/accounting/transfers"
@@ -184,8 +224,10 @@ export const ProtectedSidebar = () => {
         label="Transferencias"
         isActive={isActive('/accounting/transfers')}
       />
-    ),
-    canAccessPage('/accounting/chart-of-accounts') && (
+    );
+  }
+  if (canAccessPage('/accounting/chart-of-accounts')) {
+    financeItems.push(
       <SidebarItem
         key="chart-of-accounts"
         to="/accounting/chart-of-accounts"
@@ -193,8 +235,10 @@ export const ProtectedSidebar = () => {
         label="Catálogo de Cuentas"
         isActive={isActive('/accounting/chart-of-accounts')}
       />
-    ),
-    canAccessPage('/accounting/reports') && (
+    );
+  }
+  if (canAccessPage('/accounting/reports')) {
+    financeItems.push(
       <SidebarItem
         key="reports"
         to="/accounting/reports"
@@ -202,8 +246,10 @@ export const ProtectedSidebar = () => {
         label="Reportes"
         isActive={isActive('/accounting/reports')}
       />
-    ),
-    canAccessPage('/accounting/cash-flow-forecast') && (
+    );
+  }
+  if (canAccessPage('/accounting/cash-flow-forecast')) {
+    financeItems.push(
       <SidebarItem
         key="cash-flow"
         to="/accounting/cash-flow-forecast"
@@ -211,20 +257,23 @@ export const ProtectedSidebar = () => {
         label="Flujo de Efectivo"
         isActive={isActive('/accounting/cash-flow-forecast')}
       />
-    )
-  ].filter(Boolean);
+    );
+  }
 
   return (
     <aside className="bg-gray-900 text-white w-64 min-h-screen flex flex-col">
       <div className="p-4 border-b border-gray-800">
         <h1 className="text-2xl font-semibold">Goco ERP</h1>
+        {showDebugInfo && (
+          <div className="text-xs text-gray-400 mt-1">
+            {isAdmin ? 'Admin' : 'Usuario'} - Debug Mode
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-2">
         {/* Dashboard */}
-        {menuItems.map((item, index) => item.condition && (
-          <div key={index}>{item.component}</div>
-        ))}
+        {menuItems}
 
         {/* Ventas */}
         {salesItems.length > 0 && (
@@ -257,7 +306,7 @@ export const ProtectedSidebar = () => {
           />
         )}
 
-        {/* Usuarios */}
+        {/* Usuarios - Solo para admins o usuarios con permisos específicos */}
         {canAccessPage('/users') && (
           <SidebarItem
             to="/users"
@@ -265,6 +314,17 @@ export const ProtectedSidebar = () => {
             label="Usuarios"
             isActive={isActive('/users')}
           />
+        )}
+
+        {/* Debug info para desarrollo */}
+        {showDebugInfo && (
+          <div className="mt-4 p-2 bg-gray-800 rounded text-xs">
+            <div className="text-yellow-400 mb-1">Debug Info:</div>
+            <div>Sales: {canAccessPage('/sales') ? '✓' : '✗'}</div>
+            <div>Expenses: {canAccessPage('/expenses') ? '✓' : '✗'}</div>
+            <div>Users: {canAccessPage('/users') ? '✓' : '✗'}</div>
+            <div>Banking: {canAccessPage('/accounting/banking') ? '✓' : '✗'}</div>
+          </div>
         )}
       </div>
     </aside>

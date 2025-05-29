@@ -1,64 +1,48 @@
 
-import React, { useState } from "react";
-import { addDays } from "date-fns";
-import { DateRange } from "react-day-picker";
-import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
+import React from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
-import { ContributionMarginSection } from "@/components/dashboard/sections/ContributionMarginSection";
 import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
+import { MetricsGroupsSection } from "@/components/dashboard/MetricsGroupsSection";
 import { ChartSection } from "@/components/dashboard/ChartSection";
-import { ChannelMetricsSection } from "@/components/dashboard/sections/ChannelMetricsSection";
-import { StateDistributionSection } from "@/components/dashboard/sections/StateDistributionSection";
-import { ChannelDistributionSection } from "@/components/dashboard/sections/ChannelDistributionSection";
-import { SkuChannelSearchBox } from "@/components/dashboard/sections/SkuChannelSearchBox";
-import { TopSkusByUnitsSection } from "@/components/dashboard/sections/TopSkusByUnitsSection";
+import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
+import { PermissionsDebugPanel } from "@/components/debug/PermissionsDebugPanel";
 
-const Dashboard = () => {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -30),
-    to: new Date(),
-  });
-  
-  const { metrics, loading } = useDashboardMetrics(dateRange);
+export default function Dashboard() {
+  const { 
+    combinedData, 
+    salesData, 
+    metricsData, 
+    isLoading, 
+    error 
+  } = useDashboardMetrics();
 
-  if (loading) {
+  if (isLoading) {
     return <DashboardLoading />;
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <DashboardHeader dateRange={dateRange} setDateRange={setDateRange} />
-
-      {/* Contribution Margin Card */}
-      <ContributionMarginSection 
-        contributionMargin={metrics.contributionMargin} 
-        contributionMarginChange={metrics.contributionMarginChange}
-      />
-
-      {/* Main Metrics Cards */}
-      <MainMetricsSection metrics={metrics} />
-
-      {/* Main Chart Section */}
-      <ChartSection chartData={metrics.chartData || []} />
-        
-      {/* Distribution Charts - Now in a horizontal grid instead of nested */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <StateDistributionSection dateRange={dateRange} />
-        <ChannelDistributionSection dateRange={dateRange} />
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">Error al cargar el dashboard</h2>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
       </div>
-      
-      {/* Channel Metrics Section */}
-      <ChannelMetricsSection channelMetrics={metrics.channelMetrics || []} />
+    );
+  }
 
-      {/* SKU Channel Search Box */}
-      <SkuChannelSearchBox dateRange={dateRange} />
-      
-      {/* Top SKUs By Units Section - New */}
-      <TopSkusByUnitsSection dateRange={dateRange} />
+  return (
+    <div className="container mx-auto p-2 sm:p-6">
+      <DashboardHeader />
+      <MainMetricsSection 
+        data={combinedData}
+        salesData={salesData}
+        metricsData={metricsData}
+      />
+      <MetricsGroupsSection />
+      <ChartSection />
+      <PermissionsDebugPanel />
     </div>
   );
-};
-
-export default Dashboard;
+}

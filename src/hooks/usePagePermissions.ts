@@ -30,6 +30,7 @@ export function usePagePermissions() {
   const { hasPermission, isLoading, isAdmin } = usePermissions();
 
   const canAccessPage = (path: string): boolean => {
+    if (isLoading) return false;
     if (isAdmin) return true;
     
     const permission = PAGE_PERMISSIONS[path];

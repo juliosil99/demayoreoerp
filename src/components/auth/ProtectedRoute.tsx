@@ -12,16 +12,22 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, permission, fallback }: ProtectedRouteProps) {
-  const { hasPermission, isLoading } = usePermissions();
+  const { hasPermission, isLoading, isAdmin } = usePermissions();
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
       </div>
     );
   }
 
+  // Admins have access to everything
+  if (isAdmin) {
+    return <>{children}</>;
+  }
+
+  // Check specific permission
   if (!hasPermission(permission)) {
     if (fallback) {
       return <>{fallback}</>;
