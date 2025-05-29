@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Sidebar } from './Sidebar';
+import { ProtectedSidebar } from './ProtectedSidebar';
 import { Header } from './Header';
 import { Toaster } from "@/components/ui/toaster";
 import { Menu } from "lucide-react";
@@ -46,7 +46,7 @@ export function Layout({ children }: LayoutProps) {
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           } transition-transform duration-200 ease-in-out w-64 md:translate-x-0 fixed md:static h-[calc(100vh-64px)] z-10 overflow-y-auto`}
         >
-          <Sidebar />
+          <ProtectedSidebar />
         </div>
         
         {/* Main content */}

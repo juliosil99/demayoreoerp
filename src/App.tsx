@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import CompanySetup from "@/pages/CompanySetup";
@@ -67,30 +68,114 @@ function App() {
               </PrivateRoute>
             }
           >
-            <Route index element={<Dashboard />} />
-            <Route path="dashboard" element={<Dashboard />} />
+            <Route index element={
+              <ProtectedRoute permission="can_view_dashboard">
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="dashboard" element={
+              <ProtectedRoute permission="can_view_dashboard">
+                <Dashboard />
+              </ProtectedRoute>
+            } />
             <Route path="profile" element={<Profile />} />
-            <Route path="sales" element={<Sales />} />
-            <Route path="sales/payments" element={<Payments />} />
-            <Route path="sales/invoices" element={<Invoices />} />
+            <Route path="sales" element={
+              <ProtectedRoute permission="can_view_sales">
+                <Sales />
+              </ProtectedRoute>
+            } />
+            <Route path="sales/payments" element={
+              <ProtectedRoute permission="can_view_sales">
+                <Payments />
+              </ProtectedRoute>
+            } />
+            <Route path="sales/invoices" element={
+              <ProtectedRoute permission="can_view_invoices">
+                <Invoices />
+              </ProtectedRoute>
+            } />
             <Route path="sales/invoices/captcha/:sessionId" element={<CaptchaResolver />} />
-            <Route path="product-search" element={<ProductSearch />} />
-            <Route path="pdf-templates" element={<PdfTemplates />} />
-            <Route path="expenses" element={<Expenses />} />
-            <Route path="expenses/reconciliation" element={<Reconciliation />} />
-            <Route path="expenses/receivables" element={<Receivables />} />
-            <Route path="expenses/payables" element={<Payables />} />
-            <Route path="contacts" element={<Contacts />} />
-            <Route path="accounting" element={<Accounting />} />
-            <Route path="accounting/chart-of-accounts" element={<ChartOfAccounts />} />
-            <Route path="accounting/banking" element={<Banking />} />
-            <Route path="/accounting/banking/account/:accountId" element={<BankAccountMovements />} />
-            <Route path="/accounting/banking/payment-schedule/:accountId" element={<CreditPaymentSchedule />} />
-            <Route path="accounting/reports" element={<Reports />} />
-            <Route path="accounting/transfers" element={<AccountTransfers />} />
-            <Route path="accounting/cash-flow-forecast" element={<CashFlowForecast />} />
+            <Route path="product-search" element={
+              <ProtectedRoute permission="can_view_invoices">
+                <ProductSearch />
+              </ProtectedRoute>
+            } />
+            <Route path="pdf-templates" element={
+              <ProtectedRoute permission="can_manage_invoices">
+                <PdfTemplates />
+              </ProtectedRoute>
+            } />
+            <Route path="expenses" element={
+              <ProtectedRoute permission="can_view_expenses">
+                <Expenses />
+              </ProtectedRoute>
+            } />
+            <Route path="expenses/reconciliation" element={
+              <ProtectedRoute permission="can_view_reconciliation">
+                <Reconciliation />
+              </ProtectedRoute>
+            } />
+            <Route path="expenses/receivables" element={
+              <ProtectedRoute permission="can_view_expenses">
+                <Receivables />
+              </ProtectedRoute>
+            } />
+            <Route path="expenses/payables" element={
+              <ProtectedRoute permission="can_view_expenses">
+                <Payables />
+              </ProtectedRoute>
+            } />
+            <Route path="contacts" element={
+              <ProtectedRoute permission="can_manage_contacts">
+                <Contacts />
+              </ProtectedRoute>
+            } />
+            <Route path="accounting" element={
+              <ProtectedRoute permission="can_view_reports">
+                <Accounting />
+              </ProtectedRoute>
+            } />
+            <Route path="accounting/chart-of-accounts" element={
+              <ProtectedRoute permission="can_view_reports">
+                <ChartOfAccounts />
+              </ProtectedRoute>
+            } />
+            <Route path="accounting/banking" element={
+              <ProtectedRoute permission="can_view_banking">
+                <Banking />
+              </ProtectedRoute>
+            } />
+            <Route path="/accounting/banking/account/:accountId" element={
+              <ProtectedRoute permission="can_view_banking">
+                <BankAccountMovements />
+              </ProtectedRoute>
+            } />
+            <Route path="/accounting/banking/payment-schedule/:accountId" element={
+              <ProtectedRoute permission="can_view_banking">
+                <CreditPaymentSchedule />
+              </ProtectedRoute>
+            } />
+            <Route path="accounting/reports" element={
+              <ProtectedRoute permission="can_view_reports">
+                <Reports />
+              </ProtectedRoute>
+            } />
+            <Route path="accounting/transfers" element={
+              <ProtectedRoute permission="can_manage_banking">
+                <AccountTransfers />
+              </ProtectedRoute>
+            } />
+            <Route path="accounting/cash-flow-forecast" element={
+              <ProtectedRoute permission="can_view_reports">
+                <CashFlowForecast />
+              </ProtectedRoute>
+            } />
             <Route path="sales-channels" element={<SalesChannels />} />
-            <Route path="users" element={<UserManagement />} />
+            <Route path="users" element={
+              <ProtectedRoute permission="can_manage_users">
+                <UserManagement />
+              </ProtectedRoute>
+            } />
           </Route>
         </Routes>
       </Router>
