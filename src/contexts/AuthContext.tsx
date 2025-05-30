@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,46 +23,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAdminStatus = async (userId: string) => {
     try {
-      console.log("🔐 [AUTH DEBUG] === CHECKING ADMIN STATUS ===");
-      console.log("🔐 [AUTH DEBUG] User ID:", userId);
-      
       const { data, error } = await supabase
         .rpc('is_admin', { user_id: userId });
       
-      console.log("🔐 [AUTH DEBUG] is_admin RPC result:");
-      console.log("🔐 [AUTH DEBUG] - data:", data);
-      console.log("🔐 [AUTH DEBUG] - error:", error);
-      
       if (error) {
-        console.error("❌ [AUTH DEBUG] Error in is_admin RPC:", error);
         throw error;
       }
       
       const adminStatus = !!data;
-      console.log("🔐 [AUTH DEBUG] Final admin status:", adminStatus);
       setIsAdmin(adminStatus);
       
-      // También hacer consulta directa para verificar
-      const { data: companyUsersData, error: companyUsersError } = await supabase
-        .from('company_users')
-        .select('role')
-        .eq('user_id', userId);
-      
-      console.log("🔐 [AUTH DEBUG] Direct company_users query:");
-      console.log("🔐 [AUTH DEBUG] - data:", companyUsersData);
-      console.log("🔐 [AUTH DEBUG] - error:", companyUsersError);
-      
-      const { data: companiesData, error: companiesError } = await supabase
-        .from('companies')
-        .select('user_id')
-        .eq('user_id', userId);
-      
-      console.log("🔐 [AUTH DEBUG] Direct companies query:");
-      console.log("🔐 [AUTH DEBUG] - data:", companiesData);
-      console.log("🔐 [AUTH DEBUG] - error:", companiesError);
-      
     } catch (error) {
-      console.error('❌ [AUTH DEBUG] Error checking admin status:', error);
       setIsAdmin(false);
     }
   };
@@ -69,7 +41,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("🔐 [AUTH DEBUG] Initial session:", session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -81,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("🔐 [AUTH DEBUG] Auth state change:", _event, session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
 

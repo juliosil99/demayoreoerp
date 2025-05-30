@@ -26,19 +26,12 @@ export function usePermissions() {
   const { data: permissions, isLoading } = useQuery({
     queryKey: ["simplified-user-permissions", user?.id],
     queryFn: async () => {
-      console.log("🔐 [PERMISSIONS] === QUERY START ===");
-      console.log("🔐 [PERMISSIONS] User ID:", user?.id);
-      console.log("🔐 [PERMISSIONS] User Email:", user?.email);
-      console.log("🔐 [PERMISSIONS] isAdmin from AuthContext:", isAdmin);
-
       if (!user?.id) {
-        console.log("❌ [PERMISSIONS] No user ID - returning empty permissions");
         return {};
       }
 
       // Si es admin según AuthContext, dar todos los permisos
       if (isAdmin) {
-        console.log("👑 [PERMISSIONS] Admin user - granting all permissions");
         const allPermissions: Record<PermissionName, boolean> = {
           'can_view_dashboard': true,
           'can_view_sales': true,
@@ -76,8 +69,6 @@ export function usePermissions() {
         'can_manage_reconciliation': false
       };
 
-      console.log("📊 [PERMISSIONS] Executing Supabase query...");
-
       try {
         // Obtener permisos granulares desde user_permissions
         const { data: userPermissionOverrides, error: permissionsError } = await supabase
@@ -85,45 +76,23 @@ export function usePermissions() {
           .select("permission_name, can_access")
           .eq("user_id", user.id);
 
-        console.log("📊 [PERMISSIONS] Supabase response:");
-        console.log("📊 [PERMISSIONS] - Error:", permissionsError);
-        console.log("📊 [PERMISSIONS] - Data:", userPermissionOverrides);
-        console.log("📊 [PERMISSIONS] - Data length:", userPermissionOverrides?.length || 0);
-
         if (permissionsError) {
-          console.error("❌ [PERMISSIONS] Supabase error:", permissionsError.message);
-          console.error("❌ [PERMISSIONS] Full error:", permissionsError);
           return userPermissions;
         }
 
         if (userPermissionOverrides && userPermissionOverrides.length > 0) {
-          console.log("✅ [PERMISSIONS] Processing permissions from database...");
-          
           // Aplicar permisos granulares desde user_permissions
           userPermissionOverrides.forEach(permission => {
             const permissionName = permission.permission_name as PermissionName;
             if (permissionName in userPermissions) {
               userPermissions[permissionName] = permission.can_access;
-              console.log(`🔑 [PERMISSIONS] Set ${permissionName} = ${permission.can_access}`);
             }
           });
-
-          // Log final de permisos
-          const truePermissions = Object.entries(userPermissions)
-            .filter(([_, value]) => value)
-            .map(([key, _]) => key);
-          
-          console.log("✅ [PERMISSIONS] Final granted permissions:", truePermissions);
-          console.log("🔑 [PERMISSIONS] can_view_sales final value:", userPermissions.can_view_sales);
-        } else {
-          console.log("⚠️ [PERMISSIONS] No permissions found in database");
         }
 
-        console.log("🔐 [PERMISSIONS] === QUERY END ===");
         return userPermissions;
 
       } catch (error) {
-        console.error("💥 [PERMISSIONS] Unexpected error:", error);
         return userPermissions;
       }
     },
@@ -135,14 +104,12 @@ export function usePermissions() {
     refetchOnReconnect: true,
     refetchInterval: false,
     retry: (failureCount, error) => {
-      console.log("🔄 [PERMISSIONS] Query retry attempt:", failureCount, error);
       return failureCount < 3;
     },
   });
 
   // Función para invalidar manualmente el caché de permisos
   const invalidatePermissions = () => {
-    console.log("🔄 [PERMISSIONS] Manually invalidating permissions cache");
     queryClient.invalidateQueries({ 
       queryKey: ["simplified-user-permissions", user?.id] 
     });

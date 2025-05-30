@@ -11,19 +11,15 @@ export function usePermissionMutations(
 
   const handleRoleChange = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: string }) => {
-      console.log(`🔄 [PERMISSION_MUTATIONS] Changing role for user ${userId} to ${newRole}`);
-      
       const { error } = await supabase
         .from('company_users')
         .update({ role: newRole })
         .eq('user_id', userId);
 
       if (error) {
-        console.error('❌ [PERMISSION_MUTATIONS] Error updating role:', error);
         throw error;
       }
 
-      console.log(`✅ [PERMISSION_MUTATIONS] Role updated successfully for user ${userId}`);
       return { userId, newRole };
     },
     onSuccess: ({ userId, newRole }) => {
@@ -36,8 +32,7 @@ export function usePermissionMutations(
         }
       }));
 
-      // CRITICAL FIX: Invalidar caché de permisos para el usuario específico
-      console.log(`🔄 [PERMISSION_MUTATIONS] Invalidating permissions cache for user: ${userId}`);
+      // Invalidar caché de permisos para el usuario específico
       queryClient.invalidateQueries({ 
         queryKey: ["simplified-user-permissions", userId] 
       });
@@ -47,10 +42,8 @@ export function usePermissionMutations(
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
 
       toast.success('Rol actualizado correctamente');
-      console.log(`✅ [PERMISSION_MUTATIONS] All caches invalidated for user ${userId}`);
     },
     onError: (error) => {
-      console.error('❌ [PERMISSION_MUTATIONS] Error in role change mutation:', error);
       toast.error('Error al actualizar el rol');
     }
   });
