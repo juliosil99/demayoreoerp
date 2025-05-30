@@ -33,20 +33,20 @@ export const SimplifiedUsersTable = memo(function SimplifiedUsersTable({
 
   const getPermissionIcon = (permission: keyof UserPermissions) => {
     switch (permission) {
-      case 'canManageUsers': return <Shield className="h-4 w-4" />;
-      case 'canViewExpenses': return <DollarSign className="h-4 w-4" />;
-      case 'canViewSales': return <Eye className="h-4 w-4" />;
-      case 'canViewDashboard': return <BarChart3 className="h-4 w-4" />;
+      case 'can_manage_users': return <Shield className="h-4 w-4" />;
+      case 'can_view_expenses': return <DollarSign className="h-4 w-4" />;
+      case 'can_view_sales': return <Eye className="h-4 w-4" />;
+      case 'can_view_dashboard': return <BarChart3 className="h-4 w-4" />;
       default: return <User className="h-4 w-4" />;
     }
   };
 
   const getPermissionLabel = (permission: keyof UserPermissions) => {
     switch (permission) {
-      case 'canManageUsers': return 'Gestionar Usuarios';
-      case 'canViewExpenses': return 'Ver Gastos';
-      case 'canViewSales': return 'Ver Ventas';
-      case 'canViewDashboard': return 'Ver Dashboard';
+      case 'can_manage_users': return 'Gestionar Usuarios';
+      case 'can_view_expenses': return 'Ver Gastos';
+      case 'can_view_sales': return 'Ver Ventas';
+      case 'can_view_dashboard': return 'Ver Dashboard';
       default: return permission;
     }
   };
@@ -98,7 +98,7 @@ export const SimplifiedUsersTable = memo(function SimplifiedUsersTable({
                 <div className="space-y-2">
                   <div className="text-xs font-medium text-muted-foreground">Permisos:</div>
                   <div className="grid grid-cols-2 gap-2">
-                    {(['canManageUsers', 'canViewExpenses', 'canViewSales', 'canViewDashboard'] as const).map((permission) => (
+                    {(['can_manage_users', 'can_view_expenses', 'can_view_sales', 'can_view_dashboard'] as const).map((permission) => (
                       <div key={permission} className="flex items-center gap-1">
                         {getPermissionIcon(permission)}
                         <span className="text-xs">{getPermissionLabel(permission)}</span>
@@ -161,7 +161,7 @@ export const SimplifiedUsersTable = memo(function SimplifiedUsersTable({
                     </SelectContent>
                   </Select>
                 </TableCell>
-                {(['canManageUsers', 'canViewExpenses', 'canViewSales', 'canViewDashboard'] as const).map((permission) => (
+                {(['can_manage_users', 'can_view_expenses', 'can_view_sales', 'can_view_dashboard'] as const).map((permission) => (
                   <TableCell key={permission} className="text-center">
                     <div className={`w-3 h-3 rounded-full mx-auto ${
                       permissions?.[permission] ? 'bg-green-500' : 'bg-gray-300'

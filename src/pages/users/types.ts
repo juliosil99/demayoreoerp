@@ -5,6 +5,23 @@ export interface Profile {
   first_name?: string;
   last_name?: string;
   created_at?: string;
+  company?: {
+    id: string;
+    nombre: string;
+  };
+}
+
+export interface UserInvitation {
+  id: string;
+  email: string;
+  role: 'admin' | 'user';
+  status: 'pending' | 'completed' | 'expired';
+  created_at: string;
+  expires_at: string;
+  invitation_token?: string;
+  company_id?: string;
+  company_name?: string;
+  invited_by: string;
 }
 
 export interface UserPermissions {

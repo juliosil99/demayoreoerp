@@ -63,11 +63,11 @@ export function useTokenVerification() {
       // Get the first invitation from the array
       const rawInvitation = invitationData[0];
       
-      // Manually map the raw data to our simple interface
+      // Manually map the raw data to our simple interface - add default role if missing
       const mappedInvitation: SimpleInvitationData = {
         id: rawInvitation.id,
         email: rawInvitation.email,
-        role: rawInvitation.role,
+        role: rawInvitation.role || 'user', // Default to 'user' if role is missing
         status: rawInvitation.status,
         expires_at: rawInvitation.expires_at,
         company_id: rawInvitation.company_id,
