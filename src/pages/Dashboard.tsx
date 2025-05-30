@@ -6,8 +6,11 @@ import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
 import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
 import { MetricsGroupsSection } from "@/components/dashboard/MetricsGroupsSection";
 import { ContributionMarginSection } from "@/components/dashboard/sections/ContributionMarginSection";
+import { SalesSection } from "@/components/dashboard/sections/SalesSection";
 import { ChannelDistributionSection } from "@/components/dashboard/sections/ChannelDistributionSection";
 import { StateDistributionSection } from "@/components/dashboard/sections/StateDistributionSection";
+import { ChannelMetricsSection } from "@/components/dashboard/sections/ChannelMetricsSection";
+import { SkuChannelSearchBox } from "@/components/dashboard/sections/SkuChannelSearchBox";
 import { TopSkusByUnitsSection } from "@/components/dashboard/sections/TopSkusByUnitsSection";
 import { OldestExpenseCard } from "@/components/dashboard/OldestExpenseCard";
 import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
@@ -51,26 +54,35 @@ export default function Dashboard() {
       />
       
       <div className="space-y-6">
-        {/* Main Metrics Section */}
-        <MainMetricsSection metrics={combinedData} />
-        
         {/* Contribution Margin Section */}
         <ContributionMarginSection 
           contributionMargin={combinedData.contributionMargin}
           contributionMarginChange={combinedData.contributionMarginChange}
         />
         
-        {/* Metrics Groups Section */}
-        <MetricsGroupsSection metrics={combinedData} />
+        {/* Main Metrics Section */}
+        <MainMetricsSection metrics={combinedData} />
+        
+        {/* Sales Chart Section */}
+        <SalesSection metrics={combinedData} />
         
         {/* Distribution Sections */}
         <div className="grid gap-6 md:grid-cols-2">
-          <ChannelDistributionSection dateRange={dateRange} />
           <StateDistributionSection dateRange={dateRange} />
+          <ChannelDistributionSection dateRange={dateRange} />
         </div>
+        
+        {/* Channel Metrics Section */}
+        <ChannelMetricsSection channelMetrics={combinedData.channelMetrics} />
+        
+        {/* SKU Search Box */}
+        <SkuChannelSearchBox dateRange={dateRange} />
         
         {/* Top SKUs Section */}
         <TopSkusByUnitsSection dateRange={dateRange} />
+        
+        {/* Metrics Groups Section */}
+        <MetricsGroupsSection metrics={combinedData} />
         
         {/* Oldest Expense Card */}
         {!expenseLoading && oldestExpense && (
