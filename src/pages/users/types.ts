@@ -15,7 +15,7 @@ export interface UserInvitation {
   id: string;
   email: string;
   role: 'admin' | 'user';
-  status: 'pending' | 'completed' | 'expired';
+  status: 'pending' | 'accepted' | 'expired';
   created_at: string;
   expires_at: string;
   invitation_token?: string;

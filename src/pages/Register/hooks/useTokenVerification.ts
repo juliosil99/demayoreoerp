@@ -63,11 +63,11 @@ export function useTokenVerification() {
       // Get the first invitation from the array
       const rawInvitation = invitationData[0];
       
-      // Manually map the raw data to our simple interface - add default role if missing
+      // Manually map the raw data to our simple interface
       const mappedInvitation: SimpleInvitationData = {
         id: rawInvitation.id,
         email: rawInvitation.email,
-        role: rawInvitation.role || 'user', // Default to 'user' if role is missing
+        role: 'user', // Default role since we'll assign the actual role through company_users
         status: rawInvitation.status,
         expires_at: rawInvitation.expires_at,
         company_id: rawInvitation.company_id,
@@ -76,7 +76,7 @@ export function useTokenVerification() {
       
       // Check if the invitation is still pending
       if (mappedInvitation.status !== "pending") {
-        if (mappedInvitation.status === "completed") {
+        if (mappedInvitation.status === "accepted") {
           setTokenError("Esta invitación ya ha sido utilizada");
         } else {
           setTokenError("Esta invitación ha expirado");
