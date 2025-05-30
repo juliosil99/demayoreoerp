@@ -10,11 +10,24 @@ import { generateSampleData } from "./metrics/sampleDataGenerator";
 export const useDashboardMetrics = (dateRange?: DateRange) => {
   const navigate = useNavigate();
   const [combinedData, setCombinedData] = useState<DashboardMetrics>({
-    // Initialize with default values
+    // Main metrics for original dashboard
+    yesterdaySales: 0,
+    unreconciled: 0,
+    receivablesPending: 0,
+    salesCount: 0,
+    unreconciledCount: 0,
+    receivablesCount: 0,
+    
+    // Contribution margin
     contributionMargin: 0,
     contributionMarginChange: 0,
     marginPercentage: 0,
     marginPercentageChange: 0,
+    
+    // Chart data
+    chartData: [],
+    
+    // Extended metrics
     orderRevenue: 0,
     adSpend: 0,
     mer: 0,
@@ -25,7 +38,6 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     merChange: 0,
     aovChange: 0,
     ordersChange: 0,
-    chartData: [],
     channelMetrics: [],
     returningRevenue: 0,
     returningOrders: 0,
@@ -52,14 +64,9 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     paidOrdersChange: 0,
     paidAOVChange: 0,
     paidCACChange: 0,
-    pamerChange: 0,
-    yesterdaySales: 0,
-    unreconciled: 0,
-    receivablesPending: 0,
-    salesCount: 0,
-    unreconciledCount: 0,
-    receivablesCount: 0
+    pamerChange: 0
   });
+  
   const [salesData, setSalesData] = useState<any>(null);
   const [metricsData, setMetricsData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,8 +88,19 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
           ? await fetchSalesMetrics(dateRange)
           : {};
 
-        // Generate sample data for remaining metrics
-        const sampleData = generateSampleData(dateRange);
+        // Generate sample data for remaining metrics - focused on original dashboard
+        const sampleData = {
+          ...generateSampleData(dateRange),
+          // Override with original dashboard specific data
+          yesterdaySales: Math.floor(Math.random() * 50000) + 10000,
+          unreconciled: Math.floor(Math.random() * 25000) + 5000,
+          receivablesPending: Math.floor(Math.random() * 75000) + 15000,
+          salesCount: Math.floor(Math.random() * 50) + 10,
+          unreconciledCount: Math.floor(Math.random() * 15) + 5,
+          receivablesCount: Math.floor(Math.random() * 25) + 8,
+          contributionMargin: Math.floor(Math.random() * 100000) + 50000,
+          contributionMarginChange: (Math.random() - 0.5) * 20
+        };
         
         // Merge real data with sample data, prioritizing real data
         const mergedData = {

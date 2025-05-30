@@ -3,11 +3,14 @@ import React, { useState } from "react";
 import { DateRange } from "react-day-picker";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
-import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
-import { MetricsGroupsSection } from "@/components/dashboard/MetricsGroupsSection";
+import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
+import { ContributionMarginCard } from "@/components/dashboard/ContributionMarginCard";
 import { ChartSection } from "@/components/dashboard/ChartSection";
+import { OldestExpenseCard } from "@/components/dashboard/OldestExpenseCard";
 import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
+import { useOldestExpense } from "@/hooks/dashboard/useOldestExpense";
 import { PermissionsDebugPanel } from "@/components/debug/PermissionsDebugPanel";
+import { formatCurrency, formatDate } from "@/utils/formatters";
 
 export default function Dashboard() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -19,6 +22,8 @@ export default function Dashboard() {
     isLoading, 
     error 
   } = useDashboardMetrics(dateRange);
+
+  const { oldestExpense, isLoading: expenseLoading } = useOldestExpense();
 
   if (isLoading) {
     return <DashboardLoading />;
@@ -41,15 +46,34 @@ export default function Dashboard() {
         dateRange={dateRange}
         setDateRange={setDateRange}
       />
-      <MainMetricsSection 
-        metrics={combinedData}
-      />
-      <MetricsGroupsSection 
-        metrics={combinedData}
-      />
-      <ChartSection 
-        chartData={combinedData.chartData}
-      />
+      
+      <div className="space-y-6">
+        <DashboardMetrics 
+          data={combinedData}
+          salesData={salesData}
+          metricsData={metricsData}
+        />
+        
+        <div className="grid gap-4 md:grid-cols-2">
+          <ContributionMarginCard 
+            contributionMargin={combinedData.contributionMargin}
+            contributionMarginChange={combinedData.contributionMarginChange}
+          />
+          
+          <ChartSection 
+            chartData={combinedData.chartData}
+          />
+        </div>
+        
+        {!expenseLoading && oldestExpense && (
+          <OldestExpenseCard 
+            expense={oldestExpense}
+            formatDate={formatDate}
+            formatCurrency={formatCurrency}
+          />
+        )}
+      </div>
+      
       <PermissionsDebugPanel />
     </div>
   );
