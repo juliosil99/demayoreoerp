@@ -1,5 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -21,6 +21,7 @@ export type PermissionName =
 
 export function usePermissions() {
   const { user, isAdmin } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: permissions, isLoading } = useQuery({
     queryKey: ["simplified-user-permissions", user?.id],
@@ -151,15 +152,27 @@ export function usePermissions() {
       return userPermissions;
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
-    // Agregar retry y refetch config para debugging
+    // FIX CRITICAL: Configuración de caché para evitar datos obsoletos
+    staleTime: 0, // Los datos siempre se consideran obsoletos inmediatamente
+    gcTime: 0, // No mantener datos en caché después de que el componente se desmonte
+    refetchOnMount: true, // Siempre recargar cuando el componente se monte
+    refetchOnWindowFocus: true, // Recargar cuando la ventana obtenga el foco
+    refetchOnReconnect: true, // Recargar cuando se reconecte
+    // Invalidar caché cuando cambie el usuario
+    refetchInterval: false, // No usar polling automático
     retry: (failureCount, error) => {
       console.log("🔄 [PERMISSIONS DEBUG] Query retry attempt:", failureCount, "Error:", error);
       return failureCount < 3;
     },
-    refetchOnWindowFocus: false, // Evitar refetch automático para debugging
   });
+
+  // Función para invalidar manualmente el caché de permisos
+  const invalidatePermissions = () => {
+    console.log("🔄 [PERMISSIONS DEBUG] Manually invalidating permissions cache for user:", user?.id);
+    queryClient.invalidateQueries({ 
+      queryKey: ["simplified-user-permissions", user?.id] 
+    });
+  };
 
   const hasPermission = (permission: PermissionName): boolean => {
     console.log(`🔍 [PERMISSIONS DEBUG] === CHECKING PERMISSION: ${permission} ===`);
@@ -194,6 +207,7 @@ export function usePermissions() {
     hasPermission,
     canAccess,
     isLoading,
-    isAdmin
+    isAdmin,
+    invalidatePermissions // Exponer función para invalidar caché manualmente
   };
 }
