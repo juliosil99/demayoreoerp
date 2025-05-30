@@ -2,6 +2,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { usePermissions, PermissionName } from '@/hooks/usePermissions';
+import { useDefaultRedirect } from '@/hooks/useDefaultRedirect';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Shield } from 'lucide-react';
 
@@ -13,8 +14,9 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, permission, fallback }: ProtectedRouteProps) {
   const { hasPermission, isLoading, isAdmin } = usePermissions();
+  const { defaultRoute, isLoading: isLoadingRedirect } = useDefaultRedirect();
 
-  if (isLoading) {
+  if (isLoading || isLoadingRedirect) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
@@ -33,6 +35,12 @@ export function ProtectedRoute({ children, permission, fallback }: ProtectedRout
       return <>{fallback}</>;
     }
 
+    // If user has a default route available, redirect there
+    if (defaultRoute) {
+      return <Navigate to={defaultRoute} replace />;
+    }
+
+    // Fallback to error message if no accessible routes
     return (
       <div className="container mx-auto p-6">
         <Alert variant="destructive">
