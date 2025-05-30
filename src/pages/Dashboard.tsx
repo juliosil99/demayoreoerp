@@ -13,12 +13,26 @@ export default function Dashboard() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
   const { 
-    metrics, 
-    loading 
+    combinedData, 
+    salesData, 
+    metricsData, 
+    isLoading, 
+    error 
   } = useDashboardMetrics(dateRange);
 
-  if (loading) {
+  if (isLoading) {
     return <DashboardLoading />;
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">Error al cargar el dashboard</h2>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -28,13 +42,13 @@ export default function Dashboard() {
         setDateRange={setDateRange}
       />
       <MainMetricsSection 
-        metrics={metrics}
+        metrics={combinedData}
       />
       <MetricsGroupsSection 
-        metrics={metrics}
+        metrics={combinedData}
       />
       <ChartSection 
-        chartData={metrics.chartData}
+        chartData={combinedData.chartData}
       />
       <PermissionsDebugPanel />
     </div>

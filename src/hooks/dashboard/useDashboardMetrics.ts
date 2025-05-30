@@ -9,7 +9,7 @@ import { generateSampleData } from "./metrics/sampleDataGenerator";
 
 export const useDashboardMetrics = (dateRange?: DateRange) => {
   const navigate = useNavigate();
-  const [metrics, setMetrics] = useState<DashboardMetrics>({
+  const [combinedData, setCombinedData] = useState<DashboardMetrics>({
     // Initialize with default values
     contributionMargin: 0,
     contributionMarginChange: 0,
@@ -26,7 +26,7 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     aovChange: 0,
     ordersChange: 0,
     chartData: [],
-    channelMetrics: [], // New field for channel metrics
+    channelMetrics: [],
     returningRevenue: 0,
     returningOrders: 0,
     returningAOV: 0,
@@ -53,7 +53,6 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     paidAOVChange: 0,
     paidCACChange: 0,
     pamerChange: 0,
-    // Legacy metrics
     yesterdaySales: 0,
     unreconciled: 0,
     receivablesPending: 0,
@@ -61,7 +60,10 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     unreconciledCount: 0,
     receivablesCount: 0
   });
-  const [loading, setLoading] = useState(true);
+  const [salesData, setSalesData] = useState<any>(null);
+  const [metricsData, setMetricsData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
   const { fetchSalesMetrics } = useFetchSalesData();
 
@@ -83,23 +85,34 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
         const sampleData = generateSampleData(dateRange);
         
         // Merge real data with sample data, prioritizing real data
-        setMetrics({
+        const mergedData = {
           ...sampleData,
           ...realData
-        });
+        };
+        
+        setCombinedData(mergedData);
+        setSalesData(realData);
+        setMetricsData(sampleData);
         
       } catch (error) {
         console.error("Error fetching metrics:", error);
+        setError(error as Error);
         toast.error("Error al cargar métricas del panel");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     fetchMetrics();
   }, [navigate, dateRange, fetchSalesMetrics]);
 
-  return { metrics, loading };
+  return { 
+    combinedData, 
+    salesData, 
+    metricsData, 
+    isLoading, 
+    error 
+  };
 };
 
 // Re-export the supabase client for authentication checks
