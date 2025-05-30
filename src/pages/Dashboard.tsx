@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
@@ -15,7 +16,6 @@ import { TopSkusByUnitsSection } from "@/components/dashboard/sections/TopSkusBy
 import { OldestExpenseCard } from "@/components/dashboard/OldestExpenseCard";
 import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
 import { useOldestExpense } from "@/hooks/dashboard/useOldestExpense";
-import { PermissionsDebugPanel } from "@/components/debug/PermissionsDebugPanel";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 
 export default function Dashboard() {
@@ -97,8 +97,6 @@ export default function Dashboard() {
           />
         )}
       </div>
-      
-      <PermissionsDebugPanel />
     </div>
   );
 }

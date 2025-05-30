@@ -57,7 +57,7 @@ const SidebarGroup = ({ title, children, isOpen = false }: any) => {
 
 export const ProtectedSidebar = () => {
   const location = useLocation();
-  const { canAccessPage, isLoading, isAdmin } = usePagePermissions();
+  const { canAccessPage, isLoading } = usePagePermissions();
   const isActive = (path: string) => location.pathname === path;
 
   // Mostrar loading mientras cargamos permisos
@@ -77,9 +77,6 @@ export const ProtectedSidebar = () => {
       </aside>
     );
   }
-
-  // Debug: mostrar información de permisos para admins
-  const showDebugInfo = isAdmin && process.env.NODE_ENV === 'development';
 
   // Filtrar elementos del sidebar basado en permisos
   const menuItems = [];
@@ -264,11 +261,6 @@ export const ProtectedSidebar = () => {
     <aside className="bg-gray-900 text-white w-64 min-h-screen flex flex-col">
       <div className="p-4 border-b border-gray-800">
         <h1 className="text-2xl font-semibold">Goco ERP</h1>
-        {showDebugInfo && (
-          <div className="text-xs text-gray-400 mt-1">
-            {isAdmin ? 'Admin' : 'Usuario'} - Debug Mode
-          </div>
-        )}
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-2">
@@ -314,17 +306,6 @@ export const ProtectedSidebar = () => {
             label="Usuarios"
             isActive={isActive('/users')}
           />
-        )}
-
-        {/* Debug info para desarrollo */}
-        {showDebugInfo && (
-          <div className="mt-4 p-2 bg-gray-800 rounded text-xs">
-            <div className="text-yellow-400 mb-1">Debug Info:</div>
-            <div>Sales: {canAccessPage('/sales') ? '✓' : '✗'}</div>
-            <div>Expenses: {canAccessPage('/expenses') ? '✓' : '✗'}</div>
-            <div>Users: {canAccessPage('/users') ? '✓' : '✗'}</div>
-            <div>Banking: {canAccessPage('/accounting/banking') ? '✓' : '✗'}</div>
-          </div>
         )}
       </div>
     </aside>
