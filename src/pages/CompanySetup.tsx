@@ -1,3 +1,4 @@
+
 import { Building } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -35,31 +36,59 @@ export default function CompanySetup() {
         console.log("CompanySetup: Checking access for user:", user.id);
         console.log("CompanySetup: isEditMode:", isEditMode);
         
-        // Check if user has their own company
-        const { data: userCompany, error: companyError } = await supabase
+        // First check if user is already a member of any company
+        const { data: userCompanyMembership, error: membershipError } = await supabase
+          .from("company_users")
+          .select("*, companies(id, nombre)")
+          .eq("user_id", user.id)
+          .maybeSingle();
+          
+        if (membershipError) {
+          console.error("CompanySetup: Error checking company membership:", membershipError);
+          throw membershipError;
+        }
+        
+        console.log("CompanySetup: User company membership:", userCompanyMembership);
+        
+        // If user is already a member of a company and not in edit mode, redirect to dashboard
+        if (userCompanyMembership && !isEditMode) {
+          console.log("CompanySetup: User is already a member of a company, redirecting to dashboard");
+          navigate("/dashboard");
+          return;
+        }
+        
+        // Check if user owns a company (for edit mode)
+        const { data: userOwnedCompany, error: companyError } = await supabase
           .from("companies")
           .select("*")
           .eq("user_id", user.id)
           .maybeSingle();
           
         if (companyError) {
-          console.error("CompanySetup: Error checking company:", companyError);
+          console.error("CompanySetup: Error checking owned company:", companyError);
           throw companyError;
         }
         
-        console.log("CompanySetup: User company check result:", userCompany);
+        console.log("CompanySetup: User owned company:", userOwnedCompany);
         
-        // If in edit mode and user has a company, they can access
-        if (isEditMode && userCompany) {
-          console.log("CompanySetup: User can edit their company");
-          setHasAccess(true);
-          setCheckingAccess(false);
-          return;
+        // If in edit mode, user must own a company
+        if (isEditMode) {
+          if (userOwnedCompany) {
+            console.log("CompanySetup: User can edit their owned company");
+            setHasAccess(true);
+            setCheckingAccess(false);
+            return;
+          } else {
+            console.log("CompanySetup: User doesn't own a company, cannot edit");
+            toast.error("No tienes permiso para editar esta empresa");
+            navigate("/dashboard");
+            return;
+          }
         }
         
-        // If not in edit mode and user doesn't have a company, check if they can create one
-        if (!isEditMode && !userCompany) {
-          // Check if any company exists
+        // If not in edit mode and user doesn't belong to any company
+        if (!userCompanyMembership && !userOwnedCompany) {
+          // Check if any company exists in the system
           const { data: anyCompany, error: anyCompanyError } = await supabase
             .from("companies")
             .select("count")
@@ -72,9 +101,9 @@ export default function CompanySetup() {
           
           console.log("CompanySetup: Any company check result:", anyCompany);
           
-          // If no companies exist, user can create one
+          // If no companies exist, user can create the first one
           if (!anyCompany || anyCompany.length === 0 || anyCompany[0].count === 0) {
-            console.log("CompanySetup: No companies exist, user can create one");
+            console.log("CompanySetup: No companies exist, user can create the first one");
             setHasAccess(true);
             setCheckingAccess(false);
             return;
@@ -85,34 +114,25 @@ export default function CompanySetup() {
             .from("user_invitations")
             .select("*")
             .eq("email", user.email || '')
-            .in("status", ["pending", "completed"]);
+            .eq("status", "pending");
             
           if (invitationError) {
             console.error("CompanySetup: Error checking invitations:", invitationError);
             throw invitationError;
           }
           
-          console.log("CompanySetup: Invitations check result:", invitations);
+          console.log("CompanySetup: Pending invitations:", invitations);
           
-          // If user has an invitation, they might be able to access depending on status
+          // If user has a pending invitation, redirect to register with token
           if (invitations && invitations.length > 0) {
-            const pendingInvitation = invitations.find(inv => inv.status === 'pending');
-            if (pendingInvitation) {
-              console.log("CompanySetup: User has pending invitation, redirecting to register");
-              navigate(`/register?token=${pendingInvitation.invitation_token}`);
-              return;
-            }
-            
-            const completedInvitation = invitations.find(inv => inv.status === 'completed');
-            if (completedInvitation) {
-              console.log("CompanySetup: User has completed invitation, redirecting to dashboard");
-              navigate("/dashboard");
-              return;
-            }
+            const pendingInvitation = invitations[0];
+            console.log("CompanySetup: User has pending invitation, redirecting to register");
+            navigate(`/register?token=${pendingInvitation.invitation_token}`);
+            return;
           }
           
           // If companies exist but user doesn't have one and wasn't invited
-          console.log("CompanySetup: User has no access to any company");
+          console.log("CompanySetup: User has no access to any company and no invitations");
           toast.error("No tienes acceso a ninguna empresa. Contacta al administrador para obtener una invitación.");
           setHasAccess(false);
           setCheckingAccess(false);
@@ -120,7 +140,7 @@ export default function CompanySetup() {
         }
         
         // Default case: if we get here, the user doesn't have access
-        console.log("CompanySetup: User has no access to edit/create company");
+        console.log("CompanySetup: User has no access to create/edit company");
         setHasAccess(false);
         setCheckingAccess(false);
         
