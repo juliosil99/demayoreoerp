@@ -20,7 +20,7 @@ export function usePermissionMutations(setUserPermissions: React.Dispatch<React.
         throw findError;
       }
 
-      // If found, update the role
+      // Update the role in company_users table
       if (userCompany) {
         const { error } = await supabase
           .from("company_users")
@@ -29,16 +29,26 @@ export function usePermissionMutations(setUserPermissions: React.Dispatch<React.
 
         if (error) throw error;
       } else {
-        // This shouldn't happen in the updated system, but as a fallback
-        // update the user_roles table
-        const { error } = await supabase
-          .from("user_roles")
-          .upsert({
-            user_id: userId,
-            role: role
-          });
+        // If no company_users record exists, this shouldn't happen in the updated system
+        // but we can create one as a fallback
+        const { data: companies, error: companiesError } = await supabase
+          .from("companies")
+          .select("id")
+          .limit(1);
 
-        if (error) throw error;
+        if (companiesError) throw companiesError;
+        
+        if (companies && companies.length > 0) {
+          const { error } = await supabase
+            .from("company_users")
+            .insert({
+              user_id: userId,
+              company_id: companies[0].id,
+              role: role
+            });
+
+          if (error) throw error;
+        }
       }
 
       // Update local state with role-based permissions
