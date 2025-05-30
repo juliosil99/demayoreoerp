@@ -27,11 +27,11 @@ export function usePermissions() {
     queryFn: async () => {
       if (!user?.id) return {};
 
-      console.log("🔐 Fetching simplified permissions for user:", user.id);
+      console.log("🔐 [PERMISSIONS DEBUG] Fetching permissions for user:", user.email, user.id);
 
       // Si es admin según AuthContext, dar todos los permisos
       if (isAdmin) {
-        console.log("👑 User is admin according to AuthContext, granting all permissions");
+        console.log("👑 [PERMISSIONS DEBUG] User is admin according to AuthContext, granting all permissions");
         const allPermissions: Record<PermissionName, boolean> = {
           'can_view_dashboard': true,
           'can_view_sales': true,
@@ -52,7 +52,7 @@ export function usePermissions() {
       }
 
       // Para usuarios no-admin, usar únicamente user_permissions como fuente de verdad
-      console.log("👤 User is not admin, fetching granular permissions from user_permissions");
+      console.log("👤 [PERMISSIONS DEBUG] User is not admin, fetching granular permissions from user_permissions");
 
       // Inicializar con todos los permisos en false
       const userPermissions: Record<PermissionName, boolean> = {
@@ -79,25 +79,26 @@ export function usePermissions() {
         .eq("user_id", user.id);
 
       if (permissionsError) {
-        console.error("❌ Error fetching user permissions:", permissionsError);
+        console.error("❌ [PERMISSIONS DEBUG] Error fetching user permissions:", permissionsError);
         return userPermissions; // Retornar permisos vacíos en caso de error
       }
 
       if (userPermissionOverrides && userPermissionOverrides.length > 0) {
-        console.log("✅ Applying granular permissions from user_permissions:", userPermissionOverrides);
+        console.log("✅ [PERMISSIONS DEBUG] Found permissions in database:", userPermissionOverrides);
         
         // Aplicar permisos granulares desde user_permissions
         userPermissionOverrides.forEach(permission => {
           const permissionName = permission.permission_name as PermissionName;
           if (permissionName in userPermissions) {
             userPermissions[permissionName] = permission.can_access;
+            console.log(`🔑 [PERMISSIONS DEBUG] Setting ${permissionName} = ${permission.can_access}`);
           }
         });
       } else {
-        console.log("ℹ️ No permissions found in user_permissions for user");
+        console.log("ℹ️ [PERMISSIONS DEBUG] No permissions found in user_permissions for user");
       }
 
-      console.log("✅ Final simplified permissions:", userPermissions);
+      console.log("✅ [PERMISSIONS DEBUG] Final permissions for", user.email, ":", userPermissions);
       return userPermissions;
     },
     enabled: !!user?.id,
@@ -107,12 +108,16 @@ export function usePermissions() {
 
   const hasPermission = (permission: PermissionName): boolean => {
     if (isAdmin) return true;
-    return permissions?.[permission] || false;
+    const result = permissions?.[permission] || false;
+    console.log(`🔍 [PERMISSIONS DEBUG] Checking ${permission} for ${user?.email}: ${result}`);
+    return result;
   };
 
   const canAccess = (permission: PermissionName): boolean => {
     return hasPermission(permission);
   };
+
+  console.log("📊 [PERMISSIONS DEBUG] Hook state - isLoading:", isLoading, "isAdmin:", isAdmin, "user:", user?.email);
 
   return {
     permissions: permissions || {},
