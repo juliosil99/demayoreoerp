@@ -6,28 +6,12 @@ import { toast } from "sonner";
 import { DashboardMetrics } from "@/types/dashboard";
 import { useFetchSalesData } from "./metrics/useFetchSalesData";
 import { generateSampleData } from "./metrics/sampleDataGenerator";
+import { supabase } from "@/lib/supabase";
 
 export const useDashboardMetrics = (dateRange?: DateRange) => {
   const navigate = useNavigate();
   const [combinedData, setCombinedData] = useState<DashboardMetrics>({
-    // Main metrics for original dashboard
-    yesterdaySales: 0,
-    unreconciled: 0,
-    receivablesPending: 0,
-    salesCount: 0,
-    unreconciledCount: 0,
-    receivablesCount: 0,
-    
-    // Contribution margin
-    contributionMargin: 0,
-    contributionMarginChange: 0,
-    marginPercentage: 0,
-    marginPercentageChange: 0,
-    
-    // Chart data
-    chartData: [],
-    
-    // Extended metrics
+    // Main metrics for MainMetricsSection
     orderRevenue: 0,
     adSpend: 0,
     mer: 0,
@@ -38,7 +22,17 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     merChange: 0,
     aovChange: 0,
     ordersChange: 0,
-    channelMetrics: [],
+    
+    // Contribution margin
+    contributionMargin: 0,
+    contributionMarginChange: 0,
+    marginPercentage: 0,
+    marginPercentageChange: 0,
+    
+    // Chart data
+    chartData: [],
+    
+    // Returning customer metrics
     returningRevenue: 0,
     returningOrders: 0,
     returningAOV: 0,
@@ -47,6 +41,8 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     returningOrdersChange: 0,
     returningAOVChange: 0,
     repeatRateChange: 0,
+    
+    // New customer metrics
     newCustomerRevenue: 0,
     newCustomerOrders: 0,
     newCustomerAOV: 0,
@@ -55,6 +51,8 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     newCustomerOrdersChange: 0,
     newCustomerAOVChange: 0,
     cacChange: 0,
+    
+    // Paid performance metrics
     paidRevenue: 0,
     paidOrders: 0,
     paidAOV: 0,
@@ -64,7 +62,18 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     paidOrdersChange: 0,
     paidAOVChange: 0,
     paidCACChange: 0,
-    pamerChange: 0
+    pamerChange: 0,
+    
+    // Channel metrics
+    channelMetrics: [],
+    
+    // Legacy metrics for backward compatibility
+    yesterdaySales: 0,
+    unreconciled: 0,
+    receivablesPending: 0,
+    salesCount: 0,
+    unreconciledCount: 0,
+    receivablesCount: 0
   });
   
   const [salesData, setSalesData] = useState<any>(null);
@@ -88,19 +97,8 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
           ? await fetchSalesMetrics(dateRange)
           : {};
 
-        // Generate sample data for remaining metrics - focused on original dashboard
-        const sampleData = {
-          ...generateSampleData(dateRange),
-          // Override with original dashboard specific data
-          yesterdaySales: Math.floor(Math.random() * 50000) + 10000,
-          unreconciled: Math.floor(Math.random() * 25000) + 5000,
-          receivablesPending: Math.floor(Math.random() * 75000) + 15000,
-          salesCount: Math.floor(Math.random() * 50) + 10,
-          unreconciledCount: Math.floor(Math.random() * 15) + 5,
-          receivablesCount: Math.floor(Math.random() * 25) + 8,
-          contributionMargin: Math.floor(Math.random() * 100000) + 50000,
-          contributionMarginChange: (Math.random() - 0.5) * 20
-        };
+        // Generate sample data for all metrics including the new structure
+        const sampleData = generateSampleData(dateRange);
         
         // Merge real data with sample data, prioritizing real data
         const mergedData = {
@@ -132,6 +130,3 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     error 
   };
 };
-
-// Re-export the supabase client for authentication checks
-import { supabase } from "@/lib/supabase";

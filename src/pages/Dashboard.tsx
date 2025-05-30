@@ -3,9 +3,12 @@ import React, { useState } from "react";
 import { DateRange } from "react-day-picker";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
-import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
-import { ContributionMarginCard } from "@/components/dashboard/ContributionMarginCard";
-import { ChartSection } from "@/components/dashboard/ChartSection";
+import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
+import { MetricsGroupsSection } from "@/components/dashboard/MetricsGroupsSection";
+import { ContributionMarginSection } from "@/components/dashboard/sections/ContributionMarginSection";
+import { ChannelDistributionSection } from "@/components/dashboard/sections/ChannelDistributionSection";
+import { StateDistributionSection } from "@/components/dashboard/sections/StateDistributionSection";
+import { TopSkusByUnitsSection } from "@/components/dashboard/sections/TopSkusByUnitsSection";
 import { OldestExpenseCard } from "@/components/dashboard/OldestExpenseCard";
 import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
 import { useOldestExpense } from "@/hooks/dashboard/useOldestExpense";
@@ -48,23 +51,28 @@ export default function Dashboard() {
       />
       
       <div className="space-y-6">
-        <DashboardMetrics 
-          data={combinedData}
-          salesData={salesData}
-          metricsData={metricsData}
+        {/* Main Metrics Section */}
+        <MainMetricsSection metrics={combinedData} />
+        
+        {/* Contribution Margin Section */}
+        <ContributionMarginSection 
+          contributionMargin={combinedData.contributionMargin}
+          contributionMarginChange={combinedData.contributionMarginChange}
         />
         
-        <div className="grid gap-4 md:grid-cols-2">
-          <ContributionMarginCard 
-            contributionMargin={combinedData.contributionMargin}
-            contributionMarginChange={combinedData.contributionMarginChange}
-          />
-          
-          <ChartSection 
-            chartData={combinedData.chartData}
-          />
+        {/* Metrics Groups Section */}
+        <MetricsGroupsSection metrics={combinedData} />
+        
+        {/* Distribution Sections */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <ChannelDistributionSection dateRange={dateRange} />
+          <StateDistributionSection dateRange={dateRange} />
         </div>
         
+        {/* Top SKUs Section */}
+        <TopSkusByUnitsSection dateRange={dateRange} />
+        
+        {/* Oldest Expense Card */}
         {!expenseLoading && oldestExpense && (
           <OldestExpenseCard 
             expense={oldestExpense}
