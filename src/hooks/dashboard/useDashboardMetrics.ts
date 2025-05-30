@@ -92,23 +92,21 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
           return;
         }
 
-        // Get real data from database if date range is provided
-        const realData = dateRange?.from && dateRange?.to 
-          ? await fetchSalesMetrics(dateRange)
-          : {};
-
-        // Generate sample data for all metrics including the new structure
-        const sampleData = generateSampleData(dateRange);
-        
-        // Merge real data with sample data, prioritizing real data
-        const mergedData = {
-          ...sampleData,
-          ...realData
-        };
-        
-        setCombinedData(mergedData);
-        setSalesData(realData);
-        setMetricsData(sampleData);
+        if (dateRange?.from && dateRange?.to) {
+          // Use only real data when date range is selected
+          console.log("Fetching real data for date range:", dateRange);
+          const realData = await fetchSalesMetrics(dateRange);
+          setCombinedData(realData);
+          setSalesData(realData);
+          setMetricsData(null); // No sample data used
+        } else {
+          // Use sample data when no date range is selected (for demo purposes)
+          console.log("Using sample data - no date range selected");
+          const sampleData = generateSampleData(dateRange);
+          setCombinedData(sampleData);
+          setSalesData(null);
+          setMetricsData(sampleData);
+        }
         
       } catch (error) {
         console.error("Error fetching metrics:", error);

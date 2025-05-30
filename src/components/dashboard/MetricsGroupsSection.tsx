@@ -35,6 +35,10 @@ interface DashboardMetrics {
   paidAOVChange: number;
   paidCACChange: number;
   pamerChange: number;
+  
+  // For determining if we have real data
+  orderRevenue: number;
+  orders: number;
   [key: string]: any;
 }
 
@@ -43,6 +47,8 @@ interface MetricsGroupsSectionProps {
 }
 
 export const MetricsGroupsSection = ({ metrics }: MetricsGroupsSectionProps) => {
+  const hasData = metrics.orderRevenue > 0 || metrics.orders > 0;
+  
   return (
     <div className="space-y-6">
       {/* Returning Metrics */}
@@ -51,27 +57,27 @@ export const MetricsGroupsSection = ({ metrics }: MetricsGroupsSectionProps) => 
         metrics={[
           {
             title: "Ingresos",
-            value: formatCurrency(metrics.returningRevenue || 0),
-            change: metrics.returningRevenueChange,
-            changeType: metrics.returningRevenueChange > 0 ? "positive" : "negative"
+            value: hasData ? formatCurrency(metrics.returningRevenue || 0) : "Sin datos",
+            change: hasData ? metrics.returningRevenueChange : undefined,
+            changeType: hasData && metrics.returningRevenueChange > 0 ? "positive" : "negative"
           },
           {
             title: "Órdenes",
-            value: metrics.returningOrders?.toString() || "0",
-            change: metrics.returningOrdersChange,
-            changeType: metrics.returningOrdersChange > 0 ? "positive" : "negative"
+            value: hasData ? (metrics.returningOrders?.toString() || "0") : "Sin datos",
+            change: hasData ? metrics.returningOrdersChange : undefined,
+            changeType: hasData && metrics.returningOrdersChange > 0 ? "positive" : "negative"
           },
           {
             title: "AOV",
-            value: formatCurrency(metrics.returningAOV || 0),
-            change: metrics.returningAOVChange,
-            changeType: metrics.returningAOVChange > 0 ? "positive" : "negative"
+            value: hasData ? formatCurrency(metrics.returningAOV || 0) : "Sin datos",
+            change: hasData ? metrics.returningAOVChange : undefined,
+            changeType: hasData && metrics.returningAOVChange > 0 ? "positive" : "negative"
           },
           {
             title: "Tasa de Repetición",
-            value: `${metrics.repeatRate?.toFixed(2) || "0"}%`,
-            change: metrics.repeatRateChange,
-            changeType: metrics.repeatRateChange > 0 ? "positive" : "negative"
+            value: hasData ? `${(metrics.repeatRate || 0).toFixed(2)}%` : "Sin datos",
+            change: hasData ? metrics.repeatRateChange : undefined,
+            changeType: hasData && metrics.repeatRateChange > 0 ? "positive" : "negative"
           }
         ]}
       />
@@ -82,27 +88,27 @@ export const MetricsGroupsSection = ({ metrics }: MetricsGroupsSectionProps) => 
         metrics={[
           {
             title: "Ingresos",
-            value: formatCurrency(metrics.newCustomerRevenue || 0),
-            change: metrics.newCustomerRevenueChange,
-            changeType: metrics.newCustomerRevenueChange > 0 ? "positive" : "negative"
+            value: hasData ? formatCurrency(metrics.newCustomerRevenue || 0) : "Sin datos",
+            change: hasData ? metrics.newCustomerRevenueChange : undefined,
+            changeType: hasData && metrics.newCustomerRevenueChange > 0 ? "positive" : "negative"
           },
           {
             title: "Órdenes",
-            value: metrics.newCustomerOrders?.toString() || "0",
-            change: metrics.newCustomerOrdersChange,
-            changeType: metrics.newCustomerOrdersChange > 0 ? "positive" : "negative"
+            value: hasData ? (metrics.newCustomerOrders?.toString() || "0") : "Sin datos",
+            change: hasData ? metrics.newCustomerOrdersChange : undefined,
+            changeType: hasData && metrics.newCustomerOrdersChange > 0 ? "positive" : "negative"
           },
           {
             title: "AOV",
-            value: formatCurrency(metrics.newCustomerAOV || 0),
-            change: metrics.newCustomerAOVChange,
-            changeType: metrics.newCustomerAOVChange > 0 ? "positive" : "negative"
+            value: hasData ? formatCurrency(metrics.newCustomerAOV || 0) : "Sin datos",
+            change: hasData ? metrics.newCustomerAOVChange : undefined,
+            changeType: hasData && metrics.newCustomerAOVChange > 0 ? "positive" : "negative"
           },
           {
             title: "CAC",
-            value: formatCurrency(metrics.cac || 0),
-            change: metrics.cacChange,
-            changeType: metrics.cacChange < 0 ? "positive" : "negative"
+            value: "Sin datos de publicidad",
+            change: undefined,
+            changeType: "neutral"
           }
         ]}
       />
@@ -113,33 +119,33 @@ export const MetricsGroupsSection = ({ metrics }: MetricsGroupsSectionProps) => 
         metrics={[
           {
             title: "Ingresos",
-            value: formatCurrency(metrics.paidRevenue || 0),
-            change: metrics.paidRevenueChange,
-            changeType: metrics.paidRevenueChange > 0 ? "positive" : "negative"
+            value: "Sin datos de publicidad",
+            change: undefined,
+            changeType: "neutral"
           },
           {
             title: "Órdenes",
-            value: metrics.paidOrders?.toString() || "0",
-            change: metrics.paidOrdersChange,
-            changeType: metrics.paidOrdersChange > 0 ? "positive" : "negative"
+            value: "Sin datos de publicidad",
+            change: undefined,
+            changeType: "neutral"
           },
           {
             title: "AOV",
-            value: formatCurrency(metrics.paidAOV || 0),
-            change: metrics.paidAOVChange,
-            changeType: metrics.paidAOVChange > 0 ? "positive" : "negative"
+            value: "Sin datos de publicidad",
+            change: undefined,
+            changeType: "neutral"
           },
           {
             title: "CAC",
-            value: formatCurrency(metrics.paidCAC || 0),
-            change: metrics.paidCACChange,
-            changeType: metrics.paidCACChange < 0 ? "positive" : "negative"
+            value: "Sin datos de publicidad",
+            change: undefined,
+            changeType: "neutral"
           },
           {
             title: "PAMER",
-            value: metrics.pamer?.toFixed(2) || "0",
-            change: metrics.pamerChange,
-            changeType: metrics.pamerChange > 0 ? "positive" : "negative"
+            value: "Sin datos de publicidad",
+            change: undefined,
+            changeType: "neutral"
           }
         ]}
       />

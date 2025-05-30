@@ -26,45 +26,46 @@ interface MainMetricsSectionProps {
 }
 
 export const MainMetricsSection = ({ metrics }: MainMetricsSectionProps) => {
+  const hasData = metrics.orderRevenue > 0 || metrics.orders > 0;
+  
   return (
     <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
       <MetricCard
         title="Ingresos por Órdenes"
-        value={formatCurrency(metrics.orderRevenue || 0)}
+        value={hasData ? formatCurrency(metrics.orderRevenue || 0) : "Sin datos"}
         icon={DollarSign}
-        change={metrics.revenueChange}
-        changeLabel={metrics.revenueChange > 0 ? "incremento" : "disminución"}
-        changeType={metrics.revenueChange > 0 ? "positive" : "negative"}
+        change={hasData ? metrics.revenueChange : undefined}
+        changeLabel={hasData && metrics.revenueChange > 0 ? "incremento" : "disminución"}
+        changeType={hasData && metrics.revenueChange > 0 ? "positive" : "negative"}
       />
       <MetricCard
         title="Sales Velocity"
-        value="-"
+        value="Sin datos"
         icon={TrendingUp}
-        // We're removing the change indicators since we don't have data yet
       />
       <MetricCard
         title="Margen porcentual"
-        value={`${(metrics.marginPercentage || 0).toFixed(2)}%`}
+        value={hasData ? `${(metrics.marginPercentage || 0).toFixed(2)}%` : "Sin datos"}
         icon={TrendingUp}
-        change={metrics.marginPercentageChange}
-        changeLabel={metrics.marginPercentageChange > 0 ? "incremento" : "disminución"}
-        changeType={metrics.marginPercentageChange > 0 ? "positive" : "negative"}
+        change={hasData ? metrics.marginPercentageChange : undefined}
+        changeLabel={hasData && metrics.marginPercentageChange > 0 ? "incremento" : "disminución"}
+        changeType={hasData && metrics.marginPercentageChange > 0 ? "positive" : "negative"}
       />
       <MetricCard
         title="Valor Promedio (AOV)"
-        value={formatCurrency(metrics.aov || 0)}
+        value={hasData ? formatCurrency(metrics.aov || 0) : "Sin datos"}
         icon={ShoppingBag}
-        change={metrics.aovChange}
-        changeLabel={metrics.aovChange > 0 ? "incremento" : "disminución"}
-        changeType={metrics.aovChange > 0 ? "positive" : "negative"}
+        change={hasData ? metrics.aovChange : undefined}
+        changeLabel={hasData && metrics.aovChange > 0 ? "incremento" : "disminución"}
+        changeType={hasData && metrics.aovChange > 0 ? "positive" : "negative"}
       />
       <MetricCard
         title="Órdenes Únicas"
-        value={metrics.orders?.toString() || "0"}
+        value={hasData ? (metrics.orders?.toString() || "0") : "Sin datos"}
         icon={ShoppingBag}
-        change={metrics.ordersChange}
-        changeLabel={metrics.ordersChange > 0 ? "incremento" : "disminución"}
-        changeType={metrics.ordersChange > 0 ? "positive" : "negative"}
+        change={hasData ? metrics.ordersChange : undefined}
+        changeLabel={hasData && metrics.ordersChange > 0 ? "incremento" : "disminución"}
+        changeType={hasData && metrics.ordersChange > 0 ? "positive" : "negative"}
       />
     </div>
   );

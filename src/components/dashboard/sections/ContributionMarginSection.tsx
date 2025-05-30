@@ -4,17 +4,20 @@ import { ContributionMarginCard } from "@/components/dashboard/ContributionMargi
 
 interface ContributionMarginSectionProps {
   contributionMargin: number;
-  contributionMarginChange?: number;
+  contributionMarginChange: number;
 }
 
 export const ContributionMarginSection = ({ 
-  contributionMargin,
+  contributionMargin, 
   contributionMarginChange 
 }: ContributionMarginSectionProps) => {
+  const hasData = contributionMargin > 0;
+  
   return (
     <ContributionMarginCard 
-      contributionMargin={contributionMargin} 
-      contributionMarginChange={contributionMarginChange}
+      contributionMargin={contributionMargin}
+      contributionMarginChange={hasData ? contributionMarginChange : 0}
+      hasData={hasData}
     />
   );
 };
