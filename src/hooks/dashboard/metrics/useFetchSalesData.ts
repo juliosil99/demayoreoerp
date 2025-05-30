@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { differenceInDays, subDays, format } from "date-fns";
@@ -79,7 +78,7 @@ export const useFetchSalesData = () => {
     }
   }, []);
 
-  const calculateMetricsFromSalesData = (salesData: any[]): Partial<DashboardMetrics> => {
+  const calculateMetricsFromSalesData = (salesData: any[]): DashboardMetrics => {
     const totalRevenue = salesData.reduce((sum, sale) => sum + (sale.price || 0), 0);
     const totalProfit = salesData.reduce((sum, sale) => sum + (sale.Profit || 0), 0);
     
@@ -114,6 +113,32 @@ export const useFetchSalesData = () => {
       // Set defaults for metrics we can't calculate without additional data
       adSpend: 0,
       mer: 0,
+      
+      // Default change values
+      revenueChange: 0,
+      adSpendChange: 0,
+      merChange: 0,
+      aovChange: 0,
+      ordersChange: 0,
+      contributionMarginChange: 0,
+      marginPercentageChange: 0,
+      returningRevenueChange: 0,
+      returningOrdersChange: 0,
+      returningAOVChange: 0,
+      repeatRateChange: 0,
+      newCustomerRevenueChange: 0,
+      newCustomerOrdersChange: 0,
+      newCustomerAOVChange: 0,
+      cacChange: 0,
+      paidRevenueChange: 0,
+      paidOrdersChange: 0,
+      paidAOVChange: 0,
+      paidCACChange: 0,
+      pamerChange: 0,
+      
+      // Chart data and channel metrics (will be set later)
+      chartData: [],
+      channelMetrics: [],
       
       // Legacy metrics
       yesterdaySales: 0,
@@ -186,7 +211,7 @@ export const useFetchSalesData = () => {
     };
   };
 
-  const calculateChanges = (current: Partial<DashboardMetrics>, previous: Partial<DashboardMetrics>) => {
+  const calculateChanges = (current: DashboardMetrics, previous: DashboardMetrics) => {
     const calculatePercentChange = (curr: number, prev: number) => {
       if (prev === 0) return curr > 0 ? 100 : 0;
       return ((curr - prev) / prev) * 100;
@@ -231,7 +256,7 @@ export const useFetchSalesData = () => {
     
     // Convert to chart format
     return Object.entries(salesByDate)
-      .map(([date, sales]) => ({ date, sales }))
+      .map(([date, sales]) => ({ date, sales: sales as number }))
       .sort((a, b) => a.date.localeCompare(b.date));
   };
 

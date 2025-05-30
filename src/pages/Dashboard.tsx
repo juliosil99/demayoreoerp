@@ -1,5 +1,5 @@
-
 import React, { useState } from "react";
+import { subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
@@ -19,7 +19,11 @@ import { PermissionsDebugPanel } from "@/components/debug/PermissionsDebugPanel"
 import { formatCurrency, formatDate } from "@/utils/formatters";
 
 export default function Dashboard() {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  // Set default date range to last 30 days
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 30),
+    to: new Date()
+  });
   
   const { 
     combinedData, 
