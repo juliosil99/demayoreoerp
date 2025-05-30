@@ -25,9 +25,15 @@ export function usePermissions() {
   const { data: permissions, isLoading } = useQuery({
     queryKey: ["simplified-user-permissions", user?.id],
     queryFn: async () => {
-      if (!user?.id) return {};
+      if (!user?.id) {
+        console.log("🚫 [PERMISSIONS DEBUG] No user ID available");
+        return {};
+      }
 
-      console.log("🔐 [PERMISSIONS DEBUG] Fetching permissions for user:", user.email, user.id);
+      console.log("🔐 [PERMISSIONS DEBUG] === STARTING PERMISSIONS QUERY ===");
+      console.log("🔐 [PERMISSIONS DEBUG] User ID:", user.id);
+      console.log("🔐 [PERMISSIONS DEBUG] User email:", user.email);
+      console.log("🔐 [PERMISSIONS DEBUG] Is admin from AuthContext:", isAdmin);
 
       // Si es admin según AuthContext, dar todos los permisos
       if (isAdmin) {
@@ -72,15 +78,54 @@ export function usePermissions() {
         'can_manage_reconciliation': false
       };
 
+      console.log("🔍 [PERMISSIONS DEBUG] About to execute Supabase query...");
+      console.log("🔍 [PERMISSIONS DEBUG] Query: SELECT permission_name, can_access FROM user_permissions WHERE user_id = ?", user.id);
+
       // Obtener permisos granulares desde user_permissions
       const { data: userPermissionOverrides, error: permissionsError } = await supabase
         .from("user_permissions")
         .select("permission_name, can_access")
         .eq("user_id", user.id);
 
+      console.log("📊 [PERMISSIONS DEBUG] === SUPABASE QUERY RESULT ===");
+      console.log("📊 [PERMISSIONS DEBUG] Error:", permissionsError);
+      console.log("📊 [PERMISSIONS DEBUG] Data:", userPermissionOverrides);
+      console.log("📊 [PERMISSIONS DEBUG] Data length:", userPermissionOverrides?.length || 0);
+      console.log("📊 [PERMISSIONS DEBUG] Data type:", typeof userPermissionOverrides);
+
       if (permissionsError) {
-        console.error("❌ [PERMISSIONS DEBUG] Error fetching user permissions:", permissionsError);
+        console.error("❌ [PERMISSIONS DEBUG] Supabase error details:", {
+          message: permissionsError.message,
+          details: permissionsError.details,
+          hint: permissionsError.hint,
+          code: permissionsError.code
+        });
         return userPermissions; // Retornar permisos vacíos en caso de error
+      }
+
+      // Verificar si la consulta devolvió datos
+      if (!userPermissionOverrides) {
+        console.log("⚠️ [PERMISSIONS DEBUG] userPermissionOverrides is null/undefined");
+        return userPermissions;
+      }
+
+      if (Array.isArray(userPermissionOverrides) && userPermissionOverrides.length === 0) {
+        console.log("⚠️ [PERMISSIONS DEBUG] userPermissionOverrides is empty array");
+        
+        // Hacer una consulta adicional para verificar si existen permisos para este usuario
+        console.log("🔍 [PERMISSIONS DEBUG] Making additional verification query...");
+        const { data: verificationData, error: verificationError } = await supabase
+          .from("user_permissions")
+          .select("*")
+          .eq("user_id", user.id);
+        
+        console.log("🔍 [PERMISSIONS DEBUG] Verification query result:", {
+          data: verificationData,
+          error: verificationError,
+          dataLength: verificationData?.length || 0
+        });
+
+        return userPermissions;
       }
 
       if (userPermissionOverrides && userPermissionOverrides.length > 0) {
@@ -88,28 +133,48 @@ export function usePermissions() {
         
         // Aplicar permisos granulares desde user_permissions
         userPermissionOverrides.forEach(permission => {
+          console.log("🔑 [PERMISSIONS DEBUG] Processing permission:", permission);
           const permissionName = permission.permission_name as PermissionName;
           if (permissionName in userPermissions) {
             userPermissions[permissionName] = permission.can_access;
             console.log(`🔑 [PERMISSIONS DEBUG] Setting ${permissionName} = ${permission.can_access}`);
+          } else {
+            console.log(`⚠️ [PERMISSIONS DEBUG] Unknown permission name: ${permissionName}`);
           }
         });
-      } else {
-        console.log("ℹ️ [PERMISSIONS DEBUG] No permissions found in user_permissions for user");
       }
 
+      console.log("✅ [PERMISSIONS DEBUG] === FINAL RESULT ===");
       console.log("✅ [PERMISSIONS DEBUG] Final permissions for", user.email, ":", userPermissions);
+      console.log("✅ [PERMISSIONS DEBUG] === END PERMISSIONS QUERY ===");
+      
       return userPermissions;
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutos
     gcTime: 10 * 60 * 1000, // 10 minutos
+    // Agregar retry y refetch config para debugging
+    retry: (failureCount, error) => {
+      console.log("🔄 [PERMISSIONS DEBUG] Query retry attempt:", failureCount, "Error:", error);
+      return failureCount < 3;
+    },
+    refetchOnWindowFocus: false, // Evitar refetch automático para debugging
   });
 
   const hasPermission = (permission: PermissionName): boolean => {
-    if (isAdmin) return true;
+    console.log(`🔍 [PERMISSIONS DEBUG] === CHECKING PERMISSION: ${permission} ===`);
+    console.log(`🔍 [PERMISSIONS DEBUG] isAdmin: ${isAdmin}`);
+    console.log(`🔍 [PERMISSIONS DEBUG] permissions object:`, permissions);
+    console.log(`🔍 [PERMISSIONS DEBUG] permissions[${permission}]:`, permissions?.[permission]);
+    
+    if (isAdmin) {
+      console.log(`👑 [PERMISSIONS DEBUG] Admin access granted for ${permission}`);
+      return true;
+    }
+    
     const result = permissions?.[permission] || false;
-    console.log(`🔍 [PERMISSIONS DEBUG] Checking ${permission} for ${user?.email}: ${result}`);
+    console.log(`🔍 [PERMISSIONS DEBUG] Final result for ${permission}: ${result}`);
+    console.log(`🔍 [PERMISSIONS DEBUG] === END PERMISSION CHECK ===`);
     return result;
   };
 
@@ -117,7 +182,12 @@ export function usePermissions() {
     return hasPermission(permission);
   };
 
-  console.log("📊 [PERMISSIONS DEBUG] Hook state - isLoading:", isLoading, "isAdmin:", isAdmin, "user:", user?.email);
+  console.log("📊 [PERMISSIONS DEBUG] Hook state summary:");
+  console.log("📊 [PERMISSIONS DEBUG] - isLoading:", isLoading);
+  console.log("📊 [PERMISSIONS DEBUG] - isAdmin:", isAdmin);
+  console.log("📊 [PERMISSIONS DEBUG] - user email:", user?.email);
+  console.log("📊 [PERMISSIONS DEBUG] - user id:", user?.id);
+  console.log("📊 [PERMISSIONS DEBUG] - permissions object:", permissions);
 
   return {
     permissions: permissions || {},
