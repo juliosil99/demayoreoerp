@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { SmartRedirect } from "@/components/navigation/SmartRedirect";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import CompanySetup from "@/pages/CompanySetup";
@@ -68,11 +69,10 @@ function App() {
               </PrivateRoute>
             }
           >
-            <Route index element={
-              <ProtectedRoute permission="can_view_dashboard">
-                <Dashboard />
-              </ProtectedRoute>
-            } />
+            {/* Redirección inteligente basada en permisos */}
+            <Route index element={<SmartRedirect />} />
+            
+            {/* Rutas específicas con protección */}
             <Route path="dashboard" element={
               <ProtectedRoute permission="can_view_dashboard">
                 <Dashboard />
