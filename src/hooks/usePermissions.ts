@@ -2,7 +2,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { rolePermissions } from "@/pages/users/types";
 
 export type PermissionName = 
   | 'can_view_dashboard'
@@ -24,11 +23,11 @@ export function usePermissions() {
   const { user, isAdmin } = useAuth();
 
   const { data: permissions, isLoading } = useQuery({
-    queryKey: ["unified-user-permissions", user?.id],
+    queryKey: ["simplified-user-permissions", user?.id],
     queryFn: async () => {
       if (!user?.id) return {};
 
-      console.log("🔐 Fetching unified permissions for user:", user.id);
+      console.log("🔐 Fetching simplified permissions for user:", user.id);
 
       // Si es admin según AuthContext, dar todos los permisos
       if (isAdmin) {
@@ -52,74 +51,54 @@ export function usePermissions() {
         return allPermissions;
       }
 
-      // Paso 1: Obtener el rol del usuario desde company_users
-      const { data: companyUser, error: roleError } = await supabase
-        .from("company_users")
-        .select("role, company_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Para usuarios no-admin, usar únicamente user_permissions como fuente de verdad
+      console.log("👤 User is not admin, fetching granular permissions from user_permissions");
 
-      if (roleError) {
-        console.error("❌ Error fetching user role:", roleError);
-        return {};
-      }
-
-      if (!companyUser) {
-        console.log("⚠️ User has no company association");
-        return {};
-      }
-
-      console.log("📋 User role from company_users:", companyUser.role);
-
-      // Paso 2: Aplicar permisos base según el rol
-      const userRole = companyUser.role as 'admin' | 'user';
-      const basePermissions = rolePermissions[userRole] || rolePermissions.user;
-      
-      console.log("🏗️ Base permissions for role", userRole, ":", basePermissions);
-
-      // Paso 3: Crear el objeto de permisos con el rol y permisos base
-      const unifiedPermissions: Record<PermissionName, boolean> = {
-        can_view_dashboard: basePermissions.can_view_dashboard,
-        can_view_sales: basePermissions.can_view_sales,
-        can_manage_sales: basePermissions.can_manage_sales,
-        can_view_expenses: basePermissions.can_view_expenses,
-        can_manage_expenses: basePermissions.can_manage_expenses,
-        can_view_reports: basePermissions.can_view_reports,
-        can_manage_users: basePermissions.can_manage_users,
-        can_manage_contacts: basePermissions.can_manage_contacts,
-        can_view_banking: basePermissions.can_view_banking,
-        can_manage_banking: basePermissions.can_manage_banking,
-        can_view_invoices: basePermissions.can_view_invoices,
-        can_manage_invoices: basePermissions.can_manage_invoices,
-        can_view_reconciliation: basePermissions.can_view_reconciliation,
-        can_manage_reconciliation: basePermissions.can_manage_reconciliation
+      // Inicializar con todos los permisos en false
+      const userPermissions: Record<PermissionName, boolean> = {
+        'can_view_dashboard': false,
+        'can_view_sales': false,
+        'can_manage_sales': false,
+        'can_view_expenses': false,
+        'can_manage_expenses': false,
+        'can_view_reports': false,
+        'can_manage_users': false,
+        'can_manage_contacts': false,
+        'can_view_banking': false,
+        'can_manage_banking': false,
+        'can_view_invoices': false,
+        'can_manage_invoices': false,
+        'can_view_reconciliation': false,
+        'can_manage_reconciliation': false
       };
 
-      // Paso 4: Obtener overrides granulares desde user_permissions
-      const { data: userPermissions, error: permissionsError } = await supabase
+      // Obtener permisos granulares desde user_permissions
+      const { data: userPermissionOverrides, error: permissionsError } = await supabase
         .from("user_permissions")
         .select("permission_name, can_access")
         .eq("user_id", user.id);
 
       if (permissionsError) {
-        console.error("❌ Error fetching user permissions overrides:", permissionsError);
-        // Continuar con permisos base aunque falle la consulta de overrides
-      } else if (userPermissions && userPermissions.length > 0) {
-        console.log("🔧 Applying permission overrides from user_permissions:", userPermissions);
+        console.error("❌ Error fetching user permissions:", permissionsError);
+        return userPermissions; // Retornar permisos vacíos en caso de error
+      }
+
+      if (userPermissionOverrides && userPermissionOverrides.length > 0) {
+        console.log("✅ Applying granular permissions from user_permissions:", userPermissionOverrides);
         
-        // Aplicar overrides específicos desde user_permissions
-        userPermissions.forEach(permission => {
+        // Aplicar permisos granulares desde user_permissions
+        userPermissionOverrides.forEach(permission => {
           const permissionName = permission.permission_name as PermissionName;
-          if (permissionName in unifiedPermissions) {
-            unifiedPermissions[permissionName] = permission.can_access;
+          if (permissionName in userPermissions) {
+            userPermissions[permissionName] = permission.can_access;
           }
         });
       } else {
-        console.log("ℹ️ No permission overrides found in user_permissions");
+        console.log("ℹ️ No permissions found in user_permissions for user");
       }
 
-      console.log("✅ Final unified permissions:", unifiedPermissions);
-      return unifiedPermissions;
+      console.log("✅ Final simplified permissions:", userPermissions);
+      return userPermissions;
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutos
