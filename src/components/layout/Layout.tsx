@@ -25,7 +25,7 @@ export function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col">
       <Header />
       
       <div className="flex flex-1 relative">
@@ -67,8 +67,8 @@ export function Layout({ children }: LayoutProps) {
         </div>
         
         {/* Main content */}
-        <main className="flex-1 overflow-auto">
-          <div className="p-2 md:p-6 h-full">
+        <main className="flex-1 min-h-0">
+          <div className="p-2 md:p-6">
             {children}
           </div>
         </main>
