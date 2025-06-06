@@ -25,46 +25,55 @@ export function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       <Header />
-      <div className="flex flex-grow relative overflow-hidden">
+      
+      <div className="flex flex-1 relative">
         {/* Mobile sidebar toggle button */}
         {isMobile && (
           <Button 
             variant="ghost" 
             size="icon" 
-            className="absolute top-2 left-2 z-20" 
+            className="absolute top-2 left-2 z-30" 
             onClick={toggleSidebar}
           >
             <Menu className="h-5 w-5" />
           </Button>
         )}
         
-        {/* Responsive sidebar */}
+        {/* Mobile overlay */}
+        {isMobile && sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/20 z-20" 
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        
+        {/* Sidebar */}
         <div 
           className={`${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } transition-transform duration-200 ease-in-out w-64 md:translate-x-0 fixed md:static h-[calc(100vh-64px)] z-10 overflow-y-auto`}
+            isMobile 
+              ? `fixed left-0 top-16 bottom-0 z-25 w-64 transition-transform duration-200 ease-in-out ${
+                  sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                }`
+              : `relative w-64 transition-all duration-200 ease-in-out ${
+                  sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                }`
+          }`}
         >
-          <ProtectedSidebar />
+          <div className="h-full overflow-y-auto">
+            <ProtectedSidebar />
+          </div>
         </div>
         
         {/* Main content */}
-        <main 
-          className={`flex-grow overflow-auto p-2 md:p-6 transition-all duration-200 ease-in-out ${
-            isMobile ? 'w-full' : (sidebarOpen ? 'md:ml-0' : 'md:ml-0')
-          }`}
-        >
-          {/* Overlay for mobile when sidebar is open */}
-          {isMobile && sidebarOpen && (
-            <div 
-              className="fixed inset-0 bg-black/20 z-0" 
-              onClick={() => setSidebarOpen(false)}
-            />
-          )}
-          {children}
+        <main className="flex-1 overflow-auto">
+          <div className="p-2 md:p-6 h-full">
+            {children}
+          </div>
         </main>
       </div>
+      
       <Toaster />
     </div>
   );
