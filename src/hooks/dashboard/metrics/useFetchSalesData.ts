@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { differenceInDays, subDays } from "date-fns";
@@ -18,9 +17,6 @@ export const useFetchSalesData = () => {
     setIsLoading(true);
     
     try {
-      console.log('=== DASHBOARD METRICS SQL FUNCTION DEBUG START ===');
-      console.log('Fetching dashboard metrics for date range:', dateRange);
-      
       const fromDate = formatDateForQuery(dateRange.from);
       const toDate = formatDateForQuery(dateRange.to);
       
@@ -35,8 +31,6 @@ export const useFetchSalesData = () => {
         toast.error("Error al cargar métricas del dashboard");
         return getEmptyMetrics();
       }
-
-      console.log('Current period SQL metrics:', currentMetrics);
 
       if (!currentMetrics || currentMetrics.length === 0) {
         return getEmptyMetrics();
@@ -57,8 +51,6 @@ export const useFetchSalesData = () => {
       if (prevError) {
         console.error("Error fetching previous period metrics:", prevError);
       }
-
-      console.log('Previous period SQL metrics:', prevMetrics);
       
       const previous = prevMetrics && prevMetrics.length > 0 ? prevMetrics[0] : null;
       
@@ -76,7 +68,6 @@ export const useFetchSalesData = () => {
       }
 
       const chartData = generateChartDataFromSQL(chartDataResults || []);
-      console.log('Chart data from SQL:', chartData);
       
       // Fetch channel metrics using the new SQL function
       const { data: channelMetricsResults, error: channelMetricsError } = await supabase.rpc('get_channel_metrics', {
@@ -87,8 +78,6 @@ export const useFetchSalesData = () => {
       if (channelMetricsError) {
         console.error("Error fetching channel metrics:", channelMetricsError);
       }
-
-      console.log('Channel metrics from SQL:', channelMetricsResults);
 
       // Process channel metrics and calculate changes
       const channelMetrics = await processChannelMetrics(channelMetricsResults || [], dateRange);
@@ -137,9 +126,6 @@ export const useFetchSalesData = () => {
         receivablesCount: 0
       };
 
-      console.log('Final dashboard metrics result:', result);
-      console.log('=== DASHBOARD METRICS SQL FUNCTION DEBUG END ===');
-
       return result;
 
     } catch (error) {
@@ -153,7 +139,6 @@ export const useFetchSalesData = () => {
 
   const processChannelMetrics = async (currentChannelData: any[], dateRange: DateRange): Promise<ChannelMetrics[]> => {
     if (!currentChannelData || currentChannelData.length === 0) {
-      console.log('No channel metrics data to process');
       return [];
     }
 
@@ -171,8 +156,6 @@ export const useFetchSalesData = () => {
     if (prevChannelError) {
       console.error("Error fetching previous channel metrics:", prevChannelError);
     }
-
-    console.log('Previous period channel metrics:', prevChannelData);
 
     // Create a map for quick lookup of previous data
     const prevDataMap = new Map();
@@ -201,7 +184,6 @@ export const useFetchSalesData = () => {
       };
     });
 
-    console.log('Processed channel metrics with changes:', processedMetrics);
     return processedMetrics;
   };
 

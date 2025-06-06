@@ -94,14 +94,12 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
 
         if (dateRange?.from && dateRange?.to) {
           // Use only real data when date range is selected
-          console.log("Fetching real data for date range:", dateRange);
           const realData = await fetchSalesMetrics(dateRange);
           setCombinedData(realData);
           setSalesData(realData);
           setMetricsData(null); // No sample data used
         } else {
           // Use sample data when no date range is selected (for demo purposes)
-          console.log("Using sample data - no date range selected");
           const sampleData = generateSampleData(dateRange);
           setCombinedData(sampleData);
           setSalesData(null);

@@ -9,21 +9,16 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
   return useQuery({
     queryKey: ["salesChannelDistribution", dateRange?.from, dateRange?.to],
     queryFn: async () => {
-      console.log('=== CHANNEL DISTRIBUTION SQL FUNCTION DEBUG START ===');
-      console.log('Date range input:', dateRange);
-      
       let fromDate = null;
       let toDate = null;
       
       // Apply date filters if provided using local timezone
       if (dateRange?.from) {
         fromDate = formatDateForQuery(dateRange.from);
-        console.log('From date filter applied:', fromDate, 'Original date:', dateRange.from);
       }
       
       if (dateRange?.to) {
         toDate = formatDateForQuery(dateRange.to);
-        console.log('To date filter applied:', toDate, 'Original date:', dateRange.to);
       }
       
       // Call the SQL function with simplified parameters
@@ -37,25 +32,8 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
         throw error;
       }
       
-      console.log('Raw SQL function results:', data?.length || 0, 'channels');
-      
-      if (data && data.length > 0) {
-        console.log('Channel distribution results:', data);
-        
-        // Find Mercado Libre in the results
-        const mercadoLibreResult = data.find(item => 
-          item.channel && item.channel.toLowerCase().includes('mercado')
-        );
-        if (mercadoLibreResult) {
-          console.log('Mercado Libre SQL result:', mercadoLibreResult);
-        }
-      }
-      
       // Process the SQL results into the expected format
       const processedData = processChannelSQLResults(data || []);
-      console.log('Final processed channel data:', processedData);
-      
-      console.log('=== CHANNEL DISTRIBUTION SQL FUNCTION DEBUG END ===');
       
       return processedData;
     }
@@ -65,7 +43,6 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
 // Process SQL function results into the expected ChannelData format
 const processChannelSQLResults = (sqlResults: any[]): ChannelData[] => {
   if (!sqlResults || sqlResults.length === 0) {
-    console.log('No SQL results to process');
     return [];
   }
 
