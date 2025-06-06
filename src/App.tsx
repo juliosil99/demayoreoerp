@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import CompanySetup from "@/pages/CompanySetup";
+import Index from "@/pages/Index";
 import Dashboard from "@/pages/Dashboard";
 import Sales from "@/pages/Sales";
 import Payments from "@/pages/sales/Payments";
@@ -68,8 +69,8 @@ function App() {
               </PrivateRoute>
             }
           >
-            {/* Redirección directa a contactos */}
-            <Route index element={<Navigate to="/contacts" replace />} />
+            {/* Página de bienvenida como página principal */}
+            <Route index element={<Index />} />
             
             {/* Rutas específicas con protección */}
             <Route path="dashboard" element={
