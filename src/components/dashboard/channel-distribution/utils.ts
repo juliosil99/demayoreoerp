@@ -28,8 +28,11 @@ export interface ChannelData {
 
 export const processChannelData = (salesData: SalesBase[]): ChannelData[] => {
   if (!salesData || salesData.length === 0) {
+    console.log('Channel data processing - No sales data provided');
     return [];
   }
+
+  console.log('Channel data processing - Total sales records:', salesData.length);
 
   // Group by channel and collect unique orders with their total values
   const channelGroups: { [key: string]: { uniqueOrders: Set<string>, totalValue: number } } = {};
@@ -50,6 +53,11 @@ export const processChannelData = (salesData: SalesBase[]): ChannelData[] => {
     channelGroups[channel].uniqueOrders.add(orderNumber);
     // Sum all sales values for the channel
     channelGroups[channel].totalValue += price;
+  });
+
+  // Log unique orders per channel for debugging
+  Object.entries(channelGroups).forEach(([channel, data]) => {
+    console.log(`Channel ${channel} - Unique orders: ${data.uniqueOrders.size}, Total value: ${data.totalValue}`);
   });
 
   // Convert to array format with unique order counts
@@ -83,10 +91,13 @@ export const processChannelData = (salesData: SalesBase[]): ChannelData[] => {
 
   // Calculate percentages based on total value
   const totalValue = sortedChannels.reduce((sum, channel) => sum + channel.value, 0);
-  return topChannels.map(channel => ({
+  const result = topChannels.map(channel => ({
     ...channel,
     percentage: ((channel.value / totalValue) * 100).toFixed(1)
   }));
+
+  console.log('Channel data processing - Final result:', result);
+  return result;
 };
 
 export const calculateTotalValue = (channelData: ChannelData[]): number => {

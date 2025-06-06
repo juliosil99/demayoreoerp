@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { processChannelData, ChannelData } from "./utils";
 import { SalesBase } from "@/integrations/supabase/types/sales";
 import { DateRange } from "react-day-picker";
+import { formatDateForQuery } from "@/utils/dateUtils";
 
 export const useChannelDistributionData = (dateRange?: DateRange) => {
   return useQuery({
@@ -13,13 +14,17 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
         .from("Sales")
         .select('Channel, price, orderNumber');
       
-      // Apply date filters if provided
+      // Apply date filters if provided using local timezone
       if (dateRange?.from) {
-        query = query.gte('date', dateRange.from.toISOString().split('T')[0]);
+        const fromDate = formatDateForQuery(dateRange.from);
+        query = query.gte('date', fromDate);
+        console.log('Channel distribution - From date filter:', fromDate);
       }
       
       if (dateRange?.to) {
-        query = query.lte('date', dateRange.to.toISOString().split('T')[0]);
+        const toDate = formatDateForQuery(dateRange.to);
+        query = query.lte('date', toDate);
+        console.log('Channel distribution - To date filter:', toDate);
       }
       
       const { data, error } = await query;
@@ -29,8 +34,13 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
         throw error;
       }
       
+      console.log('Channel distribution - Raw data count:', data?.length || 0);
+      
       // Cast the data to partial SalesBase since we're only using Channel, price, and orderNumber
-      return processChannelData(data as SalesBase[]);
+      const processedData = processChannelData(data as SalesBase[]);
+      console.log('Channel distribution - Processed data:', processedData);
+      
+      return processedData;
     }
   });
 };

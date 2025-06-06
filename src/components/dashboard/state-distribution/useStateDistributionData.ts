@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { processStateData, StateData } from "./utils";
 import { SalesBase } from "@/integrations/supabase/types/sales";
 import { DateRange } from "react-day-picker";
+import { formatDateForQuery } from "@/utils/dateUtils";
 
 export const useStateDistributionData = (dateRange?: DateRange) => {
   return useQuery({
@@ -13,13 +14,15 @@ export const useStateDistributionData = (dateRange?: DateRange) => {
         .from("Sales")
         .select('state, price');
       
-      // Apply date filters if provided
+      // Apply date filters if provided using local timezone
       if (dateRange?.from) {
-        query = query.gte('date', dateRange.from.toISOString().split('T')[0]);
+        const fromDate = formatDateForQuery(dateRange.from);
+        query = query.gte('date', fromDate);
       }
       
       if (dateRange?.to) {
-        query = query.lte('date', dateRange.to.toISOString().split('T')[0]);
+        const toDate = formatDateForQuery(dateRange.to);
+        query = query.lte('date', toDate);
       }
       
       const { data, error } = await query;
