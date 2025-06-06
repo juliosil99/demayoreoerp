@@ -1,8 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { processChannelData, ChannelData } from "./utils";
-import { SalesBase } from "@/integrations/supabase/types/sales";
+import { ChannelData } from "./utils";
 import { DateRange } from "react-day-picker";
 import { formatDateForQuery } from "@/utils/dateUtils";
 
@@ -10,76 +9,100 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
   return useQuery({
     queryKey: ["salesChannelDistribution", dateRange?.from, dateRange?.to],
     queryFn: async () => {
-      console.log('=== CHANNEL DISTRIBUTION DEBUG START ===');
+      console.log('=== CHANNEL DISTRIBUTION SQL FUNCTION DEBUG START ===');
       console.log('Date range input:', dateRange);
       
-      let query = supabase
-        .from("Sales")
-        .select('Channel, price, orderNumber');
+      let fromDate = null;
+      let toDate = null;
       
       // Apply date filters if provided using local timezone
       if (dateRange?.from) {
-        const fromDate = formatDateForQuery(dateRange.from);
-        query = query.gte('date', fromDate);
+        fromDate = formatDateForQuery(dateRange.from);
         console.log('From date filter applied:', fromDate, 'Original date:', dateRange.from);
       }
       
       if (dateRange?.to) {
-        const toDate = formatDateForQuery(dateRange.to);
-        query = query.lte('date', toDate);
+        toDate = formatDateForQuery(dateRange.to);
         console.log('To date filter applied:', toDate, 'Original date:', dateRange.to);
       }
       
-      const { data, error } = await query;
+      // Call the SQL function
+      const { data, error } = await supabase.rpc('get_channel_distribution', {
+        p_user_id: null, // For now, no user filtering
+        p_start_date: fromDate,
+        p_end_date: toDate
+      });
       
       if (error) {
-        console.error("Error fetching sales data:", error);
+        console.error("Error fetching channel distribution data:", error);
         throw error;
       }
       
-      console.log('Raw data received from database:', data?.length || 0, 'records');
+      console.log('Raw SQL function results:', data?.length || 0, 'channels');
       
-      // Log sample of raw data
       if (data && data.length > 0) {
-        console.log('Sample of first 5 records:', data.slice(0, 5));
+        console.log('Channel distribution results:', data);
         
-        // Log Mercado Libre specific data
-        const mercadoLibreData = data.filter(item => 
-          item.Channel && item.Channel.toLowerCase().includes('mercado')
+        // Find Mercado Libre in the results
+        const mercadoLibreResult = data.find(item => 
+          item.channel && item.channel.toLowerCase().includes('mercado')
         );
-        console.log('Mercado Libre records found:', mercadoLibreData.length);
-        console.log('Mercado Libre sample data:', mercadoLibreData.slice(0, 10));
-        
-        // Check for null/undefined orderNumbers in Mercado Libre data
-        const mercadoLibreWithNullOrders = mercadoLibreData.filter(item => !item.orderNumber);
-        console.log('Mercado Libre records with null/undefined orderNumber:', mercadoLibreWithNullOrders.length);
-        
-        // Get unique order numbers for Mercado Libre
-        const uniqueMercadoOrders = new Set();
-        mercadoLibreData.forEach(item => {
-          if (item.orderNumber) {
-            uniqueMercadoOrders.add(item.orderNumber);
-          }
-        });
-        console.log('Unique Mercado Libre order numbers found:', uniqueMercadoOrders.size);
-        console.log('Sample unique order numbers:', Array.from(uniqueMercadoOrders).slice(0, 10));
+        if (mercadoLibreResult) {
+          console.log('Mercado Libre SQL result:', mercadoLibreResult);
+        }
       }
       
-      // Cast the data to partial SalesBase since we're only using Channel, price, and orderNumber
-      const processedData = processChannelData(data as SalesBase[]);
-      console.log('Final processed data:', processedData);
+      // Process the SQL results into the expected format
+      const processedData = processChannelSQLResults(data || []);
+      console.log('Final processed channel data:', processedData);
       
-      // Find Mercado Libre in processed data
-      const mercadoLibreProcessed = processedData.find(item => 
-        item.channel.toLowerCase().includes('mercado')
-      );
-      if (mercadoLibreProcessed) {
-        console.log('Mercado Libre final result:', mercadoLibreProcessed);
-      }
-      
-      console.log('=== CHANNEL DISTRIBUTION DEBUG END ===');
+      console.log('=== CHANNEL DISTRIBUTION SQL FUNCTION DEBUG END ===');
       
       return processedData;
     }
   });
+};
+
+// Process SQL function results into the expected ChannelData format
+const processChannelSQLResults = (sqlResults: any[]): ChannelData[] => {
+  if (!sqlResults || sqlResults.length === 0) {
+    console.log('No SQL results to process');
+    return [];
+  }
+
+  // Convert SQL results to ChannelData format
+  const channelData = sqlResults.map(result => ({
+    channel: result.channel || "Sin Canal",
+    count: Number(result.unique_orders || 0),
+    value: Number(result.total_revenue || 0)
+  }));
+
+  // Take top 6 channels and group the rest as "Otros"
+  const topChannels = channelData.slice(0, 6);
+  const otherChannels = channelData.slice(6);
+  
+  if (otherChannels.length > 0) {
+    const otherTotal = otherChannels.reduce(
+      (sum, channel) => ({
+        count: sum.count + channel.count,
+        value: sum.value + channel.value
+      }),
+      { count: 0, value: 0 }
+    );
+    
+    topChannels.push({
+      channel: "Otros Canales",
+      count: otherTotal.count,
+      value: otherTotal.value
+    });
+  }
+
+  // Calculate percentages based on total value
+  const totalValue = channelData.reduce((sum, channel) => sum + channel.value, 0);
+  const result = topChannels.map(channel => ({
+    ...channel,
+    percentage: totalValue > 0 ? ((channel.value / totalValue) * 100).toFixed(1) : "0.0"
+  }));
+
+  return result;
 };

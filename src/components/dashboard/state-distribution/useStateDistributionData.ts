@@ -1,8 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { processStateData, StateData } from "./utils";
-import { SalesBase } from "@/integrations/supabase/types/sales";
+import { StateData } from "./utils";
 import { DateRange } from "react-day-picker";
 import { formatDateForQuery } from "@/utils/dateUtils";
 
@@ -10,30 +9,81 @@ export const useStateDistributionData = (dateRange?: DateRange) => {
   return useQuery({
     queryKey: ["salesStateDistribution", dateRange?.from, dateRange?.to],
     queryFn: async () => {
-      let query = supabase
-        .from("Sales")
-        .select('state, price');
+      console.log('=== STATE DISTRIBUTION SQL FUNCTION DEBUG START ===');
+      console.log('Date range input:', dateRange);
+      
+      let fromDate = null;
+      let toDate = null;
       
       // Apply date filters if provided using local timezone
       if (dateRange?.from) {
-        const fromDate = formatDateForQuery(dateRange.from);
-        query = query.gte('date', fromDate);
+        fromDate = formatDateForQuery(dateRange.from);
+        console.log('From date filter applied:', fromDate, 'Original date:', dateRange.from);
       }
       
       if (dateRange?.to) {
-        const toDate = formatDateForQuery(dateRange.to);
-        query = query.lte('date', toDate);
+        toDate = formatDateForQuery(dateRange.to);
+        console.log('To date filter applied:', toDate, 'Original date:', dateRange.to);
       }
       
-      const { data, error } = await query;
+      // Call the SQL function
+      const { data, error } = await supabase.rpc('get_state_distribution', {
+        p_user_id: null, // For now, no user filtering
+        p_start_date: fromDate,
+        p_end_date: toDate
+      });
       
       if (error) {
-        console.error("Error fetching sales data:", error);
+        console.error("Error fetching state distribution data:", error);
         throw error;
       }
       
-      // Cast the data to partial SalesBase since we're only using state and price
-      return processStateData(data as SalesBase[]);
+      console.log('Raw SQL function results:', data?.length || 0, 'states');
+      console.log('State distribution results:', data);
+      
+      // Process the SQL results into the expected format
+      const processedData = processStateSQLResults(data || []);
+      console.log('Final processed state data:', processedData);
+      
+      console.log('=== STATE DISTRIBUTION SQL FUNCTION DEBUG END ===');
+      
+      return processedData;
     }
   });
+};
+
+// Process SQL function results into the expected StateData format
+const processStateSQLResults = (sqlResults: any[]): StateData[] => {
+  if (!sqlResults || sqlResults.length === 0) {
+    console.log('No SQL results to process');
+    return [];
+  }
+
+  // Convert SQL results to StateData format
+  const stateData = sqlResults.map(result => ({
+    state: result.state || "Sin Estado",
+    value: Number(result.total_revenue || 0)
+  }));
+
+  // Take top 6 states and group the rest as "Otros"
+  const topStates = stateData.slice(0, 6);
+  const otherStates = stateData.slice(6);
+  
+  if (otherStates.length > 0) {
+    const otherTotal = otherStates.reduce((sum, state) => sum + state.value, 0);
+    
+    topStates.push({
+      state: "Otros Estados",
+      value: otherTotal
+    });
+  }
+
+  // Calculate percentages based on total value
+  const totalValue = stateData.reduce((sum, state) => sum + state.value, 0);
+  const result = topStates.map(state => ({
+    ...state,
+    percentage: totalValue > 0 ? ((state.value / totalValue) * 100).toFixed(1) : "0.0"
+  }));
+
+  return result;
 };

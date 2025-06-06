@@ -2201,11 +2201,47 @@ export type Database = {
           status: string | null
         }[]
       }
+      get_channel_distribution: {
+        Args: { p_user_id?: string; p_start_date?: string; p_end_date?: string }
+        Returns: {
+          channel: string
+          unique_orders: number
+          total_revenue: number
+          total_records: number
+        }[]
+      }
       get_channel_income_by_period: {
         Args: { p_user_id: string; p_period_id: string }
         Returns: {
           channel: string
           total: number
+        }[]
+      }
+      get_dashboard_metrics: {
+        Args: { p_user_id?: string; p_start_date?: string; p_end_date?: string }
+        Returns: {
+          total_revenue: number
+          total_orders: number
+          total_profit: number
+          aov: number
+          margin_percentage: number
+          total_records: number
+        }[]
+      }
+      get_sales_chart_data: {
+        Args: { p_user_id?: string; p_start_date?: string; p_end_date?: string }
+        Returns: {
+          sale_date: string
+          daily_revenue: number
+          daily_orders: number
+        }[]
+      }
+      get_state_distribution: {
+        Args: { p_user_id?: string; p_start_date?: string; p_end_date?: string }
+        Returns: {
+          state: string
+          total_revenue: number
+          total_records: number
         }[]
       }
       has_company_permission: {

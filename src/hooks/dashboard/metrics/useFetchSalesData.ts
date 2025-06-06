@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { differenceInDays, subDays, format } from "date-fns";
+import { differenceInDays, subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { DashboardMetrics, ChartDataPoint, ChannelMetrics } from "@/types/dashboard";
+import { formatDateForQuery } from "@/utils/dateUtils";
 
 export const useFetchSalesData = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -16,58 +17,120 @@ export const useFetchSalesData = () => {
     setIsLoading(true);
     
     try {
-      // Fetch current period data
-      const { data: currentSalesData, error: currentError } = await supabase
-        .from("Sales")
-        .select("*")
-        .gte("date", dateRange.from.toISOString().split('T')[0])
-        .lte("date", dateRange.to.toISOString().split('T')[0]);
+      console.log('=== DASHBOARD METRICS SQL FUNCTION DEBUG START ===');
+      console.log('Fetching dashboard metrics for date range:', dateRange);
+      
+      const fromDate = formatDateForQuery(dateRange.from);
+      const toDate = formatDateForQuery(dateRange.to);
+      
+      // Fetch current period metrics using SQL function
+      const { data: currentMetrics, error: currentError } = await supabase.rpc('get_dashboard_metrics', {
+        p_user_id: null, // For now, no user filtering
+        p_start_date: fromDate,
+        p_end_date: toDate
+      });
       
       if (currentError) {
-        console.error("Error fetching current sales data:", currentError);
-        toast.error("Error al cargar datos de ventas");
+        console.error("Error fetching current dashboard metrics:", currentError);
+        toast.error("Error al cargar métricas del dashboard");
         return getEmptyMetrics();
       }
 
-      if (!currentSalesData || currentSalesData.length === 0) {
+      console.log('Current period SQL metrics:', currentMetrics);
+
+      if (!currentMetrics || currentMetrics.length === 0) {
         return getEmptyMetrics();
       }
 
-      // Calculate current period metrics
-      const currentMetrics = calculateMetricsFromSalesData(currentSalesData);
+      const current = currentMetrics[0];
       
       // Fetch previous period for comparison
       const daysDiff = differenceInDays(dateRange.to, dateRange.from) + 1;
       const prevPeriodEnd = subDays(dateRange.from, 1);
       const prevPeriodStart = subDays(prevPeriodEnd, daysDiff - 1);
 
-      const { data: prevSalesData, error: prevError } = await supabase
-        .from("Sales")
-        .select("*")
-        .gte("date", prevPeriodStart.toISOString().split('T')[0])
-        .lte("date", prevPeriodEnd.toISOString().split('T')[0]);
+      const { data: prevMetrics, error: prevError } = await supabase.rpc('get_dashboard_metrics', {
+        p_user_id: null,
+        p_start_date: formatDateForQuery(prevPeriodStart),
+        p_end_date: formatDateForQuery(prevPeriodEnd)
+      });
 
       if (prevError) {
-        console.error("Error fetching previous period data:", prevError);
+        console.error("Error fetching previous period metrics:", prevError);
       }
 
-      const prevMetrics = prevSalesData ? calculateMetricsFromSalesData(prevSalesData) : getEmptyMetrics();
+      console.log('Previous period SQL metrics:', prevMetrics);
+      
+      const previous = prevMetrics && prevMetrics.length > 0 ? prevMetrics[0] : null;
       
       // Calculate percentage changes
-      const changes = calculateChanges(currentMetrics, prevMetrics);
+      const changes = calculateChanges(current, previous);
       
-      // Generate chart data
-      const chartData = generateChartDataFromSales(currentSalesData);
-      
-      // Generate channel metrics
-      const channelMetrics = generateChannelMetricsFromSales(currentSalesData, prevSalesData || []);
+      // Generate chart data using SQL function
+      const { data: chartDataResults, error: chartError } = await supabase.rpc('get_sales_chart_data', {
+        p_user_id: null,
+        p_start_date: fromDate,
+        p_end_date: toDate
+      });
 
-      return {
-        ...currentMetrics,
+      if (chartError) {
+        console.error("Error fetching chart data:", chartError);
+      }
+
+      const chartData = generateChartDataFromSQL(chartDataResults || []);
+      console.log('Chart data from SQL:', chartData);
+      
+      // For now, we'll keep channel metrics empty since we need to implement this separately
+      const channelMetrics: ChannelMetrics[] = [];
+
+      const result = {
+        orderRevenue: Number(current.total_revenue || 0),
+        contributionMargin: Number(current.total_profit || 0),
+        marginPercentage: Number(current.margin_percentage || 0),
+        orders: Number(current.total_orders || 0),
+        aov: Number(current.aov || 0),
+        
+        // Customer metrics (simplified for now)
+        returningRevenue: 0,
+        returningOrders: 0,
+        returningAOV: 0,
+        repeatRate: 0,
+        newCustomerRevenue: Number(current.total_revenue || 0), // Assume all are new for now
+        newCustomerOrders: Number(current.total_orders || 0),
+        newCustomerAOV: Number(current.aov || 0),
+        cac: 0,
+        
+        // Paid performance metrics (not available without additional data)
+        paidRevenue: 0,
+        paidOrders: 0,
+        paidAOV: 0,
+        paidCAC: 0,
+        pamer: 0,
+        
+        // Set defaults for metrics we can't calculate without additional data
+        adSpend: 0,
+        mer: 0,
+        
+        // Apply calculated changes
         ...changes,
+        
+        // Chart data and channel metrics
         chartData,
-        channelMetrics
+        channelMetrics,
+        
+        // Legacy metrics
+        yesterdaySales: 0,
+        unreconciled: 0,
+        receivablesPending: 0,
+        salesCount: Number(current.total_records || 0),
+        unreconciledCount: 0,
+        receivablesCount: 0
       };
+
+      console.log('Final dashboard metrics result:', result);
+      console.log('=== DASHBOARD METRICS SQL FUNCTION DEBUG END ===');
+
+      return result;
 
     } catch (error) {
       console.error("Error in fetchSalesMetrics:", error);
@@ -78,160 +141,52 @@ export const useFetchSalesData = () => {
     }
   }, []);
 
-  const calculateMetricsFromSalesData = (salesData: any[]): DashboardMetrics => {
-    const totalRevenue = salesData.reduce((sum, sale) => sum + (sale.price || 0), 0);
-    const totalProfit = salesData.reduce((sum, sale) => sum + (sale.Profit || 0), 0);
-    
-    // Count unique orders
-    const uniqueOrders = new Set();
-    salesData.forEach(sale => {
-      if (sale.orderNumber) {
-        uniqueOrders.add(sale.orderNumber);
-      }
-    });
-    const totalOrders = uniqueOrders.size;
-    
-    // Calculate AOV
-    const aov = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    
-    // Calculate margin percentage
-    const marginPercentage = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-
-    // Analyze customers (simplified - using idClient as customer identifier)
-    const customerAnalysis = analyzeCustomers(salesData);
-    
-    return {
-      orderRevenue: totalRevenue,
-      contributionMargin: totalProfit,
-      marginPercentage,
-      orders: totalOrders,
-      aov,
-      
-      // Customer metrics
-      ...customerAnalysis,
-      
-      // Set defaults for metrics we can't calculate without additional data
-      adSpend: 0,
-      mer: 0,
-      
-      // Default change values
-      revenueChange: 0,
-      adSpendChange: 0,
-      merChange: 0,
-      aovChange: 0,
-      ordersChange: 0,
-      contributionMarginChange: 0,
-      marginPercentageChange: 0,
-      returningRevenueChange: 0,
-      returningOrdersChange: 0,
-      returningAOVChange: 0,
-      repeatRateChange: 0,
-      newCustomerRevenueChange: 0,
-      newCustomerOrdersChange: 0,
-      newCustomerAOVChange: 0,
-      cacChange: 0,
-      paidRevenueChange: 0,
-      paidOrdersChange: 0,
-      paidAOVChange: 0,
-      paidCACChange: 0,
-      pamerChange: 0,
-      
-      // Chart data and channel metrics (will be set later)
-      chartData: [],
-      channelMetrics: [],
-      
-      // Legacy metrics
-      yesterdaySales: 0,
-      unreconciled: 0,
-      receivablesPending: 0,
-      salesCount: salesData.length,
-      unreconciledCount: 0,
-      receivablesCount: 0
-    };
-  };
-
-  const analyzeCustomers = (salesData: any[]) => {
-    const customerSales = new Map();
-    const customerOrders = new Map();
-    
-    salesData.forEach(sale => {
-      const customerId = sale.idClient || 'anonymous';
-      
-      if (!customerSales.has(customerId)) {
-        customerSales.set(customerId, 0);
-        customerOrders.set(customerId, new Set());
-      }
-      
-      customerSales.set(customerId, customerSales.get(customerId) + (sale.price || 0));
-      if (sale.orderNumber) {
-        customerOrders.get(customerId).add(sale.orderNumber);
-      }
-    });
-
-    // For simplicity, assume customers with multiple orders are returning
-    // In a real implementation, you'd need historical data to determine this
-    let returningRevenue = 0;
-    let returningOrders = 0;
-    let newCustomerRevenue = 0;
-    let newCustomerOrders = 0;
-
-    customerSales.forEach((revenue, customerId) => {
-      const orders = customerOrders.get(customerId).size;
-      
-      if (orders > 1) {
-        // Consider as returning customer
-        returningRevenue += revenue;
-        returningOrders += orders;
-      } else {
-        // Consider as new customer
-        newCustomerRevenue += revenue;
-        newCustomerOrders += orders;
-      }
-    });
-
-    const returningAOV = returningOrders > 0 ? returningRevenue / returningOrders : 0;
-    const newCustomerAOV = newCustomerOrders > 0 ? newCustomerRevenue / newCustomerOrders : 0;
-    const totalOrders = returningOrders + newCustomerOrders;
-    const repeatRate = totalOrders > 0 ? (returningOrders / totalOrders) * 100 : 0;
-
-    return {
-      returningRevenue,
-      returningOrders,
-      returningAOV,
-      repeatRate,
-      newCustomerRevenue,
-      newCustomerOrders,
-      newCustomerAOV,
-      cac: 0, // Would need marketing data
-      paidRevenue: 0, // Would need marketing channel data
-      paidOrders: 0,
-      paidAOV: 0,
-      paidCAC: 0,
-      pamer: 0
-    };
-  };
-
-  const calculateChanges = (current: DashboardMetrics, previous: DashboardMetrics) => {
+  const calculateChanges = (current: any, previous: any | null) => {
     const calculatePercentChange = (curr: number, prev: number) => {
       if (prev === 0) return curr > 0 ? 100 : 0;
       return ((curr - prev) / prev) * 100;
     };
 
+    if (!previous) {
+      return {
+        revenueChange: 0,
+        contributionMarginChange: 0,
+        marginPercentageChange: 0,
+        ordersChange: 0,
+        aovChange: 0,
+        adSpendChange: 0,
+        merChange: 0,
+        returningRevenueChange: 0,
+        returningOrdersChange: 0,
+        returningAOVChange: 0,
+        repeatRateChange: 0,
+        newCustomerRevenueChange: 0,
+        newCustomerOrdersChange: 0,
+        newCustomerAOVChange: 0,
+        cacChange: 0,
+        paidRevenueChange: 0,
+        paidOrdersChange: 0,
+        paidAOVChange: 0,
+        paidCACChange: 0,
+        pamerChange: 0
+      };
+    }
+
     return {
-      revenueChange: calculatePercentChange(current.orderRevenue || 0, previous.orderRevenue || 0),
-      contributionMarginChange: calculatePercentChange(current.contributionMargin || 0, previous.contributionMargin || 0),
-      marginPercentageChange: calculatePercentChange(current.marginPercentage || 0, previous.marginPercentage || 0),
-      ordersChange: calculatePercentChange(current.orders || 0, previous.orders || 0),
-      aovChange: calculatePercentChange(current.aov || 0, previous.aov || 0),
+      revenueChange: calculatePercentChange(Number(current.total_revenue || 0), Number(previous.total_revenue || 0)),
+      contributionMarginChange: calculatePercentChange(Number(current.total_profit || 0), Number(previous.total_profit || 0)),
+      marginPercentageChange: calculatePercentChange(Number(current.margin_percentage || 0), Number(previous.margin_percentage || 0)),
+      ordersChange: calculatePercentChange(Number(current.total_orders || 0), Number(previous.total_orders || 0)),
+      aovChange: calculatePercentChange(Number(current.aov || 0), Number(previous.aov || 0)),
       adSpendChange: 0,
       merChange: 0,
-      returningRevenueChange: calculatePercentChange(current.returningRevenue || 0, previous.returningRevenue || 0),
-      returningOrdersChange: calculatePercentChange(current.returningOrders || 0, previous.returningOrders || 0),
-      returningAOVChange: calculatePercentChange(current.returningAOV || 0, previous.returningAOV || 0),
-      repeatRateChange: calculatePercentChange(current.repeatRate || 0, previous.repeatRate || 0),
-      newCustomerRevenueChange: calculatePercentChange(current.newCustomerRevenue || 0, previous.newCustomerRevenue || 0),
-      newCustomerOrdersChange: calculatePercentChange(current.newCustomerOrders || 0, previous.newCustomerOrders || 0),
-      newCustomerAOVChange: calculatePercentChange(current.newCustomerAOV || 0, previous.newCustomerAOV || 0),
+      returningRevenueChange: 0,
+      returningOrdersChange: 0,
+      returningAOVChange: 0,
+      repeatRateChange: 0,
+      newCustomerRevenueChange: calculatePercentChange(Number(current.total_revenue || 0), Number(previous.total_revenue || 0)),
+      newCustomerOrdersChange: calculatePercentChange(Number(current.total_orders || 0), Number(previous.total_orders || 0)),
+      newCustomerAOVChange: calculatePercentChange(Number(current.aov || 0), Number(previous.aov || 0)),
       cacChange: 0,
       paidRevenueChange: 0,
       paidOrdersChange: 0,
@@ -241,90 +196,11 @@ export const useFetchSalesData = () => {
     };
   };
 
-  const generateChartDataFromSales = (salesData: any[]): ChartDataPoint[] => {
-    // Group sales by date
-    const salesByDate = salesData.reduce((acc: Record<string, number>, sale) => {
-      const date = sale.date;
-      if (!date) return acc;
-      
-      if (!acc[date]) {
-        acc[date] = 0;
-      }
-      acc[date] += (sale.price || 0);
-      return acc;
-    }, {});
-    
-    // Convert to chart format
-    return Object.entries(salesByDate)
-      .map(([date, sales]) => ({ date, sales: sales as number }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-  };
-
-  const generateChannelMetricsFromSales = (currentData: any[], previousData: any[]): ChannelMetrics[] => {
-    const processChannelData = (data: any[]) => {
-      const channelMap = new Map();
-      
-      data.forEach(sale => {
-        if (!sale.Channel) return;
-        
-        if (!channelMap.has(sale.Channel)) {
-          channelMap.set(sale.Channel, {
-            revenue: 0,
-            orders: new Set(),
-            profit: 0
-          });
-        }
-        
-        const channel = channelMap.get(sale.Channel);
-        channel.revenue += (sale.price || 0);
-        channel.profit += (sale.Profit || 0);
-        if (sale.orderNumber) {
-          channel.orders.add(sale.orderNumber);
-        }
-      });
-      
-      return channelMap;
-    };
-
-    const currentChannels = processChannelData(currentData);
-    const previousChannels = processChannelData(previousData);
-
-    const channelMetrics: ChannelMetrics[] = [];
-
-    currentChannels.forEach((data, channelName) => {
-      const orderCount = data.orders.size;
-      const aov = orderCount > 0 ? data.revenue / orderCount : 0;
-      const marginPercentage = data.revenue > 0 ? (data.profit / data.revenue) * 100 : 0;
-
-      // Get previous period data for comparison
-      const prevData = previousChannels.get(channelName);
-      const prevOrderCount = prevData?.orders.size || 0;
-      const prevRevenue = prevData?.revenue || 0;
-      const prevProfit = prevData?.profit || 0;
-      const prevAOV = prevOrderCount > 0 ? prevRevenue / prevOrderCount : 0;
-      const prevMarginPercentage = prevRevenue > 0 ? (prevProfit / prevRevenue) * 100 : 0;
-
-      const calculateChange = (curr: number, prev: number) => {
-        if (prev === 0) return curr > 0 ? 100 : 0;
-        return ((curr - prev) / prev) * 100;
-      };
-
-      channelMetrics.push({
-        name: channelName,
-        revenue: data.revenue,
-        orders: orderCount,
-        aov,
-        contributionMargin: data.profit,
-        marginPercentage,
-        revenueChange: calculateChange(data.revenue, prevRevenue),
-        ordersChange: calculateChange(orderCount, prevOrderCount),
-        aovChange: calculateChange(aov, prevAOV),
-        contributionMarginChange: calculateChange(data.profit, prevProfit),
-        marginPercentageChange: calculateChange(marginPercentage, prevMarginPercentage)
-      });
-    });
-
-    return channelMetrics.sort((a, b) => b.revenue - a.revenue);
+  const generateChartDataFromSQL = (sqlResults: any[]): ChartDataPoint[] => {
+    return sqlResults.map(result => ({
+      date: result.sale_date,
+      sales: Number(result.daily_revenue || 0)
+    })).sort((a, b) => a.date.localeCompare(b.date));
   };
 
   const getEmptyMetrics = (): DashboardMetrics => ({
