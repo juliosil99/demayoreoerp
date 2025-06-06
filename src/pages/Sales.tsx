@@ -1,12 +1,10 @@
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { SalesImportDialog } from "@/components/sales/SalesImportDialog";
 import { SalesHeader } from "@/components/sales/components/SalesHeader";
 import { SalesTable } from "@/components/sales/components/SalesTable";
-import { SalesBase } from "@/integrations/supabase/types/sales";
+import { useOptimizedSalesQuery } from "@/hooks/sales/useOptimizedSalesQuery";
 
 const ITEMS_PER_PAGE = 50;
 
@@ -15,79 +13,45 @@ const Sales = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNegativeProfit, setShowNegativeProfit] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
 
-  const { data: sales, refetch } = useQuery({
-    queryKey: ["sales", currentPage, searchTerm, showNegativeProfit],
-    queryFn: async () => {
-      let query = supabase
-        .from("Sales")
-        .select("*");
-
-      if (searchTerm) {
-        query = query.ilike("orderNumber", `%${searchTerm}%`); // Updated to correct case
-      }
-
-      if (showNegativeProfit) {
-        query = query.lt("Profit", 0); // Updated to correct case with uppercase 'P'
-      }
-
-      // Create a separate query for counting total rows
-      let countQuery = supabase
-        .from("Sales")
-        .select("*", { count: "exact", head: true });
-
-      // Apply the same filters to the count query
-      if (searchTerm) {
-        countQuery = countQuery.ilike("orderNumber", `%${searchTerm}%`); // Updated to correct case
-      }
-
-      if (showNegativeProfit) {
-        countQuery = countQuery.lt("Profit", 0); // Updated to correct case with uppercase 'P'
-      }
-
-      const { count, error: countError } = await countQuery;
-
-      if (countError) {
-        console.error("Error fetching count:", countError);
-        throw countError;
-      }
-
-      setTotalCount(count || 0);
-
-      const from = (currentPage - 1) * ITEMS_PER_PAGE;
-      const to = from + ITEMS_PER_PAGE - 1;
-
-      const { data, error } = await query
-        .order("date", { ascending: false })
-        .range(from, to);
-
-      if (error) {
-        console.error("Error fetching sales:", error);
-        throw error;
-      }
-
-      // Cast the data to SalesBase[] to ensure type safety
-      return data as unknown as SalesBase[];
-    },
+  const { sales, totalCount, isLoading, error } = useOptimizedSalesQuery({
+    currentPage,
+    itemsPerPage: ITEMS_PER_PAGE,
+    searchTerm,
+    showNegativeProfit
   });
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
-  const handleSearch = (value: string) => {
+  const handleSearch = useCallback((value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1);
-  };
+    setCurrentPage(1); // Reset to first page when searching
+  }, []);
 
-  const handleNegativeProfitFilter = (enabled: boolean) => {
+  const handleNegativeProfitFilter = useCallback((enabled: boolean) => {
     setShowNegativeProfit(enabled);
-    setCurrentPage(1);
-  };
+    setCurrentPage(1); // Reset to first page when filtering
+  }, []);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
+
+  const handleImportSuccess = useCallback(() => {
+    // This will invalidate and refetch the query
+    window.location.reload();
+  }, []);
+
+  if (error) {
+    return (
+      <div className="space-y-6 w-full max-w-7xl mx-auto">
+        <div className="text-center py-8 text-destructive">
+          Error al cargar las ventas: {error.message}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto">
@@ -101,17 +65,23 @@ const Sales = () => {
       <SalesImportDialog
         isOpen={importDialogOpen}
         onOpenChange={setImportDialogOpen}
-        onImportSuccess={() => refetch()}
+        onImportSuccess={handleImportSuccess}
       />
 
       <Card>
         <CardContent className="overflow-x-auto">
-          <SalesTable
-            sales={sales || []}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Cargando ventas...
+            </div>
+          ) : (
+            <SalesTable
+              sales={sales || []}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
         </CardContent>
       </Card>
     </div>
