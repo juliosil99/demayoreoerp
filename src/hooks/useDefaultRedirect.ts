@@ -8,20 +8,19 @@ export function useDefaultRedirect() {
     return { defaultRoute: null, isLoading: true };
   }
 
-  // Siempre redirigir a Contactos como página de inicio
-  // Verificar si tiene acceso a Contactos
+  // PRIORIDAD #1: Siempre intentar ir a Contactos primero
   const canAccessContacts = isAdmin || hasPermission('can_manage_contacts');
   
   if (canAccessContacts) {
     return { defaultRoute: '/contacts', isLoading: false };
   }
 
-  // Si no puede acceder a Contactos, usar el orden de prioridad anterior
+  // PRIORIDAD #2: Si no puede acceder a Contactos y es admin, ir a dashboard
   if (isAdmin) {
     return { defaultRoute: '/dashboard', isLoading: false };
   }
 
-  // Orden de prioridad para usuarios no-admin sin acceso a Contactos
+  // PRIORIDAD #3: Orden de fallback para usuarios no-admin sin acceso a Contactos
   const routePriority = [
     { route: '/dashboard', permission: 'can_view_dashboard' as const },
     { route: '/sales', permission: 'can_view_sales' as const },
