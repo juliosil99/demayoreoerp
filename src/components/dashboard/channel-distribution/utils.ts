@@ -31,23 +31,33 @@ export const processChannelData = (salesData: SalesBase[]): ChannelData[] => {
     return [];
   }
 
-  // Group and aggregate sales data by channel
-  const channelGroups = salesData.reduce((acc: { [key: string]: { count: number, value: number } }, sale) => {
-    const channel = standardizeChannel(sale.Channel);
-    if (!acc[channel]) {
-      acc[channel] = { count: 0, value: 0 };
-    }
-    acc[channel].count += 1;
-    acc[channel].value += sale.price || 0;
-    return acc;
-  }, {});
+  // Group by channel and collect unique orders with their total values
+  const channelGroups: { [key: string]: { uniqueOrders: Set<string>, totalValue: number } } = {};
 
-  // Convert to array and sort by value
+  salesData.forEach(sale => {
+    const channel = standardizeChannel(sale.Channel);
+    const orderNumber = sale.orderNumber || `no-order-${Math.random()}`;
+    const price = sale.price || 0;
+
+    if (!channelGroups[channel]) {
+      channelGroups[channel] = {
+        uniqueOrders: new Set<string>(),
+        totalValue: 0
+      };
+    }
+
+    // Add the order number to the set (automatically handles duplicates)
+    channelGroups[channel].uniqueOrders.add(orderNumber);
+    // Sum all sales values for the channel
+    channelGroups[channel].totalValue += price;
+  });
+
+  // Convert to array format with unique order counts
   const sortedChannels = Object.entries(channelGroups)
     .map(([channel, data]) => ({
       channel,
-      count: data.count,
-      value: data.value
+      count: data.uniqueOrders.size, // Number of unique orders
+      value: data.totalValue // Total sales value for the channel
     }))
     .sort((a, b) => b.value - a.value);
 

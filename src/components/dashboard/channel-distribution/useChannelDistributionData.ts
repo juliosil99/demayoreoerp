@@ -11,7 +11,7 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
     queryFn: async () => {
       let query = supabase
         .from("Sales")
-        .select('Channel, price');
+        .select('Channel, price, orderNumber');
       
       // Apply date filters if provided
       if (dateRange?.from) {
@@ -29,7 +29,7 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
         throw error;
       }
       
-      // Cast the data to partial SalesBase since we're only using Channel and price
+      // Cast the data to partial SalesBase since we're only using Channel, price, and orderNumber
       return processChannelData(data as SalesBase[]);
     }
   });
