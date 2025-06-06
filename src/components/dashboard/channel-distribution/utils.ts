@@ -27,17 +27,19 @@ export interface ChannelData {
 }
 
 export const processChannelData = (salesData: SalesBase[]): ChannelData[] => {
+  console.log('=== PROCESSING CHANNEL DATA DEBUG ===');
+  
   if (!salesData || salesData.length === 0) {
-    console.log('Channel data processing - No sales data provided');
+    console.log('No sales data provided to processChannelData');
     return [];
   }
 
-  console.log('Channel data processing - Total sales records:', salesData.length);
+  console.log('Total sales records to process:', salesData.length);
 
   // Group by channel and collect unique orders with their total values
-  const channelGroups: { [key: string]: { uniqueOrders: Set<string>, totalValue: number } } = {};
+  const channelGroups: { [key: string]: { uniqueOrders: Set<string>, totalValue: number, allRecords: SalesBase[] } } = {};
 
-  salesData.forEach(sale => {
+  salesData.forEach((sale, index) => {
     const channel = standardizeChannel(sale.Channel);
     const orderNumber = sale.orderNumber || `no-order-${Math.random()}`;
     const price = sale.price || 0;
@@ -45,19 +47,45 @@ export const processChannelData = (salesData: SalesBase[]): ChannelData[] => {
     if (!channelGroups[channel]) {
       channelGroups[channel] = {
         uniqueOrders: new Set<string>(),
-        totalValue: 0
+        totalValue: 0,
+        allRecords: []
       };
     }
 
+    // Store all records for debugging
+    channelGroups[channel].allRecords.push(sale);
+    
     // Add the order number to the set (automatically handles duplicates)
     channelGroups[channel].uniqueOrders.add(orderNumber);
     // Sum all sales values for the channel
     channelGroups[channel].totalValue += price;
+    
+    // Log detailed info for Mercado Libre
+    if (channel.toLowerCase().includes('mercado') && index < 20) {
+      console.log(`Mercado record ${index + 1}:`, {
+        channel,
+        orderNumber,
+        price,
+        originalChannel: sale.Channel
+      });
+    }
   });
 
-  // Log unique orders per channel for debugging
+  // Detailed logging for each channel
   Object.entries(channelGroups).forEach(([channel, data]) => {
-    console.log(`Channel ${channel} - Unique orders: ${data.uniqueOrders.size}, Total value: ${data.totalValue}`);
+    console.log(`Channel: ${channel}`);
+    console.log(`  - Total records: ${data.allRecords.length}`);
+    console.log(`  - Unique orders: ${data.uniqueOrders.size}`);
+    console.log(`  - Total value: ${data.totalValue}`);
+    
+    if (channel.toLowerCase().includes('mercado')) {
+      console.log(`  - Mercado Libre detailed analysis:`);
+      console.log(`    - All order numbers:`, Array.from(data.uniqueOrders).slice(0, 20));
+      console.log(`    - Records with null orderNumber:`, 
+        data.allRecords.filter(r => !r.orderNumber).length
+      );
+      console.log(`    - Sample records:`, data.allRecords.slice(0, 10));
+    }
   });
 
   // Convert to array format with unique order counts
@@ -68,6 +96,8 @@ export const processChannelData = (salesData: SalesBase[]): ChannelData[] => {
       value: data.totalValue // Total sales value for the channel
     }))
     .sort((a, b) => b.value - a.value);
+
+  console.log('Sorted channels before grouping "Otros":', sortedChannels);
 
   // Take top 6 channels and group the rest as "Otros"
   const topChannels = sortedChannels.slice(0, 6);
@@ -96,7 +126,9 @@ export const processChannelData = (salesData: SalesBase[]): ChannelData[] => {
     percentage: ((channel.value / totalValue) * 100).toFixed(1)
   }));
 
-  console.log('Channel data processing - Final result:', result);
+  console.log('Final processed channel data:', result);
+  console.log('=== PROCESSING CHANNEL DATA DEBUG END ===');
+  
   return result;
 };
 
