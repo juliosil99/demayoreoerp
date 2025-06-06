@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -14,6 +15,7 @@ import {
   LayoutDashboard,
   FileSpreadsheet,
   FilePlus2,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
@@ -77,185 +79,6 @@ export const ProtectedSidebar = () => {
     );
   }
 
-  // Filtrar elementos del sidebar basado en permisos
-  const menuItems = [];
-
-  // Dashboard
-  if (canAccessPage('/dashboard')) {
-    menuItems.push(
-      <SidebarItem
-        key="dashboard"
-        to="/dashboard"
-        icon={LayoutDashboard}
-        label="Dashboard"
-        isActive={isActive('/dashboard')}
-      />
-    );
-  }
-
-  // Grupo de Ventas
-  const salesItems = [];
-  if (canAccessPage('/sales')) {
-    salesItems.push(
-      <SidebarItem
-        key="sales"
-        to="/sales"
-        icon={ShoppingCart}
-        label="Ventas"
-        isActive={isActive('/sales')}
-      />
-    );
-  }
-  if (canAccessPage('/sales/payments')) {
-    salesItems.push(
-      <SidebarItem
-        key="payments"
-        to="/sales/payments"
-        icon={CreditCard}
-        label="Pagos"
-        isActive={isActive('/sales/payments')}
-      />
-    );
-  }
-
-  // Grupo de Facturas
-  const invoiceItems = [];
-  if (canAccessPage('/sales/invoices')) {
-    invoiceItems.push(
-      <SidebarItem
-        key="invoices"
-        to="/sales/invoices"
-        icon={Receipt}
-        label="Facturas"
-        isActive={isActive('/sales/invoices')}
-      />
-    );
-  }
-  if (canAccessPage('/product-search')) {
-    invoiceItems.push(
-      <SidebarItem
-        key="product-search"
-        to="/product-search"
-        icon={FileSearch}
-        label="Buscar Productos"
-        isActive={isActive('/product-search')}
-      />
-    );
-  }
-  if (canAccessPage('/pdf-templates')) {
-    invoiceItems.push(
-      <SidebarItem
-        key="pdf-templates"
-        to="/pdf-templates"
-        icon={FileText}
-        label="Plantillas PDF"
-        isActive={isActive('/pdf-templates')}
-      />
-    );
-  }
-
-  // Grupo de Finanzas
-  const financeItems = [];
-  if (canAccessPage('/expenses')) {
-    financeItems.push(
-      <SidebarItem
-        key="expenses"
-        to="/expenses"
-        icon={FileSpreadsheet}
-        label="Gastos"
-        isActive={isActive('/expenses')}
-      />
-    );
-  }
-  if (canAccessPage('/expenses/reconciliation')) {
-    financeItems.push(
-      <SidebarItem
-        key="reconciliation"
-        to="/expenses/reconciliation"
-        icon={FilePlus2}
-        label="Conciliación"
-        isActive={isActive('/expenses/reconciliation')}
-      />
-    );
-  }
-  if (canAccessPage('/expenses/receivables')) {
-    financeItems.push(
-      <SidebarItem
-        key="receivables"
-        to="/expenses/receivables"
-        icon={CreditCard}
-        label="Por Cobrar"
-        isActive={isActive('/expenses/receivables')}
-      />
-    );
-  }
-  if (canAccessPage('/expenses/payables')) {
-    financeItems.push(
-      <SidebarItem
-        key="payables"
-        to="/expenses/payables"
-        icon={CreditCard}
-        label="Por Pagar"
-        isActive={isActive('/expenses/payables')}
-      />
-    );
-  }
-  if (canAccessPage('/accounting/banking')) {
-    financeItems.push(
-      <SidebarItem
-        key="banking"
-        to="/accounting/banking"
-        icon={Building}
-        label="Bancos"
-        isActive={isActive('/accounting/banking')}
-      />
-    );
-  }
-  if (canAccessPage('/accounting/transfers')) {
-    financeItems.push(
-      <SidebarItem
-        key="transfers"
-        to="/accounting/transfers"
-        icon={CreditCard}
-        label="Transferencias"
-        isActive={isActive('/accounting/transfers')}
-      />
-    );
-  }
-  if (canAccessPage('/accounting/chart-of-accounts')) {
-    financeItems.push(
-      <SidebarItem
-        key="chart-of-accounts"
-        to="/accounting/chart-of-accounts"
-        icon={BarChart3}
-        label="Catálogo de Cuentas"
-        isActive={isActive('/accounting/chart-of-accounts')}
-      />
-    );
-  }
-  if (canAccessPage('/accounting/reports')) {
-    financeItems.push(
-      <SidebarItem
-        key="reports"
-        to="/accounting/reports"
-        icon={BarChart3}
-        label="Reportes"
-        isActive={isActive('/accounting/reports')}
-      />
-    );
-  }
-  if (canAccessPage('/accounting/cash-flow-forecast')) {
-    financeItems.push(
-      <SidebarItem
-        key="cash-flow"
-        to="/accounting/cash-flow-forecast"
-        icon={BarChart3}
-        label="Flujo de Efectivo"
-        isActive={isActive('/accounting/cash-flow-forecast')}
-      />
-    );
-  }
-
   return (
     <div className="bg-gray-900 text-white h-full flex flex-col">
       <div className="p-4 border-b border-gray-800 flex-shrink-0">
@@ -271,6 +94,28 @@ export const ProtectedSidebar = () => {
             label="Dashboard"
             isActive={isActive('/dashboard')}
           />
+        )}
+
+        {/* CRM */}
+        {(canAccessPage('/contacts') || canAccessPage('/companies')) && (
+          <SidebarGroup title="CRM" isOpen={location.pathname.startsWith('/contacts') || location.pathname.startsWith('/companies')}>
+            {canAccessPage('/companies') && (
+              <SidebarItem
+                to="/companies"
+                icon={Building2}
+                label="Empresas"
+                isActive={isActive('/companies') || location.pathname.startsWith('/companies/')}
+              />
+            )}
+            {canAccessPage('/contacts') && (
+              <SidebarItem
+                to="/contacts"
+                icon={Users}
+                label="Contactos"
+                isActive={isActive('/contacts')}
+              />
+            )}
+          </SidebarGroup>
         )}
 
         {/* Ventas */}
@@ -401,16 +246,6 @@ export const ProtectedSidebar = () => {
               />
             )}
           </SidebarGroup>
-        )}
-
-        {/* Contactos */}
-        {canAccessPage('/contacts') && (
-          <SidebarItem
-            to="/contacts"
-            icon={Users}
-            label="Contactos"
-            isActive={isActive('/contacts')}
-          />
         )}
 
         {/* Usuarios - Solo para admins o usuarios con permisos específicos */}

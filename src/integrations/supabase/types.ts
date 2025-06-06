@@ -587,6 +587,102 @@ export type Database = {
         }
         Relationships: []
       }
+      companies_crm: {
+        Row: {
+          annual_revenue: number | null
+          company_size: string | null
+          created_at: string | null
+          description: string | null
+          employee_count: number | null
+          engagement_score: number | null
+          founded_year: number | null
+          headquarters_location: string | null
+          id: string
+          industry: string | null
+          last_interaction_date: string | null
+          logo_url: string | null
+          name: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          annual_revenue?: number | null
+          company_size?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_count?: number | null
+          engagement_score?: number | null
+          founded_year?: number | null
+          headquarters_location?: string | null
+          id?: string
+          industry?: string | null
+          last_interaction_date?: string | null
+          logo_url?: string | null
+          name: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          annual_revenue?: number | null
+          company_size?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_count?: number | null
+          engagement_score?: number | null
+          founded_year?: number | null
+          headquarters_location?: string | null
+          id?: string
+          industry?: string | null
+          last_interaction_date?: string | null
+          logo_url?: string | null
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      company_tags: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_tags_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_crm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_users: {
         Row: {
           company_id: string
@@ -619,13 +715,59 @@ export type Database = {
           },
         ]
       }
+      contact_tags: {
+        Row: {
+          contact_id: string
+          created_at: string | null
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string | null
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string | null
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_tags_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           address: string | null
+          company_id: string | null
+          contact_status: string | null
           created_at: string | null
           default_chart_account_id: string | null
+          department: string | null
+          engagement_score: number | null
           id: string
+          is_primary_contact: boolean | null
+          job_title: string | null
+          last_interaction_date: string | null
+          lead_source: string | null
+          linkedin_url: string | null
           name: string
+          notes: string | null
           phone: string | null
           postal_code: string
           rfc: string
@@ -635,10 +777,20 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          company_id?: string | null
+          contact_status?: string | null
           created_at?: string | null
           default_chart_account_id?: string | null
+          department?: string | null
+          engagement_score?: number | null
           id?: string
+          is_primary_contact?: boolean | null
+          job_title?: string | null
+          last_interaction_date?: string | null
+          lead_source?: string | null
+          linkedin_url?: string | null
           name: string
+          notes?: string | null
           phone?: string | null
           postal_code: string
           rfc: string
@@ -648,10 +800,20 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          company_id?: string | null
+          contact_status?: string | null
           created_at?: string | null
           default_chart_account_id?: string | null
+          department?: string | null
+          engagement_score?: number | null
           id?: string
+          is_primary_contact?: boolean | null
+          job_title?: string | null
+          last_interaction_date?: string | null
+          lead_source?: string | null
+          linkedin_url?: string | null
           name?: string
+          notes?: string | null
           phone?: string | null
           postal_code?: string
           rfc?: string
@@ -660,6 +822,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_crm"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contacts_default_chart_account_id_fkey"
             columns: ["default_chart_account_id"]
@@ -1174,6 +1343,66 @@ export type Database = {
             columns: ["forecast_id"]
             isOneToOne: false
             referencedRelation: "cash_flow_forecasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interactions: {
+        Row: {
+          company_id: string | null
+          contact_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          interaction_date: string | null
+          metadata: Json | null
+          next_follow_up: string | null
+          outcome: string | null
+          subject: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          interaction_date?: string | null
+          metadata?: Json | null
+          next_follow_up?: string | null
+          outcome?: string | null
+          subject?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          interaction_date?: string | null
+          metadata?: Json | null
+          next_follow_up?: string | null
+          outcome?: string | null
+          subject?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_crm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interactions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
         ]
@@ -2033,6 +2262,33 @@ export type Database = {
           report_type?: string
           status?: string | null
           submitted_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          name: string
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          type?: string | null
           user_id?: string
         }
         Relationships: []

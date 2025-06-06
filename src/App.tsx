@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -32,6 +31,8 @@ import CreditPaymentSchedule from "./pages/CreditPaymentSchedule";
 import { CaptchaResolver } from "./components/invoices/sat-automation/CaptchaResolver";
 import ProductSearch from "./pages/ProductSearch";
 import PdfTemplates from "./pages/PdfTemplates";
+import Companies from "./pages/Companies";
+import CompanyDetail from "./pages/CompanyDetail";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -128,6 +129,16 @@ function App() {
             <Route path="contacts" element={
               <ProtectedRoute permission="can_manage_contacts">
                 <Contacts />
+              </ProtectedRoute>
+            } />
+            <Route path="companies" element={
+              <ProtectedRoute permission="can_manage_contacts">
+                <Companies />
+              </ProtectedRoute>
+            } />
+            <Route path="companies/:id" element={
+              <ProtectedRoute permission="can_manage_contacts">
+                <CompanyDetail />
               </ProtectedRoute>
             } />
             <Route path="accounting" element={
