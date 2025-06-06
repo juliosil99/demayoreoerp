@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { differenceInDays, subDays } from "date-fns";
@@ -77,8 +78,20 @@ export const useFetchSalesData = () => {
       const chartData = generateChartDataFromSQL(chartDataResults || []);
       console.log('Chart data from SQL:', chartData);
       
-      // For now, we'll keep channel metrics empty since we need to implement this separately
-      const channelMetrics: ChannelMetrics[] = [];
+      // Fetch channel metrics using the new SQL function
+      const { data: channelMetricsResults, error: channelMetricsError } = await supabase.rpc('get_channel_metrics', {
+        p_start_date: fromDate,
+        p_end_date: toDate
+      });
+
+      if (channelMetricsError) {
+        console.error("Error fetching channel metrics:", channelMetricsError);
+      }
+
+      console.log('Channel metrics from SQL:', channelMetricsResults);
+
+      // Process channel metrics and calculate changes
+      const channelMetrics = await processChannelMetrics(channelMetricsResults || [], dateRange);
 
       const result = {
         orderRevenue: Number(current.total_revenue || 0),
@@ -137,6 +150,65 @@ export const useFetchSalesData = () => {
       setIsLoading(false);
     }
   }, []);
+
+  const processChannelMetrics = async (currentChannelData: any[], dateRange: DateRange): Promise<ChannelMetrics[]> => {
+    if (!currentChannelData || currentChannelData.length === 0) {
+      console.log('No channel metrics data to process');
+      return [];
+    }
+
+    // Calculate previous period for comparison
+    const daysDiff = differenceInDays(dateRange.to, dateRange.from) + 1;
+    const prevPeriodEnd = subDays(dateRange.from, 1);
+    const prevPeriodStart = subDays(prevPeriodEnd, daysDiff - 1);
+
+    // Fetch previous period channel metrics
+    const { data: prevChannelData, error: prevChannelError } = await supabase.rpc('get_channel_metrics', {
+      p_start_date: formatDateForQuery(prevPeriodStart),
+      p_end_date: formatDateForQuery(prevPeriodEnd)
+    });
+
+    if (prevChannelError) {
+      console.error("Error fetching previous channel metrics:", prevChannelError);
+    }
+
+    console.log('Previous period channel metrics:', prevChannelData);
+
+    // Create a map for quick lookup of previous data
+    const prevDataMap = new Map();
+    if (prevChannelData) {
+      prevChannelData.forEach((item: any) => {
+        prevDataMap.set(item.name, item);
+      });
+    }
+
+    // Process current data and calculate changes
+    const processedMetrics: ChannelMetrics[] = currentChannelData.map((current: any) => {
+      const previous = prevDataMap.get(current.name);
+      
+      return {
+        name: current.name,
+        revenue: Number(current.revenue || 0),
+        orders: Number(current.orders || 0),
+        aov: Number(current.aov || 0),
+        contributionMargin: Number(current.contribution_margin || 0),
+        marginPercentage: Number(current.margin_percentage || 0),
+        revenueChange: calculatePercentChange(Number(current.revenue || 0), Number(previous?.revenue || 0)),
+        ordersChange: calculatePercentChange(Number(current.orders || 0), Number(previous?.orders || 0)),
+        aovChange: calculatePercentChange(Number(current.aov || 0), Number(previous?.aov || 0)),
+        contributionMarginChange: calculatePercentChange(Number(current.contribution_margin || 0), Number(previous?.contribution_margin || 0)),
+        marginPercentageChange: calculatePercentChange(Number(current.margin_percentage || 0), Number(previous?.margin_percentage || 0))
+      };
+    });
+
+    console.log('Processed channel metrics with changes:', processedMetrics);
+    return processedMetrics;
+  };
+
+  const calculatePercentChange = (current: number, previous: number): number => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  };
 
   const calculateChanges = (current: any, previous: any | null) => {
     const calculatePercentChange = (curr: number, prev: number) => {

@@ -2202,9 +2202,7 @@ export type Database = {
         }[]
       }
       get_channel_distribution: {
-        Args:
-          | { p_start_date?: string; p_end_date?: string }
-          | { p_user_id?: string; p_start_date?: string; p_end_date?: string }
+        Args: { p_start_date?: string; p_end_date?: string }
         Returns: {
           channel: string
           unique_orders: number
@@ -2219,10 +2217,19 @@ export type Database = {
           total: number
         }[]
       }
+      get_channel_metrics: {
+        Args: { p_start_date?: string; p_end_date?: string }
+        Returns: {
+          name: string
+          revenue: number
+          orders: number
+          aov: number
+          contribution_margin: number
+          margin_percentage: number
+        }[]
+      }
       get_dashboard_metrics: {
-        Args:
-          | { p_start_date?: string; p_end_date?: string }
-          | { p_user_id?: string; p_start_date?: string; p_end_date?: string }
+        Args: { p_start_date?: string; p_end_date?: string }
         Returns: {
           total_revenue: number
           total_orders: number
@@ -2233,9 +2240,7 @@ export type Database = {
         }[]
       }
       get_sales_chart_data: {
-        Args:
-          | { p_start_date?: string; p_end_date?: string }
-          | { p_user_id?: string; p_start_date?: string; p_end_date?: string }
+        Args: { p_start_date?: string; p_end_date?: string }
         Returns: {
           sale_date: string
           daily_revenue: number
@@ -2243,9 +2248,7 @@ export type Database = {
         }[]
       }
       get_state_distribution: {
-        Args:
-          | { p_start_date?: string; p_end_date?: string }
-          | { p_user_id?: string; p_start_date?: string; p_end_date?: string }
+        Args: { p_start_date?: string; p_end_date?: string }
         Returns: {
           state: string
           total_revenue: number
