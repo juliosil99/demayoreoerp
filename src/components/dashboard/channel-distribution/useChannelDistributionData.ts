@@ -26,9 +26,8 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
         console.log('To date filter applied:', toDate, 'Original date:', dateRange.to);
       }
       
-      // Call the SQL function
+      // Call the SQL function with simplified parameters
       const { data, error } = await supabase.rpc('get_channel_distribution', {
-        p_user_id: null, // For now, no user filtering
         p_start_date: fromDate,
         p_end_date: toDate
       });

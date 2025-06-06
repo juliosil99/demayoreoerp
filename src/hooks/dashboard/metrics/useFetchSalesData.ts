@@ -23,9 +23,8 @@ export const useFetchSalesData = () => {
       const fromDate = formatDateForQuery(dateRange.from);
       const toDate = formatDateForQuery(dateRange.to);
       
-      // Fetch current period metrics using SQL function
+      // Fetch current period metrics using SQL function with simplified parameters
       const { data: currentMetrics, error: currentError } = await supabase.rpc('get_dashboard_metrics', {
-        p_user_id: null, // For now, no user filtering
         p_start_date: fromDate,
         p_end_date: toDate
       });
@@ -50,7 +49,6 @@ export const useFetchSalesData = () => {
       const prevPeriodStart = subDays(prevPeriodEnd, daysDiff - 1);
 
       const { data: prevMetrics, error: prevError } = await supabase.rpc('get_dashboard_metrics', {
-        p_user_id: null,
         p_start_date: formatDateForQuery(prevPeriodStart),
         p_end_date: formatDateForQuery(prevPeriodEnd)
       });
@@ -66,9 +64,8 @@ export const useFetchSalesData = () => {
       // Calculate percentage changes
       const changes = calculateChanges(current, previous);
       
-      // Generate chart data using SQL function
+      // Generate chart data using SQL function with simplified parameters
       const { data: chartDataResults, error: chartError } = await supabase.rpc('get_sales_chart_data', {
-        p_user_id: null,
         p_start_date: fromDate,
         p_end_date: toDate
       });
