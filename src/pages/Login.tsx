@@ -35,8 +35,8 @@ export default function Login() {
       }
       
       if (userCompany) {
-        console.log("Login: User has their own company, redirecting to dashboard");
-        navigate("/dashboard");
+        console.log("Login: User has their own company, redirecting to homepage");
+        navigate("/");
         return;
       }
       
@@ -60,8 +60,8 @@ export default function Login() {
       const completedInvitation = invitations?.find(inv => inv.status === 'completed');
       
       if (completedInvitation) {
-        console.log("Login: User has a completed invitation, redirecting to dashboard");
-        navigate("/dashboard");
+        console.log("Login: User has a completed invitation, redirecting to homepage");
+        navigate("/");
         return;
       }
       
