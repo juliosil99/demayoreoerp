@@ -62,6 +62,7 @@ const processStateSQLResults = (sqlResults: any[]): StateData[] => {
   // Convert SQL results to StateData format
   const stateData = sqlResults.map(result => ({
     state: result.state || "Sin Estado",
+    count: Number(result.total_records || 0), // Use total_records as count
     value: Number(result.total_revenue || 0)
   }));
 
@@ -70,11 +71,18 @@ const processStateSQLResults = (sqlResults: any[]): StateData[] => {
   const otherStates = stateData.slice(6);
   
   if (otherStates.length > 0) {
-    const otherTotal = otherStates.reduce((sum, state) => sum + state.value, 0);
+    const otherTotal = otherStates.reduce(
+      (sum, state) => ({
+        count: sum.count + state.count,
+        value: sum.value + state.value
+      }),
+      { count: 0, value: 0 }
+    );
     
     topStates.push({
       state: "Otros Estados",
-      value: otherTotal
+      count: otherTotal.count,
+      value: otherTotal.value
     });
   }
 
