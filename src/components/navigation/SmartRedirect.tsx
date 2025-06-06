@@ -27,5 +27,6 @@ export function SmartRedirect() {
     );
   }
 
-  return <Navigate to={defaultRoute} replace />;
+  // Siempre redirigir a Contactos como página de inicio
+  return <Navigate to="/contacts" replace />;
 }
