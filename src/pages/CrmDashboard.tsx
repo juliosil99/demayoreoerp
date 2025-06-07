@@ -1,0 +1,287 @@
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { 
+  Building2, 
+  Users, 
+  MessageSquare, 
+  TrendingUp, 
+  Plus,
+  Calendar,
+  UserPlus,
+  Clock
+} from 'lucide-react';
+import { useCrmCompanies } from '@/hooks/useCrmCompanies';
+import { useCrmInteractions } from '@/hooks/useCrmInteractions';
+import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+const CrmDashboard = () => {
+  const navigate = useNavigate();
+  const { data: companies = [], isLoading: companiesLoading } = useCrmCompanies();
+  const { data: allInteractions = [], isLoading: interactionsLoading } = useCrmInteractions();
+
+  // Get recent interactions (last 10)
+  const { data: recentInteractions = [] } = useQuery({
+    queryKey: ['recent-interactions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('interactions')
+        .select(`
+          *,
+          companies_crm (name),
+          contacts (name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Calculate metrics
+  const totalCompanies = companies.length;
+  const totalContacts = companies.reduce((sum, company) => sum + (company.contacts?.length || 0), 0);
+  const totalInteractions = allInteractions.length;
+  const avgEngagement = companies.length > 0 
+    ? Math.round(companies.reduce((sum, c) => sum + c.engagement_score, 0) / companies.length)
+    : 0;
+
+  const recentCompanies = companies
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5);
+
+  const getInteractionIcon = (type: string) => {
+    switch (type) {
+      case 'email': return '📧';
+      case 'call': return '📞';
+      case 'meeting': return '🤝';
+      case 'note': return '📝';
+      default: return '💬';
+    }
+  };
+
+  if (companiesLoading || interactionsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Building2 className="h-8 w-8 text-blue-600" />
+            CRM Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Gestiona tus relaciones con clientes y prospectos
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={() => navigate('/contacts')} variant="outline">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Nuevo Contacto
+          </Button>
+          <Button onClick={() => navigate('/companies')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Empresa
+          </Button>
+        </div>
+      </div>
+
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/companies')}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Empresas</p>
+                <p className="text-2xl font-bold">{totalCompanies}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/contacts')}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Contactos</p>
+                <p className="text-2xl font-bold">{totalContacts}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-purple-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Interacciones</p>
+                <p className="text-2xl font-bold">{totalInteractions}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-orange-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Engagement Promedio</p>
+                <p className="text-2xl font-bold">{avgEngagement}%</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Acciones Rápidas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button variant="outline" className="h-auto p-4 flex flex-col gap-2" onClick={() => navigate('/companies')}>
+              <Building2 className="h-6 w-6" />
+              <span className="text-sm">Ver Empresas</span>
+            </Button>
+            <Button variant="outline" className="h-auto p-4 flex flex-col gap-2" onClick={() => navigate('/contacts')}>
+              <Users className="h-6 w-6" />
+              <span className="text-sm">Ver Contactos</span>
+            </Button>
+            <Button variant="outline" className="h-auto p-4 flex flex-col gap-2">
+              <Calendar className="h-6 w-6" />
+              <span className="text-sm">Calendario</span>
+            </Button>
+            <Button variant="outline" className="h-auto p-4 flex flex-col gap-2">
+              <TrendingUp className="h-6 w-6" />
+              <span className="text-sm">Reportes</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Companies */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Empresas Recientes
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/companies')}>
+                Ver todas
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentCompanies.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Building2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No hay empresas registradas</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => navigate('/companies')}
+                  >
+                    Crear primera empresa
+                  </Button>
+                </div>
+              ) : (
+                recentCompanies.map((company) => (
+                  <div 
+                    key={company.id} 
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                    onClick={() => navigate(`/companies/${company.id}`)}
+                  >
+                    <div>
+                      <p className="font-medium">{company.name}</p>
+                      <p className="text-sm text-muted-foreground">{company.industry || 'Sin industria'}</p>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="outline" className="mb-1">
+                        {company.status === 'customer' ? 'Cliente' : 
+                         company.status === 'prospect' ? 'Prospecto' : 
+                         company.status}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(company.created_at), { addSuffix: true, locale: es })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Actividad Reciente
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentInteractions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No hay actividad reciente</p>
+                </div>
+              ) : (
+                recentInteractions.map((interaction: any) => (
+                  <div key={interaction.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                    <div className="text-lg">{getInteractionIcon(interaction.type)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">
+                        {interaction.subject || `${interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1)}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {interaction.companies_crm?.name || interaction.contacts?.name || 'Sin empresa'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(interaction.created_at), { addSuffix: true, locale: es })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default CrmDashboard;

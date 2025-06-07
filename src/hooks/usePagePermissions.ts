@@ -7,6 +7,7 @@ interface PagePermissionMap {
 
 const PAGE_PERMISSIONS: PagePermissionMap = {
   '/dashboard': 'can_view_dashboard',
+  '/crm': 'can_manage_contacts',
   '/sales': 'can_view_sales',
   '/sales/payments': 'can_view_sales',
   '/sales/invoices': 'can_view_invoices',
@@ -15,6 +16,7 @@ const PAGE_PERMISSIONS: PagePermissionMap = {
   '/expenses/receivables': 'can_view_expenses',
   '/expenses/payables': 'can_view_expenses',
   '/contacts': 'can_manage_contacts',
+  '/companies': 'can_manage_contacts',
   '/users': 'can_manage_users',
   '/accounting': 'can_view_reports',
   '/accounting/banking': 'can_view_banking',

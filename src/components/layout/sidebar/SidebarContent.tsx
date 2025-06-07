@@ -14,6 +14,8 @@ import {
   FileSpreadsheet,
   FilePlus2,
   Building2,
+  MessageSquare,
+  Settings,
 } from 'lucide-react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { SidebarItem } from './SidebarItem';
@@ -37,8 +39,16 @@ export const SidebarContent: React.FC = () => {
       )}
 
       {/* CRM */}
-      {(canAccessPage('/contacts') || canAccessPage('/companies')) && (
-        <SidebarGroup title="CRM" isOpen={location.pathname.startsWith('/contacts') || location.pathname.startsWith('/companies')}>
+      {(canAccessPage('/crm') || canAccessPage('/contacts') || canAccessPage('/companies')) && (
+        <SidebarGroup title="CRM" isOpen={location.pathname.startsWith('/crm') || location.pathname.startsWith('/contacts') || location.pathname.startsWith('/companies')}>
+          {canAccessPage('/crm') && (
+            <SidebarItem
+              to="/crm"
+              icon={LayoutDashboard}
+              label="Dashboard CRM"
+              isActive={isActive('/crm')}
+            />
+          )}
           {canAccessPage('/companies') && (
             <SidebarItem
               to="/companies"
