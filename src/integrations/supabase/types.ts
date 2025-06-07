@@ -1862,6 +1862,137 @@ export type Database = {
           },
         ]
       }
+      opportunities: {
+        Row: {
+          actual_close_date: string | null
+          company_id: string | null
+          contact_id: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          expected_close_date: string | null
+          id: string
+          probability: number | null
+          source: string | null
+          stage_id: string
+          title: string
+          updated_at: string | null
+          user_id: string
+          value: number | null
+        }
+        Insert: {
+          actual_close_date?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          probability?: number | null
+          source?: string | null
+          stage_id: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+          value?: number | null
+        }
+        Update: {
+          actual_close_date?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          probability?: number | null
+          source?: string | null
+          stage_id?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_opportunities_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_crm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_opportunities_contact"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_activities: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          new_stage_id: string | null
+          old_stage_id: string | null
+          opportunity_id: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          new_stage_id?: string | null
+          old_stage_id?: string | null
+          opportunity_id: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          new_stage_id?: string | null
+          old_stage_id?: string | null
+          opportunity_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_activities_new_stage_id_fkey"
+            columns: ["new_stage_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_activities_old_stage_id_fkey"
+            columns: ["old_stage_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_activities_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_permissions: {
         Row: {
           can_access: boolean | null
@@ -1961,6 +2092,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pipeline_stages: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          is_closed: boolean | null
+          name: string
+          order_index: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_closed?: boolean | null
+          name: string
+          order_index: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_closed?: boolean | null
+          name?: string
+          order_index?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
