@@ -24,6 +24,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/utils/formatters';
 import { PipelineView } from '@/components/crm/PipelineView';
+import { ChatView } from '@/components/crm/chat';
 
 const CrmDashboard = () => {
   const navigate = useNavigate();
@@ -116,9 +117,10 @@ const CrmDashboard = () => {
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline de Ventas</TabsTrigger>
+          <TabsTrigger value="chat">Centro de Mensajes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
@@ -312,6 +314,41 @@ const CrmDashboard = () => {
 
         <TabsContent value="pipeline">
           <PipelineView />
+        </TabsContent>
+
+        <TabsContent value="chat">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Centro de Mensajes CRM
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Selecciona una empresa o contacto para iniciar una conversación
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                  Bienvenido al Centro de Mensajes
+                </h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Para iniciar una conversación, ve a la página de una empresa específica y usa la pestaña "Chat"
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Button onClick={() => navigate('/companies')} variant="outline">
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Ver Empresas
+                  </Button>
+                  <Button onClick={() => navigate('/contacts')} variant="outline">
+                    <Users className="h-4 w-4 mr-2" />
+                    Ver Contactos
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

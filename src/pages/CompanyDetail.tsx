@@ -25,6 +25,7 @@ import { CompanyDialog } from '@/components/crm/CompanyDialog';
 import { InteractionDialog } from '@/components/crm/InteractionDialog';
 import { InteractionTimeline } from '@/components/crm/InteractionTimeline';
 import { ContactsTab } from '@/components/crm/ContactsTab';
+import { ChatView } from '@/components/crm/chat';
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Contact, Company } from '@/types/crm';
@@ -260,11 +261,19 @@ const CompanyDetail = () => {
         </Card>
 
         <div className="lg:col-span-2">
-          <Tabs defaultValue="interactions" className="space-y-4">
+          <Tabs defaultValue="chat" className="space-y-4">
             <TabsList>
+              <TabsTrigger value="chat">Chat</TabsTrigger>
               <TabsTrigger value="interactions">Interacciones</TabsTrigger>
               <TabsTrigger value="contacts">Contactos</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="chat">
+              <ChatView
+                companyId={company.id}
+                companyName={company.name}
+              />
+            </TabsContent>
 
             <TabsContent value="interactions">
               <Card>
