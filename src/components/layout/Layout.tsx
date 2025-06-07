@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { ProtectedSidebar } from './ProtectedSidebar';
+import { ProtectedSidebar } from './sidebar/ProtectedSidebar';
 import { Header } from './Header';
 import { Toaster } from "@/components/ui/toaster";
 import { Menu } from "lucide-react";
