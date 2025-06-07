@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { PathBasedProtectedRoute } from "@/components/auth/PathBasedProtectedRoute";
 import { SmartRedirect } from "@/components/navigation/SmartRedirect";
 import { Layout } from "@/components/layout/Layout";
 
@@ -73,263 +73,263 @@ function App() {
 
                 {/* Protected routes with layout */}
                 <Route path="/" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <SmartRedirect />
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
                 
                 <Route path="/dashboard" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Dashboard />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/crm" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <CrmDashboard />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/companies" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Companies />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/companies/:id" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <CompanyDetail />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 
                 
                 <Route path="/contacts" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Contacts />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/sales" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Sales />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/sales/payments" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Payments />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/sales/invoices" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Invoices />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/expenses" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Expenses />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/expenses/reconciliation" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Reconciliation />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/expenses/receivables" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Receivables />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/expenses/payables" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Payables />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/accounting/banking" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Banking />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/accounting/banking/:accountId" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <BankAccountMovements />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/accounting/transfers" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <AccountTransfers />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/accounting/chart-of-accounts" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <ChartOfAccounts />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/accounting/reports" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Reports />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/accounting/cash-flow-forecast" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <CashFlowForecast />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/product-search" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <ProductSearch />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/pdf-templates" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <PdfTemplates />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/users" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <UserManagement />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/company-setup" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <CompanySetup />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/sales-channels" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <SalesChannels />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/accounting/banking/:accountId/payment-schedule" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <CreditPaymentSchedule />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
 
                 <Route path="/profile" element={
-                  <ProtectedRoute>
+                  <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Profile />
                       </Suspense>
                     </Layout>
-                  </ProtectedRoute>
+                  </PathBasedProtectedRoute>
                 } />
               </Routes>
             </AuthProvider>
