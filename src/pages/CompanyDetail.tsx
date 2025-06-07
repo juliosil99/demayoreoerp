@@ -27,6 +27,7 @@ import { InteractionTimeline } from '@/components/crm/InteractionTimeline';
 import { ContactsTab } from '@/components/crm/ContactsTab';
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Contact } from '@/types/crm';
 
 const CompanyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -87,6 +88,18 @@ const CompanyDetail = () => {
     }
   };
 
+  // Convert contacts to proper Contact type
+  const contacts: Contact[] = (company.contacts || []).map((contact: any) => ({
+    ...contact,
+    company_id: contact.company_id || '',
+    contact_status: contact.contact_status || 'active',
+    engagement_score: contact.engagement_score || 0,
+    is_primary_contact: contact.is_primary_contact || false,
+    postal_code: contact.postal_code || '',
+    tax_regime: contact.tax_regime || '',
+    created_at: contact.created_at || new Date().toISOString(),
+  }));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -137,7 +150,7 @@ const CompanyDetail = () => {
               <Users className="h-5 w-5 text-green-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Contactos</p>
-                <p className="text-2xl font-bold">{company.contacts?.length || 0}</p>
+                <p className="text-2xl font-bold">{contacts.length}</p>
               </div>
             </div>
           </CardContent>
@@ -261,7 +274,7 @@ const CompanyDetail = () => {
             </TabsContent>
 
             <TabsContent value="contacts">
-              <ContactsTab companyId={company.id} contacts={company.contacts || []} />
+              <ContactsTab companyId={company.id} contacts={contacts} />
             </TabsContent>
           </Tabs>
         </div>

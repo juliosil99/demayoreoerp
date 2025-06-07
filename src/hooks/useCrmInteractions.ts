@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Interaction } from '@/types/crm';
+import { Interaction, InteractionFormData } from '@/types/crm';
 import { toast } from 'sonner';
 
 export const useCrmInteractions = (companyId?: string, contactId?: string) => {
@@ -36,10 +36,15 @@ export const useCreateInteraction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (interaction: Partial<Interaction>) => {
+    mutationFn: async (interactionData: Omit<InteractionFormData, 'interaction_date' | 'next_follow_up'> & {
+      company_id?: string;
+      contact_id?: string;
+      interaction_date: string;
+      next_follow_up?: string | null;
+    }) => {
       const { data, error } = await supabase
         .from('interactions')
-        .insert([interaction])
+        .insert([interactionData])
         .select()
         .single();
 

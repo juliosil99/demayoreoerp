@@ -80,3 +80,26 @@ export interface ContactWithTags extends Contact {
   tags: Tag[];
   interactions: Interaction[];
 }
+
+// Form types for components
+export interface CompanyFormData {
+  name: string;
+  industry: string;
+  company_size: 'startup' | 'small' | 'medium' | 'large' | 'enterprise' | '';
+  website: string;
+  description: string;
+  headquarters_location: string;
+  founded_year: string | number;
+  employee_count: string | number;
+  annual_revenue: string | number;
+  status: 'active' | 'inactive' | 'prospect' | 'customer' | 'churned';
+}
+
+export interface InteractionFormData {
+  type: 'email' | 'call' | 'meeting' | 'note' | 'task';
+  subject: string;
+  description: string;
+  outcome: string;
+  next_follow_up: string;
+  interaction_date: string;
+}

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateCompany, useUpdateCompany } from '@/hooks/useCrmCompanies';
-import { Company } from '@/types/crm';
+import { Company, CompanyFormData } from '@/types/crm';
 
 interface CompanyDialogProps {
   open: boolean;
@@ -16,7 +15,7 @@ interface CompanyDialogProps {
 }
 
 export const CompanyDialog = ({ open, onOpenChange, company }: CompanyDialogProps) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CompanyFormData>({
     name: company?.name || '',
     industry: company?.industry || '',
     company_size: company?.company_size || '',
@@ -101,7 +100,12 @@ export const CompanyDialog = ({ open, onOpenChange, company }: CompanyDialogProp
 
             <div>
               <Label htmlFor="company_size">Tamaño de Empresa</Label>
-              <Select value={formData.company_size} onValueChange={(value) => setFormData(prev => ({ ...prev, company_size: value }))}>
+              <Select 
+                value={formData.company_size} 
+                onValueChange={(value: CompanyFormData['company_size']) => 
+                  setFormData(prev => ({ ...prev, company_size: value }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar tamaño" />
                 </SelectTrigger>
@@ -117,7 +121,12 @@ export const CompanyDialog = ({ open, onOpenChange, company }: CompanyDialogProp
 
             <div>
               <Label htmlFor="status">Estado</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+              <Select 
+                value={formData.status} 
+                onValueChange={(value: CompanyFormData['status']) => 
+                  setFormData(prev => ({ ...prev, status: value }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

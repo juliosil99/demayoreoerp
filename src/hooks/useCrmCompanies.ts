@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Company } from '@/types/crm';
+import { Company, CompanyFormData } from '@/types/crm';
 import { toast } from 'sonner';
 
 export const useCrmCompanies = () => {
@@ -62,10 +62,14 @@ export const useCreateCompany = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (company: Partial<Company>) => {
+    mutationFn: async (companyData: Omit<CompanyFormData, 'founded_year' | 'employee_count' | 'annual_revenue'> & {
+      founded_year?: number | null;
+      employee_count?: number | null;
+      annual_revenue?: number | null;
+    }) => {
       const { data, error } = await supabase
         .from('companies_crm')
-        .insert([company])
+        .insert([companyData])
         .select()
         .single();
 
@@ -87,7 +91,11 @@ export const useUpdateCompany = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Company> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Omit<CompanyFormData, 'founded_year' | 'employee_count' | 'annual_revenue'> & {
+      founded_year?: number | null;
+      employee_count?: number | null;
+      annual_revenue?: number | null;
+    }>) => {
       const { data, error } = await supabase
         .from('companies_crm')
         .update(updates)

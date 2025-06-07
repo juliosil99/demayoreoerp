@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateInteraction } from '@/hooks/useCrmInteractions';
-import { Interaction } from '@/types/crm';
+import { Interaction, InteractionFormData } from '@/types/crm';
 
 interface InteractionDialogProps {
   open: boolean;
@@ -18,8 +17,8 @@ interface InteractionDialogProps {
 }
 
 export const InteractionDialog = ({ open, onOpenChange, companyId, contactId, interaction }: InteractionDialogProps) => {
-  const [formData, setFormData] = useState({
-    type: interaction?.type || 'note',
+  const [formData, setFormData] = useState<InteractionFormData>({
+    type: (interaction?.type as InteractionFormData['type']) || 'note',
     subject: interaction?.subject || '',
     description: interaction?.description || '',
     outcome: interaction?.outcome || '',
@@ -55,7 +54,7 @@ export const InteractionDialog = ({ open, onOpenChange, companyId, contactId, in
     }
   };
 
-  const interactionTypes = [
+  const interactionTypes: Array<{ value: InteractionFormData['type'], label: string }> = [
     { value: 'email', label: 'Email' },
     { value: 'call', label: 'Llamada' },
     { value: 'meeting', label: 'Reunión' },
@@ -74,7 +73,12 @@ export const InteractionDialog = ({ open, onOpenChange, companyId, contactId, in
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="type">Tipo de Interacción</Label>
-              <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
+              <Select 
+                value={formData.type} 
+                onValueChange={(value: InteractionFormData['type']) => 
+                  setFormData(prev => ({ ...prev, type: value }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
