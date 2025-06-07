@@ -66,6 +66,9 @@ const CompanyDetail = () => {
     );
   }
 
+  // Extract contacts from raw data before type casting
+  const rawContacts = rawCompany.contacts || [];
+  
   // Type-cast the raw company data to ensure proper typing
   const company: Company = {
     ...rawCompany,
@@ -96,7 +99,7 @@ const CompanyDetail = () => {
   };
 
   // Convert contacts to proper Contact type
-  const contacts: Contact[] = (company.contacts || []).map((contact: any) => ({
+  const contacts: Contact[] = rawContacts.map((contact: any) => ({
     ...contact,
     company_id: contact.company_id || '',
     contact_status: contact.contact_status || 'active',
