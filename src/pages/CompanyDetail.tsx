@@ -27,7 +27,7 @@ import { InteractionTimeline } from '@/components/crm/InteractionTimeline';
 import { ContactsTab } from '@/components/crm/ContactsTab';
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Contact } from '@/types/crm';
+import { Contact, Company } from '@/types/crm';
 
 const CompanyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,7 +35,7 @@ const CompanyDetail = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showInteractionDialog, setShowInteractionDialog] = useState(false);
 
-  const { data: company, isLoading } = useCrmCompany(id!);
+  const { data: rawCompany, isLoading } = useCrmCompany(id!);
   const { data: interactions = [] } = useCrmInteractions(id);
 
   if (isLoading) {
@@ -54,7 +54,7 @@ const CompanyDetail = () => {
     );
   }
 
-  if (!company) {
+  if (!rawCompany) {
     return (
       <div className="text-center py-12">
         <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -65,6 +65,13 @@ const CompanyDetail = () => {
       </div>
     );
   }
+
+  // Type-cast the raw company data to ensure proper typing
+  const company: Company = {
+    ...rawCompany,
+    company_size: rawCompany.company_size as Company['company_size'],
+    status: rawCompany.status as Company['status'],
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -44,7 +44,10 @@ export const useCreateInteraction = () => {
     }) => {
       const { data, error } = await supabase
         .from('interactions')
-        .insert([interactionData])
+        .insert({
+          ...interactionData,
+          user_id: (await supabase.auth.getUser()).data.user?.id!,
+        })
         .select()
         .single();
 

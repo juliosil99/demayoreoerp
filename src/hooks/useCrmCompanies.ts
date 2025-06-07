@@ -69,7 +69,10 @@ export const useCreateCompany = () => {
     }) => {
       const { data, error } = await supabase
         .from('companies_crm')
-        .insert([companyData])
+        .insert({
+          ...companyData,
+          user_id: (await supabase.auth.getUser()).data.user?.id!,
+        })
         .select()
         .single();
 
