@@ -1,4 +1,5 @@
 
+
 export const formatCurrency = (amount: number, currency: string = 'MXN'): string => {
   const currencySymbols: Record<string, string> = {
     'MXN': '$',
@@ -23,6 +24,15 @@ export const formatDate = (date: string | Date): string => {
   });
 };
 
+export const formatCardDate = (date: string | Date): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+};
+
 export const formatDatetime = (date: string | Date): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj.toLocaleDateString('es-ES', {
@@ -33,3 +43,16 @@ export const formatDatetime = (date: string | Date): string => {
     minute: '2-digit',
   });
 };
+
+export const formatBytes = (bytes: number, decimals: number = 2): string => {
+  if (bytes === 0) return '0 Bytes';
+
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
+
