@@ -97,12 +97,11 @@ export function usePermissions() {
       }
     },
     enabled: !!user?.id,
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 15 * 60 * 1000, // 15 minutos - cache largo para permisos
+    gcTime: 30 * 60 * 1000, // 30 minutos en garbage collection
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    refetchInterval: false,
+    refetchInterval: false, // Sin refetch automático
     retry: (failureCount, error) => {
       return failureCount < 3;
     },

@@ -9,6 +9,24 @@ export function useInvitationExpiration() {
 
   const checkAndMarkExpired = async () => {
     try {
+      // Primero verificar si hay invitaciones pendientes antes de ejecutar la función
+      const { data: pendingInvitations, error: checkError } = await supabase
+        .from('user_invitations')
+        .select('id')
+        .eq('status', 'pending')
+        .lt('expires_at', new Date().toISOString())
+        .limit(1);
+
+      if (checkError) {
+        console.error("Error checking pending invitations:", checkError);
+        return false;
+      }
+
+      // Solo ejecutar si hay invitaciones que expirar
+      if (!pendingInvitations || pendingInvitations.length === 0) {
+        return true; // No hay nada que hacer, pero es exitoso
+      }
+
       // Call the database function to mark expired invitations
       const { error } = await supabase.rpc('mark_expired_invitations');
       
@@ -24,12 +42,15 @@ export function useInvitationExpiration() {
     }
   };
 
-  // Check for expired invitations every 5 minutes
+  // Check for expired invitations every 30 minutes (reducido de 5 minutos)
   const { data: success } = useQuery({
     queryKey: ["invitation-expiration-check"],
     queryFn: checkAndMarkExpired,
-    refetchInterval: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true,
+    refetchInterval: 30 * 60 * 1000, // 30 minutos en lugar de 5
+    staleTime: 25 * 60 * 1000, // 25 minutos de cache
+    gcTime: 60 * 60 * 1000, // 1 hora en garbage collection
+    refetchOnReconnect: true,
+    retry: 2, // Menos reintentos
   });
 
   // Invalidate invitations query when check succeeds

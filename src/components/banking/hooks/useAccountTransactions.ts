@@ -58,8 +58,9 @@ export function useAccountTransactions(accountId: number | null) {
       return allTransactions;
     },
     enabled: !!accountId && !!user?.id,
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 minutos de cache para transacciones
+    gcTime: 10 * 60 * 1000, // 10 minutos en garbage collection
     refetchOnMount: true,
-    staleTime: 0 // Consider data stale immediately
+    retry: 2
   });
 }

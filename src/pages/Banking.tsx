@@ -28,16 +28,14 @@ export default function Banking() {
     openEditDialog,
   } = useBankAccounts();
 
-  // Force refresh bank accounts data when component mounts
+  // Optimización: Solo invalidar cuando sea realmente necesario
   useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
-    
-    // This will force the system to recalculate balances for all accounts
-    accounts.forEach(account => {
-      queryClient.invalidateQueries({ queryKey: ["account-transactions", account.id] });
-      queryClient.invalidateQueries({ queryKey: ["bank-account", account.id] });
-    });
-  }, [queryClient, accounts]);
+    // Solo invalidar si hay muy pocas cuentas (menos de 3)
+    // para evitar invalidaciones excesivas en sistemas con muchas cuentas
+    if (accounts && accounts.length < 3) {
+      queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
+    }
+  }, [queryClient]);
 
   // Remove or sanitize sensitive logging
   useEffect(() => {
