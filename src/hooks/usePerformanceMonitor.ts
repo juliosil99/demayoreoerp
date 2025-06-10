@@ -1,54 +1,35 @@
 
-import { useEffect } from 'react';
+import { useAdvancedPerformanceMonitor } from './useAdvancedPerformanceMonitor';
+import { logger } from '@/utils/logger';
 
-interface PerformanceMetrics {
-  queryName: string;
-  duration: number;
-  recordCount?: number;
-}
-
+// Mantener compatibilidad con el hook existente y expandir funcionalidad
 export const usePerformanceMonitor = () => {
-  const logMetrics = (metrics: PerformanceMetrics) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🚀 Query Performance: ${metrics.queryName}`, {
-        duration: `${metrics.duration}ms`,
-        records: metrics.recordCount || 'N/A',
-        efficiency: metrics.recordCount 
-          ? `${(metrics.recordCount / metrics.duration * 1000).toFixed(2)} records/sec`
-          : 'N/A'
-      });
-    }
+  const { measureQuery, logQuery, metrics, isEnabled, setIsEnabled } = useAdvancedPerformanceMonitor();
+
+  // Método legacy para compatibilidad
+  const logMetrics = (metricsData: {
+    queryName: string;
+    duration: number;
+    recordCount?: number;
+  }) => {
+    logger.query(metricsData.queryName, metricsData.duration, metricsData.recordCount, 'legacy');
   };
 
-  const measureQuery = async <T>(
+  // Método mejorado que integra con el sistema avanzado
+  const measureQueryWithLogging = async <T>(
     queryName: string,
-    queryFn: () => Promise<T>
+    queryFn: () => Promise<T>,
+    component?: string
   ): Promise<T> => {
-    const startTime = performance.now();
-    try {
-      const result = await queryFn();
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-      
-      logMetrics({
-        queryName,
-        duration,
-        recordCount: Array.isArray(result) ? result.length : undefined
-      });
-      
-      return result;
-    } catch (error) {
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-      
-      console.error(`❌ Query Failed: ${queryName}`, {
-        duration: `${duration}ms`,
-        error
-      });
-      
-      throw error;
-    }
+    return measureQuery(queryName, queryFn, 'general', undefined);
   };
 
-  return { measureQuery, logMetrics };
+  return { 
+    measureQuery: measureQueryWithLogging,
+    logMetrics,
+    logQuery,
+    metrics,
+    isEnabled,
+    setIsEnabled
+  };
 };
