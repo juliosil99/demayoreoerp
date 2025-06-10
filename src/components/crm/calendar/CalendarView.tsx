@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDate, formatDatetime } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 type CalendarEvent = Tables<'calendar_events'> & {
   opportunities?: { id: string; title: string } | null;
@@ -39,6 +40,7 @@ export const CalendarView = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { register, handleSubmit, reset, setValue } = useForm<EventFormData>();
 
@@ -80,6 +82,7 @@ export const CalendarView = () => {
           company_id: data.company_id || null,
           contact_id: data.contact_id || null,
           status: 'scheduled',
+          user_id: user?.id,
         });
 
       if (error) throw error;

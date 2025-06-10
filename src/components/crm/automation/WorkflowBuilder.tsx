@@ -14,6 +14,7 @@ import { useForm } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Workflow = Tables<'workflows'>;
 
@@ -28,6 +29,7 @@ export const WorkflowBuilder = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { register, handleSubmit, reset, setValue } = useForm<WorkflowFormData>();
 
@@ -55,6 +57,7 @@ export const WorkflowBuilder = () => {
           trigger_conditions: JSON.parse(data.trigger_conditions || '{}'),
           actions: [],
           is_active: false,
+          user_id: user?.id,
         });
 
       if (error) throw error;

@@ -18,6 +18,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 type FollowUp = Tables<'follow_ups'> & {
   opportunities?: { id: string; title: string } | null;
@@ -40,6 +41,7 @@ export const FollowUpReminders = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { register, handleSubmit, reset, setValue, watch } = useForm<FollowUpFormData>();
 
@@ -75,6 +77,7 @@ export const FollowUpReminders = () => {
           contact_id: data.contact_id || null,
           reminder_type: data.reminder_type,
           status: 'pending',
+          user_id: user?.id,
         });
 
       if (error) throw error;
