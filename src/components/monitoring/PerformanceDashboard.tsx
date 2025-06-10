@@ -97,7 +97,7 @@ export function PerformanceDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{metrics.slowQueries.length}</div>
             <div className="text-xs text-muted-foreground">
-              > 2 segundos
+              mayor a 2 segundos
             </div>
           </CardContent>
         </Card>
