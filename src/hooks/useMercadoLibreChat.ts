@@ -2,6 +2,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// Define the type for our metadata structure
+interface MercadoLibreMetadata {
+  response_time_seconds?: number;
+  classification?: {
+    complexity?: string;
+  };
+  product_title?: string;
+  [key: string]: any;
+}
+
 export const useMercadoLibreInteractions = () => {
   return useQuery({
     queryKey: ['mercadolibre-interactions'],
@@ -34,18 +44,21 @@ export const useMercadoLibreStats = () => {
       const totalQuestions = interactions.length;
       
       const avgResponseTime = interactions.reduce((acc, curr) => {
-        const responseTime = curr.metadata?.response_time_seconds || 0;
+        const metadata = curr.metadata as MercadoLibreMetadata;
+        const responseTime = metadata?.response_time_seconds || 0;
         return acc + responseTime;
       }, 0) / Math.max(totalQuestions, 1);
 
       const classifications = interactions.reduce((acc, curr) => {
-        const complexity = curr.metadata?.classification?.complexity || 'unknown';
+        const metadata = curr.metadata as MercadoLibreMetadata;
+        const complexity = metadata?.classification?.complexity || 'unknown';
         acc[complexity] = (acc[complexity] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
       const topProducts = interactions.reduce((acc, curr) => {
-        const productTitle = curr.metadata?.product_title;
+        const metadata = curr.metadata as MercadoLibreMetadata;
+        const productTitle = metadata?.product_title;
         if (productTitle) {
           acc[productTitle] = (acc[productTitle] || 0) + 1;
         }
