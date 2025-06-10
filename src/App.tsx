@@ -1,3 +1,4 @@
+
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -39,6 +40,7 @@ const SalesChannels = lazy(() => import("./pages/SalesChannels"));
 const CreditPaymentSchedule = lazy(() => import("./pages/CreditPaymentSchedule"));
 const Register = lazy(() => import("./pages/Register/Register"));
 const Profile = lazy(() => import("./pages/Profile"));
+const Monitoring = lazy(() => import("./pages/Monitoring"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -327,6 +329,16 @@ function App() {
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <Profile />
+                      </Suspense>
+                    </Layout>
+                  </PathBasedProtectedRoute>
+                } />
+
+                <Route path="/monitoring" element={
+                  <PathBasedProtectedRoute>
+                    <Layout>
+                      <Suspense fallback={<div>Loading...</div>}>
+                        <Monitoring />
                       </Suspense>
                     </Layout>
                   </PathBasedProtectedRoute>
