@@ -15,7 +15,7 @@ import {
 import { MainNavItem } from "@/types";
 import { AccordionDemo } from "@/components/layout/sidebar/SidebarAccordion";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePermissions } from "@/hooks/usePermissions";
+import { usePermissions, PermissionName } from "@/hooks/usePermissions";
 
 interface SidebarContentProps {
   isSuperAdmin?: boolean;
@@ -31,61 +31,61 @@ const navigation: MainNavItem[] = [
     name: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
-    permission: "can_view_dashboard" as const,
+    permission: "can_view_dashboard" as PermissionName,
   },
   {
     name: "Ventas",
     href: "/sales",
     icon: DollarSign,
-    permission: "can_view_sales" as const,
+    permission: "can_view_sales" as PermissionName,
   },
   {
     name: "Gastos",
     href: "/expenses",
     icon: ListChecks,
-    permission: "can_view_expenses" as const,
+    permission: "can_view_expenses" as PermissionName,
   },
   {
     name: "Reportes",
     href: "/reports",
     icon: FileText,
-    permission: "can_view_reports" as const,
+    permission: "can_view_reports" as PermissionName,
   },
   {
     name: "Usuarios",
     href: "/users",
     icon: Users,
-    permission: "can_manage_users" as const,
+    permission: "can_manage_users" as PermissionName,
   },
   {
     name: "Contactos",
     href: "/contacts",
     icon: Contact,
-    permission: "can_manage_contacts" as const,
+    permission: "can_manage_contacts" as PermissionName,
   },
   {
     name: "Bancos",
     href: "/banking",
     icon: DollarSign,
-    permission: "can_view_banking" as const,
+    permission: "can_view_banking" as PermissionName,
   },
   {
     name: "Facturas",
     href: "/invoices",
     icon: Receipt,
-    permission: "can_view_invoices" as const,
+    permission: "can_view_invoices" as PermissionName,
   },
   {
     name: "Reconciliación",
     href: "/reconciliation",
     icon: Calendar,
-    permission: "can_view_reconciliation" as const,
+    permission: "can_view_reconciliation" as PermissionName,
   },
   {
     name: "Monitoreo",
     href: "/monitoring",
     icon: Activity,
-    permission: "can_view_dashboard" as const,
+    permission: "can_view_dashboard" as PermissionName,
   },
 ];
 
