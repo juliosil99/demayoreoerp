@@ -1,4 +1,3 @@
-
 import {
   Home,
   LayoutDashboard,
@@ -20,6 +19,7 @@ import {
   Settings,
   ShoppingCart,
   Banknote,
+  type LucideIcon,
 } from "lucide-react";
 
 import { MainNavItem } from "@/types";
@@ -33,13 +33,13 @@ interface SidebarContentProps {
   isSuperAdmin?: boolean;
 }
 
-interface SidebarGroup {
+interface SidebarGroupType {
   title: string;
   items: MainNavItem[];
   defaultOpen?: boolean;
 }
 
-const sidebarGroups: SidebarGroup[] = [
+const sidebarGroups: SidebarGroupType[] = [
   {
     title: "Principal",
     items: [

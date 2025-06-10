@@ -1,10 +1,11 @@
 
 import { PermissionName } from "@/hooks/usePermissions";
+import { type LucideIcon } from "lucide-react";
 
 export interface MainNavItem {
   name: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   permission?: PermissionName;
 }
 

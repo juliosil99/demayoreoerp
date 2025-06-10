@@ -71,7 +71,7 @@ const Index = () => {
 
           {/* CTA Button */}
           <Button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/home")}
             size="lg"
             className="px-8 py-6 text-lg font-medium rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 bg-gradient-to-r from-primary to-primary/90"
           >
