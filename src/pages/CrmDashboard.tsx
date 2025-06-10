@@ -11,7 +11,8 @@ import {
   Calendar,
   UserPlus,
   Clock,
-  Target
+  Target,
+  BarChart3
 } from 'lucide-react';
 import { useCrmCompanies } from '@/hooks/useCrmCompanies';
 import { useCrmInteractions } from '@/hooks/useCrmInteractions';
@@ -24,7 +25,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/utils/formatters';
 import { PipelineView } from '@/components/crm/PipelineView';
-import { ChatView } from '@/components/crm/chat';
+import { ChatContainer } from '@/components/crm/chat/ChatContainer';
+import { CrmReports } from '@/components/crm/reports/CrmReports';
 
 const CrmDashboard = () => {
   const navigate = useNavigate();
@@ -117,10 +119,12 @@ const CrmDashboard = () => {
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="pipeline">Pipeline de Ventas</TabsTrigger>
-          <TabsTrigger value="chat">Centro de Mensajes</TabsTrigger>
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="messages">Mensajes</TabsTrigger>
+          <TabsTrigger value="reports">Reportes</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
@@ -207,7 +211,7 @@ const CrmDashboard = () => {
                   <span className="text-sm">Calendario</span>
                 </Button>
                 <Button variant="outline" className="h-auto p-4 flex flex-col gap-2">
-                  <TrendingUp className="h-6 w-6" />
+                  <BarChart3 className="h-6 w-6" />
                   <span className="text-sm">Reportes</span>
                 </Button>
               </div>
@@ -316,34 +320,42 @@ const CrmDashboard = () => {
           <PipelineView />
         </TabsContent>
 
-        <TabsContent value="chat">
+        <TabsContent value="messages">
+          <ChatContainer />
+        </TabsContent>
+
+        <TabsContent value="reports">
+          <CrmReports />
+        </TabsContent>
+
+        <TabsContent value="analytics">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Centro de Mensajes CRM
+                <BarChart3 className="h-5 w-5" />
+                Analytics Avanzados
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Selecciona una empresa o contacto para iniciar una conversación
+                Análisis detallado y predicciones con IA (Próximamente)
               </p>
             </CardHeader>
             <CardContent>
               <div className="text-center py-12">
-                <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <BarChart3 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                  Bienvenido al Centro de Mensajes
+                  Analytics Avanzados en Desarrollo
                 </h3>
                 <p className="text-sm text-muted-foreground mb-6">
-                  Para iniciar una conversación, ve a la página de una empresa específica y usa la pestaña "Chat"
+                  Funcionalidades de análisis predictivo y reportes avanzados con IA están en desarrollo
                 </p>
                 <div className="flex gap-2 justify-center">
-                  <Button onClick={() => navigate('/companies')} variant="outline">
-                    <Building2 className="h-4 w-4 mr-2" />
-                    Ver Empresas
+                  <Button variant="outline" disabled>
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Análisis Predictivo
                   </Button>
-                  <Button onClick={() => navigate('/contacts')} variant="outline">
-                    <Users className="h-4 w-4 mr-2" />
-                    Ver Contactos
+                  <Button variant="outline" disabled>
+                    <Target className="h-4 w-4 mr-2" />
+                    Scoring con IA
                   </Button>
                 </div>
               </div>
