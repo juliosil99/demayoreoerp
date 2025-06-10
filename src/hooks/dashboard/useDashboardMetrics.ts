@@ -7,9 +7,14 @@ import { DashboardMetrics } from "@/types/dashboard";
 import { useFetchSalesData } from "./metrics/useFetchSalesData";
 import { generateSampleData } from "./metrics/sampleDataGenerator";
 import { supabase } from "@/lib/supabase";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export const useDashboardMetrics = (dateRange?: DateRange) => {
   const navigate = useNavigate();
+  
+  // Debounce del dateRange para evitar consultas excesivas
+  const debouncedDateRange = useDebounce(dateRange, 500);
+  
   const [combinedData, setCombinedData] = useState<DashboardMetrics>({
     // Main metrics for MainMetricsSection
     orderRevenue: 0,
@@ -92,15 +97,15 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
           return;
         }
 
-        if (dateRange?.from && dateRange?.to) {
+        if (debouncedDateRange?.from && debouncedDateRange?.to) {
           // Use only real data when date range is selected
-          const realData = await fetchSalesMetrics(dateRange);
+          const realData = await fetchSalesMetrics(debouncedDateRange);
           setCombinedData(realData);
           setSalesData(realData);
           setMetricsData(null); // No sample data used
         } else {
           // Use sample data when no date range is selected (for demo purposes)
-          const sampleData = generateSampleData(dateRange);
+          const sampleData = generateSampleData(debouncedDateRange);
           setCombinedData(sampleData);
           setSalesData(null);
           setMetricsData(sampleData);
@@ -116,7 +121,7 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     };
 
     fetchMetrics();
-  }, [navigate, dateRange, fetchSalesMetrics]);
+  }, [navigate, debouncedDateRange, fetchSalesMetrics]);
 
   return { 
     combinedData, 

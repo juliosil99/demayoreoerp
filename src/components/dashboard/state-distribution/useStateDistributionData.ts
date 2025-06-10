@@ -36,7 +36,11 @@ export const useStateDistributionData = (dateRange?: DateRange) => {
       const processedData = processStateSQLResults(data || []);
       
       return processedData;
-    }
+    },
+    staleTime: 3 * 60 * 1000, // 3 minutos de cache para distribución de estados
+    gcTime: 10 * 60 * 1000, // 10 minutos en garbage collection
+    refetchOnMount: false, // No refetch al montar si hay datos en cache
+    retry: 2
   });
 };
 
