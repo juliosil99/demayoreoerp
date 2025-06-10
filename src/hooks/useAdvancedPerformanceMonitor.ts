@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -69,11 +68,9 @@ export const useAdvancedPerformanceMonitor = () => {
     if (fullMetrics.duration > thresholds.slowQueryThreshold) {
       console.warn(`🐌 Slow Query Detected: ${fullMetrics.queryName} took ${fullMetrics.duration}ms`);
       
-      // Persistir query lenta en Supabase para análisis
-      try {
-        await persistSlowQuery(fullMetrics);
-      } catch (error) {
-        console.error('Error persisting slow query:', error);
+      // Solo loggear en desarrollo sin persistir en Supabase
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📊 Slow Query Details:', fullMetrics);
       }
     }
 
@@ -81,58 +78,14 @@ export const useAdvancedPerformanceMonitor = () => {
     if (fullMetrics.status === 'error') {
       console.error(`❌ Query Error: ${fullMetrics.queryName} - ${fullMetrics.errorMessage}`);
       
-      try {
-        await persistQueryError(fullMetrics);
-      } catch (error) {
-        console.error('Error persisting query error:', error);
+      // Solo loggear en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📊 Error Query Details:', fullMetrics);
       }
     }
 
     // Actualizar métricas locales
     updateLocalMetrics();
-  };
-
-  const persistSlowQuery = async (queryMetrics: QueryMetrics) => {
-    // Solo persistir en desarrollo o si es crítico
-    if (process.env.NODE_ENV === 'development' || queryMetrics.duration > 5000) {
-      const { error } = await supabase
-        .from('performance_logs')
-        .insert({
-          query_name: queryMetrics.queryName,
-          duration: queryMetrics.duration,
-          record_count: queryMetrics.recordCount,
-          category: queryMetrics.category,
-          status: queryMetrics.status,
-          error_message: queryMetrics.errorMessage,
-          user_id: queryMetrics.userId,
-          created_at: queryMetrics.timestamp.toISOString()
-        });
-
-      if (error && error.code !== '42P01') { // Ignorar si la tabla no existe
-        console.error('Error saving slow query:', error);
-      }
-    }
-  };
-
-  const persistQueryError = async (queryMetrics: QueryMetrics) => {
-    try {
-      const { error } = await supabase
-        .from('error_logs')
-        .insert({
-          query_name: queryMetrics.queryName,
-          duration: queryMetrics.duration,
-          category: queryMetrics.category,
-          error_message: queryMetrics.errorMessage,
-          user_id: queryMetrics.userId,
-          created_at: queryMetrics.timestamp.toISOString()
-        });
-
-      if (error && error.code !== '42P01') { // Ignorar si la tabla no existe
-        console.error('Error saving query error:', error);
-      }
-    } catch (err) {
-      // Silencio errores de logging para no interferir con el flujo principal
-    }
   };
 
   const updateLocalMetrics = () => {
@@ -164,17 +117,15 @@ export const useAdvancedPerformanceMonitor = () => {
       topSlowQueries
     });
 
-    // Alertas automáticas
-    if (errorRate > thresholds.errorRateThreshold) {
-      toast.error(`Alto ratio de errores: ${errorRate.toFixed(1)}%`, {
-        duration: 5000
-      });
-    }
+    // Alertas automáticas solo en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      if (errorRate > thresholds.errorRateThreshold) {
+        console.warn(`⚠️ High error rate: ${errorRate.toFixed(1)}%`);
+      }
 
-    if (slowQueries.length > thresholds.maxSlowQueries) {
-      toast.warning(`Demasiadas queries lentas: ${slowQueries.length} queries > ${thresholds.slowQueryThreshold}ms`, {
-        duration: 5000
-      });
+      if (slowQueries.length > thresholds.maxSlowQueries) {
+        console.warn(`⚠️ Too many slow queries: ${slowQueries.length} queries > ${thresholds.slowQueryThreshold}ms`);
+      }
     }
   };
 

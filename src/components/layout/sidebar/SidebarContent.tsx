@@ -1,3 +1,4 @@
+
 import {
   Home,
   LayoutDashboard,
@@ -7,7 +8,6 @@ import {
   FileText,
   Users,
   Contact,
-  Bank,
   Receipt,
   Activity,
 } from "lucide-react";
@@ -66,7 +66,7 @@ const navigation: MainNavItem[] = [
   {
     name: "Bancos",
     href: "/banking",
-    icon: Bank,
+    icon: DollarSign,
     permission: "can_view_banking" as const,
   },
   {
