@@ -18,44 +18,70 @@ export default function BankAccountMovements() {
   const { accountId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const id = accountId ? parseInt(accountId) : null;
   const [statementsDialogOpen, setStatementsDialogOpen] = useState(false);
+
+  // Validate accountId parameter
+  const validAccountId = accountId && !isNaN(Number(accountId)) ? parseInt(accountId) : null;
+  
+  console.log('BankAccountMovements - accountId param:', accountId);
+  console.log('BankAccountMovements - validAccountId:', validAccountId);
 
   // Force refresh data when the component mounts
   useEffect(() => {
-    if (id) {
+    if (validAccountId) {
       queryClient.invalidateQueries({
-        queryKey: ["bank-account", id]
+        queryKey: ["bank-account", validAccountId]
       });
       queryClient.invalidateQueries({
-        queryKey: ["account-transactions", id]
+        queryKey: ["account-transactions", validAccountId]
       });
     }
-  }, [id, queryClient]);
+  }, [validAccountId, queryClient]);
+
+  const handleBack = () => {
+    navigate("/accounting/banking");
+  };
+
+  // Show error if accountId is invalid
+  if (!accountId || !validAccountId) {
+    console.error('Invalid accountId:', accountId);
+    return (
+      <div className="container mx-auto py-6">
+        <Button variant="outline" onClick={handleBack} className="mb-4">
+          <ArrowLeftIcon className="mr-2 h-4 w-4" />
+          Volver a Cuentas Bancarias
+        </Button>
+        <Alert variant="destructive">
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>ID de cuenta inválido</AlertTitle>
+          <AlertDescription>
+            El ID de la cuenta bancaria no es válido. Por favor, selecciona una cuenta desde la lista principal.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   // Fetch account details
   const { 
     data: account, 
     isLoading: isLoadingAccount, 
     error: accountError 
-  } = useAccountDetails(id);
+  } = useAccountDetails(validAccountId);
 
   // Fetch transactions for this account
   const { 
     data: transactions, 
     isLoading: isLoadingTransactions,
     error: transactionsError 
-  } = useAccountTransactions(id);
+  } = useAccountTransactions(validAccountId);
 
   // Use the synchronization hook to ensure balance is correct
   useSyncAccountBalance(account, transactions);
 
-  const handleBack = () => {
-    navigate("/accounting/banking");
-  };
-
   // Handle errors in a user-friendly way
   if (accountError) {
+    console.error('Account error:', accountError);
     return (
       <div className="container mx-auto py-6">
         <Button variant="outline" onClick={handleBack} className="mb-4">
@@ -66,7 +92,7 @@ export default function BankAccountMovements() {
           <InfoIcon className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            Ocurrió un error al cargar los detalles de la cuenta. Por favor, intenta de nuevo.
+            Ocurrió un error al cargar los detalles de la cuenta. Error: {accountError.message || 'Error desconocido'}
           </AlertDescription>
         </Alert>
       </div>
@@ -82,6 +108,7 @@ export default function BankAccountMovements() {
   }
 
   if (!account) {
+    console.log('No account found for ID:', validAccountId);
     return (
       <div className="container mx-auto py-6">
         <Button variant="outline" onClick={handleBack} className="mb-4">
@@ -100,6 +127,7 @@ export default function BankAccountMovements() {
 
   // Handle transactions error
   if (transactionsError) {
+    console.error('Transactions error:', transactionsError);
     return (
       <div className="container mx-auto py-6">
         <Button variant="outline" onClick={handleBack} className="mb-4">
@@ -111,7 +139,7 @@ export default function BankAccountMovements() {
           <InfoIcon className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            Ocurrió un error al cargar las transacciones. Por favor, intenta de nuevo.
+            Ocurrió un error al cargar las transacciones. Error: {transactionsError.message || 'Error desconocido'}
           </AlertDescription>
         </Alert>
       </div>
