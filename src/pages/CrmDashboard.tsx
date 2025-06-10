@@ -12,7 +12,9 @@ import {
   UserPlus,
   Clock,
   Target,
-  BarChart3
+  BarChart3,
+  Bell,
+  Zap
 } from 'lucide-react';
 import { useCrmCompanies } from '@/hooks/useCrmCompanies';
 import { useCrmInteractions } from '@/hooks/useCrmInteractions';
@@ -27,6 +29,10 @@ import { formatCurrency } from '@/utils/formatters';
 import { PipelineView } from '@/components/crm/PipelineView';
 import { ChatContainer } from '@/components/crm/chat/ChatContainer';
 import { CrmReports } from '@/components/crm/reports/CrmReports';
+import { NotificationCenter } from '@/components/crm/notifications/NotificationCenter';
+import { FollowUpReminders } from '@/components/crm/follow-ups/FollowUpReminders';
+import { CalendarView } from '@/components/crm/calendar/CalendarView';
+import { WorkflowBuilder } from '@/components/crm/automation/WorkflowBuilder';
 
 const CrmDashboard = () => {
   const navigate = useNavigate();
@@ -107,6 +113,7 @@ const CrmDashboard = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <NotificationCenter />
           <Button onClick={() => navigate('/contacts')} variant="outline">
             <UserPlus className="h-4 w-4 mr-2" />
             Nuevo Contacto
@@ -119,12 +126,14 @@ const CrmDashboard = () => {
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="messages">Mensajes</TabsTrigger>
+          <TabsTrigger value="calendar">Calendario</TabsTrigger>
+          <TabsTrigger value="follow-ups">Seguimientos</TabsTrigger>
+          <TabsTrigger value="automation">Automatización</TabsTrigger>
           <TabsTrigger value="reports">Reportes</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
@@ -324,43 +333,20 @@ const CrmDashboard = () => {
           <ChatContainer />
         </TabsContent>
 
-        <TabsContent value="reports">
-          <CrmReports />
+        <TabsContent value="calendar">
+          <CalendarView />
         </TabsContent>
 
-        <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Analytics Avanzados
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Análisis detallado y predicciones con IA (Próximamente)
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <BarChart3 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                  Analytics Avanzados en Desarrollo
-                </h3>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Funcionalidades de análisis predictivo y reportes avanzados con IA están en desarrollo
-                </p>
-                <div className="flex gap-2 justify-center">
-                  <Button variant="outline" disabled>
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Análisis Predictivo
-                  </Button>
-                  <Button variant="outline" disabled>
-                    <Target className="h-4 w-4 mr-2" />
-                    Scoring con IA
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="follow-ups">
+          <FollowUpReminders />
+        </TabsContent>
+
+        <TabsContent value="automation">
+          <WorkflowBuilder />
+        </TabsContent>
+
+        <TabsContent value="reports">
+          <CrmReports />
         </TabsContent>
       </Tabs>
     </div>
