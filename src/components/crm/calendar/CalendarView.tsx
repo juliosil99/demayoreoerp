@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CalendarIcon, Plus, Clock, User, Target, MapPin } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { formatDate, formatDatetime } from '@/utils/formatters';
 import { toast } from 'sonner';
 
@@ -30,9 +30,9 @@ interface CalendarEvent {
   status: 'scheduled' | 'completed' | 'cancelled';
   created_at: string;
   // Relations
-  opportunity?: any;
-  company?: any;
-  contact?: any;
+  opportunities?: any;
+  companies_crm?: any;
+  contacts?: any;
 }
 
 interface EventFormData {
@@ -65,9 +65,9 @@ export const CalendarView = () => {
         .from('calendar_events')
         .select(`
           *,
-          opportunity:opportunities(id, title),
-          company:companies_crm(id, name),
-          contact:contacts(id, name)
+          opportunities(id, title),
+          companies_crm(id, name),
+          contacts(id, name)
         `)
         .gte('start_date', startOfMonth.toISOString())
         .lte('start_date', endOfMonth.toISOString())
@@ -93,7 +93,6 @@ export const CalendarView = () => {
           company_id: data.company_id || null,
           contact_id: data.contact_id || null,
           status: 'scheduled',
-          user_id: (await supabase.auth.getUser()).data.user?.id,
         });
 
       if (error) throw error;
@@ -329,9 +328,9 @@ export const CalendarView = () => {
                       <p className="text-sm text-muted-foreground">
                         {formatDatetime(event.start_date)}
                       </p>
-                      {event.company?.name && (
+                      {event.companies_crm?.name && (
                         <p className="text-xs text-muted-foreground">
-                          {event.company.name}
+                          {event.companies_crm.name}
                         </p>
                       )}
                     </div>

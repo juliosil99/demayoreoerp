@@ -441,6 +441,76 @@ export type Database = {
           },
         ]
       }
+      calendar_events: {
+        Row: {
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          description: string | null
+          end_date: string
+          event_type: string
+          id: string
+          location: string | null
+          opportunity_id: string | null
+          start_date: string
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          description?: string | null
+          end_date: string
+          event_type: string
+          id?: string
+          location?: string | null
+          opportunity_id?: string | null
+          start_date: string
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          event_type?: string
+          id?: string
+          location?: string | null
+          opportunity_id?: string | null
+          start_date?: string
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_crm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cash_flow_forecasts: {
         Row: {
           ai_insights: string | null
@@ -1231,6 +1301,73 @@ export type Database = {
         }
         Relationships: []
       }
+      follow_ups: {
+        Row: {
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          description: string | null
+          due_date: string
+          id: string
+          opportunity_id: string | null
+          priority: string
+          reminder_type: string
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          opportunity_id?: string | null
+          priority?: string
+          reminder_type?: string
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          opportunity_id?: string | null
+          priority?: string
+          reminder_type?: string
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_ups_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_crm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       forecast_items: {
         Row: {
           amount: number
@@ -1861,6 +1998,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          metadata: Json | null
+          related_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          metadata?: Json | null
+          related_id?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          metadata?: Json | null
+          related_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       opportunities: {
         Row: {
@@ -2569,6 +2742,42 @@ export type Database = {
           id?: string
           permission_name?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workflows: {
+        Row: {
+          actions: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          trigger_conditions: Json
+          trigger_type: string
+          user_id: string
+        }
+        Insert: {
+          actions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          trigger_conditions?: Json
+          trigger_type: string
+          user_id: string
+        }
+        Update: {
+          actions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          trigger_conditions?: Json
+          trigger_type?: string
           user_id?: string
         }
         Relationships: []

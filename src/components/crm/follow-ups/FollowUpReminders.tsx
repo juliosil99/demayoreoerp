@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Plus, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/utils/formatters';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -62,9 +62,9 @@ export const FollowUpReminders = () => {
         .from('follow_ups')
         .select(`
           *,
-          opportunity:opportunities(id, title),
-          company:companies_crm(id, name),
-          contact:contacts(id, name)
+          opportunities(id, title),
+          companies_crm(id, name),
+          contacts(id, name)
         `)
         .order('due_date', { ascending: true });
 
@@ -87,7 +87,6 @@ export const FollowUpReminders = () => {
           contact_id: data.contact_id || null,
           reminder_type: data.reminder_type,
           status: 'pending',
-          user_id: (await supabase.auth.getUser()).data.user?.id,
         });
 
       if (error) throw error;

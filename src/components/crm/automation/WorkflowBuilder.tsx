@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Play, Pause, Settings, Zap, ArrowRight, Clock } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface Workflow {
@@ -71,7 +71,6 @@ export const WorkflowBuilder = () => {
           trigger_conditions: JSON.parse(data.trigger_conditions || '{}'),
           actions: [],
           is_active: false,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
         });
 
       if (error) throw error;
