@@ -14,26 +14,13 @@ import { useForm } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate, formatDatetime } from '@/utils/formatters';
 import { toast } from 'sonner';
+import { Tables } from '@/integrations/supabase/types';
 
-interface CalendarEvent {
-  id: string;
-  user_id: string;
-  title: string;
-  description?: string;
-  event_type: 'meeting' | 'call' | 'task' | 'follow_up' | 'demo';
-  start_date: string;
-  end_date: string;
-  location?: string;
-  opportunity_id?: string;
-  company_id?: string;
-  contact_id?: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
-  created_at: string;
-  // Relations
-  opportunities?: any;
-  companies_crm?: any;
-  contacts?: any;
-}
+type CalendarEvent = Tables<'calendar_events'> & {
+  opportunities?: { id: string; title: string } | null;
+  companies_crm?: { id: string; name: string } | null;
+  contacts?: { id: string; name: string } | null;
+};
 
 interface EventFormData {
   title: string;

@@ -11,18 +11,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { Tables } from '@/integrations/supabase/types';
 
-interface Notification {
-  id: string;
-  user_id: string;
-  type: 'opportunity_stagnant' | 'follow_up_due' | 'opportunity_moved' | 'task_due' | 'meeting_reminder';
-  title: string;
-  message: string;
-  is_read: boolean;
-  related_id?: string;
-  created_at: string;
-  metadata?: any;
-}
+type Notification = Tables<'notifications'>;
 
 export const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);

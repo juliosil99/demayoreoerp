@@ -17,25 +17,13 @@ import { formatDate } from '@/utils/formatters';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { Tables } from '@/integrations/supabase/types';
 
-interface FollowUp {
-  id: string;
-  user_id: string;
-  opportunity_id?: string;
-  company_id?: string;
-  contact_id?: string;
-  title: string;
-  description?: string;
-  due_date: string;
-  priority: 'low' | 'medium' | 'high';
-  status: 'pending' | 'completed' | 'overdue';
-  reminder_type: 'email' | 'notification' | 'both';
-  created_at: string;
-  // Relations
-  opportunity?: any;
-  company?: any;
-  contact?: any;
-}
+type FollowUp = Tables<'follow_ups'> & {
+  opportunities?: { id: string; title: string } | null;
+  companies_crm?: { id: string; name: string } | null;
+  contacts?: { id: string; name: string } | null;
+};
 
 interface FollowUpFormData {
   title: string;

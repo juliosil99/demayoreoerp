@@ -13,25 +13,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Tables } from '@/integrations/supabase/types';
 
-interface Workflow {
-  id: string;
-  user_id: string;
-  name: string;
-  description?: string;
-  trigger_type: 'opportunity_created' | 'stage_changed' | 'time_based' | 'manual';
-  trigger_conditions: any;
-  actions: WorkflowAction[];
-  is_active: boolean;
-  created_at: string;
-}
-
-interface WorkflowAction {
-  id: string;
-  type: 'send_email' | 'create_task' | 'schedule_follow_up' | 'update_field' | 'send_notification';
-  config: any;
-  delay_hours?: number;
-}
+type Workflow = Tables<'workflows'>;
 
 interface WorkflowFormData {
   name: string;
@@ -131,7 +115,7 @@ export const WorkflowBuilder = () => {
     {
       name: 'Seguimiento Automático',
       description: 'Crea seguimientos automáticos para nuevas oportunidades',
-      trigger_type: 'opportunity_created',
+      trigger_type: 'opportunity_created' as const,
       actions: [
         { type: 'schedule_follow_up', delay_hours: 24 },
         { type: 'send_notification', delay_hours: 72 }
@@ -140,7 +124,7 @@ export const WorkflowBuilder = () => {
     {
       name: 'Alerta de Oportunidad Estancada',
       description: 'Notifica cuando una oportunidad lleva mucho tiempo en la misma etapa',
-      trigger_type: 'time_based',
+      trigger_type: 'time_based' as const,
       actions: [
         { type: 'send_notification' },
         { type: 'create_task' }
@@ -149,7 +133,7 @@ export const WorkflowBuilder = () => {
     {
       name: 'Bienvenida a Clientes',
       description: 'Envía email de bienvenida cuando se cierra una oportunidad',
-      trigger_type: 'stage_changed',
+      trigger_type: 'stage_changed' as const,
       actions: [
         { type: 'send_email' },
         { type: 'create_task' }
