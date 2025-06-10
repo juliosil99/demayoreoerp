@@ -1,3 +1,4 @@
+
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -72,11 +73,15 @@ function App() {
                   </Suspense>
                 } />
 
-                {/* Home page - shows the welcome page directly */}
+                {/* Home page - shows the welcome page with layout and sidebar */}
                 <Route path="/" element={
-                  <Suspense fallback={<div>Loading...</div>}>
-                    <Index />
-                  </Suspense>
+                  <PathBasedProtectedRoute>
+                    <Layout>
+                      <Suspense fallback={<div>Loading...</div>}>
+                        <Index />
+                      </Suspense>
+                    </Layout>
+                  </PathBasedProtectedRoute>
                 } />
 
                 {/* Smart redirect route - for users who want to go to their main page */}
