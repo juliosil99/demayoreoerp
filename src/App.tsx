@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -223,7 +222,8 @@ function App() {
                   </PathBasedProtectedRoute>
                 } />
 
-                <Route path="/accounting/banking/:accountId" element={
+                {/* Fixed route to match the URL pattern being used */}
+                <Route path="/accounting/banking/account/:accountId" element={
                   <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
@@ -323,7 +323,7 @@ function App() {
                   </PathBasedProtectedRoute>
                 } />
 
-                <Route path="/accounting/banking/:accountId/payment-schedule" element={
+                <Route path="/accounting/banking/account/:accountId/payment-schedule" element={
                   <PathBasedProtectedRoute>
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
