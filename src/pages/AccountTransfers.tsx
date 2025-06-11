@@ -8,6 +8,7 @@ import { TransferForm } from "@/components/banking/TransferForm";
 import { TransfersList } from "@/components/banking/TransfersList";
 import { useBankAccounts } from "@/components/banking/hooks/useBankAccounts";
 import { useAccountTransfersList } from "@/components/banking/hooks/useAccountTransfersList";
+import { useUserCompany } from "@/hooks/useUserCompany";
 import { AccountTransfersTable } from "@/integrations/supabase/types/account-transfers";
 import { Account } from "@/components/banking/transfer-form/types";
 
@@ -23,6 +24,7 @@ interface TransferWithAccounts {
   notes: string | null;
   user_id: string;
   status: string;
+  company_id: string;
   created_at?: string;
   from_account?: { name: string };
   to_account?: { name: string };
@@ -32,6 +34,7 @@ export default function AccountTransfers() {
   const navigate = useNavigate();
   const { accounts } = useBankAccounts();
   const { transfers, isLoadingTransfers } = useAccountTransfersList();
+  const { data: userCompany } = useUserCompany();
   
   const [selectedTransfer, setSelectedTransfer] = useState<AccountTransfersTable["Row"] | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -54,8 +57,8 @@ export default function AccountTransfers() {
       notes: transfer.notes,
       user_id: transfer.user_id,
       status: transfer.status,
+      company_id: transfer.company_id || userCompany?.id || "",
       created_at: transfer.created_at
-      // Remove the invalid 'amount' property
     };
     
     setSelectedTransfer(baseTransfer);

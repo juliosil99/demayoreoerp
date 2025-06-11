@@ -16,6 +16,7 @@ interface TransferRow {
   notes: string | null;
   user_id: string;
   status: string;
+  company_id: string;
   from_account?: { name: string };
   to_account?: { name: string };
   created_at?: string;
@@ -41,6 +42,7 @@ export function useAccountTransfersList() {
           notes, 
           status,
           user_id,
+          company_id,
           created_at,
           from_account:bank_accounts!fk_from_account(name),
           to_account:bank_accounts!account_transfers_to_account_id_fkey(name)

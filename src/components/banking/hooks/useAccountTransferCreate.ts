@@ -5,10 +5,12 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserCompany } from "@/hooks/useUserCompany";
 import { TransferFormData } from "../transfer-form/types";
 
 export function useAccountTransferCreate() {
   const { user } = useAuth();
+  const { data: userCompany } = useUserCompany();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<TransferFormData>({
     date: format(new Date(), 'yyyy-MM-dd'),
@@ -23,6 +25,10 @@ export function useAccountTransferCreate() {
 
   const createTransfer = useMutation({
     mutationFn: async (data: TransferFormData) => {
+      if (!userCompany?.id) {
+        throw new Error("No company found for user");
+      }
+
       const { error } = await supabase
         .from("account_transfers")
         .insert({
@@ -35,6 +41,7 @@ export function useAccountTransferCreate() {
           reference_number: data.reference_number || null,
           notes: data.notes || null,
           user_id: user?.id,
+          company_id: userCompany.id,
           // For backward compatibility, also set the amount field
           amount: parseFloat(data.amount_from)
         });
