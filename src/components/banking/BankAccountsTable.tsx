@@ -1,3 +1,4 @@
+
 import { BanknoteIcon, CreditCard, Pencil, Trash2, FileBarChart, FileText, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,7 +66,7 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
           {account.payment_due_day && account.monthly_payment && (
             <div>
               <span className="font-medium">Pago: </span>
-              <span>{formatCurrency(account.monthly_payment)} el día {account.payment_due_day}</span>
+              <span>{formatCurrency(account.monthly_payment, account.currency)} el día {account.payment_due_day}</span>
             </div>
           )}
           {account.remaining_months !== undefined && (
@@ -145,7 +146,7 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  {formatCurrency(account.balance)}
+                  {formatCurrency(account.balance, account.currency)}
                 </TableCell>
                 <TableCell className="text-right">
                   {renderCreditInfo(account)}

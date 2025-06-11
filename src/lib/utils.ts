@@ -3,7 +3,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 /**
- * Formats a number as currency (MXN)
+ * Formats a number as currency (MXN) with consistent 2 decimal places
  */
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('es-MX', {

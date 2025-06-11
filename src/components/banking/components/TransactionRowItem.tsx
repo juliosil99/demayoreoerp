@@ -11,7 +11,7 @@ interface TransactionRowItemProps {
 }
 
 export function TransactionRowItem({ transaction, account }: TransactionRowItemProps) {
-  // Format amount with commas and 2 decimal places
+  // Format amount with commas and 2 decimal places consistently
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
       minimumFractionDigits: 2,

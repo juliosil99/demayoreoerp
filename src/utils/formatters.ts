@@ -1,5 +1,4 @@
 
-
 export const formatCurrency = (amount: number, currency: string = 'MXN'): string => {
   const currencySymbols: Record<string, string> = {
     'MXN': '$',
@@ -10,7 +9,7 @@ export const formatCurrency = (amount: number, currency: string = 'MXN'): string
   const symbol = currencySymbols[currency] || '$';
   
   return `${symbol}${amount.toLocaleString('es-MX', {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 };
@@ -55,4 +54,3 @@ export const formatBytes = (bytes: number, decimals: number = 2): string => {
 
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
-
