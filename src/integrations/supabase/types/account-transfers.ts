@@ -13,6 +13,7 @@ export interface AccountTransfersTable {
     notes: string | null
     user_id: string
     status: string
+    company_id: string
   }
   Insert: {
     id?: string
@@ -27,6 +28,7 @@ export interface AccountTransfersTable {
     notes?: string | null
     user_id: string
     status?: string
+    company_id: string
   }
   Update: {
     id?: string
@@ -41,6 +43,7 @@ export interface AccountTransfersTable {
     notes?: string | null
     user_id?: string
     status?: string
+    company_id?: string
   }
   Relationships: [
     {
@@ -62,6 +65,13 @@ export interface AccountTransfersTable {
       columns: ["user_id"]
       isOneToOne: false
       referencedRelation: "users"
+      referencedColumns: ["id"]
+    },
+    {
+      foreignKeyName: "account_transfers_company_id_fkey"
+      columns: ["company_id"]
+      isOneToOne: false
+      referencedRelation: "companies"
       referencedColumns: ["id"]
     }
   ]

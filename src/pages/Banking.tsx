@@ -26,32 +26,41 @@ export default function Banking() {
     handleEditAccount,
     handleDeleteAccount,
     openEditDialog,
+    userCompany,
   } = useBankAccounts();
 
-  // Optimización: Solo invalidar cuando sea realmente necesario
+  // Log company information for debugging
   useEffect(() => {
-    // Solo invalidar si hay muy pocas cuentas (menos de 3)
-    // para evitar invalidaciones excesivas en sistemas con muchas cuentas
-    if (accounts && accounts.length < 3) {
-      queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log("Banking page - user company:", userCompany);
+      console.log("Banking page - account count:", accounts?.length || 0);
     }
-  }, [queryClient]);
+  }, [userCompany, accounts]);
 
-  // Remove or sanitize sensitive logging
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'production' && accounts && accounts.length > 0) {
-      console.log("Banking page - account count:", accounts.length);
-    }
-  }, [accounts]);
+  // Show error if no company is found
+  if (!userCompany && !isLoadingAccounts) {
+    return (
+      <div className="p-4">
+        <Alert variant="destructive">
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>Sin empresa</AlertTitle>
+          <AlertDescription>
+            No se encontró una empresa asociada a tu usuario. Contacta al administrador para que te asigne a una empresa.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   if (accountsError) {
+    console.error("Banking page - accounts error:", accountsError);
     return (
       <div className="p-4">
         <Alert variant="destructive">
           <InfoIcon className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            Error al cargar las cuentas. Por favor, intenta de nuevo.
+            Error al cargar las cuentas: {accountsError.message}
           </AlertDescription>
         </Alert>
       </div>

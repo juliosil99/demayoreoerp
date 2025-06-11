@@ -1,11 +1,14 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { NewBankAccount, BankAccount, AccountType, AccountCurrency } from "@/components/banking/types";
+import { useUserCompany } from "@/hooks/useUserCompany";
 
 export function useBankAccounts() {
   const queryClient = useQueryClient();
+  const { data: userCompany } = useUserCompany();
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [isEditingAccount, setIsEditingAccount] = useState(false);
   const [newAccount, setNewAccount] = useState<NewBankAccount>({
@@ -17,23 +20,27 @@ export function useBankAccounts() {
     currency: "MXN"
   });
 
-  // Fetch bank accounts - modified to sort by type first, then by name
+  // Fetch bank accounts - automatically filtered by RLS policies
   const { 
     data: accounts = [], 
     isLoading: isLoadingAccounts,
     error: accountsError 
   } = useQuery({
-    queryKey: ["bank-accounts"],
+    queryKey: ["bank-accounts", userCompany?.id],
     queryFn: async () => {
-      console.log("Fetching bank accounts data...");
+      console.log("Fetching bank accounts for company:", userCompany?.id);
+      
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*")
         .order('type')
         .order('name');
-      if (error) throw error;
+        
+      if (error) {
+        console.error("Error fetching bank accounts:", error);
+        throw error;
+      }
       
-      // Log the fetched accounts for debugging
       console.log("Fetched bank accounts:", data);
       
       // Convert the type string to AccountType and ensure currency is of type AccountCurrency
@@ -43,6 +50,7 @@ export function useBankAccounts() {
         currency: (account.currency || "MXN") as AccountCurrency
       }));
     },
+    enabled: !!userCompany?.id,
     staleTime: 5 * 60 * 1000, // 5 minutos de cache para cuentas bancarias
     gcTime: 15 * 60 * 1000, // 15 minutos en garbage collection
     refetchOnMount: true,
@@ -52,6 +60,10 @@ export function useBankAccounts() {
   // Add new bank account
   const addAccount = useMutation({
     mutationFn: async (account: NewBankAccount) => {
+      if (!userCompany?.id) {
+        throw new Error("No company found for user");
+      }
+
       const { error } = await supabase
         .from("bank_accounts")
         .insert({
@@ -61,6 +73,7 @@ export function useBankAccounts() {
           initial_balance: account.initial_balance,
           balance_date: account.balance_date,
           currency: account.currency,
+          company_id: userCompany.id,
           // Credit card specific fields
           payment_due_day: account.payment_due_day,
           statement_cut_day: account.statement_cut_day,
@@ -91,6 +104,7 @@ export function useBankAccounts() {
       });
     },
     onError: (error) => {
+      console.error("Error creating bank account:", error);
       toast.error("Error al crear la cuenta: " + error.message);
     },
   });
@@ -130,6 +144,7 @@ export function useBankAccounts() {
       toast.success("Cuenta bancaria actualizada con éxito");
     },
     onError: (error) => {
+      console.error("Error updating bank account:", error);
       toast.error("Error al actualizar la cuenta: " + error.message);
     },
   });
@@ -148,6 +163,7 @@ export function useBankAccounts() {
       toast.success("Cuenta bancaria eliminada con éxito");
     },
     onError: (error) => {
+      console.error("Error deleting bank account:", error);
       toast.error("Error al eliminar la cuenta: " + error.message);
     },
   });
@@ -184,6 +200,7 @@ export function useBankAccounts() {
     handleAddAccount,
     handleEditAccount,
     handleDeleteAccount,
-    openEditDialog
+    openEditDialog,
+    userCompany
   };
 }

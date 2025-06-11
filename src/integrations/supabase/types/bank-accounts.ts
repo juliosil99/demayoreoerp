@@ -9,6 +9,17 @@ export interface BankAccountsTable {
     initial_balance: number | null
     balance_date: string | null
     currency: "MXN" | "USD" | null
+    company_id: string
+    payment_due_day: number | null
+    statement_cut_day: number | null
+    credit_limit: number | null
+    minimum_payment_percentage: number | null
+    monthly_payment: number | null
+    total_term_months: number | null
+    remaining_months: number | null
+    original_loan_amount: number | null
+    loan_start_date: string | null
+    interest_rate: number | null
   }
   Insert: {
     id?: number
@@ -19,6 +30,17 @@ export interface BankAccountsTable {
     initial_balance?: number | null
     balance_date?: string | null
     currency?: "MXN" | "USD" | null
+    company_id: string
+    payment_due_day?: number | null
+    statement_cut_day?: number | null
+    credit_limit?: number | null
+    minimum_payment_percentage?: number | null
+    monthly_payment?: number | null
+    total_term_months?: number | null
+    remaining_months?: number | null
+    original_loan_amount?: number | null
+    loan_start_date?: string | null
+    interest_rate?: number | null
   }
   Update: {
     id?: number
@@ -29,5 +51,16 @@ export interface BankAccountsTable {
     initial_balance?: number | null
     balance_date?: string | null
     currency?: "MXN" | "USD" | null
+    company_id?: string
+    payment_due_day?: number | null
+    statement_cut_day?: number | null
+    credit_limit?: number | null
+    minimum_payment_percentage?: number | null
+    monthly_payment?: number | null
+    total_term_months?: number | null
+    remaining_months?: number | null
+    original_loan_amount?: number | null
+    loan_start_date?: string | null
+    interest_rate?: number | null
   }
 }

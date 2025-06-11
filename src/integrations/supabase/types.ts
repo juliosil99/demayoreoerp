@@ -59,6 +59,7 @@ export type Database = {
           amount: number
           amount_from: number
           amount_to: number
+          company_id: string
           created_at: string | null
           date: string
           exchange_rate: number
@@ -74,6 +75,7 @@ export type Database = {
           amount: number
           amount_from?: number
           amount_to?: number
+          company_id: string
           created_at?: string | null
           date: string
           exchange_rate?: number
@@ -89,6 +91,7 @@ export type Database = {
           amount?: number
           amount_from?: number
           amount_to?: number
+          company_id?: string
           created_at?: string | null
           date?: string
           exchange_rate?: number
@@ -101,6 +104,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "account_transfers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "account_transfers_from_account_id_fkey"
             columns: ["from_account_id"]
@@ -332,6 +342,7 @@ export type Database = {
         Row: {
           balance: number | null
           balance_date: string | null
+          company_id: string
           created_at: string | null
           credit_limit: number | null
           currency: string
@@ -352,6 +363,7 @@ export type Database = {
         Insert: {
           balance?: number | null
           balance_date?: string | null
+          company_id: string
           created_at?: string | null
           credit_limit?: number | null
           currency?: string
@@ -372,6 +384,7 @@ export type Database = {
         Update: {
           balance?: number | null
           balance_date?: string | null
+          company_id?: string
           created_at?: string | null
           credit_limit?: number | null
           currency?: string
@@ -389,7 +402,15 @@ export type Database = {
           total_term_months?: number | null
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bank_statements: {
         Row: {
@@ -2787,6 +2808,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_bank_account: {
+        Args: { account_company_id: string }
+        Returns: boolean
+      }
       can_access_company: {
         Args: { user_id: string; company_id: string }
         Returns: boolean
