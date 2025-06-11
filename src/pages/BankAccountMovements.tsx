@@ -22,16 +22,10 @@ export default function BankAccountMovements() {
 
   // Validate accountId parameter
   const validAccountId = accountId && !isNaN(Number(accountId)) ? parseInt(accountId) : null;
-  
-  console.log('🏦 BankAccountMovements - Component mounted');
-  console.log('🏦 BankAccountMovements - accountId param:', accountId);
-  console.log('🏦 BankAccountMovements - validAccountId:', validAccountId);
 
   // Force refresh data when the component mounts
   useEffect(() => {
-    console.log('🏦 BankAccountMovements - useEffect triggered');
     if (validAccountId) {
-      console.log('🏦 BankAccountMovements - Invalidating queries for accountId:', validAccountId);
       queryClient.invalidateQueries({
         queryKey: ["bank-account", validAccountId]
       });
@@ -47,7 +41,6 @@ export default function BankAccountMovements() {
 
   // Show error if accountId is invalid
   if (!accountId || !validAccountId) {
-    console.error('❌ BankAccountMovements - Invalid accountId:', accountId);
     return (
       <div className="container mx-auto py-6">
         <Button variant="outline" onClick={handleBack} className="mb-4">
@@ -66,7 +59,6 @@ export default function BankAccountMovements() {
   }
 
   // Fetch account details
-  console.log('🏦 BankAccountMovements - Fetching account details...');
   const { 
     data: account, 
     isLoading: isLoadingAccount, 
@@ -74,27 +66,17 @@ export default function BankAccountMovements() {
   } = useAccountDetails(validAccountId);
 
   // Fetch transactions for this account
-  console.log('🏦 BankAccountMovements - Fetching transactions...');
   const { 
     data: transactions, 
     isLoading: isLoadingTransactions,
     error: transactionsError 
   } = useAccountTransactions(validAccountId);
 
-  console.log('🏦 BankAccountMovements - Current state:');
-  console.log('🏦 - account:', account);
-  console.log('🏦 - isLoadingAccount:', isLoadingAccount);
-  console.log('🏦 - accountError:', accountError);
-  console.log('🏦 - transactions:', transactions);
-  console.log('🏦 - isLoadingTransactions:', isLoadingTransactions);
-  console.log('🏦 - transactionsError:', transactionsError);
-
   // Use the synchronization hook to ensure balance is correct
   useSyncAccountBalance(account, transactions);
 
   // Handle errors in a user-friendly way
   if (accountError) {
-    console.error('❌ BankAccountMovements - Account error:', accountError);
     return (
       <div className="container mx-auto py-6">
         <Button variant="outline" onClick={handleBack} className="mb-4">
@@ -113,7 +95,6 @@ export default function BankAccountMovements() {
   }
 
   if (isLoadingAccount) {
-    console.log('🏦 BankAccountMovements - Loading account...');
     return (
       <div className="container mx-auto py-6 space-y-6">
         <AccountSkeleton />
@@ -122,7 +103,6 @@ export default function BankAccountMovements() {
   }
 
   if (!account) {
-    console.log('❌ BankAccountMovements - No account found for ID:', validAccountId);
     return (
       <div className="container mx-auto py-6">
         <Button variant="outline" onClick={handleBack} className="mb-4">
@@ -141,7 +121,6 @@ export default function BankAccountMovements() {
 
   // Handle transactions error
   if (transactionsError) {
-    console.error('❌ BankAccountMovements - Transactions error:', transactionsError);
     return (
       <div className="container mx-auto py-6">
         <Button variant="outline" onClick={handleBack} className="mb-4">
@@ -160,7 +139,6 @@ export default function BankAccountMovements() {
     );
   }
 
-  console.log('✅ BankAccountMovements - Rendering main content');
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
