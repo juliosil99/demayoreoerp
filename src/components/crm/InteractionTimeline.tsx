@@ -10,7 +10,9 @@ import {
   CheckSquare, 
   ShoppingCart,
   Receipt,
-  CreditCard 
+  CreditCard,
+  MessageSquare,
+  Package
 } from 'lucide-react';
 import { Interaction } from '@/types/crm';
 import { format } from 'date-fns';
@@ -31,6 +33,7 @@ export const InteractionTimeline = ({ interactions }: InteractionTimelineProps) 
       case 'sale': return ShoppingCart;
       case 'invoice': return Receipt;
       case 'payment': return CreditCard;
+      case 'mercadolibre_question': return MessageSquare;
       default: return FileText;
     }
   };
@@ -45,6 +48,7 @@ export const InteractionTimeline = ({ interactions }: InteractionTimelineProps) 
       case 'sale': return 'text-emerald-600 bg-emerald-100';
       case 'invoice': return 'text-indigo-600 bg-indigo-100';
       case 'payment': return 'text-green-600 bg-green-100';
+      case 'mercadolibre_question': return 'text-yellow-600 bg-yellow-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
@@ -59,6 +63,7 @@ export const InteractionTimeline = ({ interactions }: InteractionTimelineProps) 
       case 'sale': return 'Venta';
       case 'invoice': return 'Factura';
       case 'payment': return 'Pago';
+      case 'mercadolibre_question': return 'Pregunta ML';
       default: return type;
     }
   };
@@ -123,6 +128,7 @@ export const InteractionTimeline = ({ interactions }: InteractionTimelineProps) 
                   
                   {interaction.metadata && Object.keys(interaction.metadata).length > 0 && (
                     <div className="mt-2 p-2 bg-muted rounded text-xs">
+                      {/* Metadata general */}
                       {interaction.metadata.amount && (
                         <div>Monto: ${interaction.metadata.amount}</div>
                       )}
@@ -131,6 +137,43 @@ export const InteractionTimeline = ({ interactions }: InteractionTimelineProps) 
                       )}
                       {interaction.metadata.product_name && (
                         <div>Producto: {interaction.metadata.product_name}</div>
+                      )}
+                      
+                      {/* Metadata específica de MercadoLibre */}
+                      {interaction.type === 'mercadolibre_question' && (
+                        <>
+                          {interaction.metadata.platform && (
+                            <div className="flex items-center gap-1 mb-1">
+                              <Package className="h-3 w-3" />
+                              <span className="font-medium">Plataforma:</span> {interaction.metadata.platform}
+                            </div>
+                          )}
+                          {interaction.metadata.product_title && (
+                            <div className="mb-1">
+                              <span className="font-medium">Producto:</span> {interaction.metadata.product_title}
+                            </div>
+                          )}
+                          {interaction.metadata.product_price && (
+                            <div className="mb-1">
+                              <span className="font-medium">Precio:</span> ${interaction.metadata.product_price}
+                            </div>
+                          )}
+                          {interaction.metadata.from_user_nickname && (
+                            <div className="mb-1">
+                              <span className="font-medium">Cliente:</span> {interaction.metadata.from_user_nickname}
+                            </div>
+                          )}
+                          {interaction.metadata.original_question && (
+                            <div className="mb-1 p-2 bg-gray-50 rounded">
+                              <span className="font-medium">Pregunta:</span> {interaction.metadata.original_question}
+                            </div>
+                          )}
+                          {interaction.metadata.response_time_seconds && (
+                            <div className="text-xs text-gray-500">
+                              Respondido en {interaction.metadata.response_time_seconds}s
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   )}

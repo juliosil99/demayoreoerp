@@ -43,6 +43,59 @@ serve(async (req) => {
       );
     }
 
+    const userId = body.user_id;
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing user_id' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Buscar o crear empresa para el cliente de MercadoLibre
+    let companyId = null;
+    const clientNickname = body.from_user_nickname || `Cliente ${body.from_user || body.from_user_id}`;
+    
+    // Buscar si ya existe una empresa con este nickname
+    const { data: existingCompany, error: searchError } = await supabase
+      .from('companies_crm')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('name', clientNickname)
+      .single();
+
+    if (searchError && searchError.code !== 'PGRST116') {
+      console.error('Error searching for existing company:', searchError);
+    }
+
+    if (existingCompany) {
+      companyId = existingCompany.id;
+      console.log('Found existing company:', companyId);
+    } else {
+      // Crear nueva empresa para este cliente de MercadoLibre
+      const { data: newCompany, error: companyError } = await supabase
+        .from('companies_crm')
+        .insert({
+          user_id: userId,
+          name: clientNickname,
+          industry: 'E-commerce',
+          description: `Cliente de MercadoLibre - Usuario: ${body.from_user || body.from_user_id}`,
+          status: 'customer',
+          engagement_score: 50
+        })
+        .select('id')
+        .single();
+
+      if (companyError) {
+        console.error('Error creating company:', companyError);
+      } else {
+        companyId = newCompany.id;
+        console.log('Created new company:', companyId);
+      }
+    }
+
     // Preparar metadata con todos los datos específicos de ML
     const metadata = {
       platform: 'mercadolibre',
@@ -74,8 +127,8 @@ serve(async (req) => {
         interaction_date: new Date().toISOString(),
         outcome: body.response_text ? 'Respondida automáticamente' : 'Procesada',
         metadata: metadata,
-        // Nota: user_id se puede obtener del contexto o pasarse en el body
-        user_id: body.user_id || null
+        user_id: userId,
+        company_id: companyId
       })
       .select()
       .single();
@@ -97,6 +150,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         interaction_id: data.id,
+        company_id: companyId,
         message: 'ML question stored successfully' 
       }),
       { 

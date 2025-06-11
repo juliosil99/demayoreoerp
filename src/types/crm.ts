@@ -49,7 +49,7 @@ export interface Interaction {
   user_id: string;
   company_id?: string;
   contact_id?: string;
-  type: 'email' | 'call' | 'meeting' | 'note' | 'task' | 'sale' | 'invoice' | 'payment';
+  type: 'email' | 'call' | 'meeting' | 'note' | 'task' | 'sale' | 'invoice' | 'payment' | 'mercadolibre_question';
   subject?: string;
   description?: string;
   interaction_date: string;
