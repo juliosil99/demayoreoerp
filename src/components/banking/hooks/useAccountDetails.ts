@@ -10,19 +10,20 @@ export function useAccountDetails(accountId: number | null) {
   return useQuery({
     queryKey: ["bank-account", accountId, userCompany?.id],
     queryFn: async () => {
-      console.log('useAccountDetails - Starting query for accountId:', accountId, 'company:', userCompany?.id);
+      console.log('🔍 useAccountDetails - Starting query for accountId:', accountId, 'company:', userCompany?.id);
       
       if (!accountId || accountId <= 0) {
-        console.log('useAccountDetails - Invalid accountId, returning null');
+        console.log('❌ useAccountDetails - Invalid accountId, returning null');
         return null;
       }
       
       if (!userCompany?.id) {
-        console.log('useAccountDetails - No user company found, returning null');
+        console.log('❌ useAccountDetails - No user company found, returning null');
         return null;
       }
       
       try {
+        console.log('🔄 useAccountDetails - Querying bank_accounts table...');
         const { data, error } = await supabase
           .from("bank_accounts")
           .select("*")
@@ -30,11 +31,11 @@ export function useAccountDetails(accountId: number | null) {
           .single();
           
         if (error) {
-          console.error('useAccountDetails - Supabase error:', error);
+          console.error('❌ useAccountDetails - Supabase error:', error);
           throw error;
         }
         
-        console.log('useAccountDetails - Raw data from Supabase:', data);
+        console.log('✅ useAccountDetails - Raw data from Supabase:', data);
         
         // Ensure the data is properly typed as BankAccount
         if (data) {
@@ -62,14 +63,14 @@ export function useAccountDetails(accountId: number | null) {
             // Common credit field
             interest_rate: data.interest_rate
           };
-          console.log('useAccountDetails - Transformed bank account:', bankAccount);
+          console.log('✅ useAccountDetails - Transformed bank account:', bankAccount);
           return bankAccount;
         }
         
-        console.log('useAccountDetails - No data found');
+        console.log('❌ useAccountDetails - No data found');
         return null;
       } catch (error) {
-        console.error('useAccountDetails - Query error:', error);
+        console.error('❌ useAccountDetails - Query error:', error);
         throw error;
       }
     },
