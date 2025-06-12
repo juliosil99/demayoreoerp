@@ -15,20 +15,17 @@ import {
   TrendingUp,
   Calendar,
   Plus,
-  Phone,
-  Mail,
   MessageSquare
 } from 'lucide-react';
 import { useCrmCompany } from '@/hooks/useCrmCompanies';
 import { useCrmInteractions } from '@/hooks/useCrmInteractions';
 import { CompanyDialog } from '@/components/crm/CompanyDialog';
 import { InteractionDialog } from '@/components/crm/InteractionDialog';
-import { InteractionTimeline } from '@/components/crm/InteractionTimeline';
 import { ContactsTab } from '@/components/crm/ContactsTab';
-import { ChatView } from '@/components/crm/chat';
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Contact, Company } from '@/types/crm';
+import { UnifiedCommunicationTab } from '@/components/crm/communications/UnifiedCommunicationTab';
 
 const CompanyDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -261,35 +258,18 @@ const CompanyDetail = () => {
         </Card>
 
         <div className="lg:col-span-2">
-          <Tabs defaultValue="chat" className="space-y-4">
+          <Tabs defaultValue="communication" className="space-y-4">
             <TabsList>
-              <TabsTrigger value="chat">Chat</TabsTrigger>
-              <TabsTrigger value="interactions">Interacciones</TabsTrigger>
+              <TabsTrigger value="communication">Comunicación</TabsTrigger>
               <TabsTrigger value="contacts">Contactos</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="chat">
-              <ChatView
+            <TabsContent value="communication">
+              <UnifiedCommunicationTab
                 companyId={company.id}
                 companyName={company.name}
+                interactions={interactions}
               />
-            </TabsContent>
-
-            <TabsContent value="interactions">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Timeline de Interacciones</CardTitle>
-                    <Button size="sm" onClick={() => setShowInteractionDialog(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nueva Interacción
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <InteractionTimeline interactions={interactions} />
-                </CardContent>
-              </Card>
             </TabsContent>
 
             <TabsContent value="contacts">

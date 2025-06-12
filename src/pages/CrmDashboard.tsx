@@ -14,7 +14,12 @@ import {
   Target,
   BarChart3,
   Bell,
-  Zap
+  Zap,
+  Mail,
+  Phone,
+  FileText,
+  ShoppingCart,
+  Package
 } from 'lucide-react';
 import { useCrmCompanies } from '@/hooks/useCrmCompanies';
 import { useCrmInteractions } from '@/hooks/useCrmInteractions';
@@ -27,7 +32,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/utils/formatters';
 import { PipelineView } from '@/components/crm/PipelineView';
-import { ChatContainer } from '@/components/crm/chat/ChatContainer';
+import { CommunicationsView } from '@/components/crm/communications/CommunicationsView';
 import { CrmReports } from '@/components/crm/reports/CrmReports';
 import { NotificationCenter } from '@/components/crm/notifications/NotificationCenter';
 import { FollowUpReminders } from '@/components/crm/follow-ups/FollowUpReminders';
@@ -75,12 +80,51 @@ const CrmDashboard = () => {
 
   const getInteractionIcon = (type: string) => {
     switch (type) {
-      case 'email': return '📧';
-      case 'call': return '📞';
-      case 'meeting': return '🤝';
-      case 'note': return '📝';
-      case 'sale': return '💰';
-      default: return '💬';
+      case 'email': return Mail;
+      case 'call': return Phone;
+      case 'meeting': return Calendar;
+      case 'note': return FileText;
+      case 'task': return FileText;
+      case 'sale': return ShoppingCart;
+      case 'invoice': return FileText;
+      case 'payment': return TrendingUp;
+      case 'mercadolibre_question': return Package;
+      default: return MessageSquare;
+    }
+  };
+
+  const getChannelInfo = (type: string, metadata?: any) => {
+    switch (type) {
+      case 'mercadolibre_question':
+        return { 
+          label: 'MercadoLibre', 
+          color: 'bg-yellow-100 text-yellow-800',
+          icon: Package
+        };
+      case 'email':
+        return { 
+          label: 'Email', 
+          color: 'bg-blue-100 text-blue-800',
+          icon: Mail
+        };
+      case 'call':
+        return { 
+          label: 'Llamada', 
+          color: 'bg-green-100 text-green-800',
+          icon: Phone
+        };
+      case 'meeting':
+        return { 
+          label: 'Reunión', 
+          color: 'bg-purple-100 text-purple-800',
+          icon: Calendar
+        };
+      default:
+        return { 
+          label: type.charAt(0).toUpperCase() + type.slice(1), 
+          color: 'bg-gray-100 text-gray-800',
+          icon: MessageSquare
+        };
     }
   };
 
@@ -126,12 +170,11 @@ const CrmDashboard = () => {
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="communications">Comunicaciones</TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="messages">Mensajes</TabsTrigger>
           <TabsTrigger value="calendar">Calendario</TabsTrigger>
-          <TabsTrigger value="follow-ups">Seguimientos</TabsTrigger>
           <TabsTrigger value="automation">Automatización</TabsTrigger>
           <TabsTrigger value="reports">Reportes</TabsTrigger>
         </TabsList>
@@ -302,22 +345,34 @@ const CrmDashboard = () => {
                       <p>No hay actividad reciente</p>
                     </div>
                   ) : (
-                    recentInteractions.map((interaction: any) => (
-                      <div key={interaction.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                        <div className="text-lg">{getInteractionIcon(interaction.type)}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">
-                            {interaction.subject || `${interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1)}`}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {interaction.companies_crm?.name || interaction.contacts?.name || 'Sin empresa'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(interaction.created_at), { addSuffix: true, locale: es })}
-                          </p>
+                    recentInteractions.map((interaction: any) => {
+                      const channelInfo = getChannelInfo(interaction.type, interaction.metadata);
+                      const Icon = channelInfo.icon;
+                      
+                      return (
+                        <div key={interaction.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                          <div className="flex-shrink-0">
+                            <Icon className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-sm truncate">
+                                {interaction.subject || `${interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1)}`}
+                              </p>
+                              <Badge variant="secondary" className={`text-xs ${channelInfo.color}`}>
+                                {channelInfo.label}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {interaction.companies_crm?.name || interaction.contacts?.name || 'Sin empresa'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(interaction.created_at), { addSuffix: true, locale: es })}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </CardContent>
@@ -325,20 +380,16 @@ const CrmDashboard = () => {
           </div>
         </TabsContent>
 
+        <TabsContent value="communications">
+          <CommunicationsView />
+        </TabsContent>
+
         <TabsContent value="pipeline">
           <PipelineView />
         </TabsContent>
 
-        <TabsContent value="messages">
-          <ChatContainer />
-        </TabsContent>
-
         <TabsContent value="calendar">
           <CalendarView />
-        </TabsContent>
-
-        <TabsContent value="follow-ups">
-          <FollowUpReminders />
         </TabsContent>
 
         <TabsContent value="automation">
