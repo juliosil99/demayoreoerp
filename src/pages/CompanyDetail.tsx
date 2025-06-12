@@ -24,7 +24,7 @@ import { InteractionDialog } from '@/components/crm/InteractionDialog';
 import { ContactsTab } from '@/components/crm/ContactsTab';
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Contact, Company } from '@/types/crm';
+import { Contact, Company, Interaction } from '@/types/crm';
 import { UnifiedCommunicationTab } from '@/components/crm/communications/UnifiedCommunicationTab';
 
 const CompanyDetail = () => {
@@ -34,7 +34,7 @@ const CompanyDetail = () => {
   const [showInteractionDialog, setShowInteractionDialog] = useState(false);
 
   const { data: rawCompany, isLoading } = useCrmCompany(id!);
-  const { data: interactions = [] } = useCrmInteractions(id);
+  const { data: rawInteractions = [] } = useCrmInteractions(id);
 
   if (isLoading) {
     return (
@@ -73,6 +73,15 @@ const CompanyDetail = () => {
     company_size: rawCompany.company_size as Company['company_size'],
     status: rawCompany.status as Company['status'],
   };
+
+  // Transform raw interactions to properly typed Interaction objects
+  const interactions: Interaction[] = rawInteractions.map((interaction: any) => ({
+    ...interaction,
+    type: interaction.type as Interaction['type'],
+    metadata: (interaction.metadata as Record<string, any>) || {},
+    companies_crm: interaction.companies_crm,
+    contacts: interaction.contacts
+  }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
