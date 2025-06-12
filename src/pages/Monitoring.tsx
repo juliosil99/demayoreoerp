@@ -2,8 +2,9 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EgressDashboard } from '@/components/monitoring/EgressDashboard';
+import { RealEgressDashboard } from '@/components/monitoring/RealEgressDashboard';
 import { PerformanceDashboard } from '@/components/monitoring/PerformanceDashboard';
-import { Activity, Database } from 'lucide-react';
+import { Activity, Database, Zap } from 'lucide-react';
 
 export default function Monitoring() {
   return (
@@ -15,17 +16,25 @@ export default function Monitoring() {
         </p>
       </div>
 
-      <Tabs defaultValue="egress" className="space-y-4">
+      <Tabs defaultValue="real-egress" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="real-egress" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Monitor Real de Egress
+          </TabsTrigger>
           <TabsTrigger value="egress" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
-            Monitor de Egress
+            Monitor de Egress (Legacy)
           </TabsTrigger>
           <TabsTrigger value="performance" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             Monitor de Performance
           </TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="real-egress">
+          <RealEgressDashboard />
+        </TabsContent>
         
         <TabsContent value="egress">
           <EgressDashboard />
