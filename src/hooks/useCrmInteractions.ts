@@ -10,6 +10,16 @@ export const useCrmInteractions = (companyId?: string, contactId?: string) => {
     queryFn: async () => {
       console.log('Fetching interactions with filters:', { companyId, contactId });
       
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No authenticated user found');
+        return [];
+      }
+
+      console.log('Authenticated user:', user.id);
+
+      // Build query with optional filters
       let query = supabase
         .from('interactions')
         .select(`
@@ -27,11 +37,13 @@ export const useCrmInteractions = (companyId?: string, contactId?: string) => {
         `)
         .order('interaction_date', { ascending: false });
 
-      // Aplicar filtros opcionales
+      // Apply optional filters
       if (companyId) {
+        console.log('Filtering by company_id:', companyId);
         query = query.eq('company_id', companyId);
       }
       if (contactId) {
+        console.log('Filtering by contact_id:', contactId);
         query = query.eq('contact_id', contactId);
       }
 
@@ -42,24 +54,13 @@ export const useCrmInteractions = (companyId?: string, contactId?: string) => {
         throw error;
       }
 
+      console.log('Successfully fetched interactions:', data?.length || 0, 'records');
       console.log('Raw interactions data:', data);
       
-      // Filtrar las interacciones para incluir aquellas que:
-      // 1. Pertenecen al usuario actual
-      // 2. O están asociadas a empresas/contactos del usuario actual
-      const filteredData = data?.filter((interaction: any) => {
-        const hasCompanyAccess = !interaction.companies_crm || 
-          (interaction.companies_crm && interaction.companies_crm.user_id);
-        const hasContactAccess = !interaction.contacts || 
-          (interaction.contacts && interaction.contacts.user_id);
-        
-        return hasCompanyAccess && hasContactAccess;
-      }) || [];
-
-      console.log('Filtered interactions:', filteredData);
-      
-      return filteredData as any[];
+      // RLS policies will automatically filter by user_id, so we don't need manual filtering
+      return data || [];
     },
+    enabled: true, // Always enabled, let RLS handle authorization
   });
 };
 

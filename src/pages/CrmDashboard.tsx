@@ -26,8 +26,6 @@ import { useCrmInteractions } from '@/hooks/useCrmInteractions';
 import { useOpportunities } from '@/hooks/useOpportunities';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/utils/formatters';
@@ -46,41 +44,15 @@ const CrmDashboard = () => {
   const { data: opportunities = [], isLoading: opportunitiesLoading } = useOpportunities();
 
   // Debug logging
-  console.log('CrmDashboard - allInteractions:', allInteractions);
+  console.log('CrmDashboard - allInteractions count:', allInteractions.length);
   console.log('CrmDashboard - interactionsError:', interactionsError);
 
-  // Get recent interactions (last 10)
-  const { data: recentInteractions = [] } = useQuery({
-    queryKey: ['recent-interactions'],
-    queryFn: async () => {
-      console.log('Fetching recent interactions...');
-      const { data, error } = await supabase
-        .from('interactions')
-        .select(`
-          *,
-          companies_crm (
-            id,
-            name,
-            user_id
-          ),
-          contacts (
-            id,
-            name,
-            user_id
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
+  // Get recent interactions (last 10) from the main hook data
+  const recentInteractions = allInteractions
+    .sort((a, b) => new Date(b.created_at || b.interaction_date).getTime() - new Date(a.created_at || a.interaction_date).getTime())
+    .slice(0, 10);
 
-      if (error) {
-        console.error('Error fetching recent interactions:', error);
-        throw error;
-      }
-
-      console.log('Recent interactions raw data:', data);
-      return data || [];
-    },
-  });
+  console.log('CrmDashboard - recentInteractions count:', recentInteractions.length);
 
   // Calculate metrics
   const totalCompanies = companies.length;
@@ -159,11 +131,6 @@ const CrmDashboard = () => {
         </div>
       </div>
     );
-  }
-
-  // Show error state if there's an interactions error
-  if (interactionsError) {
-    console.error('Interactions error in CrmDashboard:', interactionsError);
   }
 
   return (
@@ -374,6 +341,7 @@ const CrmDashboard = () => {
                     <div className="text-center py-8 text-muted-foreground">
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>No hay actividad reciente</p>
+                      <p className="text-xs mt-1">Las interacciones aparecerán aquí una vez que se registren</p>
                     </div>
                   ) : (
                     recentInteractions.map((interaction: any) => {
@@ -398,7 +366,7 @@ const CrmDashboard = () => {
                               {interaction.companies_crm?.name || interaction.contacts?.name || 'Sin empresa'}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(interaction.created_at), { addSuffix: true, locale: es })}
+                              {formatDistanceToNow(new Date(interaction.created_at || interaction.interaction_date), { addSuffix: true, locale: es })}
                             </p>
                           </div>
                         </div>

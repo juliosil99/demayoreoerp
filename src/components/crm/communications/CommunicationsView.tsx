@@ -16,7 +16,8 @@ import {
   Package,
   MessageSquare,
   Plus,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { useCrmInteractions } from '@/hooks/useCrmInteractions';
 import { InteractionDialog } from '@/components/crm/InteractionDialog';
@@ -33,7 +34,7 @@ export const CommunicationsView = () => {
 
   const { data: interactions = [], isLoading, error } = useCrmInteractions();
 
-  console.log('CommunicationsView - interactions:', interactions);
+  console.log('CommunicationsView - interactions count:', interactions.length);
   console.log('CommunicationsView - isLoading:', isLoading);
   console.log('CommunicationsView - error:', error);
 
@@ -102,14 +103,33 @@ export const CommunicationsView = () => {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="h-10 bg-gray-200 rounded mb-6"></div>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded"></div>
-            ))}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Comunicaciones</h2>
+            <p className="text-muted-foreground">
+              Vista unificada de todas las interacciones con clientes
+            </p>
           </div>
+          <Button disabled>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Cargando...
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="animate-pulse flex space-x-4">
+                  <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -122,7 +142,7 @@ export const CommunicationsView = () => {
         <div>
           <h2 className="text-2xl font-bold">Comunicaciones</h2>
           <p className="text-muted-foreground">
-            Vista unificada de todas las interacciones con clientes
+            Vista unificada de todas las interacciones con clientes ({interactions.length} total)
           </p>
         </div>
         <Button onClick={() => setShowInteractionDialog(true)}>
