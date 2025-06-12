@@ -27,12 +27,12 @@ export const CommunicationsView = () => {
   console.log('CommunicationsView - error:', error);
 
   const filteredInteractions = interactions.filter(interaction => {
-    const metadata = interaction.metadata as Record<string, any> | null;
+    const metadata = interaction.metadata || {};
     
     const matchesSearch = !searchTerm || 
       interaction.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       interaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      interaction.companies_crm?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      interaction.company?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesChannel = selectedChannel === 'all' || interaction.type === selectedChannel;
     
@@ -96,7 +96,7 @@ export const CommunicationsView = () => {
     );
   }
 
-  const hasFilters = searchTerm || selectedChannel !== 'all';
+  const hasFilters = searchTerm !== '' || selectedChannel !== 'all';
 
   return (
     <div className="space-y-6">

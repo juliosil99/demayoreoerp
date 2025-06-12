@@ -61,6 +61,32 @@ export interface Interaction {
   contact?: Contact;
 }
 
+// Raw Supabase interaction data type (what comes from the database)
+export interface RawInteractionData {
+  id: string;
+  user_id: string;
+  company_id?: string;
+  contact_id?: string;
+  type: string; // Generic string from DB
+  subject?: string;
+  description?: string;
+  interaction_date: string;
+  outcome?: string;
+  next_follow_up?: string;
+  metadata: any; // Json type from Supabase
+  created_at: string;
+  companies_crm?: {
+    id: string;
+    name: string;
+    user_id: string;
+  } | null;
+  contacts?: {
+    id: string;
+    name: string;
+    user_id: string;
+  } | null;
+}
+
 export interface Tag {
   id: string;
   user_id: string;

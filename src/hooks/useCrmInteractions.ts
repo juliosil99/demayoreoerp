@@ -1,13 +1,62 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Interaction, InteractionFormData } from '@/types/crm';
+import { Interaction, InteractionFormData, RawInteractionData } from '@/types/crm';
 import { toast } from 'sonner';
+
+// Helper function to transform raw data to Interaction type
+const transformRawInteraction = (raw: RawInteractionData): Interaction => {
+  // Safely cast type with validation
+  const validTypes: Interaction['type'][] = [
+    'email', 'call', 'meeting', 'note', 'task', 'sale', 'invoice', 'payment', 'mercadolibre_question'
+  ];
+  const type = validTypes.includes(raw.type as Interaction['type']) 
+    ? raw.type as Interaction['type'] 
+    : 'note'; // Default fallback
+
+  return {
+    id: raw.id,
+    user_id: raw.user_id,
+    company_id: raw.company_id,
+    contact_id: raw.contact_id,
+    type,
+    subject: raw.subject,
+    description: raw.description,
+    interaction_date: raw.interaction_date,
+    outcome: raw.outcome,
+    next_follow_up: raw.next_follow_up,
+    metadata: (raw.metadata as Record<string, any>) || {},
+    created_at: raw.created_at,
+    company: raw.companies_crm ? {
+      id: raw.companies_crm.id,
+      name: raw.companies_crm.name,
+      user_id: raw.companies_crm.user_id,
+      status: 'active' as const,
+      engagement_score: 0,
+      created_at: '',
+      updated_at: ''
+    } : undefined,
+    contact: raw.contacts ? {
+      id: raw.contacts.id,
+      name: raw.contacts.name,
+      user_id: raw.contacts.user_id,
+      company_id: '',
+      rfc: '',
+      type: 'client',
+      is_primary_contact: false,
+      engagement_score: 0,
+      contact_status: 'active' as const,
+      postal_code: '',
+      tax_regime: '',
+      created_at: ''
+    } : undefined
+  };
+};
 
 export const useCrmInteractions = (companyId?: string, contactId?: string) => {
   return useQuery({
     queryKey: ['crm-interactions', companyId, contactId],
-    queryFn: async () => {
+    queryFn: async (): Promise<Interaction[]> => {
       console.log('Fetching interactions with filters:', { companyId, contactId });
       
       // Check if user is authenticated
@@ -57,8 +106,10 @@ export const useCrmInteractions = (companyId?: string, contactId?: string) => {
       console.log('Successfully fetched interactions:', data?.length || 0, 'records');
       console.log('Raw interactions data:', data);
       
-      // RLS policies will automatically filter by user_id, so we don't need manual filtering
-      return data || [];
+      // Transform raw data to proper Interaction type
+      const transformedData = (data || []).map(transformRawInteraction);
+      
+      return transformedData;
     },
     enabled: true, // Always enabled, let RLS handle authorization
   });

@@ -36,7 +36,7 @@ export const CommunicationsList = ({ interactions }: CommunicationsListProps) =>
     <div className="space-y-4">
       {interactions.map((interaction) => {
         const Icon = getInteractionIcon(interaction.type);
-        const metadata = interaction.metadata as Record<string, any> | null;
+        const metadata = interaction.metadata || {};
         
         return (
           <div key={interaction.id} className="flex gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
@@ -58,7 +58,7 @@ export const CommunicationsList = ({ interactions }: CommunicationsListProps) =>
               </div>
               
               <p className="text-sm text-muted-foreground mb-2">
-                {interaction.companies_crm?.name || interaction.contacts?.name || 'Sin empresa'}
+                {interaction.company?.name || interaction.contact?.name || 'Sin empresa'}
               </p>
               
               {interaction.description && (
