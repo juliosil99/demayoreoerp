@@ -42,24 +42,42 @@ import { WorkflowBuilder } from '@/components/crm/automation/WorkflowBuilder';
 const CrmDashboard = () => {
   const navigate = useNavigate();
   const { data: companies = [], isLoading: companiesLoading } = useCrmCompanies();
-  const { data: allInteractions = [], isLoading: interactionsLoading } = useCrmInteractions();
+  const { data: allInteractions = [], isLoading: interactionsLoading, error: interactionsError } = useCrmInteractions();
   const { data: opportunities = [], isLoading: opportunitiesLoading } = useOpportunities();
+
+  // Debug logging
+  console.log('CrmDashboard - allInteractions:', allInteractions);
+  console.log('CrmDashboard - interactionsError:', interactionsError);
 
   // Get recent interactions (last 10)
   const { data: recentInteractions = [] } = useQuery({
     queryKey: ['recent-interactions'],
     queryFn: async () => {
+      console.log('Fetching recent interactions...');
       const { data, error } = await supabase
         .from('interactions')
         .select(`
           *,
-          companies_crm (name),
-          contacts (name)
+          companies_crm (
+            id,
+            name,
+            user_id
+          ),
+          contacts (
+            id,
+            name,
+            user_id
+          )
         `)
         .order('created_at', { ascending: false })
         .limit(10);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching recent interactions:', error);
+        throw error;
+      }
+
+      console.log('Recent interactions raw data:', data);
       return data || [];
     },
   });
@@ -141,6 +159,11 @@ const CrmDashboard = () => {
         </div>
       </div>
     );
+  }
+
+  // Show error state if there's an interactions error
+  if (interactionsError) {
+    console.error('Interactions error in CrmDashboard:', interactionsError);
   }
 
   return (
@@ -339,7 +362,15 @@ const CrmDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {recentInteractions.length === 0 ? (
+                  {interactionsError ? (
+                    <div className="text-center py-8 text-destructive">
+                      <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>Error al cargar la actividad</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {interactionsError.message}
+                      </p>
+                    </div>
+                  ) : recentInteractions.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>No hay actividad reciente</p>

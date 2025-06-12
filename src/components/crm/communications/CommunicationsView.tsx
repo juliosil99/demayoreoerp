@@ -15,7 +15,8 @@ import {
   ShoppingCart,
   Package,
   MessageSquare,
-  Plus
+  Plus,
+  AlertCircle
 } from 'lucide-react';
 import { useCrmInteractions } from '@/hooks/useCrmInteractions';
 import { InteractionDialog } from '@/components/crm/InteractionDialog';
@@ -30,7 +31,11 @@ export const CommunicationsView = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showInteractionDialog, setShowInteractionDialog] = useState(false);
 
-  const { data: interactions = [], isLoading } = useCrmInteractions();
+  const { data: interactions = [], isLoading, error } = useCrmInteractions();
+
+  console.log('CommunicationsView - interactions:', interactions);
+  console.log('CommunicationsView - isLoading:', isLoading);
+  console.log('CommunicationsView - error:', error);
 
   const getInteractionIcon = (type: string) => {
     switch (type) {
@@ -55,6 +60,44 @@ export const CommunicationsView = () => {
     
     return matchesSearch && matchesChannel;
   });
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Comunicaciones</h2>
+            <p className="text-muted-foreground">
+              Vista unificada de todas las interacciones con clientes
+            </p>
+          </div>
+          <Button onClick={() => setShowInteractionDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Interacción
+          </Button>
+        </div>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              <div>
+                <h3 className="font-medium">Error al cargar las comunicaciones</h3>
+                <p className="text-sm text-muted-foreground">
+                  {error.message || 'Ha ocurrido un error inesperado'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <InteractionDialog
+          open={showInteractionDialog}
+          onOpenChange={setShowInteractionDialog}
+        />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
