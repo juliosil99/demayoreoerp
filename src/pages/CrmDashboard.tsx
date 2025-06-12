@@ -47,15 +47,8 @@ const CrmDashboard = () => {
   console.log('CrmDashboard - allInteractions count:', allInteractions.length);
   console.log('CrmDashboard - interactionsError:', interactionsError);
 
-  // Type assertion for interactions to handle the type properly
-  const typedInteractions = allInteractions.map(interaction => ({
-    ...interaction,
-    type: interaction.type as 'email' | 'call' | 'meeting' | 'note' | 'task' | 'sale' | 'invoice' | 'payment' | 'mercadolibre_question',
-    metadata: interaction.metadata as Record<string, any> | null
-  }));
-
   // Get recent interactions (last 10) from the main hook data
-  const recentInteractions = typedInteractions
+  const recentInteractions = allInteractions
     .sort((a, b) => new Date(b.created_at || b.interaction_date).getTime() - new Date(a.created_at || a.interaction_date).getTime())
     .slice(0, 10);
 
@@ -370,7 +363,7 @@ const CrmDashboard = () => {
                               </Badge>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              {interaction.companies_crm?.name || interaction.contacts?.name || 'Sin empresa'}
+                              {interaction.company?.name || interaction.contact?.name || 'Sin empresa'}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {formatDistanceToNow(new Date(interaction.created_at || interaction.interaction_date), { addSuffix: true, locale: es })}
