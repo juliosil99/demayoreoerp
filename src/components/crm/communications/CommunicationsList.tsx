@@ -19,6 +19,18 @@ interface CommunicationsListProps {
 }
 
 export const CommunicationsList = ({ interactions }: CommunicationsListProps) => {
+  console.log('📋 [CommunicationsList] Rendering with interactions:', {
+    count: interactions.length,
+    interactions: interactions.map(i => ({
+      id: i.id,
+      type: i.type,
+      subject: i.subject,
+      company: i.company?.name,
+      contact: i.contact?.name,
+      user_id: i.user_id
+    }))
+  });
+
   const getInteractionIcon = (type: string) => {
     switch (type) {
       case 'email': return Mail;
@@ -31,6 +43,10 @@ export const CommunicationsList = ({ interactions }: CommunicationsListProps) =>
       default: return MessageSquare;
     }
   };
+
+  if (interactions.length === 0) {
+    console.log('⚠️ [CommunicationsList] No interactions to render');
+  }
 
   return (
     <div className="space-y-4">

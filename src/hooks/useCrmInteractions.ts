@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Interaction, InteractionFormData, RawInteractionData } from '@/types/crm';
@@ -57,16 +56,30 @@ export const useCrmInteractions = (companyId?: string, contactId?: string) => {
   return useQuery({
     queryKey: ['crm-interactions', companyId, contactId],
     queryFn: async (): Promise<Interaction[]> => {
-      console.log('Fetching interactions with filters:', { companyId, contactId });
+      console.log('🔍 [useCrmInteractions] Starting fetch with filters:', { companyId, contactId });
       
       // Check if user is authenticated
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('No authenticated user found');
+        console.log('❌ [useCrmInteractions] No authenticated user found');
         return [];
       }
 
-      console.log('Authenticated user:', user.id);
+      console.log('✅ [useCrmInteractions] Authenticated user:', user.id);
+
+      // Debug: Check user's company relationships
+      const { data: userCompanies } = await supabase
+        .from('company_users')
+        .select('company_id, role')
+        .eq('user_id', user.id);
+      
+      const { data: ownedCompanies } = await supabase
+        .from('companies')
+        .select('id, nombre')
+        .eq('user_id', user.id);
+
+      console.log('🏢 [useCrmInteractions] User companies (as member):', userCompanies);
+      console.log('🏢 [useCrmInteractions] User companies (as owner):', ownedCompanies);
 
       // Build query with optional filters
       let query = supabase
@@ -88,26 +101,69 @@ export const useCrmInteractions = (companyId?: string, contactId?: string) => {
 
       // Apply optional filters
       if (companyId) {
-        console.log('Filtering by company_id:', companyId);
+        console.log('🔍 [useCrmInteractions] Filtering by company_id:', companyId);
         query = query.eq('company_id', companyId);
       }
       if (contactId) {
-        console.log('Filtering by contact_id:', contactId);
+        console.log('🔍 [useCrmInteractions] Filtering by contact_id:', contactId);
         query = query.eq('contact_id', contactId);
       }
 
+      console.log('📡 [useCrmInteractions] Executing query...');
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching interactions:', error);
+        console.error('❌ [useCrmInteractions] Query error:', error);
+        console.error('❌ [useCrmInteractions] Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
 
-      console.log('Successfully fetched interactions:', data?.length || 0, 'records');
-      console.log('Raw interactions data:', data);
+      console.log('📊 [useCrmInteractions] Raw query result:', {
+        totalRecords: data?.length || 0,
+        firstRecord: data?.[0] || 'No records',
+        recordsPreview: data?.slice(0, 3).map(r => ({
+          id: r.id,
+          type: r.type,
+          user_id: r.user_id,
+          company_id: r.company_id,
+          subject: r.subject
+        })) || []
+      });
+
+      // Debug: Check if there are any interactions in the database at all
+      if (!data || data.length === 0) {
+        console.log('🔍 [useCrmInteractions] No data returned, checking total interactions in DB...');
+        const { data: totalInteractions, error: totalError } = await supabase
+          .from('interactions')
+          .select('id, user_id, type, subject')
+          .limit(5);
+        
+        if (totalError) {
+          console.error('❌ [useCrmInteractions] Error checking total interactions:', totalError);
+        } else {
+          console.log('📊 [useCrmInteractions] Total interactions in DB (sample):', totalInteractions);
+        }
+      }
       
       // Transform raw data to proper Interaction type
       const transformedData = (data || []).map(transformRawInteraction);
+      
+      console.log('✅ [useCrmInteractions] Successfully transformed interactions:', {
+        originalCount: data?.length || 0,
+        transformedCount: transformedData.length,
+        sampleTransformed: transformedData.slice(0, 2).map(t => ({
+          id: t.id,
+          type: t.type,
+          subject: t.subject,
+          company: t.company?.name || 'No company',
+          contact: t.contact?.name || 'No contact'
+        }))
+      });
       
       return transformedData;
     },
