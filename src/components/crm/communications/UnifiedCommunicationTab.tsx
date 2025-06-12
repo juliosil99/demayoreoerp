@@ -81,6 +81,8 @@ export const UnifiedCommunicationTab = ({
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {sortedInteractions.map((interaction, index) => {
               const Icon = getInteractionIcon(interaction.type);
+              // Type assertion for metadata to handle Supabase Json type
+              const metadata = interaction.metadata as Record<string, any> | null;
               
               return (
                 <div key={interaction.id} className="flex gap-4">
@@ -103,7 +105,7 @@ export const UnifiedCommunicationTab = ({
                             <h4 className="font-medium">
                               {interaction.subject || `${interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1)} sin título`}
                             </h4>
-                            <ChannelBadge type={interaction.type} metadata={interaction.metadata} />
+                            <ChannelBadge type={interaction.type} metadata={metadata} />
                           </div>
                           <time className="text-xs text-muted-foreground whitespace-nowrap">
                             {format(new Date(interaction.interaction_date), 'dd MMM yyyy, HH:mm', { locale: es })}
@@ -111,14 +113,14 @@ export const UnifiedCommunicationTab = ({
                         </div>
                         
                         {/* MercadoLibre specific content */}
-                        {interaction.type === 'mercadolibre_question' && interaction.metadata?.original_question && (
+                        {interaction.type === 'mercadolibre_question' && metadata?.original_question && (
                           <div className="mb-2 p-2 bg-yellow-50 rounded text-sm">
                             <div className="font-medium text-yellow-800 mb-1">Pregunta del Cliente:</div>
-                            <div className="text-yellow-700">{interaction.metadata.original_question}</div>
-                            {interaction.metadata.product_title && (
+                            <div className="text-yellow-700">{metadata.original_question}</div>
+                            {metadata.product_title && (
                               <div className="mt-1 text-xs text-yellow-600">
-                                Producto: {interaction.metadata.product_title}
-                                {interaction.metadata.product_price && ` - $${interaction.metadata.product_price}`}
+                                Producto: {metadata.product_title}
+                                {metadata.product_price && ` - $${metadata.product_price}`}
                               </div>
                             )}
                           </div>
@@ -137,16 +139,16 @@ export const UnifiedCommunicationTab = ({
                           </div>
                         )}
                         
-                        {interaction.metadata && Object.keys(interaction.metadata).length > 0 && interaction.type !== 'mercadolibre_question' && (
+                        {metadata && Object.keys(metadata).length > 0 && interaction.type !== 'mercadolibre_question' && (
                           <div className="mt-2 p-2 bg-muted rounded text-xs">
-                            {interaction.metadata.amount && (
-                              <div>Monto: ${interaction.metadata.amount}</div>
+                            {metadata.amount && (
+                              <div>Monto: ${metadata.amount}</div>
                             )}
-                            {interaction.metadata.order_number && (
-                              <div>Orden: {interaction.metadata.order_number}</div>
+                            {metadata.order_number && (
+                              <div>Orden: {metadata.order_number}</div>
                             )}
-                            {interaction.metadata.product_name && (
-                              <div>Producto: {interaction.metadata.product_name}</div>
+                            {metadata.product_name && (
+                              <div>Producto: {metadata.product_name}</div>
                             )}
                           </div>
                         )}

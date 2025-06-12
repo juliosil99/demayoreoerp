@@ -232,6 +232,8 @@ export const CommunicationsView = () => {
             ) : (
               filteredInteractions.map((interaction) => {
                 const Icon = getInteractionIcon(interaction.type);
+                // Type assertion for metadata to handle Supabase Json type
+                const metadata = interaction.metadata as Record<string, any> | null;
                 
                 return (
                   <div key={interaction.id} className="flex gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
@@ -246,7 +248,7 @@ export const CommunicationsView = () => {
                         <h4 className="font-medium truncate">
                           {interaction.subject || `${interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1)} sin título`}
                         </h4>
-                        <ChannelBadge type={interaction.type} metadata={interaction.metadata} />
+                        <ChannelBadge type={interaction.type} metadata={metadata} />
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(interaction.interaction_date), 'dd MMM yyyy, HH:mm', { locale: es })}
                         </span>
@@ -263,10 +265,10 @@ export const CommunicationsView = () => {
                       )}
                       
                       {/* MercadoLibre specific info */}
-                      {interaction.type === 'mercadolibre_question' && interaction.metadata?.original_question && (
+                      {interaction.type === 'mercadolibre_question' && metadata?.original_question && (
                         <div className="bg-yellow-50 p-2 rounded text-sm mb-2">
                           <span className="font-medium">Pregunta: </span>
-                          {interaction.metadata.original_question}
+                          {metadata.original_question}
                         </div>
                       )}
                       

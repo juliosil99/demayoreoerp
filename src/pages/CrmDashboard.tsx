@@ -47,8 +47,15 @@ const CrmDashboard = () => {
   console.log('CrmDashboard - allInteractions count:', allInteractions.length);
   console.log('CrmDashboard - interactionsError:', interactionsError);
 
+  // Type assertion for interactions to handle the type properly
+  const typedInteractions = allInteractions.map(interaction => ({
+    ...interaction,
+    type: interaction.type as 'email' | 'call' | 'meeting' | 'note' | 'task' | 'sale' | 'invoice' | 'payment' | 'mercadolibre_question',
+    metadata: interaction.metadata as Record<string, any> | null
+  }));
+
   // Get recent interactions (last 10) from the main hook data
-  const recentInteractions = allInteractions
+  const recentInteractions = typedInteractions
     .sort((a, b) => new Date(b.created_at || b.interaction_date).getTime() - new Date(a.created_at || a.interaction_date).getTime())
     .slice(0, 10);
 
@@ -344,7 +351,7 @@ const CrmDashboard = () => {
                       <p className="text-xs mt-1">Las interacciones aparecerán aquí una vez que se registren</p>
                     </div>
                   ) : (
-                    recentInteractions.map((interaction: any) => {
+                    recentInteractions.map((interaction) => {
                       const channelInfo = getChannelInfo(interaction.type, interaction.metadata);
                       const Icon = channelInfo.icon;
                       
