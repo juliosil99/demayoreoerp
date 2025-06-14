@@ -196,7 +196,7 @@ const sidebarGroups: SidebarGroupType[] = [
       },
       {
         name: "Configuración Empresa",
-        href: "/company-setup",
+        href: "/company-setup?edit=true",
         icon: Settings,
         permission: "can_manage_users" as PermissionName,
       },
