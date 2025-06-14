@@ -15,20 +15,7 @@ export const calculateChanges = (current: any, previous: any | null) => {
       ordersChange: 0,
       aovChange: 0,
       adSpendChange: 0,
-      merChange: 0,
-      returningRevenueChange: 0,
-      returningOrdersChange: 0,
-      returningAOVChange: 0,
-      repeatRateChange: 0,
-      newCustomerRevenueChange: 0,
-      newCustomerOrdersChange: 0,
-      newCustomerAOVChange: 0,
-      cacChange: 0,
-      paidRevenueChange: 0,
-      paidOrdersChange: 0,
-      paidAOVChange: 0,
-      paidCACChange: 0,
-      pamerChange: 0
+      merChange: 0
     };
   }
 
@@ -39,20 +26,7 @@ export const calculateChanges = (current: any, previous: any | null) => {
     ordersChange: calculatePercentChange(Number(current.total_orders || 0), Number(previous.total_orders || 0)),
     aovChange: calculatePercentChange(Number(current.aov || 0), Number(previous.aov || 0)),
     adSpendChange: 0,
-    merChange: 0,
-    returningRevenueChange: 0,
-    returningOrdersChange: 0,
-    returningAOVChange: 0,
-    repeatRateChange: 0,
-    newCustomerRevenueChange: calculatePercentChange(Number(current.total_revenue || 0), Number(previous.total_revenue || 0)),
-    newCustomerOrdersChange: calculatePercentChange(Number(current.total_orders || 0), Number(previous.total_orders || 0)),
-    newCustomerAOVChange: calculatePercentChange(Number(current.aov || 0), Number(previous.aov || 0)),
-    cacChange: 0,
-    paidRevenueChange: 0,
-    paidOrdersChange: 0,
-    paidAOVChange: 0,
-    paidCACChange: 0,
-    pamerChange: 0
+    merChange: 0
   };
 };
 
@@ -82,37 +56,6 @@ export const getEmptyMetrics = (): DashboardMetrics => ({
   
   // Channel metrics
   channelMetrics: [],
-  
-  // Customer metrics
-  returningRevenue: 0,
-  returningOrders: 0,
-  returningAOV: 0,
-  repeatRate: 0,
-  returningRevenueChange: 0,
-  returningOrdersChange: 0,
-  returningAOVChange: 0,
-  repeatRateChange: 0,
-  
-  newCustomerRevenue: 0,
-  newCustomerOrders: 0,
-  newCustomerAOV: 0,
-  cac: 0,
-  newCustomerRevenueChange: 0,
-  newCustomerOrdersChange: 0,
-  newCustomerAOVChange: 0,
-  cacChange: 0,
-  
-  // Paid performance metrics
-  paidRevenue: 0,
-  paidOrders: 0,
-  paidAOV: 0,
-  paidCAC: 0,
-  pamer: 0,
-  paidRevenueChange: 0,
-  paidOrdersChange: 0,
-  paidAOVChange: 0,
-  paidCACChange: 0,
-  pamerChange: 0,
   
   // Legacy metrics
   yesterdaySales: 0,

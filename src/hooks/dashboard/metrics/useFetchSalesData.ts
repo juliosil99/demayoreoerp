@@ -92,23 +92,6 @@ export const useFetchSalesData = () => {
         orders: Number(current.total_orders || 0),
         aov: Number(current.aov || 0),
         
-        // Customer metrics (simplified for now)
-        returningRevenue: 0,
-        returningOrders: 0,
-        returningAOV: 0,
-        repeatRate: 0,
-        newCustomerRevenue: Number(current.total_revenue || 0), // Assume all are new for now
-        newCustomerOrders: Number(current.total_orders || 0),
-        newCustomerAOV: Number(current.aov || 0),
-        cac: 0,
-        
-        // Paid performance metrics (not available without additional data)
-        paidRevenue: 0,
-        paidOrders: 0,
-        paidAOV: 0,
-        paidCAC: 0,
-        pamer: 0,
-        
         // Set defaults for metrics we can't calculate without additional data
         adSpend: 0,
         mer: 0,
