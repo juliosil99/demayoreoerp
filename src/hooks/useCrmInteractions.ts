@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Interaction, InteractionFormData, RawInteractionData } from '@/types/crm';
@@ -97,7 +98,7 @@ export const useCrmInteractions = (companyId?: string, contactId?: string) => {
             user_id
           )
         `)
-        .order('interaction_date', { ascending: false });
+        .order('interaction_date', { ascending: true });
 
       // Apply optional filters
       if (companyId) {
