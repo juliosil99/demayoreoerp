@@ -15,6 +15,7 @@ const CrmChat = () => {
 
   // Encontrar conversación seleccionada (o la primera)
   const selectedConversation = conversations.find(c => c.id === selectedId) || conversations[0];
+  const isReadOnly = selectedConversation?.last_message_type === 'mercadolibre_question';
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-background">
@@ -76,6 +77,7 @@ const CrmChat = () => {
             contactId={selectedConversation.contact_id}
             companyName={selectedConversation.company_name}
             contactName={selectedConversation.contact_name}
+            isReadOnly={isReadOnly}
             key={selectedConversation.id}
           />
         ) : (

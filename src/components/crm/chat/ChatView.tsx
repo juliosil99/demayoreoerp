@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,9 +14,10 @@ interface ChatViewProps {
   contactId?: string;
   companyName?: string;
   contactName?: string;
+  isReadOnly?: boolean;
 }
 
-export const ChatView = ({ companyId, contactId, companyName, contactName }: ChatViewProps) => {
+export const ChatView = ({ companyId, contactId, companyName, contactName, isReadOnly = false }: ChatViewProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { data: interactions = [], isLoading } = useCrmInteractions(companyId, contactId);
@@ -113,17 +113,25 @@ export const ChatView = ({ companyId, contactId, companyName, contactName }: Cha
           )}
         </div>
 
-        {/* Quick Actions */}
-        <div className="px-4">
-          <QuickActions onQuickAction={handleQuickAction} />
-        </div>
+        {!isReadOnly ? (
+          <>
+            {/* Quick Actions */}
+            <div className="px-4">
+              <QuickActions onQuickAction={handleQuickAction} />
+            </div>
 
-        {/* Chat Input */}
-        <ChatInput
-          onSendMessage={handleSendMessage}
-          disabled={isSending}
-          placeholder={`Escribe un mensaje${companyName ? ` para ${companyName}` : ''}...`}
-        />
+            {/* Chat Input */}
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              disabled={isSending}
+              placeholder={`Escribe un mensaje${companyName ? ` para ${companyName}` : ''}...`}
+            />
+          </>
+        ) : (
+          <div className="p-4 border-t text-center text-sm text-muted-foreground bg-gray-50">
+            Esta conversación es de solo lectura.
+          </div>
+        )}
       </CardContent>
     </Card>
   );

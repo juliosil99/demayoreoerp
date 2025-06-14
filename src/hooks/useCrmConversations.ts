@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -60,18 +61,21 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
       // Agrupar: aquí cada interacción es una conversación,
       // pero deberías agrupar por company_id+contact_id si hay varias
       // (este mock asume que ya están agrupadas por backend)
-      return (data || []).map((item: any) => ({
-        id: item.id,
-        company_id: item.company_id,
-        company_name: item.company?.name ?? "",
-        contact_id: item.contact_id,
-        contact_name: item.contact?.name ?? "",
-        last_message: item.description || "",
-        last_message_time: item.created_at,
-        last_message_type: item.type,
-        unread_count: item.is_read === false ? 1 : 0,
-        conversation_status: item.conversation_status || "open"
-      }));
+      return (data || []).map((item: any) => {
+        const isMercadoLibre = item.type === 'mercadolibre_question';
+        return {
+          id: item.id,
+          company_id: item.company_id,
+          company_name: item.company?.name ?? "",
+          contact_id: item.contact_id,
+          contact_name: item.contact?.name ?? "",
+          last_message: item.description || "",
+          last_message_time: item.created_at,
+          last_message_type: item.type,
+          unread_count: item.is_read === false ? 1 : 0,
+          conversation_status: isMercadoLibre ? "closed" : (item.conversation_status || "open")
+        };
+      });
     }
   });
 }
