@@ -22,56 +22,82 @@ export interface Recipient {
 }
 
 export function useExpenseQueries() {
+  // Always call hooks in the same order - no conditional execution
   const { user } = useAuth();
   const { data: company, isLoading: isLoadingCompany } = useUserCompany();
+  
+  // Extract values to avoid undefined issues
+  const userId = user?.id;
   const companyId = company?.id;
 
+  // Always execute all hooks in the same order, regardless of data availability
   const { data: bankAccounts = [], isLoading: isLoadingBankAccounts } = useQuery<BankAccount[], Error>({
     queryKey: ["bankAccounts", companyId],
     queryFn: async () => {
-      if (!companyId) return [];
+      console.log("Fetching bank accounts for company:", companyId);
+      if (!companyId) {
+        console.log("No company ID available, returning empty array");
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*")
         .eq("company_id", companyId);
+        
       if (error) {
         console.error("Error fetching bank accounts:", error);
         throw error;
       }
+      
+      console.log("Fetched bank accounts:", data?.length || 0);
       return data as BankAccount[];
     },
-    enabled: !!companyId,
+    enabled: Boolean(companyId), // Simplified boolean condition
     initialData: [],
   });
 
   const { data: chartAccounts = [], isLoading: isLoadingChartAccounts } = useQuery<ChartAccount[], Error>({
-    queryKey: ["chartAccounts", user?.id],
+    queryKey: ["chartAccounts", userId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      console.log("Fetching chart accounts for user:", userId);
+      if (!userId) {
+        console.log("No user ID available, returning empty array");
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from("chart_of_accounts")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .in("account_type", ["expense", "asset", "liability"])
         .order('code');
+        
       if (error) {
         console.error("Error fetching chart accounts:", error);
         throw error;
       }
+      
+      console.log("Fetched chart accounts:", data?.length || 0);
       return data as ChartAccount[];
     },
-    enabled: !!user?.id,
+    enabled: Boolean(userId), // Simplified boolean condition
     initialData: [],
   });
 
   const { data: recipients = [], isLoading: isLoadingRecipients } = useQuery<Recipient[], Error>({
-    queryKey: ["expenseRecipients", user?.id],
+    queryKey: ["expenseRecipients", userId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      console.log("Fetching recipients for user:", userId);
+      if (!userId) {
+        console.log("No user ID available, returning empty array");
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from("contacts")
         .select("id, name, type, rfc")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .in("type", ["supplier", "employee"])
         .order('name');
         
@@ -80,16 +106,30 @@ export function useExpenseQueries() {
         throw error;
       }
       
-      return data ? data.map(recipient => ({
+      const mappedData = data ? data.map(recipient => ({
         ...recipient,
         id: String(recipient.id)
       })) : [];
+      
+      console.log("Fetched recipients:", mappedData.length);
+      return mappedData;
     },
-    enabled: !!user?.id,
+    enabled: Boolean(userId), // Simplified boolean condition
     initialData: [],
   });
 
+  // Calculate loading state
   const isLoading = isLoadingCompany || isLoadingBankAccounts || isLoadingChartAccounts || isLoadingRecipients;
+
+  // Log current state for debugging
+  console.log("useExpenseQueries state:", {
+    userId,
+    companyId,
+    bankAccountsCount: bankAccounts.length,
+    chartAccountsCount: chartAccounts.length,
+    recipientsCount: recipients.length,
+    isLoading
+  });
 
   return {
     bankAccounts,
