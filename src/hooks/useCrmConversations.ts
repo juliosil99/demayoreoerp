@@ -23,7 +23,7 @@ export interface UseCrmConversationsOptions {
   filter: "all" | "open" | "closed" | "unanswered";
 }
 
-const CONVERSATIONS_PAGE_SIZE = 25;
+const CONVERSATIONS_PAGE_SIZE = 20;
 
 export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
   return useInfiniteQuery({
