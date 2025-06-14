@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from "react";
 import { useCrmConversations } from "@/hooks/useCrmConversations";
 import { MessageBubble } from "@/components/crm/chat/MessageBubble";
@@ -107,9 +106,6 @@ const CrmChatPage: React.FC = () => {
         <div className="p-4 border-t bg-gray-50">
           {activeConversation && !isClosed ? (
             <ChatInput
-              companyId={interactions[0]?.company_id}
-              contactId={interactions[0]?.contact_id}
-              channel={interactions[0]?.type}
               disabled={isClosed}
             />
           ) : (
