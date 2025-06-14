@@ -1,7 +1,6 @@
 
 import React from "react";
 import { ProductSearchResult } from "@/types/product-search";
-import { InfoAlert } from "./InfoAlert";
 import { ProductTable } from "./table/ProductTable";
 
 interface ProductSearchResultsProps {
@@ -33,7 +32,6 @@ export const ProductSearchResults: React.FC<ProductSearchResultsProps> = ({
 
   return (
     <div className="space-y-4">
-      <InfoAlert />
       <ProductTable
         products={products}
         isLoading={isLoading}
