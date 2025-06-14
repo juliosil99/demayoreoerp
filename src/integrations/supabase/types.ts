@@ -2891,6 +2891,15 @@ export type Database = {
           margin_percentage: number
         }[]
       }
+      get_crm_conversation_previews: {
+        Args: {
+          p_user_id: string
+          p_filter: string
+          p_page_size: number
+          p_page_number: number
+        }
+        Returns: Database["public"]["CompositeTypes"]["crm_conversation_preview_type"][]
+      }
       get_dashboard_metrics: {
         Args: { p_start_date?: string; p_end_date?: string }
         Returns: {
@@ -2979,7 +2988,18 @@ export type Database = {
       report_type: "income_statement" | "cash_flow" | "balance_sheet"
     }
     CompositeTypes: {
-      [_ in never]: never
+      crm_conversation_preview_type: {
+        id: string | null
+        company_id: string | null
+        company_name: string | null
+        contact_id: string | null
+        contact_name: string | null
+        last_message: string | null
+        last_message_time: string | null
+        last_message_type: string | null
+        unread_count: number | null
+        conversation_status: string | null
+      }
     }
   }
 }

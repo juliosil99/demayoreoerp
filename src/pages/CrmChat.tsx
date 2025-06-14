@@ -1,20 +1,37 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Circle } from "lucide-react";
 import { ConversationsList } from "@/components/crm/chat/ConversationsList";
 import { ChatView } from "@/components/crm/chat/ChatView";
 import { useCrmConversations } from "@/hooks/useCrmConversations";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const CrmChat = () => {
   const [filter, setFilter] = useState<"all" | "open" | "closed" | "unanswered">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const { data: conversations = [], isLoading } = useCrmConversations({ filter });
+  const { 
+    data, 
+    isLoading, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage 
+  } = useCrmConversations({ filter });
 
-  // Encontrar conversación seleccionada (o la primera)
+  const conversations = data?.pages.flat() || [];
+
+  // Resetear selección al cambiar el filtro para no mostrar un chat viejo.
+  useEffect(() => {
+    setSelectedId(null);
+  }, [filter]);
+
+  // Seleccionar la primera conversación si no hay ninguna seleccionada.
+  useEffect(() => {
+    if (!selectedId && conversations.length > 0) {
+      setSelectedId(conversations[0].id);
+    }
+  }, [conversations, selectedId]);
+
   const selectedConversation = conversations.find(c => c.id === selectedId) || conversations[0];
   const isReadOnly = selectedConversation?.last_message_type === 'mercadolibre_question';
 
@@ -60,14 +77,15 @@ const CrmChat = () => {
             </div>
           </CardHeader>
           <CardContent className="flex-1 p-0 min-h-0">
-            <ScrollArea className="h-full">
-              <ConversationsList
-                conversations={conversations}
-                isLoading={isLoading}
-                selectedId={selectedConversation?.id}
-                onSelect={id => setSelectedId(id)}
-              />
-            </ScrollArea>
+            <ConversationsList
+              conversations={conversations}
+              isLoading={isLoading}
+              selectedId={selectedConversation?.id}
+              onSelect={id => setSelectedId(id)}
+              fetchNextPage={fetchNextPage}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+            />
           </CardContent>
         </Card>
       </div>
@@ -85,8 +103,14 @@ const CrmChat = () => {
           />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
-            <Circle className="h-8 w-8" />
-            <span className="ml-2">Selecciona una conversación</span>
+            {isLoading ? (
+               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            ) : (
+              <>
+                <Circle className="h-8 w-8" />
+                <span className="ml-2">Selecciona una conversación</span>
+              </>
+            )}
           </div>
         )}
       </div>

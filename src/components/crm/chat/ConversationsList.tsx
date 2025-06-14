@@ -1,4 +1,4 @@
-
+import { useEffect, useRef } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Building2, User } from "lucide-react";
@@ -13,7 +13,7 @@ export interface ConversationPreview {
   last_message_time: string;
   last_message_type: string;
   unread_count: number;
-  conversation_status: "open" | "closed" | "pending_response" | "archived";
+  conversation_status: "open" | "closed" | "pending_response" | "archived" | string;
 }
 
 interface ConversationsListProps {
@@ -21,6 +21,9 @@ interface ConversationsListProps {
   isLoading: boolean;
   selectedId?: string;
   onSelect: (id: string) => void;
+  fetchNextPage: () => void;
+  hasNextPage?: boolean;
+  isFetchingNextPage: boolean;
 }
 
 const getStatusProps = (conv: ConversationPreview) => {
@@ -57,23 +60,50 @@ export const ConversationsList = ({
   isLoading,
   selectedId,
   onSelect,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
 }: ConversationsListProps) => {
+  const loadMoreRef = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.8 } // Cargar un poco antes de llegar al final
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
   if (isLoading) {
     return (
       <div className="py-4 space-y-2">
-        {[...Array(7)].map((_, i) => (
-          <Skeleton key={i} className="h-16 rounded-lg mx-3" />
+        {[...Array(10)].map((_, i) => (
+          <Skeleton key={i} className="h-20 rounded-lg mx-3" />
         ))}
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="h-full overflow-y-auto">
       {conversations.length === 0 ? (
         <div className="py-8 text-center text-muted-foreground">
           <MessageSquare className="mx-auto mb-2" />
-          <p>No hay conversaciones</p>
+          <p>No hay conversaciones en este filtro.</p>
         </div>
       ) : (
         <ul>
@@ -84,7 +114,7 @@ export const ConversationsList = ({
             return (
               <li
                 key={conv.id}
-                className={`flex items-center gap-3 px-4 py-3 border-b cursor-pointer transition-colors
+                className={`flex items-start gap-3 px-4 py-3 border-b cursor-pointer transition-colors
                   ${conv.id === selectedId ? "bg-muted" : "hover:bg-accent"}
                 `}
                 onClick={() => onSelect(conv.id)}
@@ -127,6 +157,14 @@ export const ConversationsList = ({
               </li>
             );
           })}
+          
+          <li ref={loadMoreRef} className="h-1" />
+          
+          {isFetchingNextPage && (
+            <li className="flex justify-center items-center py-4">
+               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+            </li>
+          )}
         </ul>
       )}
     </div>
