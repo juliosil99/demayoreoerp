@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +55,6 @@ const getStatusProps = (conv: ConversationPreview) => {
   }
 };
 
-
 export const ConversationsList = ({
   conversations,
   isLoading,
@@ -66,10 +66,26 @@ export const ConversationsList = ({
 }: ConversationsListProps) => {
   const loadMoreRef = useRef<HTMLLIElement>(null);
 
+  console.log('📋 [ConversationsList] Component rendered with props:', {
+    conversationsCount: conversations.length,
+    isLoading,
+    selectedId,
+    hasNextPage,
+    isFetchingNextPage,
+    conversations: conversations.map(c => ({
+      id: c.id,
+      company_name: c.company_name,
+      contact_name: c.contact_name,
+      last_message: c.last_message?.substring(0, 30) + '...',
+      status: c.conversation_status
+    }))
+  });
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          console.log('🔄 [ConversationsList] Loading more conversations...');
           fetchNextPage();
         }
       },
@@ -89,6 +105,7 @@ export const ConversationsList = ({
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (isLoading) {
+    console.log('⏳ [ConversationsList] Showing loading state');
     return (
       <div className="py-4 space-y-2">
         {[...Array(10)].map((_, i) => (
@@ -98,75 +115,91 @@ export const ConversationsList = ({
     );
   }
 
+  if (conversations.length === 0) {
+    console.log('🕳️ [ConversationsList] No conversations to display');
+    return (
+      <div className="py-8 text-center text-muted-foreground">
+        <MessageSquare className="mx-auto mb-2" />
+        <p>No hay conversaciones en este filtro.</p>
+      </div>
+    );
+  }
+
+  console.log('📝 [ConversationsList] Rendering conversation list with', conversations.length, 'items');
+
   return (
     <div className="h-full overflow-y-auto">
-      {conversations.length === 0 ? (
-        <div className="py-8 text-center text-muted-foreground">
-          <MessageSquare className="mx-auto mb-2" />
-          <p>No hay conversaciones en este filtro.</p>
-        </div>
-      ) : (
-        <ul>
-          {conversations.map(conv => {
-            const statusProps = getStatusProps(conv);
-            const timeAgo = formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: true, locale: es });
+      <ul>
+        {conversations.map((conv, index) => {
+          const statusProps = getStatusProps(conv);
+          const timeAgo = formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: true, locale: es });
 
-            return (
-              <li
-                key={conv.id}
-                className={`flex items-start gap-3 px-4 py-3 border-b cursor-pointer transition-colors
-                  ${conv.id === selectedId ? "bg-muted" : "hover:bg-accent"}
-                `}
-                onClick={() => onSelect(conv.id)}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="font-medium truncate flex items-center gap-2">
-                      {conv.company_name ? (
-                        <span className="flex items-center gap-1">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          {conv.company_name}
+          console.log(`📄 [ConversationsList] Rendering conversation ${index + 1}:`, {
+            id: conv.id,
+            company_name: conv.company_name,
+            contact_name: conv.contact_name,
+            isSelected: conv.id === selectedId,
+            status: conv.conversation_status
+          });
+
+          return (
+            <li
+              key={conv.id}
+              className={`flex items-start gap-3 px-4 py-3 border-b cursor-pointer transition-colors
+                ${conv.id === selectedId ? "bg-muted" : "hover:bg-accent"}
+              `}
+              onClick={() => {
+                console.log('👆 [ConversationsList] Conversation clicked:', conv.id);
+                onSelect(conv.id);
+              }}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="font-medium truncate flex items-center gap-2">
+                    {conv.company_name ? (
+                      <span className="flex items-center gap-1">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        {conv.company_name}
+                      </span>
+                    ) : null}
+                    {conv.contact_name && (
+                      <>
+                        {conv.company_name && <span className="mx-1 text-muted-foreground text-xs">/</span>}
+                         <span className="flex items-center gap-1">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          {conv.contact_name}
                         </span>
-                      ) : null}
-                      {conv.contact_name && (
-                        <>
-                          {conv.company_name && <span className="mx-1 text-muted-foreground text-xs">/</span>}
-                           <span className="flex items-center gap-1">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            {conv.contact_name}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                     <span className="text-xs text-muted-foreground flex-shrink-0">{timeAgo}</span>
-                  </div>
-
-                  <div className="text-muted-foreground text-sm truncate mb-2">
-                    {conv.last_message}
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Badge variant={statusProps.variant} className={statusProps.className}>
-                      {statusProps.text}
-                    </Badge>
-                     {conv.unread_count > 0 && (
-                      <div className="bg-blue-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold">{conv.unread_count}</div>
+                      </>
                     )}
                   </div>
+                   <span className="text-xs text-muted-foreground flex-shrink-0">{timeAgo}</span>
                 </div>
-              </li>
-            );
-          })}
-          
-          <li ref={loadMoreRef} className="h-1" />
-          
-          {isFetchingNextPage && (
-            <li className="flex justify-center items-center py-4">
-               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+
+                <div className="text-muted-foreground text-sm truncate mb-2">
+                  {conv.last_message}
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Badge variant={statusProps.variant} className={statusProps.className}>
+                    {statusProps.text}
+                  </Badge>
+                   {conv.unread_count > 0 && (
+                    <div className="bg-blue-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold">{conv.unread_count}</div>
+                  )}
+                </div>
+              </div>
             </li>
-          )}
-        </ul>
-      )}
+          );
+        })}
+        
+        <li ref={loadMoreRef} className="h-1" />
+        
+        {isFetchingNextPage && (
+          <li className="flex justify-center items-center py-4">
+             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+          </li>
+        )}
+      </ul>
     </div>
   );
 };

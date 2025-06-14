@@ -29,8 +29,19 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
   return useInfiniteQuery({
     queryKey: ["crm-conversations", filter],
     queryFn: async ({ pageParam }) => {
+      console.log('🔍 [useCrmConversations] Starting query with:', {
+        filter,
+        pageParam,
+        pageSize: CONVERSATIONS_PAGE_SIZE
+      });
+
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      if (!user) {
+        console.error('❌ [useCrmConversations] User not authenticated');
+        throw new Error("User not authenticated");
+      }
+
+      console.log('✅ [useCrmConversations] User authenticated:', user.id);
 
       const { data, error } = await supabase.rpc('get_crm_conversation_previews', {
         p_user_id: user.id,
@@ -40,21 +51,50 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
       });
 
       if (error) {
-        console.error("Error fetching conversations:", error);
+        console.error("❌ [useCrmConversations] Supabase RPC error:", error);
         throw error;
       }
       
+      console.log('📊 [useCrmConversations] Raw data from Supabase:', {
+        dataLength: data?.length || 0,
+        data: data,
+        filter,
+        pageParam
+      });
+
       // La función RPC devuelve un array de objetos que coinciden con CrmConversationPreview.
-      return (data || []) as CrmConversationPreview[];
+      const conversations = (data || []) as CrmConversationPreview[];
+      
+      console.log('🔄 [useCrmConversations] Transformed conversations:', {
+        count: conversations.length,
+        conversations: conversations.map(c => ({
+          id: c.id,
+          company_name: c.company_name,
+          contact_name: c.contact_name,
+          last_message: c.last_message?.substring(0, 50) + '...',
+          status: c.conversation_status
+        }))
+      });
+
+      return conversations;
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
+      console.log('🔄 [useCrmConversations] Calculating next page:', {
+        lastPageLength: lastPage.length,
+        pageSize: CONVERSATIONS_PAGE_SIZE,
+        allPagesCount: allPages.length
+      });
+
       // Si la última página trajo menos resultados que el tamaño de la página, no hay más.
       if (lastPage.length < CONVERSATIONS_PAGE_SIZE) {
+        console.log('🏁 [useCrmConversations] No more pages available');
         return undefined;
       }
       // Si no, pedimos la siguiente página.
-      return allPages.length + 1;
+      const nextPage = allPages.length + 1;
+      console.log('➡️ [useCrmConversations] Next page:', nextPage);
+      return nextPage;
     },
   });
 }

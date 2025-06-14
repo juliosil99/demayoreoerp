@@ -19,21 +19,60 @@ const CrmChat = () => {
     isFetchingNextPage 
   } = useCrmConversations({ filter });
 
+  console.log('📱 [CrmChat] Hook data received:', {
+    data: data,
+    isLoading,
+    dataPages: data?.pages?.length || 0,
+    totalPages: data?.pages || []
+  });
+
   const conversations = data?.pages.flat() || [];
+  
+  console.log('📱 [CrmChat] Flattened conversations:', {
+    conversationsCount: conversations.length,
+    conversations: conversations.map(c => ({
+      id: c.id,
+      company_name: c.company_name,
+      contact_name: c.contact_name,
+      last_message: c.last_message?.substring(0, 30) + '...'
+    })),
+    filter,
+    isLoading,
+    selectedId
+  });
 
   // Resetear selección al cambiar el filtro para no mostrar un chat viejo.
   useEffect(() => {
+    console.log('🔄 [CrmChat] Filter changed, resetting selection:', { filter });
     setSelectedId(null);
   }, [filter]);
 
   // Seleccionar la primera conversación si no hay ninguna seleccionada y la carga ha terminado.
   useEffect(() => {
+    console.log('🎯 [CrmChat] Selection effect triggered:', {
+      isLoading,
+      selectedId,
+      conversationsLength: conversations.length,
+      firstConversationId: conversations[0]?.id
+    });
+
     if (!isLoading && !selectedId && conversations.length > 0) {
-      setSelectedId(conversations[0].id);
+      const firstConversationId = conversations[0].id;
+      console.log('✅ [CrmChat] Auto-selecting first conversation:', firstConversationId);
+      setSelectedId(firstConversationId);
     }
   }, [isLoading, conversations, selectedId]);
 
   const selectedConversation = conversations.find(c => c.id === selectedId);
+  console.log('👆 [CrmChat] Selected conversation:', {
+    selectedId,
+    selectedConversation: selectedConversation ? {
+      id: selectedConversation.id,
+      company_name: selectedConversation.company_name,
+      contact_name: selectedConversation.contact_name
+    } : null
+  });
+
   const isReadOnly = selectedConversation?.last_message_type === 'mercadolibre_question';
 
   return (
