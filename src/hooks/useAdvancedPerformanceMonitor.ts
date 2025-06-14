@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -38,7 +39,7 @@ export const useAdvancedPerformanceMonitor = () => {
     topSlowQueries: []
   });
 
-  const [isEnabled, setIsEnabled] = useState(true);
+  const [isEnabled, setIsEnabled] = useState(false); // Disabled by default
   const queryHistory = useRef<QueryMetrics[]>([]);
   
   const thresholds: AlertThresholds = {
@@ -64,24 +65,16 @@ export const useAdvancedPerformanceMonitor = () => {
       queryHistory.current = queryHistory.current.slice(-100);
     }
 
-    // Si es una query lenta, alertar inmediatamente
-    if (fullMetrics.duration > thresholds.slowQueryThreshold) {
-      console.warn(`🐌 Slow Query Detected: ${fullMetrics.queryName} took ${fullMetrics.duration}ms`);
-      
-      // Solo loggear en desarrollo sin persistir en Supabase
+    // Solo alertar para queries muy lentas (>5 segundos)
+    if (fullMetrics.duration > 5000) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('📊 Slow Query Details:', fullMetrics);
+        console.warn(`🐌 Very Slow Query: ${fullMetrics.queryName} took ${fullMetrics.duration}ms`);
       }
     }
 
-    // Si hay error, loggear para análisis
+    // Solo loggear errores críticos
     if (fullMetrics.status === 'error') {
-      console.error(`❌ Query Error: ${fullMetrics.queryName} - ${fullMetrics.errorMessage}`);
-      
-      // Solo loggear en desarrollo
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📊 Error Query Details:', fullMetrics);
-      }
+      console.error(`❌ Query Error: ${fullMetrics.queryName}`);
     }
 
     // Actualizar métricas locales
@@ -116,17 +109,6 @@ export const useAdvancedPerformanceMonitor = () => {
       queriesByCategory,
       topSlowQueries
     });
-
-    // Alertas automáticas solo en desarrollo
-    if (process.env.NODE_ENV === 'development') {
-      if (errorRate > thresholds.errorRateThreshold) {
-        console.warn(`⚠️ High error rate: ${errorRate.toFixed(1)}%`);
-      }
-
-      if (slowQueries.length > thresholds.maxSlowQueries) {
-        console.warn(`⚠️ Too many slow queries: ${slowQueries.length} queries > ${thresholds.slowQueryThreshold}ms`);
-      }
-    }
   };
 
   // Hook para medir performance de queries automáticamente
@@ -172,6 +154,8 @@ export const useAdvancedPerformanceMonitor = () => {
 
   // Limpiar métricas antiguas cada 5 minutos
   useEffect(() => {
+    if (!isEnabled) return;
+    
     const interval = setInterval(() => {
       const cutoff = Date.now() - (30 * 60 * 1000); // 30 minutos
       queryHistory.current = queryHistory.current.filter(
@@ -181,7 +165,7 @@ export const useAdvancedPerformanceMonitor = () => {
     }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isEnabled]);
 
   return {
     metrics,

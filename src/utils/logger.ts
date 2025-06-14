@@ -14,8 +14,8 @@ interface LogEntry {
 class CentralizedLogger {
   private isProduction = process.env.NODE_ENV === 'production';
   private enabledLevels: LogLevel[] = this.isProduction 
-    ? ['ERROR', 'WARN'] 
-    : ['ERROR', 'WARN', 'INFO', 'DEBUG'];
+    ? ['ERROR'] // Only log errors in production
+    : ['ERROR', 'WARN']; // Reduced logging in development
 
   private shouldLog(level: LogLevel): boolean {
     return this.enabledLevels.includes(level);
@@ -30,15 +30,12 @@ class CentralizedLogger {
   }
 
   private async persistCriticalLog(entry: LogEntry) {
-    // Solo persistir logs críticos para evitar consumo excesivo
-    if (entry.level === 'ERROR' || (entry.level === 'WARN' && entry.category === 'performance')) {
+    // Only persist critical errors in production
+    if (entry.level === 'ERROR' && this.isProduction) {
       try {
-        // Simular persistencia - en producción conectaríamos a Supabase
-        if (!this.isProduction) {
-          console.log('🔄 Would persist to Supabase:', this.formatMessage(entry));
-        }
+        // Production logging would go here
       } catch (error) {
-        // Silenciar errores de logging para no crear loops
+        // Silently fail to avoid logging loops
       }
     }
   }
@@ -55,7 +52,7 @@ class CentralizedLogger {
       category: 'error'
     };
 
-    console.error(`❌ ${this.formatMessage(entry)}`, data || '');
+    console.error(`❌ ${this.formatMessage(entry)}`);
     this.persistCriticalLog(entry);
   }
 
@@ -71,61 +68,42 @@ class CentralizedLogger {
       category: 'warning'
     };
 
-    console.warn(`⚠️ ${this.formatMessage(entry)}`, data || '');
-    this.persistCriticalLog(entry);
+    console.warn(`⚠️ ${this.formatMessage(entry)}`);
   }
 
   info(message: string, data?: any, component?: string) {
-    if (!this.shouldLog('INFO')) return;
-    
-    const entry: LogEntry = {
-      level: 'INFO',
-      message,
-      data,
-      timestamp: new Date(),
-      component
-    };
-
-    console.log(`ℹ️ ${this.formatMessage(entry)}`, data || '');
+    // Info logs disabled to reduce console noise
+    return;
   }
 
   debug(message: string, data?: any, component?: string) {
-    if (!this.shouldLog('DEBUG')) return;
-    
-    const entry: LogEntry = {
-      level: 'DEBUG',
-      message,
-      data,
-      timestamp: new Date(),
-      component
-    };
-
-    console.log(`🔍 ${this.formatMessage(entry)}`, data || '');
+    // Debug logs disabled to reduce console noise
+    return;
   }
 
-  // Método especial para logging de performance
+  // Método especial para logging de performance - solo en development
   performance(message: string, duration: number, component?: string) {
-    const entry: LogEntry = {
-      level: duration > 2000 ? 'WARN' : 'INFO',
-      message: `${message} (${duration}ms)`,
-      data: { duration },
-      timestamp: new Date(),
-      component,
-      category: 'performance'
-    };
-
+    if (this.isProduction) return;
+    
     if (duration > 2000) {
+      const entry: LogEntry = {
+        level: 'WARN',
+        message: `${message} (${duration}ms)`,
+        data: { duration },
+        timestamp: new Date(),
+        component,
+        category: 'performance'
+      };
       console.warn(`🐌 ${this.formatMessage(entry)}`);
-      this.persistCriticalLog(entry);
-    } else if (!this.isProduction) {
-      console.log(`⚡ ${this.formatMessage(entry)}`);
     }
   }
 
-  // Método para logging de queries específicas
+  // Método para logging de queries específicas - solo errores críticos
   query(queryName: string, duration: number, recordCount?: number, component?: string) {
-    const message = `Query: ${queryName}${recordCount ? ` (${recordCount} records)` : ''}`;
-    this.performance(message, duration, component);
+    // Only log very slow queries as warnings
+    if (duration > 5000) {
+      this.performance(`Slow Query: ${queryName}`, duration, component);
+    }
   }
 }
 

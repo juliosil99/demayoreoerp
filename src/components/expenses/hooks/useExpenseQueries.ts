@@ -1,5 +1,4 @@
 
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BankAccount as BankAccountType } from "@/components/banking/types";
@@ -34,7 +33,6 @@ export function useExpenseQueries() {
   const { data: bankAccounts = [], isLoading: isLoadingBankAccounts, error: bankAccountsError } = useQuery<BankAccount[], Error>({
     queryKey: ["bankAccounts", companyId],
     queryFn: async () => {
-      console.log("🏦 Fetching bank accounts for company:", companyId);
       if (!companyId) {
         return [];
       }
@@ -46,14 +44,11 @@ export function useExpenseQueries() {
           .eq("company_id", companyId);
           
         if (error) {
-          console.error("❌ Error fetching bank accounts:", error);
           throw error;
         }
         
-        console.log("✅ Fetched bank accounts successfully:", data?.length || 0, "accounts");
         return data as BankAccount[];
       } catch (err) {
-        console.error("💥 Exception in bank accounts fetch:", err);
         throw err;
       }
     },
@@ -64,7 +59,6 @@ export function useExpenseQueries() {
   const { data: chartAccounts = [], isLoading: isLoadingChartAccounts, error: chartAccountsError } = useQuery<ChartAccount[], Error>({
     queryKey: ["chartAccounts", userId],
     queryFn: async () => {
-      console.log("📈 Fetching chart accounts for user:", userId);
       if (!userId) {
         return [];
       }
@@ -78,14 +72,11 @@ export function useExpenseQueries() {
           .order('code');
           
         if (error) {
-          console.error("❌ Error fetching chart accounts:", error);
           throw error;
         }
         
-        console.log("✅ Fetched chart accounts successfully:", data?.length || 0, "accounts");
         return data as ChartAccount[];
       } catch (err) {
-        console.error("💥 Exception in chart accounts fetch:", err);
         throw err;
       }
     },
@@ -96,7 +87,6 @@ export function useExpenseQueries() {
   const { data: recipients = [], isLoading: isLoadingRecipients, error: recipientsError } = useQuery<Recipient[], Error>({
     queryKey: ["expenseRecipients", userId],
     queryFn: async () => {
-      console.log("👥 Fetching recipients for user:", userId);
       if (!userId) {
         return [];
       }
@@ -110,7 +100,6 @@ export function useExpenseQueries() {
           .order('name');
           
         if (error) {
-          console.error("❌ Error fetching recipients:", error);
           throw error;
         }
         
@@ -119,10 +108,8 @@ export function useExpenseQueries() {
           id: String(recipient.id)
         })) : [];
         
-        console.log("✅ Fetched recipients successfully:", mappedData.length, "recipients");
         return mappedData;
       } catch (err) {
-        console.error("💥 Exception in recipients fetch:", err);
         throw err;
       }
     },
@@ -140,4 +127,3 @@ export function useExpenseQueries() {
     isLoading,
   };
 }
-
