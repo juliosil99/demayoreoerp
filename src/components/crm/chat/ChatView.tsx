@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Building2, User } from 'lucide-react';
@@ -25,17 +25,24 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
   const { data: interactions = [], isLoading } = useCrmInteractions(companyId, contactId);
   const { sendMessage, handleQuickAction, isTyping, isSending } = useChatOperations(companyId, contactId);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
-  // Solo hacer scroll automático cuando se agregan nuevos mensajes, no al cambiar de conversación
-  useEffect(() => {
-    if (interactions.length > 0 && interactions.length > lastMessageCount) {
-      scrollToBottom();
+  // Usamos useLayoutEffect para asegurar que el scroll ocurra después del renderizado del layout
+  useLayoutEffect(() => {
+    // Cuando se cargan mensajes (nuevos o al cambiar de chat), nos desplazamos
+    if (interactions.length > lastMessageCount) {
+      // Si es la carga inicial (lastMessageCount es 0), saltamos al final sin animación.
+      // Para mensajes nuevos, el scroll es suave.
+      const behavior = lastMessageCount === 0 ? 'auto' : 'smooth';
+      scrollToBottom(behavior);
     }
-    setLastMessageCount(interactions.length);
-  }, [interactions.length]);
+    // Actualizamos el contador después del check
+    if (interactions.length !== lastMessageCount) {
+      setLastMessageCount(interactions.length);
+    }
+  }, [interactions, lastMessageCount]);
 
   // Scroll cuando aparece el indicador de typing
   useEffect(() => {
