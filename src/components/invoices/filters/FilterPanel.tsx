@@ -5,6 +5,8 @@ import { DateRangeFilter } from "./DateRangeFilter";
 import { InvoiceTypeFilter } from "./InvoiceTypeFilter";
 import { AmountFilter } from "./AmountFilter";
 import { ReconciliationStatusFilter } from "./ReconciliationStatusFilter";
+import { IssuerFilter } from "./IssuerFilter";
+import { ReceiverFilter } from "./ReceiverFilter";
 import type { InvoiceFilters } from "../InvoiceFilters";
 
 interface FilterPanelProps {
@@ -43,9 +45,17 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     onFilterChange({ ...filters, reconciliationStatus: status });
   }, [filters, onFilterChange]);
 
+  const handleIssuerNameChange = React.useCallback((value: string) => {
+    onFilterChange({ ...filters, issuerName: value });
+  }, [filters, onFilterChange]);
+
+  const handleReceiverNameChange = React.useCallback((value: string) => {
+    onFilterChange({ ...filters, receiverName: value });
+  }, [filters, onFilterChange]);
+
   return (
     <div className="border p-4 rounded-md space-y-4">
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <DateRangeFilter
           dateFrom={filters.dateFrom}
           dateTo={filters.dateTo}
@@ -63,12 +73,24 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           onChange={handleReconciliationStatusChange}
         />
         
-        <AmountFilter
-          minAmount={filters.minAmount}
-          maxAmount={filters.maxAmount}
-          onMinAmountChange={handleMinAmountChange}
-          onMaxAmountChange={handleMaxAmountChange}
+        <IssuerFilter
+          value={filters.issuerName}
+          onChange={handleIssuerNameChange}
         />
+        
+        <ReceiverFilter
+          value={filters.receiverName}
+          onChange={handleReceiverNameChange}
+        />
+        
+        <div className="md:col-span-2 lg:col-span-3">
+          <AmountFilter
+            minAmount={filters.minAmount}
+            maxAmount={filters.maxAmount}
+            onMinAmountChange={handleMinAmountChange}
+            onMaxAmountChange={handleMaxAmountChange}
+          />
+        </div>
       </div>
       
       <div className="flex justify-end">

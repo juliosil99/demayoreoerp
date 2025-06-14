@@ -9,6 +9,8 @@ export interface InvoiceFilters {
   minAmount: string;
   maxAmount: string;
   reconciliationStatus: string;
+  issuerName: string;
+  receiverName: string;
 }
 
 export const useOptimizedInvoiceFiltering = () => {
@@ -20,6 +22,8 @@ export const useOptimizedInvoiceFiltering = () => {
     minAmount: "",
     maxAmount: "",
     reconciliationStatus: "all",
+    issuerName: "",
+    receiverName: "",
   });
 
   const handleFilterChange = useCallback((newFilters: InvoiceFilters) => {
@@ -35,6 +39,8 @@ export const useOptimizedInvoiceFiltering = () => {
       minAmount: "",
       maxAmount: "",
       reconciliationStatus: "all",
+      issuerName: "",
+      receiverName: "",
     });
   }, []);
 

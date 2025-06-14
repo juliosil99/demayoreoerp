@@ -14,6 +14,8 @@ export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
     minAmount: "",
     maxAmount: "",
     reconciliationStatus: "all",
+    issuerName: "",
+    receiverName: "",
   });
 
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[] | null>(invoices);
@@ -41,6 +43,22 @@ export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
           (invoice.issuer_name && invoice.issuer_name.toLowerCase().includes(searchLower)) ||
           (invoice.receiver_name && invoice.receiver_name.toLowerCase().includes(searchLower)) ||
           (invoice.uuid && invoice.uuid.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply issuer name filter
+    if (filters.issuerName) {
+      const issuerLower = filters.issuerName.toLowerCase();
+      results = results.filter(
+        (invoice) => invoice.issuer_name && invoice.issuer_name.toLowerCase().includes(issuerLower)
+      );
+    }
+
+    // Apply receiver name filter
+    if (filters.receiverName) {
+      const receiverLower = filters.receiverName.toLowerCase();
+      results = results.filter(
+        (invoice) => invoice.receiver_name && invoice.receiver_name.toLowerCase().includes(receiverLower)
       );
     }
 

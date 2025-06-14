@@ -12,6 +12,8 @@ export type InvoiceFilters = {
   minAmount: string;
   maxAmount: string;
   reconciliationStatus: string;
+  issuerName: string;
+  receiverName: string;
 };
 
 type InvoiceFiltersProps = {
@@ -61,6 +63,8 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
       minAmount: "",
       maxAmount: "",
       reconciliationStatus: "all",
+      issuerName: "",
+      receiverName: "",
     });
   }, [onFilterChange]);
 

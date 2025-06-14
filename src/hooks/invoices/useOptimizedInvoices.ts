@@ -13,6 +13,8 @@ export interface InvoiceFilters {
   minAmount: string;
   maxAmount: string;
   reconciliationStatus: string;
+  issuerName: string;
+  receiverName: string;
 }
 
 interface UseOptimizedInvoicesOptions {
@@ -59,6 +61,18 @@ export const useOptimizedInvoices = ({
       if (filters.search.trim()) {
         const searchTerm = `%${filters.search.trim()}%`;
         query = query.or(`invoice_number.ilike.${searchTerm},issuer_name.ilike.${searchTerm},receiver_name.ilike.${searchTerm},uuid.ilike.${searchTerm}`);
+      }
+
+      // Apply issuer name filter
+      if (filters.issuerName.trim()) {
+        const issuerTerm = `%${filters.issuerName.trim()}%`;
+        query = query.ilike('issuer_name', issuerTerm);
+      }
+
+      // Apply receiver name filter
+      if (filters.receiverName.trim()) {
+        const receiverTerm = `%${filters.receiverName.trim()}%`;
+        query = query.ilike('receiver_name', receiverTerm);
       }
 
       // Apply date range filters
