@@ -13,6 +13,7 @@ export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
     invoiceType: "",
     minAmount: "",
     maxAmount: "",
+    reconciliationStatus: "all",
   });
 
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[] | null>(invoices);
