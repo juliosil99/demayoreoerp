@@ -22,7 +22,7 @@ export const useProductSearch = () => {
 
       try {
         console.log(`Searching for products with term: "${searchQuery}"`);
-        const query = supabase
+        let query = supabase
           .from("invoice_products")
           .select(`
             *,
@@ -47,15 +47,18 @@ export const useProductSearch = () => {
         if (startDate) {
           const startDateStr = startDate.toISOString().split("T")[0];
           console.log(`Adding start date filter: ${startDateStr}`);
-          query.gte("invoices.invoice_date", startDateStr);
+          query = query.gte("invoices.invoice_date", startDateStr);
         }
         if (endDate) {
           const endDateStr = endDate.toISOString().split("T")[0];
           console.log(`Adding end date filter: ${endDateStr}`);
-          query.lte("invoices.invoice_date", endDateStr);
+          query = query.lte("invoices.invoice_date", endDateStr);
         }
 
-        const { data, error } = await query;
+        const { data, error } = await query.order('invoice_date', {
+          foreignTable: 'invoices',
+          ascending: false,
+        });
 
         if (error) {
           console.error("Database error searching products:", error);
