@@ -231,37 +231,36 @@ const addProductsTable = async (doc: jsPDF, products: ProductData[], yPosition: 
 };
 
 const addTaxSection = (doc: jsPDF, invoice: InvoiceData, yPosition: number): number => {
-  // Tax breakdown section
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  safeAddText(doc, "DESGLOSE DE IMPUESTOS", 14, yPosition);
+  const startX = 130;
+  const valueX = 195;
+  const rightAlign = { align: "right" as const };
+
+  let currentY = yPosition;
   
-  let taxY = yPosition + 10;
+  // Subtotal
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  
-  // Tax details
-  safeAddText(doc, "Impuestos Trasladados:", 14, taxY);
-  taxY += 5;
-  safeAddText(doc, `IVA (16%): ${formatCurrency(invoice.tax_amount || 0)}`, 20, taxY);
-  
-  taxY += 10;
-  
-  // Totals section
   doc.setFont("helvetica", "bold");
-  safeAddText(doc, "Subtotal:", 130, taxY);
-  safeAddText(doc, formatCurrency(invoice.subtotal || 0), 170, taxY, { align: "right" });
+  safeAddText(doc, "Subtotal:", startX, currentY);
+  doc.setFont("helvetica", "normal");
+  safeAddText(doc, formatCurrency(invoice.subtotal || 0), valueX, currentY, rightAlign);
   
-  taxY += 6;
-  safeAddText(doc, "Total Impuestos:", 130, taxY);
-  safeAddText(doc, formatCurrency(invoice.tax_amount || 0), 170, taxY, { align: "right" });
+  currentY += 7;
+
+  // Taxes
+  doc.setFont("helvetica", "bold");
+  safeAddText(doc, "Total Impuestos:", startX, currentY);
+  doc.setFont("helvetica", "normal");
+  safeAddText(doc, formatCurrency(invoice.tax_amount || 0), valueX, currentY, rightAlign);
   
-  taxY += 6;
+  currentY += 7;
+
+  // Total
   doc.setFontSize(12);
-  safeAddText(doc, "TOTAL:", 130, taxY);
-  safeAddText(doc, formatCurrency(invoice.total_amount || 0), 170, taxY, { align: "right" });
+  doc.setFont("helvetica", "bold");
+  safeAddText(doc, "TOTAL:", startX, currentY);
+  safeAddText(doc, formatCurrency(invoice.total_amount || 0), valueX, currentY, rightAlign);
   
-  return taxY + 15;
+  return currentY + 15;
 };
 
 const addDigitalSealSection = (doc: jsPDF, invoice: InvoiceData, yPosition: number): number => {
@@ -273,31 +272,42 @@ const addDigitalSealSection = (doc: jsPDF, invoice: InvoiceData, yPosition: numb
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   
+  const maxWidth = 100;
+  const lineHeight = 4;
+
   if (invoice.uuid) {
-    safeAddText(doc, `UUID: ${invoice.uuid}`, 14, sealY);
-    sealY += 4;
+    const text = `UUID: ${invoice.uuid}`;
+    const lines = doc.splitTextToSize(text, maxWidth);
+    doc.text(lines, 14, sealY);
+    sealY += lines.length * lineHeight;
   }
   
   if (invoice.certificate_number) {
-    safeAddText(doc, `No. Certificado Emisor: ${invoice.certificate_number}`, 14, sealY);
-    sealY += 4;
+    const text = `No. Certificado Emisor: ${invoice.certificate_number}`;
+    const lines = doc.splitTextToSize(text, maxWidth);
+    doc.text(lines, 14, sealY);
+    sealY += lines.length * lineHeight;
   }
   
   if (invoice.sat_certificate_number) {
-    safeAddText(doc, `No. Certificado SAT: ${invoice.sat_certificate_number}`, 14, sealY);
-    sealY += 4;
+    const text = `No. Certificado SAT: ${invoice.sat_certificate_number}`;
+    const lines = doc.splitTextToSize(text, maxWidth);
+    doc.text(lines, 14, sealY);
+    sealY += lines.length * lineHeight;
   }
   
   if (invoice.cfdi_stamp) {
-    const selloDigital = invoice.cfdi_stamp.substring(invoice.cfdi_stamp.length - 8);
-    safeAddText(doc, `Sello Digital Emisor: ...${selloDigital}`, 14, sealY);
-    sealY += 4;
+    const text = `Sello Digital Emisor: ${invoice.cfdi_stamp}`;
+    const lines = doc.splitTextToSize(text, maxWidth);
+    doc.text(lines, 14, sealY);
+    sealY += lines.length * lineHeight;
   }
   
   if (invoice.sat_stamp) {
-    const selloSAT = invoice.sat_stamp.substring(invoice.sat_stamp.length - 8);
-    safeAddText(doc, `Sello Digital SAT: ...${selloSAT}`, 14, sealY);
-    sealY += 4;
+    const text = `Sello Digital SAT: ${invoice.sat_stamp}`;
+    const lines = doc.splitTextToSize(text, maxWidth);
+    doc.text(lines, 14, sealY);
+    sealY += lines.length * lineHeight;
   }
   
   return sealY + 10;
