@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 
 /**
  * Convert Excel's numeric date to a proper JS Date
@@ -27,28 +27,45 @@ export function excelDateToJSDate(excelDate: number): Date {
 }
 
 /**
- * Format a date value from various possible formats to a standardized string
+ * Format a date value from various possible formats to a standardized string 'yyyy-MM-dd'
+ * This function is now timezone-safe and handles strings, numbers (Excel), and Date objects.
  */
 export function formatDateValue(dateValue: any): string {
+  // Handle Excel numeric dates
   if (typeof dateValue === 'number') {
-    const jsDate = excelDateToJSDate(dateValue);
-    return format(jsDate, 'yyyy-MM-dd');
+    try {
+      const jsDate = excelDateToJSDate(dateValue);
+      return format(jsDate, 'yyyy-MM-dd');
+    } catch (e) {
+      console.error("Error parsing excel date:", e, dateValue);
+      // Fall through to default
+    }
   } 
   
-  // Handle string date formats or return today's date if undefined
-  if (typeof dateValue === 'string') {
+  // Handle string date formats
+  if (typeof dateValue === 'string' && dateValue.trim()) {
     try {
-      const parts = dateValue.split('T')[0].split('-');
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      
-      const utcDate = new Date(Date.UTC(year, month, day));
-      return format(utcDate, 'yyyy-MM-dd');
+      // Parse the date part of the string as a local date
+      const dateString = dateValue.split('T')[0];
+      const localDate = parse(dateString, 'yyyy-MM-dd', new Date());
+      if (isNaN(localDate.getTime())) throw new Error("Invalid date string");
+      return format(localDate, 'yyyy-MM-dd');
     } catch (e) {
-      console.error("Error parsing date:", e, dateValue);
+      console.error("Error parsing string date:", e, dateValue);
+      // Fall through to default
+    }
+  }
+
+  // Handle Date objects
+  if (dateValue instanceof Date) {
+    try {
+      return format(dateValue, 'yyyy-MM-dd');
+    } catch (e) {
+      console.error("Error formatting date object:", e, dateValue);
+      // Fall through to default
     }
   }
   
-  return dateValue || format(new Date(), 'yyyy-MM-dd');
+  // Fallback for null, undefined, empty string, or failed parsing
+  return format(new Date(), 'yyyy-MM-dd');
 }

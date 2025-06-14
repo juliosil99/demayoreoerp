@@ -53,14 +53,28 @@ export const formatCardDate = (date: string | Date): string => {
 };
 
 export const formatDatetime = (date: string | Date): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return dateObj.toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  try {
+    let dateObj: Date;
+
+    if (typeof date === 'string') {
+      // If it's a date-only string (YYYY-MM-DD), parse it as local to prevent timezone shifts.
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        dateObj = parse(date, 'yyyy-MM-dd', new Date());
+      } else {
+        // For full ISO strings, `new Date()` correctly interprets the timezone.
+        dateObj = new Date(date);
+      }
+    } else {
+      dateObj = date;
+    }
+
+    if (isNaN(dateObj.getTime())) throw new Error("Invalid date passed to formatDatetime");
+
+    return format(dateObj, 'd MMM yyyy, HH:mm', { locale: es });
+  } catch (error) {
+    console.error("Error in formatDatetime:", error);
+    return "Fecha inválida";
+  }
 };
 
 export const formatBytes = (bytes: number, decimals: number = 2): string => {
