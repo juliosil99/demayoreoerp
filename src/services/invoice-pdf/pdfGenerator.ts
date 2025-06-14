@@ -7,10 +7,11 @@ import {
   getFormattedDate,
   safeAddText,
   formatRFC,
-  formatComprobanteFiscal
+  formatComprobanteFiscal,
+  formatTaxRegime
 } from "@/utils/pdfGenerationUtils";
 import { addQRCodeToPdf } from "./qrCodeService";
-import type { InvoiceData, ProductData, PdfTemplate } from "./databaseService";
+import type { InvoiceData, ProductData, PdfTemplate, IssuerContactData } from "./databaseService";
 
 /**
  * Generates the SAT-compliant PDF document for an invoice
@@ -18,7 +19,8 @@ import type { InvoiceData, ProductData, PdfTemplate } from "./databaseService";
 export const generateSATCompliantPdf = async (
   invoice: InvoiceData, 
   products: ProductData[], 
-  templateConfig: PdfTemplate | null
+  templateConfig: PdfTemplate | null,
+  issuerContactData: IssuerContactData | null
 ): Promise<jsPDF> => {
   const doc = new jsPDF();
   let yPosition = 20;
@@ -54,7 +56,7 @@ export const generateSATCompliantPdf = async (
   yPosition += 15;
   
   // Issuer Section
-  yPosition = addIssuerSection(doc, invoice, templateConfig, yPosition);
+  yPosition = addIssuerSection(doc, invoice, templateConfig, issuerContactData, yPosition);
   
   // Receiver Section
   yPosition = addReceiverSection(doc, invoice, yPosition);
@@ -77,7 +79,7 @@ export const generateSATCompliantPdf = async (
   return doc;
 };
 
-const addIssuerSection = (doc: jsPDF, invoice: InvoiceData, templateConfig: PdfTemplate | null, yPosition: number): number => {
+const addIssuerSection = (doc: jsPDF, invoice: InvoiceData, templateConfig: PdfTemplate | null, issuerContactData: IssuerContactData | null, yPosition: number): number => {
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(0, 0, 0);
@@ -87,29 +89,42 @@ const addIssuerSection = (doc: jsPDF, invoice: InvoiceData, templateConfig: PdfT
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   
-  const issuerName = invoice.issuer_name || "No disponible";
+  // Prioritize contact data, then invoice data, then fallback
+  const issuerName = issuerContactData?.name || invoice.issuer_name || "No disponible";
   const issuerRfc = formatRFC(invoice.issuer_rfc);
+  const taxRegime = formatTaxRegime(issuerContactData?.tax_regime || invoice.issuer_tax_regime);
   
   safeAddText(doc, `Razón Social: ${issuerName}`, 14, yPosition);
   yPosition += 5;
   safeAddText(doc, `RFC: ${issuerRfc}`, 14, yPosition);
   yPosition += 5;
-  safeAddText(doc, `Régimen Fiscal: ${invoice.issuer_tax_regime || 'No especificado'}`, 14, yPosition);
+  safeAddText(doc, `Régimen Fiscal: ${taxRegime || 'No especificado'}`, 14, yPosition);
   
-  // Add template info if available
-  if (templateConfig) {
-    if (templateConfig.address) {
-      yPosition += 5;
-      safeAddText(doc, `Domicilio: ${templateConfig.address}`, 14, yPosition);
-    }
-    if (templateConfig.phone) {
-      yPosition += 5;
-      safeAddText(doc, `Teléfono: ${templateConfig.phone}`, 14, yPosition);
-    }
-    if (templateConfig.email) {
-      yPosition += 5;
-      safeAddText(doc, `Email: ${templateConfig.email}`, 14, yPosition);
-    }
+  // Address: contact -> template -> none
+  const addressFromContact = issuerContactData?.address 
+    ? `${issuerContactData.address}${issuerContactData.postal_code ? `, C.P. ${issuerContactData.postal_code}` : ''}`
+    : null;
+  const address = addressFromContact || templateConfig?.address;
+  if (address) {
+    yPosition += 5;
+    safeAddText(doc, `Domicilio: ${address}`, 14, yPosition);
+  }
+
+  // Phone: contact -> template -> none
+  const phone = issuerContactData?.phone || templateConfig?.phone;
+  if (phone) {
+    yPosition += 5;
+    safeAddText(doc, `Teléfono: ${phone}`, 14, yPosition);
+  }
+
+  // Email and Website are only in templateConfig
+  if (templateConfig?.email) {
+    yPosition += 5;
+    safeAddText(doc, `Email: ${templateConfig.email}`, 14, yPosition);
+  }
+  if (templateConfig?.website) {
+    yPosition += 5;
+    safeAddText(doc, `Sitio Web: ${templateConfig.website}`, 14, yPosition);
   }
   
   return yPosition + 15;

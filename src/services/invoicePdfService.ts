@@ -1,7 +1,7 @@
 
 import { toast } from "@/components/ui/use-toast";
 import { createPdfFilename } from "@/utils/pdfGenerationUtils";
-import { fetchInvoiceData, fetchInvoiceProducts, fetchTemplateConfig } from "./invoice-pdf/databaseService";
+import { fetchInvoiceData, fetchInvoiceProducts, fetchTemplateConfig, fetchIssuerContactData } from "./invoice-pdf/databaseService";
 import { generateSATCompliantPdf } from "./invoice-pdf/pdfGenerator";
 import type { PdfGenerationResult } from "./invoice-pdf/types";
 
@@ -38,8 +38,11 @@ export const generateInvoicePdf = async (
     // 3. Try to get PDF template configuration
     const templateConfig = await fetchTemplateConfig(issuerRfc);
     
+    // 3.5 Fetch issuer's contact data for more details
+    const issuerContactData = await fetchIssuerContactData(invoice.issuer_rfc || issuerRfc);
+
     // 4. Generate SAT-compliant PDF
-    const doc = await generateSATCompliantPdf(invoice, products, templateConfig);
+    const doc = await generateSATCompliantPdf(invoice, products, templateConfig, issuerContactData);
     
     // 5. Save the file
     const filename = createPdfFilename(

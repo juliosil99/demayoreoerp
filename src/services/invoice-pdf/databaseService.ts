@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 interface InvoiceData {
@@ -45,6 +44,14 @@ interface PdfTemplate {
   email?: string | null;
   website?: string | null;
   logo_url?: string | null;
+}
+
+interface IssuerContactData {
+  name?: string | null;
+  address?: string | null;
+  postal_code?: string | null;
+  phone?: string | null;
+  tax_regime?: string | null;
 }
 
 /**
@@ -99,6 +106,40 @@ export const fetchInvoiceProducts = async (invoiceId: number): Promise<ProductDa
 };
 
 /**
+ * Fetches issuer contact data from the 'contacts' table
+ */
+export const fetchIssuerContactData = async (issuerRfc: string): Promise<IssuerContactData | null> => {
+  if (!issuerRfc) {
+    console.log("No issuer RFC provided, skipping contact data fetch");
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("contacts")
+      .select("name, address, postal_code, phone, tax_regime")
+      .eq("rfc", issuerRfc)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching issuer contact data:", error);
+      return null;
+    }
+
+    if (data) {
+      console.log("Issuer contact data fetched successfully for RFC:", issuerRfc);
+    } else {
+      console.log("No contact data found for issuer RFC:", issuerRfc);
+    }
+    
+    return data;
+  } catch (err) {
+    console.error("Error in fetchIssuerContactData:", err);
+    return null;
+  }
+};
+
+/**
  * Fetches PDF template configuration for an issuer
  */
 export const fetchTemplateConfig = async (issuerRfc: string): Promise<PdfTemplate | null> => {
@@ -127,4 +168,4 @@ export const fetchTemplateConfig = async (issuerRfc: string): Promise<PdfTemplat
   }
 };
 
-export type { InvoiceData, ProductData, PdfTemplate };
+export type { InvoiceData, ProductData, PdfTemplate, IssuerContactData };
