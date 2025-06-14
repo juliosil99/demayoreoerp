@@ -88,6 +88,17 @@ export const useCrmDebugger = () => {
         console.log('👥 [CrmDebugger] Sample contacts:', contacts?.slice(0, 3));
       }
 
+      // Test the debug function to see company access
+      console.log('🧪 [CrmDebugger] Testing company access debug function...');
+      const { data: companyAccess, error: companyAccessError } = await supabase
+        .rpc('debug_user_company_access', { p_user_id: user.id });
+
+      if (companyAccessError) {
+        console.error('❌ [CrmDebugger] Company access error:', companyAccessError);
+      } else {
+        console.log('🏢 [CrmDebugger] Company access details:', companyAccess);
+      }
+
       // Test the RPC function directly with detailed logging
       console.log('🧪 [CrmDebugger] Testing RPC function directly...');
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_crm_conversation_previews', {
@@ -108,6 +119,50 @@ export const useCrmDebugger = () => {
         });
       }
 
+      // Check interactions from other users in the same company
+      const allCompanyIds = [
+        ...(ownedCompanies?.map(c => c.id) || []),
+        ...(companyMemberships?.map(m => m.company_id) || [])
+      ];
+
+      if (allCompanyIds.length > 0) {
+        console.log('🔍 [CrmDebugger] Checking interactions from company users...');
+        
+        // Get all users in the same companies
+        const { data: companyUsers, error: companyUsersError } = await supabase
+          .from('company_users')
+          .select('user_id')
+          .in('company_id', allCompanyIds);
+
+        if (!companyUsersError && companyUsers) {
+          const userIds = [...new Set([
+            user.id,
+            ...companyUsers.map(cu => cu.user_id),
+            ...(ownedCompanies?.map(c => c.user_id) || [])
+          ])];
+
+          console.log('👥 [CrmDebugger] All company user IDs:', userIds);
+
+          // Check interactions from all company users
+          const { data: allInteractions, error: allInteractionsError } = await supabase
+            .from('interactions')
+            .select('*')
+            .in('user_id', userIds);
+
+          if (!allInteractionsError) {
+            console.log('📊 [CrmDebugger] Total company interactions:', allInteractions?.length || 0);
+            
+            // Group by user
+            const interactionsByUser = allInteractions?.reduce((acc, interaction) => {
+              acc[interaction.user_id] = (acc[interaction.user_id] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>) || {};
+            
+            console.log('📊 [CrmDebugger] Interactions by user:', interactionsByUser);
+          }
+        }
+      }
+
       return {
         user_id: user.id,
         owned_companies_count: ownedCompanies?.length || 0,
@@ -115,6 +170,7 @@ export const useCrmDebugger = () => {
         interactions_count: interactions?.length || 0,
         companies_count: companies?.length || 0,
         contacts_count: contacts?.length || 0,
+        company_access: companyAccess,
         rpc_result: rpcData,
         rpc_error: rpcError,
         sample_interaction: interactions?.[0] || null,
