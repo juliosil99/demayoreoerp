@@ -61,14 +61,25 @@ export const useProductSearch = () => {
           throw error;
         }
 
-        // Sort results by invoice date (newest to oldest) on the client side
+        // Sort results: first by whether they have a valid date, then by date (newest to oldest)
         const sortedData = (data as ProductSearchResult[]).sort((a, b) => {
-          const dateA = new Date(a.invoice?.invoice_date || '');
-          const dateB = new Date(b.invoice?.invoice_date || '');
-          return dateB.getTime() - dateA.getTime(); // Descending order (newest first)
+          const dateA = a.invoice?.invoice_date || a.invoice?.stamp_date;
+          const dateB = b.invoice?.invoice_date || b.invoice?.stamp_date;
+          
+          // If one has a date and the other doesn't, prioritize the one with date
+          if (dateA && !dateB) return -1;
+          if (!dateA && dateB) return 1;
+          
+          // If both have no date, maintain relative order
+          if (!dateA && !dateB) return 0;
+          
+          // If both have dates, sort by date (newest first)
+          const timeA = new Date(dateA).getTime();
+          const timeB = new Date(dateB).getTime();
+          return timeB - timeA; // Descending order (newest first)
         });
 
-        console.log(`Found ${sortedData?.length || 0} products matching "${searchQuery}" (sorted by date)`);
+        console.log(`Found ${sortedData?.length || 0} products matching "${searchQuery}" (sorted by date, N/A at end)`);
         return sortedData;
       } catch (error) {
         console.error("Error searching products:", error);
