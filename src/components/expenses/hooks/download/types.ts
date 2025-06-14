@@ -1,3 +1,4 @@
+
 export interface Expense {
   id: string;
   description: string;
@@ -19,6 +20,14 @@ export interface Expense {
     };
   } | null;
   contacts: { name: string; type?: string } | null;
+}
+
+export interface DownloadItem {
+  filePath: string;
+  fileName: string;
+  contentType?: string;
+  index: number;
+  total: number;
 }
 
 export type LogAction = (message: string) => void;
