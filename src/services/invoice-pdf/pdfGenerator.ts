@@ -10,7 +10,7 @@ import {
   formatTaxRegime
 } from "@/utils/pdfGenerationUtils";
 import { addQRCodeToPdf } from "./qrCodeService";
-import type { InvoiceData, ProductData, PdfTemplate, IssuerContactData, ReceiverCompanyData } from "./databaseService";
+import type { InvoiceData, ProductData, PdfTemplate, EntityData } from "./databaseService";
 
 /**
  * Generates the SAT-compliant PDF document for an invoice
@@ -19,8 +19,8 @@ export const generateSATCompliantPdf = async (
   invoice: InvoiceData, 
   products: ProductData[], 
   templateConfig: PdfTemplate | null,
-  issuerContactData: IssuerContactData | null,
-  receiverCompanyData: ReceiverCompanyData | null
+  issuerDetails: EntityData | null,
+  receiverDetails: EntityData | null
 ): Promise<jsPDF> => {
   const doc = new jsPDF();
   let yPosition = 20;
@@ -56,10 +56,10 @@ export const generateSATCompliantPdf = async (
   yPosition += 15;
   
   // Issuer Section
-  yPosition = addIssuerSection(doc, invoice, templateConfig, issuerContactData, yPosition);
+  yPosition = addIssuerSection(doc, invoice, templateConfig, issuerDetails, yPosition);
   
   // Receiver Section
-  yPosition = addReceiverSection(doc, invoice, receiverCompanyData, yPosition);
+  yPosition = addReceiverSection(doc, invoice, receiverDetails, yPosition);
   
   // Products table
   let tableFinalY = await addProductsTable(doc, products, yPosition);
@@ -86,7 +86,7 @@ export const generateSATCompliantPdf = async (
   return doc;
 };
 
-const addIssuerSection = (doc: jsPDF, invoice: InvoiceData, templateConfig: PdfTemplate | null, issuerContactData: IssuerContactData | null, yPosition: number): number => {
+const addIssuerSection = (doc: jsPDF, invoice: InvoiceData, templateConfig: PdfTemplate | null, issuerDetails: EntityData | null, yPosition: number): number => {
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(0, 0, 0);
@@ -97,9 +97,9 @@ const addIssuerSection = (doc: jsPDF, invoice: InvoiceData, templateConfig: PdfT
   doc.setFontSize(10);
   
   // Prioritize contact data, then invoice data, then fallback
-  const issuerName = issuerContactData?.name || invoice.issuer_name || "No disponible";
+  const issuerName = issuerDetails?.name || invoice.issuer_name || "No disponible";
   const issuerRfc = formatRFC(invoice.issuer_rfc);
-  const taxRegime = formatTaxRegime(issuerContactData?.tax_regime || invoice.issuer_tax_regime);
+  const taxRegime = formatTaxRegime(issuerDetails?.tax_regime || invoice.issuer_tax_regime);
   
   safeAddText(doc, `Razón Social: ${issuerName}`, 14, yPosition);
   yPosition += 5;
@@ -108,8 +108,8 @@ const addIssuerSection = (doc: jsPDF, invoice: InvoiceData, templateConfig: PdfT
   safeAddText(doc, `Régimen Fiscal: ${taxRegime || 'No especificado'}`, 14, yPosition);
   
   // Address: contact -> template -> none
-  const addressFromContact = issuerContactData?.address 
-    ? `${issuerContactData.address}${issuerContactData.postal_code ? `, C.P. ${issuerContactData.postal_code}` : ''}`
+  const addressFromContact = issuerDetails?.address 
+    ? `${issuerDetails.address}${issuerDetails.postal_code ? `, C.P. ${issuerDetails.postal_code}` : ''}`
     : null;
   const address = addressFromContact || templateConfig?.address;
   if (address) {
@@ -118,7 +118,7 @@ const addIssuerSection = (doc: jsPDF, invoice: InvoiceData, templateConfig: PdfT
   }
 
   // Phone: contact -> template -> none
-  const phone = issuerContactData?.phone || templateConfig?.phone;
+  const phone = issuerDetails?.phone || templateConfig?.phone;
   if (phone) {
     yPosition += 5;
     safeAddText(doc, `Teléfono: ${phone}`, 14, yPosition);
@@ -137,7 +137,7 @@ const addIssuerSection = (doc: jsPDF, invoice: InvoiceData, templateConfig: PdfT
   return yPosition + 15;
 };
 
-const addReceiverSection = (doc: jsPDF, invoice: InvoiceData, receiverCompanyData: ReceiverCompanyData | null, yPosition: number): number => {
+const addReceiverSection = (doc: jsPDF, invoice: InvoiceData, receiverDetails: EntityData | null, yPosition: number): number => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   safeAddText(doc, "DATOS DEL RECEPTOR", 14, yPosition);
@@ -146,23 +146,23 @@ const addReceiverSection = (doc: jsPDF, invoice: InvoiceData, receiverCompanyDat
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   
-  const receiverName = receiverCompanyData?.nombre || invoice.receiver_name || "No disponible";
+  const receiverName = receiverDetails?.name || invoice.receiver_name || "No disponible";
 
   safeAddText(doc, `Razón Social: ${receiverName}`, 14, yPosition);
   yPosition += 5;
   safeAddText(doc, `RFC: ${formatRFC(invoice.receiver_rfc)}`, 14, yPosition);
   yPosition += 5;
 
-  if (receiverCompanyData) {
-    if (receiverCompanyData.direccion) {
-      const address = receiverCompanyData.codigo_postal 
-        ? `${receiverCompanyData.direccion}, C.P. ${receiverCompanyData.codigo_postal}`
-        : receiverCompanyData.direccion;
+  if (receiverDetails) {
+    if (receiverDetails.address) {
+      const address = receiverDetails.postal_code 
+        ? `${receiverDetails.address}, C.P. ${receiverDetails.postal_code}`
+        : receiverDetails.address;
       safeAddText(doc, `Domicilio: ${address}`, 14, yPosition);
       yPosition += 5;
     }
-    if (receiverCompanyData.telefono) {
-      safeAddText(doc, `Teléfono: ${receiverCompanyData.telefono}`, 14, yPosition);
+    if (receiverDetails.phone) {
+      safeAddText(doc, `Teléfono: ${receiverDetails.phone}`, 14, yPosition);
       yPosition += 5;
     }
   }

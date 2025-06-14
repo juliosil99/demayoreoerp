@@ -1,6 +1,7 @@
+
 import { toast } from "@/components/ui/use-toast";
 import { createPdfFilename } from "@/utils/pdfGenerationUtils";
-import { fetchInvoiceData, fetchInvoiceProducts, fetchTemplateConfig, fetchIssuerContactData, fetchReceiverCompanyData } from "./invoice-pdf/databaseService";
+import { fetchInvoiceData, fetchInvoiceProducts, fetchTemplateConfig, fetchIssuerContactData, fetchReceiverCompanyData, fetchReceiverContactData } from "./invoice-pdf/databaseService";
 import { generateSATCompliantPdf } from "./invoice-pdf/pdfGenerator";
 import type { PdfGenerationResult } from "./invoice-pdf/types";
 
@@ -38,13 +39,17 @@ export const generateInvoicePdf = async (
     const templateConfig = await fetchTemplateConfig(issuerRfc);
     
     // 3.5 Fetch issuer's contact data for more details
-    const issuerContactData = await fetchIssuerContactData(invoice.issuer_rfc || issuerRfc);
+    const issuerDetails = await fetchIssuerContactData(invoice.issuer_rfc || issuerRfc);
 
-    // 3.6 Fetch our company data if we are the receiver
-    const receiverCompanyData = await fetchReceiverCompanyData(invoice.receiver_rfc || '');
+    // 3.6 Fetch receiver details from companies or contacts
+    let receiverDetails = await fetchReceiverCompanyData(invoice.receiver_rfc || '');
+    if (!receiverDetails) {
+      console.log("Receiver not found in companies, checking contacts...");
+      receiverDetails = await fetchReceiverContactData(invoice.receiver_rfc || '');
+    }
 
     // 4. Generate SAT-compliant PDF
-    const doc = await generateSATCompliantPdf(invoice, products, templateConfig, issuerContactData, receiverCompanyData);
+    const doc = await generateSATCompliantPdf(invoice, products, templateConfig, issuerDetails, receiverDetails);
     
     // 5. Save the file
     const filename = createPdfFilename(

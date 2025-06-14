@@ -46,19 +46,12 @@ interface PdfTemplate {
   logo_url?: string | null;
 }
 
-interface IssuerContactData {
+interface EntityData {
   name?: string | null;
   address?: string | null;
   postal_code?: string | null;
   phone?: string | null;
   tax_regime?: string | null;
-}
-
-interface ReceiverCompanyData {
-  nombre?: string | null;
-  direccion?: string | null;
-  codigo_postal?: string | null;
-  telefono?: string | null;
 }
 
 /**
@@ -115,7 +108,7 @@ export const fetchInvoiceProducts = async (invoiceId: number): Promise<ProductDa
 /**
  * Fetches issuer contact data from the 'contacts' table
  */
-export const fetchIssuerContactData = async (issuerRfc: string): Promise<IssuerContactData | null> => {
+export const fetchIssuerContactData = async (issuerRfc: string): Promise<EntityData | null> => {
   if (!issuerRfc) {
     console.log("No issuer RFC provided, skipping contact data fetch");
     return null;
@@ -150,7 +143,7 @@ export const fetchIssuerContactData = async (issuerRfc: string): Promise<IssuerC
  * Fetches company data from the 'companies' table for a given RFC.
  * This is used to get details for our own company when we are the receiver.
  */
-export const fetchReceiverCompanyData = async (receiverRfc: string): Promise<ReceiverCompanyData | null> => {
+export const fetchReceiverCompanyData = async (receiverRfc: string): Promise<EntityData | null> => {
   if (!receiverRfc) {
     console.log("No receiver RFC provided, skipping company data fetch");
     return null;
@@ -159,7 +152,7 @@ export const fetchReceiverCompanyData = async (receiverRfc: string): Promise<Rec
   try {
     const { data, error } = await supabase
       .from("companies")
-      .select("nombre, direccion, codigo_postal, telefono")
+      .select("name:nombre, address:direccion, postal_code:codigo_postal, phone:telefono, tax_regime:regimen_fiscal")
       .eq("rfc", receiverRfc)
       .maybeSingle();
 
@@ -177,6 +170,40 @@ export const fetchReceiverCompanyData = async (receiverRfc: string): Promise<Rec
     return data;
   } catch (err) {
     console.error("Error in fetchReceiverCompanyData:", err);
+    return null;
+  }
+};
+
+/**
+ * Fetches contact data for a receiver from the 'contacts' table.
+ */
+export const fetchReceiverContactData = async (receiverRfc: string): Promise<EntityData | null> => {
+  if (!receiverRfc) {
+    console.log("No receiver RFC provided, skipping receiver contact data fetch");
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("contacts")
+      .select("name, address, postal_code, phone, tax_regime")
+      .eq("rfc", receiverRfc)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching receiver contact data:", error);
+      return null;
+    }
+
+    if (data) {
+      console.log("Receiver contact data fetched successfully for RFC:", receiverRfc);
+    } else {
+      console.log("No contact data found for receiver RFC:", receiverRfc);
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Error in fetchReceiverContactData:", err);
     return null;
   }
 };
@@ -210,4 +237,4 @@ export const fetchTemplateConfig = async (issuerRfc: string): Promise<PdfTemplat
   }
 };
 
-export type { InvoiceData, ProductData, PdfTemplate, IssuerContactData, ReceiverCompanyData };
+export type { InvoiceData, ProductData, PdfTemplate, EntityData };
