@@ -1,4 +1,3 @@
-
 export interface Company {
   id: string;
   user_id: string;
@@ -57,6 +56,9 @@ export interface Interaction {
   next_follow_up?: string;
   metadata: Record<string, any>;
   created_at: string;
+  conversation_status?: 'open' | 'closed' | 'pending_response' | 'archived';
+  is_read?: boolean;
+  last_response_date?: string;
   company?: Company;
   contact?: Contact;
 }
