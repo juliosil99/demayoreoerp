@@ -62,15 +62,22 @@ export const generateSATCompliantPdf = async (
   yPosition = addReceiverSection(doc, invoice, receiverCompanyData, yPosition);
   
   // Products table
-  const finalY = await addProductsTable(doc, products, yPosition);
+  let tableFinalY = await addProductsTable(doc, products, yPosition);
   
-  // Tax breakdown and totals
-  const taxY = addTaxSection(doc, invoice, finalY);
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const bottomSectionMinHeight = 100; // Estimated height for seal, totals, and QR
+
+  // Check if a new page is needed for the bottom section
+  if (tableFinalY > pageHeight - bottomSectionMinHeight) {
+    doc.addPage();
+    tableFinalY = 20; // Start at top of new page
+  }
   
-  // Digital seal section
-  const sealY = addDigitalSealSection(doc, invoice, taxY);
+  // Digital seal and tax sections start at the same Y position
+  const sealY = addDigitalSealSection(doc, invoice, tableFinalY);
+  addTaxSection(doc, invoice, tableFinalY);
   
-  // Add QR code
+  // Add QR code below the seal section
   await addQRCodeToPdf(doc, invoice, sealY);
   
   // Footer
@@ -297,20 +304,28 @@ const addDigitalSealSection = (doc: jsPDF, invoice: InvoiceData, yPosition: numb
 };
 
 const addFooter = (doc: jsPDF, invoice: InvoiceData): void => {
+  const pageCount = doc.getNumberOfPages();
   const pageHeight = doc.internal.pageSize.getHeight();
-  doc.setFontSize(8);
-  doc.setTextColor(100);
-  
-  const footerY = pageHeight - 25;
-  safeAddText(doc, "Este documento es una representación impresa de un CFDI", doc.internal.pageSize.getWidth() / 2, footerY, { align: "center" });
-  
-  if (invoice.stamp_date) {
-    const stampDate = new Date(invoice.stamp_date).toLocaleString('es-MX');
-    safeAddText(doc, `Fecha y hora de certificación: ${stampDate}`, doc.internal.pageSize.getWidth() / 2, footerY + 4, { align: "center" });
-  }
-  
-  // Add UUID in footer if available
-  if (invoice.uuid) {
-    safeAddText(doc, `Folio Fiscal (UUID): ${invoice.uuid}`, doc.internal.pageSize.getWidth() / 2, footerY + 8, { align: "center" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    
+    const footerY = pageHeight - 25;
+    safeAddText(doc, "Este documento es una representación impresa de un CFDI", pageWidth / 2, footerY, { align: "center" });
+    
+    if (invoice.stamp_date) {
+      const stampDate = new Date(invoice.stamp_date).toLocaleString('es-MX');
+      safeAddText(doc, `Fecha y hora de certificación: ${stampDate}`, pageWidth / 2, footerY + 4, { align: "center" });
+    }
+    
+    // Add UUID in footer if available
+    if (invoice.uuid) {
+      safeAddText(doc, `Folio Fiscal (UUID): ${invoice.uuid}`, pageWidth / 2, footerY + 8, { align: "center" });
+    }
+
+    safeAddText(doc, `Página ${i} de ${pageCount}`, pageWidth - 15, pageHeight - 10, { align: 'right' });
   }
 };

@@ -1,4 +1,3 @@
-
 import qr from "qrcode-generator";
 import { jsPDF } from "jspdf";
 import { safeAddText } from "@/utils/pdfGenerationUtils";
@@ -85,17 +84,16 @@ export const addQRCodeToPdf = async (
       invoice.uuid
     );
 
-    // Position QR code in bottom right corner
-    const pageWidth = doc.internal.pageSize.getWidth();
+    // Position QR code on the left side, under seal info
     const qrSize = 30;
-    const margin = 15;
+    const margin = 14;
     
-    doc.addImage(qrCodeDataURL, 'PNG', pageWidth - qrSize - margin, yPosition, qrSize, qrSize);
+    doc.addImage(qrCodeDataURL, 'PNG', margin, yPosition, qrSize, qrSize);
     
     // Add QR code label
     doc.setFontSize(8);
     doc.setTextColor(100);
-    safeAddText(doc, "Código QR SAT", pageWidth - qrSize - margin + (qrSize/2), yPosition + qrSize + 5, { align: "center" });
+    safeAddText(doc, "Código QR SAT", margin + (qrSize/2), yPosition + qrSize + 5, { align: "center" });
   } catch (err) {
     console.error("Error adding QR code to PDF:", err);
     // Continue without QR code if generation fails
