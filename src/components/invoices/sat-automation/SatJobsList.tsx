@@ -90,10 +90,18 @@ export function SatJobsList() {
 
   const clearAllJobs = async () => {
     try {
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        throw new Error("Usuario no autenticado");
+      }
+
+      // Delete all jobs for the current user
       const { error } = await supabase
         .from("sat_automation_jobs")
         .delete()
-        .gt("created_at", "1900-01-01"); // This will match all records
+        .eq("user_id", user.id);
 
       if (error) {
         throw error;
