@@ -1,50 +1,49 @@
 
-import { Suspense, lazy } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { PathBasedProtectedRoute } from "@/components/auth/PathBasedProtectedRoute";
-import { SmartRedirect } from "@/components/navigation/SmartRedirect";
-import { Layout } from "@/components/layout/Layout";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/sonner';
+import { AuthProvider } from '@/contexts/AuthContext';
+import Layout from '@/components/layout/Layout';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import PathBasedProtectedRoute from '@/components/auth/PathBasedProtectedRoute';
 
-// Lazy load pages
-const Index = lazy(() => import("./pages/Index"));
-const Login = lazy(() => import("./pages/Login"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const CrmDashboard = lazy(() => import("./pages/CrmDashboard"));
-const Companies = lazy(() => import("./pages/Companies"));
-const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
-const Contacts = lazy(() => import("./pages/Contacts"));
-const Sales = lazy(() => import("./pages/Sales"));
-const Payments = lazy(() => import("./pages/sales/Payments"));
-const Invoices = lazy(() => import("./pages/Invoices"));
-const Expenses = lazy(() => import("./pages/Expenses"));
-const Reconciliation = lazy(() => import("./pages/Reconciliation"));
-const Receivables = lazy(() => import("./pages/Receivables"));
-const Payables = lazy(() => import("./pages/Payables"));
-const Banking = lazy(() => import("./pages/Banking"));
-const BankAccountMovements = lazy(() => import("./pages/BankAccountMovements"));
-const AccountTransfers = lazy(() => import("./pages/AccountTransfers"));
-const ChartOfAccounts = lazy(() => import("./pages/ChartOfAccounts"));
-const Reports = lazy(() => import("./pages/Reports"));
-const CashFlowForecast = lazy(() => import("./pages/CashFlowForecast"));
-const ProductSearch = lazy(() => import("./pages/ProductSearch"));
-const UserManagement = lazy(() => import("./pages/UserManagement"));
-const CompanySetup = lazy(() => import("./pages/CompanySetup"));
-const SalesChannels = lazy(() => import("./pages/SalesChannels"));
-const CreditPaymentSchedule = lazy(() => import("./pages/CreditPaymentSchedule"));
-const Register = lazy(() => import("./pages/Register/Register"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Monitoring = lazy(() => import("./pages/Monitoring"));
+// Import all pages
+import Index from '@/pages/Index';
+import Login from '@/pages/Login';
+import Dashboard from '@/pages/Dashboard';
+import Sales from '@/pages/Sales';
+import Expenses from '@/pages/Expenses';
+import Reconciliation from '@/pages/Reconciliation';
+import Banking from '@/pages/Banking';
+import BankAccountMovements from '@/pages/BankAccountMovements';
+import AccountTransfers from '@/pages/AccountTransfers';
+import CreditPaymentSchedule from '@/pages/CreditPaymentSchedule';
+import Invoices from '@/pages/Invoices';
+import ProductSearch from '@/pages/ProductSearch';
+import Reports from '@/pages/Reports';
+import Contacts from '@/pages/Contacts';
+import UserManagement from '@/pages/UserManagement';
+import Companies from '@/pages/Companies';
+import CompanyDetail from '@/pages/CompanyDetail';
+import CompanySetup from '@/pages/CompanySetup';
+import SalesChannels from '@/pages/SalesChannels';
+import Monitoring from '@/pages/Monitoring';
+import Register from '@/pages/Register';
+import Profile from '@/pages/Profile';
+import Accounting from '@/pages/Accounting';
+import ChartOfAccounts from '@/pages/ChartOfAccounts';
+import CashFlowForecast from '@/pages/CashFlowForecast';
+import Payables from '@/pages/Payables';
+import Receivables from '@/pages/Receivables';
+import CrmDashboard from '@/pages/CrmDashboard';
+import CrmChat from '@/pages/CrmChat';
+import { Payments } from '@/pages/sales/Payments';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes
       refetchOnWindowFocus: false,
     },
   },
@@ -53,300 +52,256 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={
-                  <Suspense fallback={<div>Loading...</div>}>
-                    <Login />
-                  </Suspense>
-                } />
-                <Route path="/register" element={
-                  <Suspense fallback={<div>Loading...</div>}>
-                    <Register />
-                  </Suspense>
-                } />
-
-                {/* Home page - shows the welcome page with layout and sidebar */}
-                <Route path="/" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Index />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                {/* Smart redirect route - for users who want to go to their main page */}
-                <Route path="/home" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <SmartRedirect />
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
+      <AuthProvider>
+        <Router>
+          <div className="min-h-screen bg-background">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              <Route element={<Layout />}>
+                <Route path="/" element={<Index />} />
                 
-                <Route path="/dashboard" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Dashboard />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/crm" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <CrmDashboard />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/companies" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Companies />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/companies/:id" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <CompanyDetail />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/contacts" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Contacts />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/sales" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Sales />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/sales/payments" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Payments />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/sales/invoices" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Invoices />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/expenses" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Expenses />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/expenses/reconciliation" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Reconciliation />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/expenses/receivables" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Receivables />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/expenses/payables" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Payables />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/accounting/banking" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Banking />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                {/* Fixed route to match the URL pattern being used */}
-                <Route path="/accounting/banking/account/:accountId" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <BankAccountMovements />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/accounting/transfers" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <AccountTransfers />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/accounting/chart-of-accounts" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <ChartOfAccounts />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/accounting/reports" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Reports />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/accounting/cash-flow-forecast" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <CashFlowForecast />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/product-search" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <ProductSearch />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/users" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <UserManagement />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/company-setup" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <CompanySetup />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/sales-channels" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <SalesChannels />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/accounting/banking/account/:accountId/payment-schedule" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <CreditPaymentSchedule />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/profile" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Profile />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/monitoring" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <Monitoring />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-              </Routes>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Dashboard />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/sales" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Sales />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/sales/payments" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Payments />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/sales/invoices" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Invoices />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/expenses" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Expenses />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/expenses/reconciliation" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Reconciliation />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/expenses/payables" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Payables />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/expenses/receivables" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Receivables />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/accounting/banking" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Banking />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/accounting/banking/:accountId" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <BankAccountMovements />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/accounting/transfers" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <AccountTransfers />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/accounting/credit-schedule/:accountId" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <CreditPaymentSchedule />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/accounting/chart-of-accounts" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <ChartOfAccounts />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/accounting/reports" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Reports />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/accounting/cash-flow-forecast" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <CashFlowForecast />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/product-search" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <ProductSearch />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/contacts" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Contacts />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/users" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <UserManagement />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/companies" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Companies />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/companies/:id" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <CompanyDetail />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/company-setup" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <CompanySetup />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/sales-channels" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <SalesChannels />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/monitoring" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Monitoring />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/crm" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <CrmDashboard />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/crm/chat" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <CrmChat />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/profile" 
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  } 
+                />
+              </Route>
+            </Routes>
+            
+            <Toaster />
+          </div>
+        </Router>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
