@@ -160,6 +160,12 @@ const sidebarGroups: SidebarGroupType[] = [
         permission: "can_manage_contacts" as PermissionName,
       },
       {
+        name: "Chat",
+        href: "/crm/chat",
+        icon: MessageSquare,
+        permission: "can_manage_contacts" as PermissionName,
+      },
+      {
         name: "Empresas",
         href: "/companies",
         icon: Building2,
