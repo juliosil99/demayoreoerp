@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -15,6 +14,7 @@ import { SelectedInvoicesList } from "./SelectedInvoicesList";
 import { InvoiceList } from "./InvoiceList";
 import { InvoiceSelectionSummary } from "./InvoiceSelectionSummary";
 import { useCurrencyCalculator } from "../../hooks/calculation/useCurrencyCalculator";
+import { calculateExpenseSelection } from "../../hooks/calculation/calculateExpenseSelection";
 
 interface InvoiceSearchDialogProps {
   open: boolean;
@@ -42,21 +42,23 @@ export function InvoiceSearchDialog({
   onManualReconciliation,
 }: InvoiceSearchDialogProps) {
   const [tempSelectedInvoices, setTempSelectedInvoices] = useState<any[]>([]);
-  const { calculateRemainingWithCurrency } = useCurrencyCalculator();
 
   // Initialize temporary selections with current selections
   useEffect(() => {
     setTempSelectedInvoices(selectedInvoices);
   }, [selectedInvoices, open]);
 
-  // Calculate totals with currency conversion
-  const { totalSelectedAmount, remainingAmount: calculatedRemaining, isConverted } = selectedExpense && tempSelectedInvoices.length > 0
-    ? calculateRemainingWithCurrency(selectedExpense, tempSelectedInvoices)
-    : { totalSelectedAmount: 0, remainingAmount: selectedExpense?.amount || 0, isConverted: false };
+  // Calcular totales y restante usando SIEMPRE la moneda original del gasto
+  const {
+    totalSelectedAmount,
+    remainingAmount: calcRemaining,
+    currency,
+  } = selectedExpense && tempSelectedInvoices.length > 0
+    ? calculateExpenseSelection(selectedExpense, tempSelectedInvoices)
+    : { totalSelectedAmount: 0, remainingAmount: selectedExpense?.currency === "USD" ? selectedExpense?.original_amount : selectedExpense?.amount, currency: selectedExpense?.currency || "MXN" };
 
   const toggleInvoiceSelection = (invoice: any) => {
     const isSelected = tempSelectedInvoices.some(inv => inv.id === invoice.id);
-    
     if (isSelected) {
       setTempSelectedInvoices(prev => prev.filter(inv => inv.id !== invoice.id));
     } else {
@@ -73,41 +75,48 @@ export function InvoiceSearchDialog({
 
   if (!selectedExpense) return null;
 
+  // Mostrar siempre el monto original en el header
+  const originalAmount =
+    selectedExpense.currency === "USD"
+      ? selectedExpense.original_amount
+      : selectedExpense.amount;
+  const currencyCode = selectedExpense.currency || "MXN";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Buscar Factura para Conciliar</DialogTitle>
           <DialogDescription>
-            Gasto: {selectedExpense.description} - {selectedExpense.amount}
+            Gasto: {selectedExpense.description} – {originalAmount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currencyCode}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <SelectedInvoicesList 
-            selectedInvoices={selectedInvoices} 
+          <SelectedInvoicesList
+            selectedInvoices={selectedInvoices}
             remainingAmount={remainingAmount}
             selectedExpense={selectedExpense}
           />
 
-          <SearchBar 
-            searchTerm={searchTerm} 
-            onSearchChange={onSearchChange} 
-            onManualReconciliation={onManualReconciliation} 
+          <SearchBar
+            searchTerm={searchTerm}
+            onSearchChange={onSearchChange}
+            onManualReconciliation={onManualReconciliation}
           />
 
           {tempSelectedInvoices.length > 0 && (
-            <InvoiceSelectionSummary 
+            <InvoiceSelectionSummary
               totalSelectedAmount={totalSelectedAmount}
-              calculatedRemaining={calculatedRemaining}
+              calculatedRemaining={calcRemaining}
               invoiceCount={tempSelectedInvoices.length}
-              isConverted={isConverted}
+              isConverted={false}
             />
           )}
 
-          <InvoiceList 
-            filteredInvoices={filteredInvoices} 
-            tempSelectedInvoices={tempSelectedInvoices} 
+          <InvoiceList
+            filteredInvoices={filteredInvoices}
+            tempSelectedInvoices={tempSelectedInvoices}
             toggleInvoiceSelection={toggleInvoiceSelection}
             selectedExpense={selectedExpense}
           />
@@ -117,8 +126,8 @@ export function InvoiceSearchDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleConfirmSelection} 
+          <Button
+            onClick={handleConfirmSelection}
             disabled={tempSelectedInvoices.length === 0}
             className="ml-2"
           >

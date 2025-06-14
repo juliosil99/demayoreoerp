@@ -1,9 +1,9 @@
-
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCardDate, formatCurrency } from "@/utils/formatters";
 import { CurrencyBadge } from "./CurrencyBadge";
+import { calculateExpenseSelection } from "../hooks/calculation/calculateExpenseSelection";
 import { useCurrencyCalculator } from "../hooks/calculation/useCurrencyCalculator";
 
 interface ExpenseCardProps {
@@ -12,16 +12,14 @@ interface ExpenseCardProps {
 }
 
 export function ExpenseCard({ expense, onSelectExpense }: ExpenseCardProps) {
-  const { getDisplayAmounts } = useCurrencyCalculator();
-  
-  // Check if this expense is from a payable
-  const isFromPayable = !!expense.accounts_payable;
-  
-  // Check if this expense is from a payable with an invoice
-  const hasPayableInvoice = isFromPayable && !!expense.accounts_payable.invoice_id;
+  // Determinar el monto y currency que se va a mostrar SIEMPRE en moneda original
+  const isUSD = expense.currency === 'USD';
+  const originalAmount = isUSD ? expense.original_amount : expense.amount;
+  const currency = expense.currency || 'MXN';
 
-  const { expense: expenseDisplay } = getDisplayAmounts(expense);
-  const isMultiCurrency = !!expenseDisplay.converted;
+  // Variables auxiliares para distinguir si viene de CxP
+  const isFromPayable = !!expense.accounts_payable;
+  const hasPayableInvoice = isFromPayable && !!expense.accounts_payable.invoice_id;
 
   return (
     <Card className={`shadow-sm hover:shadow-md transition-shadow ${isFromPayable ? 'border-blue-200' : ''}`}>
@@ -32,44 +30,34 @@ export function ExpenseCard({ expense, onSelectExpense }: ExpenseCardProps) {
             <div className="flex flex-col items-end gap-1">
               <div className="text-right">
                 <span className="font-bold text-lg">
-                  {formatCurrency(expenseDisplay.original.amount)} {expenseDisplay.original.currency}
+                  {originalAmount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
                 </span>
-                {isMultiCurrency && expenseDisplay.converted && (
-                  <div className="text-sm text-gray-600">
-                    {formatCurrency(expenseDisplay.converted.amount)} {expenseDisplay.converted.currency}
-                  </div>
-                )}
               </div>
               <span className="text-sm text-gray-500">{formatCardDate(expense.date)}</span>
             </div>
           </div>
-          
+
           <div className="flex flex-col gap-1 mt-2">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Cuenta:</span>
               <span className="text-sm">{expense.bank_accounts.name}</span>
             </div>
-            
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Moneda:</span>
-              <CurrencyBadge 
-                currency={expenseDisplay.original.currency}
-                amount={expenseDisplay.original.amount}
-                convertedAmount={expenseDisplay.converted?.amount}
-                convertedCurrency={expenseDisplay.converted?.currency}
-                exchangeRate={expense.exchange_rate}
-                showConversion={isMultiCurrency}
+              <CurrencyBadge
+                currency={currency}
+                amount={originalAmount}
+                showConversion={false}
               />
             </div>
-            
             <div className="flex justify-between">
               <span className="text-sm font-medium">Método:</span>
               <span className="text-sm capitalize">
                 {expense.payment_method === 'cash' ? 'Efectivo' :
-                 expense.payment_method === 'transfer' ? 'Transferencia' :
-                 expense.payment_method === 'check' ? 'Cheque' :
-                 expense.payment_method === 'credit_card' ? 'Tarjeta de Crédito' :
-                 expense.payment_method}
+                  expense.payment_method === 'transfer' ? 'Transferencia' :
+                  expense.payment_method === 'check' ? 'Cheque' :
+                  expense.payment_method === 'credit_card' ? 'Tarjeta de Crédito' :
+                    expense.payment_method}
               </span>
             </div>
             {expense.reference_number && (
@@ -81,17 +69,16 @@ export function ExpenseCard({ expense, onSelectExpense }: ExpenseCardProps) {
             <div className="flex justify-between">
               <span className="text-sm font-medium">Proveedor:</span>
               <span className="text-sm">
-                {isFromPayable && expense.accounts_payable.client 
-                  ? expense.accounts_payable.client.name 
+                {isFromPayable && expense.accounts_payable.client
+                  ? expense.accounts_payable.client.name
                   : expense.contacts?.name || '-'}
               </span>
             </div>
-            
             {isFromPayable && (
               <div className="mt-2">
                 <Badge className="w-full justify-center bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200">
-                  {hasPayableInvoice 
-                    ? "Cuenta por Pagar con Factura" 
+                  {hasPayableInvoice
+                    ? "Cuenta por Pagar con Factura"
                     : "Cuenta por Pagar"}
                 </Badge>
               </div>
@@ -100,9 +87,9 @@ export function ExpenseCard({ expense, onSelectExpense }: ExpenseCardProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button 
-          onClick={() => onSelectExpense(expense)} 
-          variant="default" 
+        <Button
+          onClick={() => onSelectExpense(expense)}
+          variant="default"
           className="w-full"
         >
           Conciliar Gasto
