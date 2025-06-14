@@ -1,6 +1,9 @@
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Building2, User } from "lucide-react";
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export interface ConversationPreview {
   id: string;
@@ -19,6 +22,35 @@ interface ConversationsListProps {
   selectedId?: string;
   onSelect: (id: string) => void;
 }
+
+const getStatusProps = (conv: ConversationPreview) => {
+  // Las preguntas de ML siempre se tratan como cerradas en la UI
+  const isMercadoLibre = conv.last_message_type === 'mercadolibre_question';
+  const effectiveStatus = isMercadoLibre ? 'closed' : conv.conversation_status;
+
+  switch (effectiveStatus) {
+    case 'closed':
+      return {
+        text: 'Cerrada',
+        className: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
+        variant: 'outline' as const,
+      };
+    case 'pending_response':
+      return {
+        text: 'Pendiente',
+        className: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        variant: 'default' as const,
+      };
+    case 'open':
+    default:
+      return {
+        text: 'Abierta',
+        className: 'bg-green-100 text-green-800 border-green-200',
+        variant: 'default' as const,
+      };
+  }
+};
+
 
 export const ConversationsList = ({
   conversations,
@@ -45,54 +77,56 @@ export const ConversationsList = ({
         </div>
       ) : (
         <ul>
-          {conversations.map(conv => (
-            <li
-              key={conv.id}
-              className={`flex items-center gap-2 px-4 py-3 border-b cursor-pointer transition-colors
-                ${conv.id === selectedId ? "bg-muted" : "hover:bg-accent"}
-              `}
-              onClick={() => onSelect(conv.id)}
-            >
-              <div>
-                <Badge
-                  variant={conv.conversation_status === "closed" ? "outline" : "default"}
-                  className={
-                    conv.conversation_status === "closed"
-                      ? "bg-gray-200 text-gray-600"
-                      : "bg-green-100 text-green-900"
-                  }
-                >
-                  {conv.conversation_status === "closed" ? "Cerrada" : "Abierta"}
-                </Badge>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium truncate">
-                  {conv.company_name ? (
-                    <>
-                      <Building2 className="inline h-4 w-4 mr-1" />
-                      {conv.company_name}
-                    </>
-                  ) : null}
-                  {conv.contact_name && (
-                    <>
-                      <span className="mx-1 text-muted-foreground text-xs">/</span>
-                      <User className="inline h-4 w-4 mr-1" />
-                      {conv.contact_name}
-                    </>
-                  )}
+          {conversations.map(conv => {
+            const statusProps = getStatusProps(conv);
+            const timeAgo = formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: true, locale: es });
+
+            return (
+              <li
+                key={conv.id}
+                className={`flex items-center gap-3 px-4 py-3 border-b cursor-pointer transition-colors
+                  ${conv.id === selectedId ? "bg-muted" : "hover:bg-accent"}
+                `}
+                onClick={() => onSelect(conv.id)}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="font-medium truncate flex items-center gap-2">
+                      {conv.company_name ? (
+                        <span className="flex items-center gap-1">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          {conv.company_name}
+                        </span>
+                      ) : null}
+                      {conv.contact_name && (
+                        <>
+                          {conv.company_name && <span className="mx-1 text-muted-foreground text-xs">/</span>}
+                           <span className="flex items-center gap-1">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            {conv.contact_name}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                     <span className="text-xs text-muted-foreground flex-shrink-0">{timeAgo}</span>
+                  </div>
+
+                  <div className="text-muted-foreground text-sm truncate mb-2">
+                    {conv.last_message}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Badge variant={statusProps.variant} className={statusProps.className}>
+                      {statusProps.text}
+                    </Badge>
+                     {conv.unread_count > 0 && (
+                      <div className="bg-blue-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold">{conv.unread_count}</div>
+                    )}
+                  </div>
                 </div>
-                <div className="text-muted-foreground text-xs truncate">
-                  {conv.last_message}
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground flex flex-col items-end">
-                <span>{conv.last_message_time}</span>
-                {conv.unread_count > 0 && (
-                  <div className="bg-blue-500 text-white rounded-full px-2 mt-1 text-xs">{conv.unread_count}</div>
-                )}
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
