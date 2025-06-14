@@ -1,6 +1,5 @@
-
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 // Tipos mínimos para el hook (ajustar según la BD)
 export type CrmConversationStatus = "open" | "closed" | "pending_response" | "archived";
