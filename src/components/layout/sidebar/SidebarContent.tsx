@@ -1,4 +1,3 @@
-
 import {
   Home,
   LayoutDashboard,
@@ -19,6 +18,7 @@ import {
   Settings,
   ShoppingCart,
   Banknote,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react";
 
