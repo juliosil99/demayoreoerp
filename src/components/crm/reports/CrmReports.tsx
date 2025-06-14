@@ -20,7 +20,8 @@ import { formatCurrency } from '@/utils/formatters';
 export const CrmReports = () => {
   const { data: companies = [] } = useCrmCompanies();
   const { data: opportunities = [] } = useOpportunities();
-  const { data: interactions = [] } = useCrmInteractions();
+  const { data: interactionsData } = useCrmInteractions();
+  const interactions = interactionsData?.pages.flat() || [];
 
   // Calculate metrics
   const totalCompanies = companies.length;

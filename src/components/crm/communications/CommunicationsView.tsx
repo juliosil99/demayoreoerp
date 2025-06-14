@@ -20,7 +20,8 @@ export const CommunicationsView = () => {
   const [selectedChannel, setSelectedChannel] = useState('all');
   const [showInteractionDialog, setShowInteractionDialog] = useState(false);
 
-  const { data: interactions = [], isLoading, error } = useCrmInteractions();
+  const { data: interactionsData, isLoading, error } = useCrmInteractions();
+  const interactions = interactionsData?.pages.flat() || [];
 
   console.log('CommunicationsView - interactions count:', interactions.length);
   console.log('CommunicationsView - isLoading:', isLoading);

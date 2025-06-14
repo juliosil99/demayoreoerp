@@ -34,7 +34,8 @@ const CompanyDetail = () => {
   const [showInteractionDialog, setShowInteractionDialog] = useState(false);
 
   const { data: rawCompany, isLoading } = useCrmCompany(id!);
-  const { data: rawInteractions = [] } = useCrmInteractions(id);
+  const { data: rawInteractionsData } = useCrmInteractions(id);
+  const rawInteractions = rawInteractionsData?.pages.flat() || [];
 
   if (isLoading) {
     return (

@@ -40,7 +40,8 @@ import { WorkflowBuilder } from '@/components/crm/automation/WorkflowBuilder';
 const CrmDashboard = () => {
   const navigate = useNavigate();
   const { data: companies = [], isLoading: companiesLoading } = useCrmCompanies();
-  const { data: allInteractions = [], isLoading: interactionsLoading, error: interactionsError } = useCrmInteractions();
+  const { data: allInteractionsData, isLoading: interactionsLoading, error: interactionsError } = useCrmInteractions();
+  const allInteractions = allInteractionsData?.pages.flat() || [];
   const { data: opportunities = [], isLoading: opportunitiesLoading } = useOpportunities();
 
   // Debug logging
