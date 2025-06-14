@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -87,9 +88,9 @@ const fetchInvoiceData = async (invoiceId: number): Promise<InvoiceData | null> 
 
     console.log("Invoice data fetched successfully");
     return data;
-  } catch (error) {
-    console.error("Error in fetchInvoiceData:", error);
-    throw error;
+  } catch (err) {
+    console.error("Error in fetchInvoiceData:", err);
+    throw err;
   }
 };
 
@@ -110,8 +111,8 @@ const fetchInvoiceProducts = async (invoiceId: number): Promise<ProductData[]> =
 
     console.log(`Fetched ${data?.length || 0} products for invoice`);
     return data || [];
-  } catch (error) {
-    console.error("Error in fetchInvoiceProducts:", error);
+  } catch (err) {
+    console.error("Error in fetchInvoiceProducts:", err);
     return []; // Return empty array as fallback
   }
 };
@@ -139,8 +140,8 @@ const fetchTemplateConfig = async (issuerRfc: string): Promise<PdfTemplate | nul
     
     console.log("No custom template found for RFC, using default template");
     return null;
-  } catch (error) {
-    console.log("Error fetching template, continuing with default:", error);
+  } catch (err) {
+    console.log("Error fetching template, continuing with default:", err);
     return null;
   }
 };
@@ -165,8 +166,8 @@ const generateQRCode = async (
       }
     });
     return qrCodeDataURL;
-  } catch (error) {
-    console.error("Error generating QR code:", error);
+  } catch (err) {
+    console.error("Error generating QR code:", err);
     throw new Error("Failed to generate QR code");
   }
 };
@@ -203,8 +204,8 @@ const addQRCodeToPdf = async (
     doc.setFontSize(8);
     doc.setTextColor(100);
     safeAddText(doc, "Código QR SAT", pageWidth - qrSize - margin + (qrSize/2), yPosition + qrSize + 5, { align: "center" });
-  } catch (error) {
-    console.error("Error adding QR code to PDF:", error);
+  } catch (err) {
+    console.error("Error adding QR code to PDF:", err);
   }
 };
 
@@ -352,7 +353,7 @@ const generateSATCompiantPdf = async (
       }
     });
   } catch (tableError) {
-    console.error("Error generating products table:", error);
+    console.error("Error generating products table:", tableError);
     doc.setFontSize(10);
     safeAddText(doc, "Error al generar tabla de productos", 14, yPosition);
     yPosition += 10;
@@ -507,12 +508,12 @@ export const generateInvoicePdf = async (
       success: true,
       filename 
     };
-  } catch (error) {
-    console.error("Unexpected error in SAT PDF generation:", error);
+  } catch (err) {
+    console.error("Unexpected error in SAT PDF generation:", err);
     return {
       success: false,
-      error: error instanceof Error 
-        ? `Error al generar PDF: ${error.message}` 
+      error: err instanceof Error 
+        ? `Error al generar PDF: ${err.message}` 
         : "Error desconocido al generar el PDF",
     };
   }
