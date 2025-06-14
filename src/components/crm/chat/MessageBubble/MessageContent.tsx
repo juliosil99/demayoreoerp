@@ -25,15 +25,6 @@ export const MessageContent = ({ interaction, isOutgoing, subject }: MessageCont
           {interaction.description}
         </p>
       )}
-      
-      {interaction.outcome && (
-        <div className={`text-sm ${
-          isOutgoing ? 'text-blue-50' : 'text-gray-600'
-        }`}>
-          <span className="font-medium">Resultado: </span>
-          <span>{interaction.outcome}</span>
-        </div>
-      )}
     </>
   );
 };
