@@ -88,17 +88,6 @@ export const useCrmDebugger = () => {
         console.log('👥 [CrmDebugger] Sample contacts:', contacts?.slice(0, 3));
       }
 
-      // Test the debug function to see company access
-      console.log('🧪 [CrmDebugger] Testing company access debug function...');
-      const { data: companyAccess, error: companyAccessError } = await supabase
-        .rpc('debug_user_company_access', { p_user_id: user.id });
-
-      if (companyAccessError) {
-        console.error('❌ [CrmDebugger] Company access error:', companyAccessError);
-      } else {
-        console.log('🏢 [CrmDebugger] Company access details:', companyAccess);
-      }
-
       // Test the RPC function directly with detailed logging
       console.log('🧪 [CrmDebugger] Testing RPC function directly...');
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_crm_conversation_previews', {
@@ -163,6 +152,21 @@ export const useCrmDebugger = () => {
         }
       }
 
+      // Manual company access debug using direct queries
+      console.log('🧪 [CrmDebugger] Manual company access debug...');
+      
+      // Get companies where user is owner or member
+      const allAccessibleCompanies = [
+        ...(ownedCompanies || []).map(c => ({ ...c, access_type: 'owner' })),
+        ...(companyMemberships || []).map(m => ({ 
+          id: m.company_id, 
+          nombre: m.companies?.nombre || 'Unknown', 
+          access_type: 'member' 
+        }))
+      ];
+
+      console.log('🏢 [CrmDebugger] Accessible companies:', allAccessibleCompanies);
+
       return {
         user_id: user.id,
         owned_companies_count: ownedCompanies?.length || 0,
@@ -170,7 +174,7 @@ export const useCrmDebugger = () => {
         interactions_count: interactions?.length || 0,
         companies_count: companies?.length || 0,
         contacts_count: contacts?.length || 0,
-        company_access: companyAccess,
+        accessible_companies: allAccessibleCompanies,
         rpc_result: rpcData,
         rpc_error: rpcError,
         sample_interaction: interactions?.[0] || null,
