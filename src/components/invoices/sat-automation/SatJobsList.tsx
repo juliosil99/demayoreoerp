@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle, Clock, RefreshCw, Trash2 } from "lucide-react";
 import { format } from "date-fns";
@@ -94,7 +93,7 @@ export function SatJobsList() {
       const { error } = await supabase
         .from("sat_automation_jobs")
         .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all jobs
+        .gt("created_at", "1900-01-01"); // This will match all records
 
       if (error) {
         throw error;
