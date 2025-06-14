@@ -1,25 +1,41 @@
 
 import { useMemo } from "react";
+import { useCurrencyCalculator } from "./useCurrencyCalculator";
 
 export const useInvoiceAmountCalculator = () => {
+  const { calculateRemainingWithCurrency } = useCurrencyCalculator();
+
   /**
    * Calculates the total amount from a list of invoices,
-   * accounting for credit notes (type E)
+   * accounting for credit notes (type E) and currency conversions
    */
-  const calculateTotalAmount = (invoices: any[]): number => {
+  const calculateTotalAmount = (invoices: any[], expense?: any): number => {
+    if (!invoices.length) return 0;
+    
+    if (expense) {
+      const { totalSelectedAmount } = calculateRemainingWithCurrency(expense, invoices);
+      return totalSelectedAmount;
+    }
+    
+    // Fallback to simple calculation if no expense context
     return invoices.reduce((sum, inv) => {
-      // For credit notes (type E), subtract the amount instead of adding it
       const amountToAdd = inv.invoice_type === 'E' ? -inv.total_amount : inv.total_amount;
       return sum + (amountToAdd || 0);
     }, 0);
   };
 
   /**
-   * Calculates the remaining amount after selecting invoices
+   * Calculates the remaining amount after selecting invoices with currency conversion
    */
-  const calculateRemainingAmount = (expenseAmount: number, invoices: any[]): number => {
+  const calculateRemainingAmount = (expenseAmount: number, invoices: any[], expense?: any): number => {
     if (!invoices.length) return expenseAmount;
     
+    if (expense) {
+      const { remainingAmount } = calculateRemainingWithCurrency(expense, invoices);
+      return remainingAmount;
+    }
+    
+    // Fallback to simple calculation
     const totalSelectedAmount = calculateTotalAmount(invoices);
     return expenseAmount - totalSelectedAmount;
   };

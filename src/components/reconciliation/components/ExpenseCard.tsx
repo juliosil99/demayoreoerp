@@ -3,6 +3,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCardDate, formatCurrency } from "@/utils/formatters";
+import { CurrencyBadge } from "./CurrencyBadge";
+import { useCurrencyCalculator } from "../hooks/calculation/useCurrencyCalculator";
 
 interface ExpenseCardProps {
   expense: any;
@@ -10,11 +12,16 @@ interface ExpenseCardProps {
 }
 
 export function ExpenseCard({ expense, onSelectExpense }: ExpenseCardProps) {
+  const { getDisplayAmounts } = useCurrencyCalculator();
+  
   // Check if this expense is from a payable
   const isFromPayable = !!expense.accounts_payable;
   
   // Check if this expense is from a payable with an invoice
   const hasPayableInvoice = isFromPayable && !!expense.accounts_payable.invoice_id;
+
+  const { expense: expenseDisplay } = getDisplayAmounts(expense);
+  const isMultiCurrency = !!expenseDisplay.converted;
 
   return (
     <Card className={`shadow-sm hover:shadow-md transition-shadow ${isFromPayable ? 'border-blue-200' : ''}`}>
@@ -22,17 +29,39 @@ export function ExpenseCard({ expense, onSelectExpense }: ExpenseCardProps) {
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-start">
             <h3 className="font-bold text-lg line-clamp-2">{expense.description}</h3>
-            <div className="flex flex-col items-end">
-              <span className="font-bold text-lg">{formatCurrency(expense.amount)}</span>
+            <div className="flex flex-col items-end gap-1">
+              <div className="text-right">
+                <span className="font-bold text-lg">
+                  {formatCurrency(expenseDisplay.original.amount)} {expenseDisplay.original.currency}
+                </span>
+                {isMultiCurrency && expenseDisplay.converted && (
+                  <div className="text-sm text-gray-600">
+                    {formatCurrency(expenseDisplay.converted.amount)} {expenseDisplay.converted.currency}
+                  </div>
+                )}
+              </div>
               <span className="text-sm text-gray-500">{formatCardDate(expense.date)}</span>
             </div>
           </div>
           
           <div className="flex flex-col gap-1 mt-2">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Cuenta:</span>
               <span className="text-sm">{expense.bank_accounts.name}</span>
             </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Moneda:</span>
+              <CurrencyBadge 
+                currency={expenseDisplay.original.currency}
+                amount={expenseDisplay.original.amount}
+                convertedAmount={expenseDisplay.converted?.amount}
+                convertedCurrency={expenseDisplay.converted?.currency}
+                exchangeRate={expense.exchange_rate}
+                showConversion={isMultiCurrency}
+              />
+            </div>
+            
             <div className="flex justify-between">
               <span className="text-sm font-medium">Método:</span>
               <span className="text-sm capitalize">

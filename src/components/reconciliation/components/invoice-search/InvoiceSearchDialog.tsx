@@ -14,6 +14,7 @@ import { SearchBar } from "./SearchBar";
 import { SelectedInvoicesList } from "./SelectedInvoicesList";
 import { InvoiceList } from "./InvoiceList";
 import { InvoiceSelectionSummary } from "./InvoiceSelectionSummary";
+import { useCurrencyCalculator } from "../../hooks/calculation/useCurrencyCalculator";
 
 interface InvoiceSearchDialogProps {
   open: boolean;
@@ -41,29 +42,17 @@ export function InvoiceSearchDialog({
   onManualReconciliation,
 }: InvoiceSearchDialogProps) {
   const [tempSelectedInvoices, setTempSelectedInvoices] = useState<any[]>([]);
-  const [totalSelectedAmount, setTotalSelectedAmount] = useState<number>(0);
-  const [calculatedRemaining, setCalculatedRemaining] = useState<number>(0);
+  const { calculateRemainingWithCurrency } = useCurrencyCalculator();
 
   // Initialize temporary selections with current selections
   useEffect(() => {
     setTempSelectedInvoices(selectedInvoices);
-    calculateTotals(selectedInvoices);
   }, [selectedInvoices, open]);
 
-  // Calculate totals whenever temp selections change
-  useEffect(() => {
-    calculateTotals(tempSelectedInvoices);
-  }, [tempSelectedInvoices]);
-
-  const calculateTotals = (invoices: any[]) => {
-    const total = invoices.reduce((sum, inv) => {
-      const amountToAdd = inv.invoice_type === 'E' ? -inv.total_amount : inv.total_amount;
-      return sum + (amountToAdd || 0);
-    }, 0);
-    
-    setTotalSelectedAmount(total);
-    setCalculatedRemaining(selectedExpense?.amount ? selectedExpense.amount - total : 0);
-  };
+  // Calculate totals with currency conversion
+  const { totalSelectedAmount, remainingAmount: calculatedRemaining, isConverted } = selectedExpense && tempSelectedInvoices.length > 0
+    ? calculateRemainingWithCurrency(selectedExpense, tempSelectedInvoices)
+    : { totalSelectedAmount: 0, remainingAmount: selectedExpense?.amount || 0, isConverted: false };
 
   const toggleInvoiceSelection = (invoice: any) => {
     const isSelected = tempSelectedInvoices.some(inv => inv.id === invoice.id);
@@ -97,7 +86,8 @@ export function InvoiceSearchDialog({
         <div className="space-y-4">
           <SelectedInvoicesList 
             selectedInvoices={selectedInvoices} 
-            remainingAmount={remainingAmount} 
+            remainingAmount={remainingAmount}
+            selectedExpense={selectedExpense}
           />
 
           <SearchBar 
@@ -111,13 +101,15 @@ export function InvoiceSearchDialog({
               totalSelectedAmount={totalSelectedAmount}
               calculatedRemaining={calculatedRemaining}
               invoiceCount={tempSelectedInvoices.length}
+              isConverted={isConverted}
             />
           )}
 
           <InvoiceList 
             filteredInvoices={filteredInvoices} 
             tempSelectedInvoices={tempSelectedInvoices} 
-            toggleInvoiceSelection={toggleInvoiceSelection} 
+            toggleInvoiceSelection={toggleInvoiceSelection}
+            selectedExpense={selectedExpense}
           />
         </div>
 

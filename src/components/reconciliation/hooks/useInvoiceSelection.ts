@@ -1,6 +1,6 @@
 
 import { useCallback } from "react";
-import { useInvoiceAmountCalculator } from "./calculation/useInvoiceAmountCalculator";
+import { useCurrencyCalculator } from "./calculation/useCurrencyCalculator";
 
 export const useInvoiceSelection = (
   expense: any | null,
@@ -11,7 +11,7 @@ export const useInvoiceSelection = (
   setShowAdjustmentDialog: (show: boolean) => void,
   handleReconcile: (expense: any, invoices: any[]) => Promise<boolean>
 ) => {
-  const { calculateRemainingAmount, determineAdjustmentType } = useInvoiceAmountCalculator();
+  const { calculateRemainingWithCurrency } = useCurrencyCalculator();
 
   const handleInvoiceSelect = useCallback((invoices: any[]) => {
     if (!expense) return;
@@ -19,15 +19,15 @@ export const useInvoiceSelection = (
     const updatedInvoices = invoices;
     setSelectedInvoices(updatedInvoices);
     
-    const newRemainingAmount = calculateRemainingAmount(expense.amount, updatedInvoices);
-    setRemainingAmount(newRemainingAmount);
+    const { remainingAmount } = calculateRemainingWithCurrency(expense, updatedInvoices);
+    setRemainingAmount(remainingAmount);
 
-    if (newRemainingAmount !== 0) {
-      const adjustmentType = determineAdjustmentType(newRemainingAmount);
+    if (Math.abs(remainingAmount) > 0.01) { // Using small threshold for floating point comparison
+      const adjustmentType = remainingAmount > 0 ? "expense_excess" : "invoice_excess";
       setAdjustmentType(adjustmentType);
       setShowAdjustmentDialog(true);
     } else {
-      // If remaining amount is zero, proceed with reconciliation
+      // If remaining amount is essentially zero, proceed with reconciliation
       handleReconcile(expense, updatedInvoices);
     }
   }, [
@@ -37,8 +37,7 @@ export const useInvoiceSelection = (
     setAdjustmentType, 
     setShowAdjustmentDialog, 
     handleReconcile,
-    calculateRemainingAmount,
-    determineAdjustmentType
+    calculateRemainingWithCurrency
   ]);
 
   return {
