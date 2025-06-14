@@ -4,9 +4,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
-import Layout from '@/components/layout/Layout';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import PathBasedProtectedRoute from '@/components/auth/PathBasedProtectedRoute';
+import { Layout } from '@/components/layout/Layout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { PathBasedProtectedRoute } from '@/components/auth/PathBasedProtectedRoute';
 
 // Import all pages
 import Index from '@/pages/Index';
@@ -38,7 +38,7 @@ import Payables from '@/pages/Payables';
 import Receivables from '@/pages/Receivables';
 import CrmDashboard from '@/pages/CrmDashboard';
 import CrmChat from '@/pages/CrmChat';
-import { Payments } from '@/pages/sales/Payments';
+import Payments from '@/pages/sales/Payments';
 
 const queryClient = new QueryClient({
   defaultOptions: {
