@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { INVOICE_TYPE_MAP } from "@/utils/invoiceTypeUtils";
 
 interface InvoiceTypeFilterProps {
   value: string;
@@ -20,17 +21,18 @@ export const InvoiceTypeFilter: React.FC<InvoiceTypeFilterProps> = ({
 }) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor="invoiceType">Tipo de Factura</Label>
+      <Label htmlFor="invoiceType">Tipo de Comprobante</Label>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger id="invoiceType">
           <SelectValue placeholder="Todos los tipos" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos los tipos</SelectItem>
-          <SelectItem value="I">Ingreso</SelectItem>
-          <SelectItem value="E">Egreso (Nota de Crédito)</SelectItem>
-          <SelectItem value="P">Pago</SelectItem>
-          <SelectItem value="N">Nómina</SelectItem>
+          {Object.entries(INVOICE_TYPE_MAP).map(([code, info]) => (
+            <SelectItem key={code} value={code}>
+              {info.label} - {info.description}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>

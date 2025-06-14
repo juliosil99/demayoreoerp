@@ -7,9 +7,9 @@ import { formatDate } from "@/utils/formatters";
 import { 
   formatInvoiceAmount,
   formatInvoiceTaxAmount,
-  formatInvoiceNumber,
-  getInvoiceTypeLabel
+  formatInvoiceNumber
 } from "@/utils/invoiceFormatters";
+import { InvoiceTypeBadge } from "@/components/invoices/InvoiceTypeBadge";
 
 type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 
@@ -41,7 +41,7 @@ export const InvoiceRow: React.FC<InvoiceRowProps> = ({ invoice }) => {
         {formatInvoiceNumber(invoice)}
       </TableCell>
       <TableCell>
-        {getInvoiceTypeLabel(invoice.invoice_type)}
+        <InvoiceTypeBadge invoiceType={invoice.invoice_type} />
       </TableCell>
       <TableCell>
         <div className="flex flex-col">

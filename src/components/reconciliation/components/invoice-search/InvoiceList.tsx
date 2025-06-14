@@ -1,6 +1,7 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency, formatCardDate } from "@/utils/formatters";
+import { InvoiceTypeBadge } from "@/components/invoices/InvoiceTypeBadge";
 
 interface InvoiceListProps {
   filteredInvoices: any[];
@@ -37,10 +38,10 @@ export function InvoiceList({
                   onCheckedChange={() => toggleInvoiceSelection(invoice)}
                   onClick={(e) => e.stopPropagation()}
                 />
-                <div>
-                  <div className="font-medium">
-                    {invoice.issuer_name}
-                    {isCredit && <span className="ml-2 text-red-600">(Nota de Crédito)</span>}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium">{invoice.issuer_name}</span>
+                    <InvoiceTypeBadge invoiceType={invoice.invoice_type} />
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {formatCardDate(invoice.invoice_date)} - {invoice.invoice_number || invoice.uuid}
