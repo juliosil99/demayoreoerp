@@ -1,3 +1,4 @@
+
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -12,7 +13,8 @@ import {
   CreditCard,
   Clock,
   MessageSquare,
-  Package
+  Package,
+  Send
 } from 'lucide-react';
 import { Interaction } from '@/types/crm';
 import { format } from 'date-fns';
@@ -35,6 +37,7 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
       case 'invoice': return Receipt;
       case 'payment': return CreditCard;
       case 'mercadolibre_question': return MessageSquare;
+      case 'mercadolibre_answer': return Send;
       default: return FileText;
     }
   };
@@ -50,6 +53,7 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
       case 'invoice': return 'text-indigo-600 bg-indigo-50';
       case 'payment': return 'text-green-600 bg-green-50';
       case 'mercadolibre_question': return 'text-yellow-600 bg-yellow-50';
+      case 'mercadolibre_answer': return 'text-blue-600 bg-blue-50';
       default: return 'text-gray-600 bg-gray-50';
     }
   };
@@ -65,6 +69,7 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
       case 'invoice': return 'Factura';
       case 'payment': return 'Pago';
       case 'mercadolibre_question': return 'Pregunta ML';
+      case 'mercadolibre_answer': return 'Respuesta ML';
       default: return type;
     }
   };
@@ -72,11 +77,12 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
   const Icon = getInteractionIcon(interaction.type);
   const colorClass = getInteractionColor(interaction.type);
 
-  // Para preguntas de MercadoLibre, considerarlas como entrantes (del cliente)
+  // The `isOutgoing` prop is now correctly set from ChatView.
+  const messageIsOutgoing = isOutgoing;
   const isMLQuestion = interaction.type === 'mercadolibre_question';
-  const messageIsOutgoing = isMLQuestion ? false : isOutgoing;
+  const isMLAnswer = interaction.type === 'mercadolibre_answer';
 
-  // Mostrar la pregunta completa como subject principal si es ML
+  // For ML questions, use original_question. For our answers, subject is set in ChatView.
   const subject = isMLQuestion && interaction.metadata?.original_question
     ? interaction.metadata.original_question
     : interaction.subject;
@@ -125,7 +131,7 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
             </span>
           </div>
           
-          {/* Mostrar pregunta completa como título principal */}
+          {/* Mostrar pregunta o respuesta como título principal */}
           {subject && (
             <h4 className={`font-medium text-sm mb-1 ${
               messageIsOutgoing ? 'text-white' : 'text-gray-900'
@@ -134,6 +140,7 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
             </h4>
           )}
           
+          {/* This part will now be empty for ML messages since we moved the content */}
           {interaction.description && (
             <p className={`text-sm mb-2 ${
               messageIsOutgoing ? 'text-blue-50' : 'text-gray-600'
@@ -159,7 +166,7 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
                   ? 'bg-yellow-100 text-yellow-700'
                   : 'bg-gray-50 text-gray-600'
             }`}>
-              {/* Metadata específica de MercadoLibre */}
+              {/* Metadata for ML Question */}
               {isMLQuestion && (
                 <>
                   {interaction.metadata.product_title && (
@@ -172,16 +179,18 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
                       <span className="font-medium">Precio:</span> ${interaction.metadata.product_price}
                     </div>
                   )}
-                  {interaction.metadata.response_time_seconds && (
-                    <div className="text-xs opacity-75">
-                      Respondido en {interaction.metadata.response_time_seconds}s
-                    </div>
-                  )}
                 </>
               )}
               
+              {/* Metadata for ML Answer */}
+              {isMLAnswer && interaction.metadata.response_time_seconds && (
+                  <div className="text-xs opacity-75">
+                    Respondido en {interaction.metadata.response_time_seconds}s
+                  </div>
+              )}
+              
               {/* Metadata general para otros tipos */}
-              {!isMLQuestion && (
+              {!isMLQuestion && !isMLAnswer && (
                 <>
                   {interaction.metadata.amount && (
                     <div>Monto: ${interaction.metadata.amount}</div>
@@ -226,5 +235,3 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
     </div>
   );
 };
-
-// ADVERTENCIA: Este archivo ya es muy largo (más de 230 líneas). Considera pedirme refactorización después de estos cambios.

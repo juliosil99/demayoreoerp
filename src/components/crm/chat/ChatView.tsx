@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -55,6 +54,38 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
     sendMessage(data);
   };
 
+  const displayMessages = interactions.flatMap((interaction: any) => {
+    if (interaction.type === 'mercadolibre_question') {
+      const question = {
+        ...interaction,
+        id: `${interaction.id}-question`,
+        isOutgoing: false,
+        description: null, // The answer is in the description, so we hide it here
+      };
+
+      // If there is a description, it means we have an answer. Create a separate message for it.
+      if (interaction.description) {
+        const answer = {
+          ...interaction,
+          id: `${interaction.id}-answer`,
+          isOutgoing: true,
+          type: 'mercadolibre_answer', // Artificial type for our reply
+          subject: interaction.description, // The answer text becomes the main subject
+          description: null,
+          metadata: { // Only keep relevant metadata for the answer
+            response_time_seconds: interaction.metadata?.response_time_seconds,
+          }
+        };
+        return [question, answer];
+      }
+      
+      return [question];
+    }
+    
+    // All other interaction types are considered outgoing (from us)
+    return [{ ...interaction, isOutgoing: true }];
+  });
+
   if (isLoading) {
     return (
       <Card className="h-full">
@@ -96,7 +127,7 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {/* Messages Area - Ahora usa flex-1 para ocupar todo el espacio disponible */}
         <div className="flex-1 p-4 overflow-y-auto">
-          {interactions.length === 0 ? (
+          {displayMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-muted-foreground mb-2">
@@ -108,11 +139,11 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
             </div>
           ) : (
             <div className="space-y-1">
-              {interactions.map((interaction: any, index) => (
+              {displayMessages.map((msg: any) => (
                 <MessageBubble
-                  key={interaction.id}
-                  interaction={interaction}
-                  isOutgoing={index % 2 === 0} // Alternating for demo, should be based on user logic
+                  key={msg.id}
+                  interaction={msg}
+                  isOutgoing={msg.isOutgoing}
                 />
               ))}
               
