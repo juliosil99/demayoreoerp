@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Building2, User } from 'lucide-react';
@@ -19,6 +20,7 @@ interface ChatViewProps {
 
 export const ChatView = ({ companyId, contactId, companyName, contactName, isReadOnly = false }: ChatViewProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [lastMessageCount, setLastMessageCount] = useState(0);
   
   const { data: interactions = [], isLoading } = useCrmInteractions(companyId, contactId);
   const { sendMessage, handleQuickAction, isTyping, isSending } = useChatOperations(companyId, contactId);
@@ -27,9 +29,20 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Solo hacer scroll automático cuando se agregan nuevos mensajes, no al cambiar de conversación
   useEffect(() => {
-    scrollToBottom();
-  }, [interactions, isTyping]);
+    if (interactions.length > 0 && interactions.length > lastMessageCount) {
+      scrollToBottom();
+    }
+    setLastMessageCount(interactions.length);
+  }, [interactions.length]);
+
+  // Scroll cuando aparece el indicador de typing
+  useEffect(() => {
+    if (isTyping) {
+      scrollToBottom();
+    }
+  }, [isTyping]);
 
   const handleSendMessage = (data: Partial<InteractionFormData>) => {
     sendMessage(data);
@@ -50,7 +63,7 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="border-b bg-gray-50">
+      <CardHeader className="border-b bg-gray-50 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <MessageSquare className="h-5 w-5 text-blue-600" />
@@ -73,9 +86,9 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0">
-        {/* Messages Area */}
-        <div className="flex-1 p-4 overflow-y-auto max-h-96 min-h-96">
+      <CardContent className="flex-1 flex flex-col p-0 min-h-0">
+        {/* Messages Area - Ahora usa flex-1 para ocupar todo el espacio disponible */}
+        <div className="flex-1 p-4 overflow-y-auto">
           {interactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
@@ -113,10 +126,11 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
           )}
         </div>
 
+        {/* Controles fijos en la parte inferior */}
         {!isReadOnly ? (
-          <>
+          <div className="flex-shrink-0 border-t bg-white">
             {/* Quick Actions */}
-            <div className="px-4">
+            <div className="px-4 pt-3">
               <QuickActions onQuickAction={handleQuickAction} />
             </div>
 
@@ -126,9 +140,9 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
               disabled={isSending}
               placeholder={`Escribe un mensaje${companyName ? ` para ${companyName}` : ''}...`}
             />
-          </>
+          </div>
         ) : (
-          <div className="p-4 border-t text-center text-sm text-muted-foreground bg-gray-50">
+          <div className="flex-shrink-0 p-4 border-t text-center text-sm text-muted-foreground bg-gray-50">
             Esta conversación es de solo lectura.
           </div>
         )}
