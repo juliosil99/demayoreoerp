@@ -6,6 +6,7 @@ import { MessageSquare, Circle } from "lucide-react";
 import { ConversationsList } from "@/components/crm/chat/ConversationsList";
 import { ChatView } from "@/components/crm/chat/ChatView";
 import { useCrmConversations } from "@/hooks/useCrmConversations";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const CrmChat = () => {
   const [filter, setFilter] = useState<"all" | "open" | "closed" | "unanswered">("all");
@@ -21,7 +22,7 @@ const CrmChat = () => {
     <div className="flex h-[calc(100vh-4rem)] bg-background">
       {/* Lista de conversaciones */}
       <div className="w-full sm:w-96 border-r h-full flex flex-col">
-        <Card className="h-full">
+        <Card className="h-full flex flex-col">
           <CardHeader className="border-b">
             <CardTitle className="flex items-center gap-2 text-lg">
               <MessageSquare className="h-5 w-5 text-blue-600" />
@@ -58,13 +59,15 @@ const CrmChat = () => {
               </Badge>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 p-0 overflow-y-auto min-h-0">
-            <ConversationsList
-              conversations={conversations}
-              isLoading={isLoading}
-              selectedId={selectedConversation?.id}
-              onSelect={id => setSelectedId(id)}
-            />
+          <CardContent className="flex-1 p-0 min-h-0">
+            <ScrollArea className="h-full">
+              <ConversationsList
+                conversations={conversations}
+                isLoading={isLoading}
+                selectedId={selectedConversation?.id}
+                onSelect={id => setSelectedId(id)}
+              />
+            </ScrollArea>
           </CardContent>
         </Card>
       </div>
