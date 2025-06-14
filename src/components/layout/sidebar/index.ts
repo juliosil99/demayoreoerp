@@ -5,3 +5,4 @@ export { SidebarHeader } from './SidebarHeader';
 export { SidebarContent } from './SidebarContent';
 export { SidebarLoading } from './SidebarLoading';
 export { ProtectedSidebar } from './ProtectedSidebar';
+export type { MainNavItem, SidebarGroupType, SidebarContentProps } from './types';
