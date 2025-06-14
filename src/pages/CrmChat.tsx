@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +5,7 @@ import { MessageSquare, Circle } from "lucide-react";
 import { ConversationsList } from "@/components/crm/chat/ConversationsList";
 import { ChatView } from "@/components/crm/chat/ChatView";
 import { useCrmConversations } from "@/hooks/useCrmConversations";
+import { useCrmDebugger } from "@/hooks/useCrmDebugger";
 
 const CrmChat = () => {
   const [filter, setFilter] = useState<"all" | "open" | "closed" | "unanswered">("all");
@@ -19,11 +19,20 @@ const CrmChat = () => {
     isFetchingNextPage 
   } = useCrmConversations({ filter });
 
+  // Add debug hook
+  const { data: debugData, isLoading: isDebugLoading } = useCrmDebugger();
+
   console.log('📱 [CrmChat] Hook data received:', {
     data: data,
     isLoading,
     dataPages: data?.pages?.length || 0,
     totalPages: data?.pages || []
+  });
+
+  // Add debug log
+  console.log('🔧 [CrmChat] Debug data:', {
+    debugData,
+    isDebugLoading
   });
 
   const conversations = data?.pages.flat() || [];
@@ -85,6 +94,12 @@ const CrmChat = () => {
               <MessageSquare className="h-5 w-5 text-blue-600" />
               Chat
             </CardTitle>
+            {/* Add debug info */}
+            {debugData && (
+              <div className="text-xs text-muted-foreground">
+                Debug: {debugData.interactions_count} interactions, {debugData.companies_count} companies, {debugData.contacts_count} contacts
+              </div>
+            )}
             <div className="flex gap-2 mt-2">
               <Badge
                 variant={filter === "all" ? "default" : "outline"}
