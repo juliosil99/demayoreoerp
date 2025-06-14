@@ -1,4 +1,3 @@
-
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { 
@@ -11,7 +10,7 @@ import {
   formatTaxRegime
 } from "@/utils/pdfGenerationUtils";
 import { addQRCodeToPdf } from "./qrCodeService";
-import type { InvoiceData, ProductData, PdfTemplate, IssuerContactData } from "./databaseService";
+import type { InvoiceData, ProductData, PdfTemplate, IssuerContactData, ReceiverCompanyData } from "./databaseService";
 
 /**
  * Generates the SAT-compliant PDF document for an invoice
@@ -20,7 +19,8 @@ export const generateSATCompliantPdf = async (
   invoice: InvoiceData, 
   products: ProductData[], 
   templateConfig: PdfTemplate | null,
-  issuerContactData: IssuerContactData | null
+  issuerContactData: IssuerContactData | null,
+  receiverCompanyData: ReceiverCompanyData | null
 ): Promise<jsPDF> => {
   const doc = new jsPDF();
   let yPosition = 20;
@@ -59,7 +59,7 @@ export const generateSATCompliantPdf = async (
   yPosition = addIssuerSection(doc, invoice, templateConfig, issuerContactData, yPosition);
   
   // Receiver Section
-  yPosition = addReceiverSection(doc, invoice, yPosition);
+  yPosition = addReceiverSection(doc, invoice, receiverCompanyData, yPosition);
   
   // Products table
   const finalY = await addProductsTable(doc, products, yPosition);
@@ -130,7 +130,7 @@ const addIssuerSection = (doc: jsPDF, invoice: InvoiceData, templateConfig: PdfT
   return yPosition + 15;
 };
 
-const addReceiverSection = (doc: jsPDF, invoice: InvoiceData, yPosition: number): number => {
+const addReceiverSection = (doc: jsPDF, invoice: InvoiceData, receiverCompanyData: ReceiverCompanyData | null, yPosition: number): number => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   safeAddText(doc, "DATOS DEL RECEPTOR", 14, yPosition);
@@ -139,10 +139,27 @@ const addReceiverSection = (doc: jsPDF, invoice: InvoiceData, yPosition: number)
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   
-  safeAddText(doc, `Razón Social: ${invoice.receiver_name || "No disponible"}`, 14, yPosition);
+  const receiverName = receiverCompanyData?.nombre || invoice.receiver_name || "No disponible";
+
+  safeAddText(doc, `Razón Social: ${receiverName}`, 14, yPosition);
   yPosition += 5;
   safeAddText(doc, `RFC: ${formatRFC(invoice.receiver_rfc)}`, 14, yPosition);
   yPosition += 5;
+
+  if (receiverCompanyData) {
+    if (receiverCompanyData.direccion) {
+      const address = receiverCompanyData.codigo_postal 
+        ? `${receiverCompanyData.direccion}, C.P. ${receiverCompanyData.codigo_postal}`
+        : receiverCompanyData.direccion;
+      safeAddText(doc, `Domicilio: ${address}`, 14, yPosition);
+      yPosition += 5;
+    }
+    if (receiverCompanyData.telefono) {
+      safeAddText(doc, `Teléfono: ${receiverCompanyData.telefono}`, 14, yPosition);
+      yPosition += 5;
+    }
+  }
+
   safeAddText(doc, `Régimen Fiscal: ${invoice.receiver_tax_regime || 'No especificado'}`, 14, yPosition);
   yPosition += 5;
   safeAddText(doc, `Uso del CFDI: ${invoice.receiver_cfdi_use || 'No especificado'}`, 14, yPosition);

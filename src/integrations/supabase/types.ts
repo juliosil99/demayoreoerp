@@ -652,28 +652,34 @@ export type Database = {
         Row: {
           codigo_postal: string
           created_at: string | null
+          direccion: string | null
           id: string
           nombre: string
           regimen_fiscal: string
           rfc: string
+          telefono: string | null
           user_id: string
         }
         Insert: {
           codigo_postal: string
           created_at?: string | null
+          direccion?: string | null
           id?: string
           nombre: string
           regimen_fiscal: string
           rfc: string
+          telefono?: string | null
           user_id: string
         }
         Update: {
           codigo_postal?: string
           created_at?: string | null
+          direccion?: string | null
           id?: string
           nombre?: string
           regimen_fiscal?: string
           rfc?: string
+          telefono?: string | null
           user_id?: string
         }
         Relationships: []

@@ -9,6 +9,8 @@ interface CompanyData {
   rfc: string;
   codigo_postal: string;
   regimen_fiscal: string;
+  direccion: string | null;
+  telefono: string | null;
 }
 
 /**

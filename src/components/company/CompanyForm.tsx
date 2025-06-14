@@ -13,6 +13,8 @@ import { RFCField } from "./form-fields/RFCField";
 import { PostalCodeField } from "./form-fields/PostalCodeField";
 import { TaxRegimeField } from "./form-fields/TaxRegimeField";
 import { checkRFCExists } from "@/hooks/company/utils/rfcChecker";
+import { AddressField } from "./form-fields/AddressField";
+import { PhoneField } from "./form-fields/PhoneField";
 
 interface CompanyFormProps {
   defaultValues?: CompanyFormData;
@@ -31,6 +33,8 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
       rfc: "",
       codigo_postal: "",
       regimen_fiscal: "",
+      direccion: "",
+      telefono: "",
     },
   });
 
@@ -97,7 +101,9 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <CompanyNameField form={form} />
         <RFCField form={form} />
+        <AddressField form={form} />
         <PostalCodeField form={form} />
+        <PhoneField form={form} />
         <TaxRegimeField form={form} />
 
         <Button
