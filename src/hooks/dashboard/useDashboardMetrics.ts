@@ -37,38 +37,6 @@ export const useDashboardMetrics = (dateRange?: DateRange) => {
     // Chart data
     chartData: [],
     
-    // Returning customer metrics
-    returningRevenue: 0,
-    returningOrders: 0,
-    returningAOV: 0,
-    repeatRate: 0,
-    returningRevenueChange: 0,
-    returningOrdersChange: 0,
-    returningAOVChange: 0,
-    repeatRateChange: 0,
-    
-    // New customer metrics
-    newCustomerRevenue: 0,
-    newCustomerOrders: 0,
-    newCustomerAOV: 0,
-    cac: 0,
-    newCustomerRevenueChange: 0,
-    newCustomerOrdersChange: 0,
-    newCustomerAOVChange: 0,
-    cacChange: 0,
-    
-    // Paid performance metrics
-    paidRevenue: 0,
-    paidOrders: 0,
-    paidAOV: 0,
-    paidCAC: 0,
-    pamer: 0,
-    paidRevenueChange: 0,
-    paidOrdersChange: 0,
-    paidAOVChange: 0,
-    paidCACChange: 0,
-    pamerChange: 0,
-    
     // Channel metrics
     channelMetrics: [],
     

@@ -20,7 +20,7 @@ export interface ChannelMetrics {
 }
 
 export interface DashboardMetrics {
-  // New contribution margin metrics
+  // Contribution margin metrics
   contributionMargin: number;
   contributionMarginChange: number;
   marginPercentage: number;
@@ -45,38 +45,6 @@ export interface DashboardMetrics {
   
   // Channel-specific metrics
   channelMetrics: ChannelMetrics[];
-  
-  // Returning customer metrics
-  returningRevenue: number;
-  returningOrders: number;
-  returningAOV: number;
-  repeatRate: number;
-  returningRevenueChange: number;
-  returningOrdersChange: number;
-  returningAOVChange: number;
-  repeatRateChange: number;
-  
-  // New customer metrics
-  newCustomerRevenue: number;
-  newCustomerOrders: number;
-  newCustomerAOV: number;
-  cac: number;
-  newCustomerRevenueChange: number;
-  newCustomerOrdersChange: number;
-  newCustomerAOVChange: number;
-  cacChange: number;
-  
-  // Paid performance metrics
-  paidRevenue: number;
-  paidOrders: number;
-  paidAOV: number;
-  paidCAC: number;
-  pamer: number;
-  paidRevenueChange: number;
-  paidOrdersChange: number;
-  paidAOVChange: number;
-  paidCACChange: number;
-  pamerChange: number;
   
   // Legacy metrics for backward compatibility
   yesterdaySales: number;

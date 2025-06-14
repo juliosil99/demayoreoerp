@@ -5,7 +5,6 @@ import { DateRange } from "react-day-picker";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
 import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
-import { MetricsGroupsSection } from "@/components/dashboard/MetricsGroupsSection";
 import { ContributionMarginSection } from "@/components/dashboard/sections/ContributionMarginSection";
 import { SalesSection } from "@/components/dashboard/sections/SalesSection";
 import { ChannelDistributionSection } from "@/components/dashboard/sections/ChannelDistributionSection";
@@ -84,9 +83,6 @@ export default function Dashboard() {
         
         {/* Top SKUs Section */}
         <TopSkusByUnitsSection dateRange={dateRange} />
-        
-        {/* Metrics Groups Section */}
-        <MetricsGroupsSection metrics={combinedData} />
         
         {/* Oldest Expense Card */}
         {!expenseLoading && oldestExpense && (
