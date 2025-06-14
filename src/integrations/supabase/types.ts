@@ -2829,7 +2829,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      bank_transactions_unified: {
+        Row: {
+          account_id: number | null
+          amount: number | null
+          chart_account_name: string | null
+          client_name: string | null
+          currency: string | null
+          date: string | null
+          description: string | null
+          from_account_id: number | null
+          reference_number: string | null
+          to_account_id: number | null
+          transaction_id: string | null
+          transaction_type: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_access_bank_account: {
