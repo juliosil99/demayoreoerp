@@ -35,48 +35,90 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
         pageSize: CONVERSATIONS_PAGE_SIZE
       });
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('❌ [useCrmConversations] User not authenticated');
-        throw new Error("User not authenticated");
-      }
+      try {
+        // Verificar la conexión de usuario primero
+        console.log('🔐 [useCrmConversations] Checking user authentication...');
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) {
+          console.error('❌ [useCrmConversations] User authentication error:', userError);
+          throw new Error(`Authentication error: ${userError.message}`);
+        }
+        
+        if (!user) {
+          console.error('❌ [useCrmConversations] User not authenticated');
+          throw new Error("User not authenticated");
+        }
 
-      console.log('✅ [useCrmConversations] User authenticated:', user.id);
+        console.log('✅ [useCrmConversations] User authenticated:', user.id);
 
-      const { data, error } = await supabase.rpc('get_crm_conversation_previews', {
-        p_user_id: user.id,
-        p_filter: filter,
-        p_page_size: CONVERSATIONS_PAGE_SIZE,
-        p_page_number: pageParam,
-      });
+        // Hacer la llamada RPC con mejor manejo de errores
+        console.log('📞 [useCrmConversations] Calling RPC function...');
+        const rpcParams = {
+          p_user_id: user.id,
+          p_filter: filter,
+          p_page_size: CONVERSATIONS_PAGE_SIZE,
+          p_page_number: pageParam,
+        };
+        
+        console.log('📋 [useCrmConversations] RPC parameters:', rpcParams);
 
-      if (error) {
-        console.error("❌ [useCrmConversations] Supabase RPC error:", error);
+        const { data, error } = await supabase.rpc('get_crm_conversation_previews', rpcParams);
+
+        if (error) {
+          console.error("❌ [useCrmConversations] Supabase RPC error details:", {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw new Error(`RPC Error: ${error.message}`);
+        }
+        
+        console.log('📊 [useCrmConversations] Raw RPC response:', {
+          dataType: typeof data,
+          isArray: Array.isArray(data),
+          dataLength: data?.length || 0,
+          data: data,
+          filter,
+          pageParam
+        });
+
+        // Verificar que los datos sean válidos
+        if (data === null || data === undefined) {
+          console.warn('⚠️ [useCrmConversations] RPC returned null/undefined');
+          return [];
+        }
+
+        if (!Array.isArray(data)) {
+          console.error('❌ [useCrmConversations] RPC returned non-array:', typeof data, data);
+          throw new Error(`Invalid response format: expected array, got ${typeof data}`);
+        }
+
+        // La función RPC devuelve un array de objetos que coinciden con CrmConversationPreview.
+        const conversations = data as CrmConversationPreview[];
+        
+        console.log('🔄 [useCrmConversations] Processed conversations:', {
+          count: conversations.length,
+          conversations: conversations.map(c => ({
+            id: c.id,
+            company_name: c.company_name,
+            contact_name: c.contact_name,
+            last_message: c.last_message?.substring(0, 50) + '...',
+            status: c.conversation_status
+          }))
+        });
+
+        return conversations;
+
+      } catch (error) {
+        console.error('💥 [useCrmConversations] Critical error in queryFn:', {
+          error: error,
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        });
         throw error;
       }
-      
-      console.log('📊 [useCrmConversations] Raw data from Supabase:', {
-        dataLength: data?.length || 0,
-        data: data,
-        filter,
-        pageParam
-      });
-
-      // La función RPC devuelve un array de objetos que coinciden con CrmConversationPreview.
-      const conversations = (data || []) as CrmConversationPreview[];
-      
-      console.log('🔄 [useCrmConversations] Transformed conversations:', {
-        count: conversations.length,
-        conversations: conversations.map(c => ({
-          id: c.id,
-          company_name: c.company_name,
-          contact_name: c.contact_name,
-          last_message: c.last_message?.substring(0, 50) + '...',
-          status: c.conversation_status
-        }))
-      });
-
-      return conversations;
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
@@ -96,5 +138,13 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
       console.log('➡️ [useCrmConversations] Next page:', nextPage);
       return nextPage;
     },
+    retry: (failureCount, error) => {
+      console.log('🔄 [useCrmConversations] Query retry attempt:', {
+        failureCount,
+        error: error instanceof Error ? error.message : error
+      });
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
