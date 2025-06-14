@@ -1682,6 +1682,9 @@ export type Database = {
           issuer_name: string | null
           issuer_rfc: string | null
           issuer_tax_regime: string | null
+          manual_reconciliation_date: string | null
+          manual_reconciliation_notes: string | null
+          manually_reconciled: boolean | null
           month_period: number | null
           paid_amount: number | null
           payment_form: string | null
@@ -1725,6 +1728,9 @@ export type Database = {
           issuer_name?: string | null
           issuer_rfc?: string | null
           issuer_tax_regime?: string | null
+          manual_reconciliation_date?: string | null
+          manual_reconciliation_notes?: string | null
+          manually_reconciled?: boolean | null
           month_period?: number | null
           paid_amount?: number | null
           payment_form?: string | null
@@ -1768,6 +1774,9 @@ export type Database = {
           issuer_name?: string | null
           issuer_rfc?: string | null
           issuer_tax_regime?: string | null
+          manual_reconciliation_date?: string | null
+          manual_reconciliation_notes?: string | null
+          manually_reconciled?: boolean | null
           month_period?: number | null
           paid_amount?: number | null
           payment_form?: string | null

@@ -24,7 +24,10 @@ interface UseOptimizedInvoicesOptions {
 }
 
 interface OptimizedInvoicesResult {
-  invoices: (Partial<Invoice> & { is_reconciled?: boolean })[];
+  invoices: (Partial<Invoice> & { 
+    is_reconciled?: boolean;
+    reconciliation_type?: 'automatic' | 'manual' | null;
+  })[];
   totalCount: number;
   isLoading: boolean;
   error: Error | null;
@@ -106,11 +109,16 @@ export const useOptimizedInvoices = ({
         }
       }
 
-      // Apply reconciliation status filter
+      // Apply reconciliation status filter with enhanced logic
       if (filters.reconciliationStatus === 'reconciled') {
-        query = query.in('id', reconciledInvoiceIds);
+        // Show invoices that are either in expense_invoice_relations OR manually_reconciled = true
+        query = query.or(`id.in.(${reconciledInvoiceIds.join(',')}),manually_reconciled.eq.true`);
       } else if (filters.reconciliationStatus === 'unreconciled') {
-        query = query.not('id', 'in', `(${reconciledInvoiceIds.join(',')})`);
+        // Show invoices that are NOT in expense_invoice_relations AND manually_reconciled = false
+        if (reconciledInvoiceIds.length > 0) {
+          query = query.not('id', 'in', `(${reconciledInvoiceIds.join(',')})`);
+        }
+        query = query.eq('manually_reconciled', false);
       }
 
       // Apply pagination
@@ -126,16 +134,27 @@ export const useOptimizedInvoices = ({
         throw error;
       }
 
-      // Transform the data to include reconciliation status
-      const transformedInvoices = invoices?.map((invoice: any) => ({
-        ...invoice,
-        is_reconciled: reconciledInvoiceIds.includes(invoice.id)
-      })) || [];
+      // Transform the data to include reconciliation status and type
+      const transformedInvoices = invoices?.map((invoice: any) => {
+        const hasExpenseRelation = reconciledInvoiceIds.includes(invoice.id);
+        const isManuallyReconciled = invoice.manually_reconciled === true;
+        const isReconciled = hasExpenseRelation || isManuallyReconciled;
+        
+        return {
+          ...invoice,
+          is_reconciled: isReconciled,
+          reconciliation_type: hasExpenseRelation ? 'automatic' : 
+                              isManuallyReconciled ? 'manual' : null
+        };
+      }) || [];
 
       console.log(`Fetched ${transformedInvoices.length} invoices out of ${count || 0} total`);
       
       return {
-        invoices: transformedInvoices as (Partial<Invoice> & { is_reconciled?: boolean })[],
+        invoices: transformedInvoices as (Partial<Invoice> & { 
+          is_reconciled?: boolean;
+          reconciliation_type?: 'automatic' | 'manual' | null;
+        })[],
         totalCount: count || 0
       };
     },
