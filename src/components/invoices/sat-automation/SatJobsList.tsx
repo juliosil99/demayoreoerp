@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle, Clock, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, RefreshCw, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -11,8 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/lib/supabase";
+import { toast } from "@/components/ui/use-toast";
 
 interface SatJob {
   id: string;
@@ -29,6 +31,7 @@ interface SatJob {
 export function SatJobsList() {
   const [jobs, setJobs] = useState<SatJob[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingJobs, setDeletingJobs] = useState<Set<string>>(new Set());
 
   const fetchJobs = async () => {
     try {
@@ -48,6 +51,68 @@ export function SatJobsList() {
       console.error("Error fetching SAT jobs:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteJob = async (jobId: string) => {
+    try {
+      setDeletingJobs(prev => new Set([...prev, jobId]));
+      
+      const { error } = await supabase
+        .from("sat_automation_jobs")
+        .delete()
+        .eq("id", jobId);
+
+      if (error) {
+        throw error;
+      }
+
+      setJobs(prev => prev.filter(job => job.id !== jobId));
+      
+      toast({
+        title: "Trabajo eliminado",
+        description: "El trabajo de descarga ha sido eliminado correctamente.",
+      });
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el trabajo. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingJobs(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(jobId);
+        return newSet;
+      });
+    }
+  };
+
+  const clearAllJobs = async () => {
+    try {
+      const { error } = await supabase
+        .from("sat_automation_jobs")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all jobs
+
+      if (error) {
+        throw error;
+      }
+
+      setJobs([]);
+      
+      toast({
+        title: "Trabajos eliminados",
+        description: "Todos los trabajos de descarga han sido eliminados.",
+      });
+    } catch (error) {
+      console.error("Error clearing all jobs:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron eliminar todos los trabajos. Intenta de nuevo.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -113,10 +178,23 @@ export function SatJobsList() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Trabajos de descarga recientes</CardTitle>
-        <CardDescription>
-          Los últimos 5 trabajos de descarga automática del SAT
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Trabajos de descarga recientes</CardTitle>
+            <CardDescription>
+              Los últimos 5 trabajos de descarga automática del SAT
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearAllJobs}
+            className="text-red-600 hover:text-red-700"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Limpiar todo
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -129,9 +207,24 @@ export function SatJobsList() {
                     {getStatusText(job.status)}
                   </span>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {format(new Date(job.created_at), "d 'de' MMMM, yyyy HH:mm", { locale: es })}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {format(new Date(job.created_at), "d 'de' MMMM, yyyy HH:mm", { locale: es })}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteJob(job.id)}
+                    disabled={deletingJobs.has(job.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    {deletingJobs.has(job.id) ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
               
               <div className="text-sm mb-2">
