@@ -1,4 +1,3 @@
-
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -29,15 +28,8 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
   return useInfiniteQuery({
     queryKey: ["crm-conversations", filter],
     queryFn: async ({ pageParam }) => {
-      console.log('🔍 [useCrmConversations] Starting query with:', {
-        filter,
-        pageParam,
-        pageSize: CONVERSATIONS_PAGE_SIZE
-      });
-
       try {
         // Verificar la conexión de usuario primero
-        console.log('🔐 [useCrmConversations] Checking user authentication...');
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError) {
@@ -50,10 +42,7 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
           throw new Error("User not authenticated");
         }
 
-        console.log('✅ [useCrmConversations] User authenticated:', user.id);
-
         // Hacer la llamada RPC con mejor manejo de errores
-        console.log('📞 [useCrmConversations] Calling RPC function...');
         const rpcParams = {
           p_user_id: user.id,
           p_filter: filter,
@@ -61,8 +50,6 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
           p_page_number: pageParam,
         };
         
-        console.log('📋 [useCrmConversations] RPC parameters:', rpcParams);
-
         const { data, error } = await supabase.rpc('get_crm_conversation_previews', rpcParams);
 
         if (error) {
@@ -75,15 +62,6 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
           throw new Error(`RPC Error: ${error.message}`);
         }
         
-        console.log('📊 [useCrmConversations] Raw RPC response:', {
-          dataType: typeof data,
-          isArray: Array.isArray(data),
-          dataLength: data?.length || 0,
-          data: data,
-          filter,
-          pageParam
-        });
-
         // Verificar que los datos sean válidos
         if (data === null || data === undefined) {
           console.warn('⚠️ [useCrmConversations] RPC returned null/undefined');
@@ -98,17 +76,6 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
         // La función RPC devuelve un array de objetos que coinciden con CrmConversationPreview.
         const conversations = data as CrmConversationPreview[];
         
-        console.log('🔄 [useCrmConversations] Processed conversations:', {
-          count: conversations.length,
-          conversations: conversations.map(c => ({
-            id: c.id,
-            company_name: c.company_name,
-            contact_name: c.contact_name,
-            last_message: c.last_message?.substring(0, 50) + '...',
-            status: c.conversation_status
-          }))
-        });
-
         return conversations;
 
       } catch (error) {
@@ -122,27 +89,15 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
-      console.log('🔄 [useCrmConversations] Calculating next page:', {
-        lastPageLength: lastPage.length,
-        pageSize: CONVERSATIONS_PAGE_SIZE,
-        allPagesCount: allPages.length
-      });
-
       // Si la última página trajo menos resultados que el tamaño de la página, no hay más.
       if (lastPage.length < CONVERSATIONS_PAGE_SIZE) {
-        console.log('🏁 [useCrmConversations] No more pages available');
         return undefined;
       }
       // Si no, pedimos la siguiente página.
       const nextPage = allPages.length + 1;
-      console.log('➡️ [useCrmConversations] Next page:', nextPage);
       return nextPage;
     },
     retry: (failureCount, error) => {
-      console.log('🔄 [useCrmConversations] Query retry attempt:', {
-        failureCount,
-        error: error instanceof Error ? error.message : error
-      });
       return failureCount < 3;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
