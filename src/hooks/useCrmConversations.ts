@@ -45,8 +45,9 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
           `
         );
 
-      // Filtros de conversación (ajustar a tu lógica)
+      // Filtros de conversación - CORREGIDO para excluir correctamente ML
       if (filter === "open") {
+        // Excluir explícitamente las preguntas de Mercado Libre del filtro "open"
         query = query
           .eq("conversation_status", "open")
           .neq("type", "mercadolibre_question");
@@ -56,11 +57,11 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
         query = query.or("conversation_status.eq.closed,type.eq.mercadolibre_question");
       }
       if (filter === "unanswered") {
+        // Excluir explícitamente las preguntas de Mercado Libre del filtro "unanswered"
         query = query
           .eq("conversation_status", "pending_response")
           .neq("type", "mercadolibre_question");
       }
-
 
       query = query.order("created_at", { ascending: false });
 
@@ -82,7 +83,9 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
           last_message: item.description || "",
           last_message_time: item.created_at,
           last_message_type: item.type,
-          unread_count: isMercadoLibre ? 0 : (item.is_read === false ? 1 : 0), // Las de ML no cuentan como no leídas
+          // CORREGIDO: Las preguntas de ML nunca deben mostrar contador de no leídas
+          unread_count: isMercadoLibre ? 0 : (item.is_read === false ? 1 : 0),
+          // CORREGIDO: Las preguntas de ML siempre se marcan como cerradas
           conversation_status: isMercadoLibre ? "closed" : (item.conversation_status || "open")
         };
       });
