@@ -23,6 +23,32 @@ export const useCrmDebugger = () => {
 
       console.log('✅ [CrmDebugger] User ID:', user.id);
 
+      // Check user's companies (as owner)
+      const { data: ownedCompanies, error: ownedCompaniesError } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (ownedCompaniesError) {
+        console.error('❌ [CrmDebugger] Owned companies error:', ownedCompaniesError);
+      } else {
+        console.log('🏢 [CrmDebugger] Owned companies:', ownedCompanies?.length || 0);
+        console.log('🏢 [CrmDebugger] Sample owned companies:', ownedCompanies?.slice(0, 3));
+      }
+
+      // Check user's company memberships
+      const { data: companyMemberships, error: membershipError } = await supabase
+        .from('company_users')
+        .select('*, companies(*)')
+        .eq('user_id', user.id);
+
+      if (membershipError) {
+        console.error('❌ [CrmDebugger] Company memberships error:', membershipError);
+      } else {
+        console.log('👔 [CrmDebugger] Company memberships:', companyMemberships?.length || 0);
+        console.log('👔 [CrmDebugger] Sample memberships:', companyMemberships?.slice(0, 3));
+      }
+
       // Check total interactions for this user
       const { data: interactions, error: interactionsError } = await supabase
         .from('interactions')
@@ -45,8 +71,8 @@ export const useCrmDebugger = () => {
       if (companiesError) {
         console.error('❌ [CrmDebugger] Companies error:', companiesError);
       } else {
-        console.log('🏢 [CrmDebugger] Total companies:', companies?.length || 0);
-        console.log('🏢 [CrmDebugger] Sample companies:', companies?.slice(0, 3));
+        console.log('🏢 [CrmDebugger] Total CRM companies:', companies?.length || 0);
+        console.log('🏢 [CrmDebugger] Sample CRM companies:', companies?.slice(0, 3));
       }
 
       // Check contacts for this user
@@ -84,12 +110,16 @@ export const useCrmDebugger = () => {
 
       return {
         user_id: user.id,
+        owned_companies_count: ownedCompanies?.length || 0,
+        company_memberships_count: companyMemberships?.length || 0,
         interactions_count: interactions?.length || 0,
         companies_count: companies?.length || 0,
         contacts_count: contacts?.length || 0,
         rpc_result: rpcData,
         rpc_error: rpcError,
-        sample_interaction: interactions?.[0] || null
+        sample_interaction: interactions?.[0] || null,
+        sample_owned_company: ownedCompanies?.[0] || null,
+        sample_membership: companyMemberships?.[0] || null
       };
     },
     staleTime: 0, // Always refetch
