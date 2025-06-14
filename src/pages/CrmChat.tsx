@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,14 +26,14 @@ const CrmChat = () => {
     setSelectedId(null);
   }, [filter]);
 
-  // Seleccionar la primera conversación si no hay ninguna seleccionada.
+  // Seleccionar la primera conversación si no hay ninguna seleccionada y la carga ha terminado.
   useEffect(() => {
-    if (!selectedId && conversations.length > 0) {
+    if (!isLoading && !selectedId && conversations.length > 0) {
       setSelectedId(conversations[0].id);
     }
-  }, [conversations, selectedId]);
+  }, [isLoading, conversations, selectedId]);
 
-  const selectedConversation = conversations.find(c => c.id === selectedId) || conversations[0];
+  const selectedConversation = conversations.find(c => c.id === selectedId);
   const isReadOnly = selectedConversation?.last_message_type === 'mercadolibre_question';
 
   return (
@@ -80,7 +81,7 @@ const CrmChat = () => {
             <ConversationsList
               conversations={conversations}
               isLoading={isLoading}
-              selectedId={selectedConversation?.id}
+              selectedId={selectedId}
               onSelect={id => setSelectedId(id)}
               fetchNextPage={fetchNextPage}
               hasNextPage={hasNextPage}
@@ -105,10 +106,15 @@ const CrmChat = () => {
           <div className="flex h-full items-center justify-center text-muted-foreground">
             {isLoading ? (
                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            ) : (
+            ) : conversations.length > 0 ? (
               <>
                 <Circle className="h-8 w-8" />
                 <span className="ml-2">Selecciona una conversación</span>
+              </>
+            ) : (
+              <>
+                <MessageSquare className="h-8 w-8" />
+                <span className="ml-2">No hay conversaciones en este filtro</span>
               </>
             )}
           </div>
