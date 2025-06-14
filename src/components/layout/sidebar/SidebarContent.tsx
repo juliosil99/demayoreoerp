@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Home, Users, Building2, Settings, HelpCircle, Plus, ListChecks, BarChartBig, KanbanSquare, FileText, UserPlus, CheckCheck, LucideIcon } from 'lucide-react';
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useUser } from '@/hooks/useUser';
 import { Button } from '@/components/ui/button';
 import {
   Accordion,
@@ -12,15 +12,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-
-// LOCAL fallback hook to get current user
-function useUser() {
-  const [user, setUser] = React.useState(null);
-  React.useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data?.user ?? null));
-  }, []);
-  return { user };
-}
 
 interface NavItem {
   href: string;
@@ -51,15 +42,12 @@ export const SidebarContent: React.FC = () => {
       if (!user) {
         throw new Error('User not authenticated');
       }
-      // Use "nombre" instead of "name"
+
       const { data, error } = await supabase
         .from('companies')
         .insert({
-          nombre: 'Nueva Empresa',
+          name: 'Nueva Empresa',
           user_id: user.id,
-          regimen_fiscal: '601',
-          rfc: 'XAXX010101000',
-          codigo_postal: '00000',
         })
         .select()
         .single();
@@ -68,6 +56,7 @@ export const SidebarContent: React.FC = () => {
         console.error('Error creating company:', error);
         throw error;
       }
+
       return data;
     },
     onSuccess: (data) => {
@@ -162,7 +151,7 @@ export const SidebarContent: React.FC = () => {
                 variant="ghost"
                 className="justify-start text-sm text-gray-400 hover:text-gray-100"
                 onClick={() => createCompanyMutation.mutate()}
-                disabled={createCompanyMutation.status === "pending"}
+                disabled={createCompanyMutation.isLoading}
               >
                 <Building2 className="w-4 h-4 mr-2" />
                 Nueva Empresa
@@ -171,7 +160,7 @@ export const SidebarContent: React.FC = () => {
                 variant="ghost"
                 className="justify-start text-sm text-gray-400 hover:text-gray-100"
                 onClick={() => createContactMutation.mutate()}
-                disabled={createContactMutation.status === "pending"}
+                disabled={createContactMutation.isLoading}
               >
                 <UserPlus className="w-4 h-4 mr-2" />
                 Nuevo Contacto

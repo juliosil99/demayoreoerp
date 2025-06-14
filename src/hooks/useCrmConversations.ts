@@ -14,37 +14,13 @@ export interface ConversationGroup {
   allInteractions: Interaction[];
 }
 
-function getKey(i: any) {
+function getKey(interaction: Interaction) {
+  // agrupamos por empresa, contacto y canal
   return [
-    i.company_id || "none",
-    i.contact_id || "none",
-    i.type || "generic"
+    interaction.company_id || "none",
+    interaction.contact_id || "none",
+    interaction.type || "generic"
   ].join("__");
-}
-
-// helper to sanitize `type`
-const allowedTypes: Interaction["type"][] = [
-  "email",
-  "invoice",
-  "call",
-  "meeting",
-  "note",
-  "task",
-  "sale",
-  "payment",
-  "mercadolibre_question"
-];
-function sanitizeInteraction(supabaseRow: any): Interaction {
-  const type =
-    allowedTypes.includes(supabaseRow.type)
-      ? supabaseRow.type
-      : allowedTypes.includes(String(supabaseRow.type))
-      ? (supabaseRow.type as Interaction["type"])
-      : "note";
-  return {
-    ...supabaseRow,
-    type,
-  };
 }
 
 export const useCrmConversations = () => {
@@ -60,9 +36,9 @@ export const useCrmConversations = () => {
 
       if (error) throw error;
 
+      // Agrupar por conversación
       const groups: Record<string, ConversationGroup> = {};
-      (data || []).forEach((rawI) => {
-        const i = sanitizeInteraction(rawI);
+      (data || []).forEach((i) => {
         const key = getKey(i);
         if (!groups[key]) {
           groups[key] = {
@@ -76,7 +52,9 @@ export const useCrmConversations = () => {
             allInteractions: [],
           };
         }
+        // siempre inserta por orden fecha descendente
         groups[key].allInteractions.push(i);
+        // primer registro es el más reciente
         if (groups[key].latest.interaction_date < i.interaction_date) {
           groups[key].latest = i;
         }
