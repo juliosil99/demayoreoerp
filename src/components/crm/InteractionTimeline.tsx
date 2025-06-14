@@ -82,6 +82,13 @@ export const InteractionTimeline = ({ interactions }: InteractionTimelineProps) 
       {interactions.map((interaction, index) => {
         const Icon = getInteractionIcon(interaction.type);
         const colorClass = getInteractionColor(interaction.type);
+        const metadata = interaction.metadata || {};
+
+        // Para mercadolibre_question usamos la pregunta original como subject principal
+        const isMLQuestion = interaction.type === 'mercadolibre_question';
+        const subject = isMLQuestion && metadata.original_question
+          ? metadata.original_question
+          : (interaction.subject || `${getTypeLabel(interaction.type)} sin título`);
         
         return (
           <div key={interaction.id} className="flex gap-4">
@@ -101,8 +108,9 @@ export const InteractionTimeline = ({ interactions }: InteractionTimelineProps) 
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium">
-                        {interaction.subject || `${getTypeLabel(interaction.type)} sin título`}
+                      {/* Mostrar subject principal (pregunta completa si es ML) */}
+                      <h4 className="font-medium" title={subject}>
+                        {subject}
                       </h4>
                       <Badge variant="secondary" className="text-xs">
                         {getTypeLabel(interaction.type)}
@@ -139,8 +147,8 @@ export const InteractionTimeline = ({ interactions }: InteractionTimelineProps) 
                         <div>Producto: {interaction.metadata.product_name}</div>
                       )}
                       
-                      {/* Metadata específica de MercadoLibre */}
-                      {interaction.type === 'mercadolibre_question' && (
+                      {/* Metadata específica de MercadoLibre - Eliminado "Pregunta" duplicada */}
+                      {isMLQuestion && (
                         <>
                           {interaction.metadata.platform && (
                             <div className="flex items-center gap-1 mb-1">
@@ -163,11 +171,7 @@ export const InteractionTimeline = ({ interactions }: InteractionTimelineProps) 
                               <span className="font-medium">Cliente:</span> {interaction.metadata.from_user_nickname}
                             </div>
                           )}
-                          {interaction.metadata.original_question && (
-                            <div className="mb-1 p-2 bg-gray-50 rounded">
-                              <span className="font-medium">Pregunta:</span> {interaction.metadata.original_question}
-                            </div>
-                          )}
+                          {/* Eliminado: Mostrar pregunta duplicada */}
                           {interaction.metadata.response_time_seconds && (
                             <div className="text-xs text-gray-500">
                               Respondido en {interaction.metadata.response_time_seconds}s

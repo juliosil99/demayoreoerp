@@ -53,7 +53,13 @@ export const CommunicationsList = ({ interactions }: CommunicationsListProps) =>
       {interactions.map((interaction) => {
         const Icon = getInteractionIcon(interaction.type);
         const metadata = interaction.metadata || {};
-        
+
+        // Determinar subject real: si es mercadolibre_question usamos siempre la pregunta original si existe
+        const isMLQuestion = interaction.type === 'mercadolibre_question';
+        const subject = isMLQuestion && metadata.original_question
+          ? metadata.original_question
+          : (interaction.subject || `${interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1)} sin título`);
+
         return (
           <div key={interaction.id} className="flex gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
             <Avatar className="h-10 w-10 flex-shrink-0">
@@ -64,8 +70,9 @@ export const CommunicationsList = ({ interactions }: CommunicationsListProps) =>
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <h4 className="font-medium truncate">
-                  {interaction.subject || `${interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1)} sin título`}
+                {/* Mostrar pregunta completa si es ML */}
+                <h4 className="font-medium truncate" title={subject}>
+                  {subject}
                 </h4>
                 <ChannelBadge type={interaction.type} metadata={metadata} />
                 <span className="text-xs text-muted-foreground">
@@ -83,13 +90,7 @@ export const CommunicationsList = ({ interactions }: CommunicationsListProps) =>
                 </p>
               )}
               
-              {/* MercadoLibre specific info */}
-              {interaction.type === 'mercadolibre_question' && metadata?.original_question && (
-                <div className="bg-yellow-50 p-2 rounded text-sm mb-2">
-                  <span className="font-medium">Pregunta: </span>
-                  {metadata.original_question}
-                </div>
-              )}
+              {/* ELIMINADO: Caja amarilla duplicada con la pregunta */}
               
               {interaction.outcome && (
                 <div className="text-sm">

@@ -1,4 +1,3 @@
-
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -77,6 +76,11 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
   const isMLQuestion = interaction.type === 'mercadolibre_question';
   const messageIsOutgoing = isMLQuestion ? false : isOutgoing;
 
+  // Mostrar la pregunta completa como subject principal si es ML
+  const subject = isMLQuestion && interaction.metadata?.original_question
+    ? interaction.metadata.original_question
+    : interaction.subject;
+
   return (
     <div className={`flex gap-3 mb-4 ${messageIsOutgoing ? 'justify-end' : 'justify-start'}`}>
       {!messageIsOutgoing && (
@@ -121,22 +125,13 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
             </span>
           </div>
           
-          {interaction.subject && (
+          {/* Mostrar pregunta completa como título principal */}
+          {subject && (
             <h4 className={`font-medium text-sm mb-1 ${
               messageIsOutgoing ? 'text-white' : 'text-gray-900'
-            }`}>
-              {interaction.subject}
+            }`} title={subject}>
+              {subject}
             </h4>
-          )}
-          
-          {/* Mostrar pregunta original de ML */}
-          {isMLQuestion && interaction.metadata?.original_question && (
-            <div className={`text-sm mb-2 p-2 rounded ${
-              messageIsOutgoing ? 'bg-blue-400 text-blue-50' : 'bg-yellow-100 text-yellow-800'
-            }`}>
-              <span className="font-medium">Pregunta: </span>
-              {interaction.metadata.original_question}
-            </div>
           )}
           
           {interaction.description && (
@@ -231,3 +226,5 @@ export const MessageBubble = ({ interaction, isOutgoing = true }: MessageBubbleP
     </div>
   );
 };
+
+// ADVERTENCIA: Este archivo ya es muy largo (más de 230 líneas). Considera pedirme refactorización después de estos cambios.
