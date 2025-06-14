@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { handleManualReconciliation } from "./download/manualReconciliationHandler";
 import { handleInvoiceRelations } from "./download/invoiceRelationsHandler";
+import { generateInvoicePdf } from "@/services/invoicePdfService";
 import type { DownloadProgress, Expense } from "./download/types";
 
 export function useInvoiceDownload() {
@@ -19,12 +20,12 @@ export function useInvoiceDownload() {
     setProgress({ current, total });
   };
 
-  const handleDownloadInvoice = async (expense: Expense) => {
+  const handleDownloadInvoice = async (expense: Expense, format: 'xml' | 'pdf' = 'xml') => {
     setIsDownloading(true);
     setDownloadLog([]);
     
     try {
-      logAction(`Starting download process for expense ID: ${expense.id}`);
+      logAction(`Starting ${format.toUpperCase()} download process for expense ID: ${expense.id}`);
       logAction(`Expense reconciliation type: ${expense.reconciliation_type || 'Not set'}`);
       logAction(`Expense has invoice relations: ${Boolean(expense.expense_invoice_relations?.length)}`);
       if (expense.expense_invoice_relations?.length) {
@@ -41,13 +42,13 @@ export function useInvoiceDownload() {
       }
       
       // Case 2: Regular invoice reconciliation through expense_invoice_relations
-      await handleInvoiceRelations(expense, logAction, updateProgress);
+      await handleInvoiceRelations(expense, logAction, updateProgress, format);
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logAction(`General error: ${errorMessage}`);
       console.error("Error downloading invoice:", error);
-      toast.error("Error al descargar la factura");
+      toast.error(`Error al descargar la ${format === 'pdf' ? 'factura en PDF' : 'factura'}`);
     } finally {
       setIsDownloading(false);
       setProgress({ current: 0, total: 0 });

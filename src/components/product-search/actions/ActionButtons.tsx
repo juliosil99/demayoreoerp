@@ -41,6 +41,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
     try {
       console.log(`Generating PDF for invoice ID: ${invoiceId}, RFC: ${issuerRfc}`);
       setGeneratingPdf(invoiceId);
+      // Use the same unified PDF service
       await generatePdf(invoiceId, issuerRfc);
     } catch (error) {
       console.error("Error in handleGeneratePdf:", error);

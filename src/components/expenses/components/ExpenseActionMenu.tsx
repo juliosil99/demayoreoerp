@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { MoreHorizontal, Pencil, Trash2, Download, Bug, FileX } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Download, Bug, FileX, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,6 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useInvoiceDownload } from "../hooks/useInvoiceDownload";
@@ -31,8 +34,8 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
   
   const invoiceCount = expense.expense_invoice_relations?.length || 0;
                       
-  const handleDownload = async () => {
-    console.log(`[ExpenseActionMenu] Initiating download for expense ID: ${expense.id}`);
+  const handleDownload = async (format: 'xml' | 'pdf') => {
+    console.log(`[ExpenseActionMenu] Initiating ${format.toUpperCase()} download for expense ID: ${expense.id}`);
     console.log(`[ExpenseActionMenu] Invoice count: ${invoiceCount}`);
     if (expense.expense_invoice_relations) {
       console.log(`[ExpenseActionMenu] Invoice relations details:`, 
@@ -44,7 +47,7 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
       );
     }
     
-    await handleDownloadInvoice(expense);
+    await handleDownloadInvoice(expense, format);
   };
 
   const progressPercentage = progress.total > 0 
@@ -66,15 +69,30 @@ export function ExpenseActionMenu({ expense, onEdit, onDelete }: ExpenseActionMe
             Editar
           </DropdownMenuItem>
           {hasInvoice && (
-            <DropdownMenuItem 
-              onClick={handleDownload}
-              disabled={isDownloading}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              {isDownloading ? "Descargando..." : invoiceCount > 1 
-                ? `Descargar ${invoiceCount} Facturas` 
-                : "Descargar Factura"}
-            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger disabled={isDownloading}>
+                <Download className="mr-2 h-4 w-4" />
+                {isDownloading ? "Descargando..." : invoiceCount > 1 
+                  ? `Descargar ${invoiceCount} Facturas` 
+                  : "Descargar Factura"}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem 
+                  onClick={() => handleDownload('xml')}
+                  disabled={isDownloading}
+                >
+                  <FileX className="mr-2 h-4 w-4" />
+                  Descargar XML
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleDownload('pdf')}
+                  disabled={isDownloading}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Generar PDF
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
           )}
           <DropdownMenuItem onSelect={onDelete}>
             <Trash2 className="mr-2 h-4 w-4" />

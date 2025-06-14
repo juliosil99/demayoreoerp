@@ -1,10 +1,8 @@
-
-import type { Database } from "@/integrations/supabase/types/base";
-
-export type Expense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string };
-  chart_of_accounts: { name: string; code: string };
-  contacts: { name: string } | null;
+export interface Expense {
+  id: string;
+  description: string;
+  reconciled?: boolean;
+  reconciliation_type?: string;
   expense_invoice_relations?: {
     invoice: {
       uuid: string;
@@ -14,17 +12,24 @@ export type Expense = Database['public']['Tables']['expenses']['Row'] & {
       content_type?: string;
     }
   }[];
-};
+  accounts_payable?: {
+    id: string;
+    client: {
+      name: string;
+    };
+  } | null;
+  contacts: { name: string; type?: string } | null;
+}
 
-export type DownloadItem = {
-  filePath: string;
-  fileName: string;
-  contentType?: string;
-  index: number;
-  total: number;
-};
+export type LogAction = (message: string) => void;
+export type ProgressUpdater = (current: number, total: number) => void;
 
-export type DownloadProgress = {
+export interface DownloadProgress {
   current: number;
   total: number;
-};
+}
+
+export interface DownloadTask {
+  id: string;
+  task: () => Promise<void>;
+}
