@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, useLayoutEffect } from 'react';
+
+import { useEffect, useRef, useState, useLayoutEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Building2, User } from 'lucide-react';
+import { MessageSquare, Building2, User, Loader2 } from 'lucide-react';
 import { useCrmInteractions } from '@/hooks/useCrmInteractions';
 import { useChatOperations } from '@/hooks/useChatOperations';
 import { MessageBubble } from './MessageBubble';
@@ -19,74 +20,113 @@ interface ChatViewProps {
 
 export const ChatView = ({ companyId, contactId, companyName, contactName, isReadOnly = false }: ChatViewProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [lastMessageCount, setLastMessageCount] = useState(0);
-  
-  const { data: interactions = [], isLoading } = useCrmInteractions(companyId, contactId);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const scrollHeightBeforeLoad = useRef(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  const { 
+    data, 
+    isLoading, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage 
+  } = useCrmInteractions(companyId, contactId);
+
   const { sendMessage, handleQuickAction, isTyping, isSending } = useChatOperations(companyId, contactId);
 
-  const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
-    messagesEndRef.current?.scrollIntoView({ behavior });
-  };
-
-  // Usamos useLayoutEffect para asegurar que el scroll ocurra después del renderizado del layout
-  useLayoutEffect(() => {
-    // Cuando se cargan mensajes (nuevos o al cambiar de chat), nos desplazamos
-    if (interactions.length > lastMessageCount) {
-      // Si es la carga inicial (lastMessageCount es 0), saltamos al final sin animación.
-      // Para mensajes nuevos, el scroll es suave.
-      const behavior = lastMessageCount === 0 ? 'auto' : 'smooth';
-      scrollToBottom(behavior);
-    }
-    // Actualizamos el contador después del check
-    if (interactions.length !== lastMessageCount) {
-      setLastMessageCount(interactions.length);
-    }
-  }, [interactions, lastMessageCount]);
-
-  // Scroll cuando aparece el indicador de typing
+  // Reset initial load state when chat context changes
   useEffect(() => {
-    if (isTyping) {
-      scrollToBottom();
+    setIsInitialLoad(true);
+    if(chatContainerRef.current) chatContainerRef.current.scrollTop = 0;
+  }, [companyId, contactId]);
+
+  // Observer to trigger fetching older messages
+  const loadMoreTriggerRef = useCallback(node => {
+    if (isLoading || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasNextPage) {
+        if (chatContainerRef.current) {
+          scrollHeightBeforeLoad.current = chatContainerRef.current.scrollHeight;
+        }
+        fetchNextPage();
+      }
+    });
+
+    if (node) observer.observe(node);
+
+    return () => {
+      if (node) observer.unobserve(node);
+    };
+  }, [hasNextPage, fetchNextPage, isLoading, isFetchingNextPage]);
+
+  // Effect for scroll management after render
+  useLayoutEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    if (scrollHeightBeforeLoad.current > 0) {
+      // Case 1: We just loaded older messages (scrolled up)
+      container.scrollTop = container.scrollHeight - scrollHeightBeforeLoad.current;
+      scrollHeightBeforeLoad.current = 0; // Reset
+    } else if (isInitialLoad && displayMessages.length > 0) {
+      // Case 2: Initial load of the chat
+      container.scrollTop = container.scrollHeight;
+      setIsInitialLoad(false);
     }
-  }, [isTyping]);
+  }, [isInitialLoad, companyId, contactId, data]);
+
+  // Effect for new messages at the bottom (typing, sent, or received)
+  useEffect(() => {
+    // Only scroll to bottom if we are not loading previous messages from the top
+    if (scrollHeightBeforeLoad.current === 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [isTyping, isSending, data]);
+
 
   const handleSendMessage = (data: Partial<InteractionFormData>) => {
     sendMessage(data);
   };
 
-  const displayMessages = interactions.flatMap((interaction: any) => {
-    if (interaction.type === 'mercadolibre_question') {
-      const question = {
-        ...interaction,
-        id: `${interaction.id}-question`,
-        isOutgoing: false,
-        description: null, // The answer is in the description, so we hide it here
-      };
+  const displayMessages = useMemo(() => {
+    if (!data?.pages) return [];
+    const interactions = data.pages.flat().reverse();
 
-      // If there is a description, it means we have an answer. Create a separate message for it.
-      if (interaction.description) {
-        const answer = {
+    return interactions.flatMap((interaction: any) => {
+      if (interaction.type === 'mercadolibre_question') {
+        const question = {
           ...interaction,
-          id: `${interaction.id}-answer`,
-          isOutgoing: true,
-          type: 'mercadolibre_answer', // Artificial type for our reply
-          subject: interaction.description, // The answer text becomes the main subject
-          description: null,
-          metadata: { // Only keep relevant metadata for the answer
-            response_time_seconds: interaction.metadata?.response_time_seconds,
-          }
+          id: `${interaction.id}-question`,
+          isOutgoing: false,
+          description: null, // The answer is in the description, so we hide it here
         };
-        return [question, answer];
+  
+        // If there is a description, it means we have an answer. Create a separate message for it.
+        if (interaction.description) {
+          const answer = {
+            ...interaction,
+            id: `${interaction.id}-answer`,
+            isOutgoing: true,
+            type: 'mercadolibre_answer', // Artificial type for our reply
+            subject: interaction.description, // The answer text becomes the main subject
+            description: null,
+            metadata: { // Only keep relevant metadata for the answer
+              response_time_seconds: interaction.metadata?.response_time_seconds,
+            }
+          };
+          return [question, answer];
+        }
+        
+        return [question];
       }
       
-      return [question];
-    }
-    
-    // All other interaction types are considered outgoing (from us)
-    return [{ ...interaction, isOutgoing: true }];
-  });
+      // All other interaction types are considered outgoing (from us)
+      return [{ ...interaction, isOutgoing: true }];
+    });
+  }, [data]);
 
-  if (isLoading) {
+  if (isLoading && isInitialLoad) {
     return (
       <Card className="h-full">
         <CardContent className="flex items-center justify-center h-96">
@@ -125,9 +165,19 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
-        {/* Messages Area - Ahora usa flex-1 para ocupar todo el espacio disponible */}
-        <div className="flex-1 p-4 overflow-y-auto">
-          {displayMessages.length === 0 ? (
+        {/* Messages Area */}
+        <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto">
+          {/* Loader for older messages */}
+          <div ref={loadMoreTriggerRef}>
+            {isFetchingNextPage && (
+              <div className="flex justify-center items-center p-4">
+                <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+                <span className="ml-2 text-muted-foreground">Cargando mensajes...</span>
+              </div>
+            )}
+          </div>
+          
+          {displayMessages.length === 0 && !isLoading ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-muted-foreground mb-2">

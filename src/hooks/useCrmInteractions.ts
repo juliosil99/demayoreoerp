@@ -1,5 +1,4 @@
-
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Interaction, InteractionFormData, RawInteractionData } from '@/types/crm';
 import { toast } from 'sonner';
@@ -53,36 +52,18 @@ const transformRawInteraction = (raw: RawInteractionData): Interaction => {
   };
 };
 
+const INTERACTIONS_PAGE_SIZE = 30;
+
 export const useCrmInteractions = (companyId?: string, contactId?: string) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['crm-interactions', companyId, contactId],
-    queryFn: async (): Promise<Interaction[]> => {
-      console.log('🔍 [useCrmInteractions] Starting fetch with filters:', { companyId, contactId });
-      
-      // Check if user is authenticated
+    queryFn: async ({ pageParam = 0 }): Promise<Interaction[]> => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('❌ [useCrmInteractions] No authenticated user found');
-        return [];
-      }
+      if (!user) return [];
 
-      console.log('✅ [useCrmInteractions] Authenticated user:', user.id);
+      const from = pageParam * INTERACTIONS_PAGE_SIZE;
+      const to = from + INTERACTIONS_PAGE_SIZE - 1;
 
-      // Debug: Check user's company relationships
-      const { data: userCompanies } = await supabase
-        .from('company_users')
-        .select('company_id, role')
-        .eq('user_id', user.id);
-      
-      const { data: ownedCompanies } = await supabase
-        .from('companies')
-        .select('id, nombre')
-        .eq('user_id', user.id);
-
-      console.log('🏢 [useCrmInteractions] User companies (as member):', userCompanies);
-      console.log('🏢 [useCrmInteractions] User companies (as owner):', ownedCompanies);
-
-      // Build query with optional filters
       let query = supabase
         .from('interactions')
         .select(`
@@ -98,77 +79,34 @@ export const useCrmInteractions = (companyId?: string, contactId?: string) => {
             user_id
           )
         `)
-        .order('interaction_date', { ascending: true });
+        .order('interaction_date', { ascending: false }) // Fetch newest first for pagination
+        .range(from, to);
 
-      // Apply optional filters
       if (companyId) {
-        console.log('🔍 [useCrmInteractions] Filtering by company_id:', companyId);
         query = query.eq('company_id', companyId);
       }
       if (contactId) {
-        console.log('🔍 [useCrmInteractions] Filtering by contact_id:', contactId);
         query = query.eq('contact_id', contactId);
       }
 
-      console.log('📡 [useCrmInteractions] Executing query...');
       const { data, error } = await query;
 
       if (error) {
-        console.error('❌ [useCrmInteractions] Query error:', error);
-        console.error('❌ [useCrmInteractions] Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('❌ [useCrmInteractions] Query error:', error.message);
         throw error;
       }
-
-      console.log('📊 [useCrmInteractions] Raw query result:', {
-        totalRecords: data?.length || 0,
-        firstRecord: data?.[0] || 'No records',
-        recordsPreview: data?.slice(0, 3).map(r => ({
-          id: r.id,
-          type: r.type,
-          user_id: r.user_id,
-          company_id: r.company_id,
-          subject: r.subject
-        })) || []
-      });
-
-      // Debug: Check if there are any interactions in the database at all
-      if (!data || data.length === 0) {
-        console.log('🔍 [useCrmInteractions] No data returned, checking total interactions in DB...');
-        const { data: totalInteractions, error: totalError } = await supabase
-          .from('interactions')
-          .select('id, user_id, type, subject')
-          .limit(5);
-        
-        if (totalError) {
-          console.error('❌ [useCrmInteractions] Error checking total interactions:', totalError);
-        } else {
-          console.log('📊 [useCrmInteractions] Total interactions in DB (sample):', totalInteractions);
-        }
-      }
       
-      // Transform raw data to proper Interaction type
       const transformedData = (data || []).map(transformRawInteraction);
-      
-      console.log('✅ [useCrmInteractions] Successfully transformed interactions:', {
-        originalCount: data?.length || 0,
-        transformedCount: transformedData.length,
-        sampleTransformed: transformedData.slice(0, 2).map(t => ({
-          id: t.id,
-          type: t.type,
-          subject: t.subject,
-          company: t.company?.name || 'No company',
-          contact: t.contact?.name || 'No contact'
-        }))
-      });
-      
       return transformedData;
     },
-    enabled: true, // Always enabled, let RLS handle authorization
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage || lastPage.length < INTERACTIONS_PAGE_SIZE) {
+        return undefined; // No more pages
+      }
+      return allPages.length; // The next page number
+    },
+    enabled: !!(companyId || contactId),
   });
 };
 
