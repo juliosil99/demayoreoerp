@@ -11,6 +11,7 @@ export type InvoiceFilters = {
   invoiceType: string;
   minAmount: string;
   maxAmount: string;
+  reconciliationStatus: string;
 };
 
 type InvoiceFiltersProps = {
@@ -59,6 +60,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
       invoiceType: "",
       minAmount: "",
       maxAmount: "",
+      reconciliationStatus: "all",
     });
   }, [onFilterChange]);
 
@@ -70,6 +72,7 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
   const activeFiltersCount = Object.entries(filters).filter(
     ([key, value]) => {
       if (key === 'search') return searchTerm !== "";
+      if (key === 'reconciliationStatus') return value !== "all";
       return value !== "" && value !== undefined;
     }
   ).length;

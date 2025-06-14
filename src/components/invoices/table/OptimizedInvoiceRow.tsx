@@ -1,7 +1,8 @@
 
 import React from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
-import { FileText, Check, X } from "lucide-react";
+import { FileText, Check, X, Link, Unlink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import type { Database } from "@/integrations/supabase/types";
 import { formatDate } from "@/utils/formatters";
 import { 
@@ -11,7 +12,9 @@ import {
 } from "@/utils/invoiceFormatters";
 import { InvoiceTypeBadge } from "@/components/invoices/InvoiceTypeBadge";
 
-type PartialInvoice = Partial<Database["public"]["Tables"]["invoices"]["Row"]>;
+type PartialInvoice = Partial<Database["public"]["Tables"]["invoices"]["Row"]> & { 
+  is_reconciled?: boolean;
+};
 
 interface OptimizedInvoiceRowProps {
   invoice: PartialInvoice;
@@ -22,6 +25,24 @@ export const OptimizedInvoiceRow: React.FC<OptimizedInvoiceRowProps> = ({ invoic
     if (status === 'completed') return <Check className="h-4 w-4 text-green-500" />;
     if (status === 'error') return <X className="h-4 w-4 text-red-500" />;
     return null;
+  };
+
+  const getReconciliationBadge = (isReconciled: boolean | undefined) => {
+    if (isReconciled) {
+      return (
+        <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">
+          <Link className="h-3 w-3 mr-1" />
+          Reconciliada
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-200">
+          <Unlink className="h-3 w-3 mr-1" />
+          Sin reconciliar
+        </Badge>
+      );
+    }
   };
 
   return (
@@ -68,6 +89,9 @@ export const OptimizedInvoiceRow: React.FC<OptimizedInvoiceRowProps> = ({ invoic
                  invoice.status === 'error' ? 'Error' : 
                  invoice.status}</span>
         </div>
+      </TableCell>
+      <TableCell>
+        {getReconciliationBadge(invoice.is_reconciled)}
       </TableCell>
     </TableRow>
   );
