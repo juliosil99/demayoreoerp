@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,18 +54,22 @@ export const useProductSearch = () => {
           query = query.lte("invoices.invoice_date", endDateStr);
         }
 
-        const { data, error } = await query.order('invoice_date', {
-          foreignTable: 'invoices',
-          ascending: false,
-        });
+        const { data, error } = await query;
 
         if (error) {
           console.error("Database error searching products:", error);
           throw error;
         }
 
-        console.log(`Found ${data?.length || 0} products matching "${searchQuery}"`);
-        return data as ProductSearchResult[];
+        // Sort results by invoice date (newest to oldest) on the client side
+        const sortedData = (data as ProductSearchResult[]).sort((a, b) => {
+          const dateA = new Date(a.invoice?.invoice_date || '');
+          const dateB = new Date(b.invoice?.invoice_date || '');
+          return dateB.getTime() - dateA.getTime(); // Descending order (newest first)
+        });
+
+        console.log(`Found ${sortedData?.length || 0} products matching "${searchQuery}" (sorted by date)`);
+        return sortedData;
       } catch (error) {
         console.error("Error searching products:", error);
         toast({
