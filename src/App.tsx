@@ -1,3 +1,4 @@
+
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -9,7 +10,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { PathBasedProtectedRoute } from "@/components/auth/PathBasedProtectedRoute";
 import { SmartRedirect } from "@/components/navigation/SmartRedirect";
 import { Layout } from "@/components/layout/Layout";
-import CrmChatPage from "@/pages/CrmChat";
 
 // Lazy load pages
 const Index = lazy(() => import("./pages/Index"));
@@ -111,8 +111,6 @@ function App() {
                     </Layout>
                   </PathBasedProtectedRoute>
                 } />
-
-                <Route path="/crm/chat" element={<CrmChatPage />} />
 
                 <Route path="/companies" element={
                   <PathBasedProtectedRoute>
