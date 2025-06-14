@@ -1515,10 +1515,13 @@ export type Database = {
         Row: {
           company_id: string | null
           contact_id: string | null
+          conversation_status: string | null
           created_at: string | null
           description: string | null
           id: string
           interaction_date: string | null
+          is_read: boolean | null
+          last_response_date: string | null
           metadata: Json | null
           next_follow_up: string | null
           outcome: string | null
@@ -1529,10 +1532,13 @@ export type Database = {
         Insert: {
           company_id?: string | null
           contact_id?: string | null
+          conversation_status?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           interaction_date?: string | null
+          is_read?: boolean | null
+          last_response_date?: string | null
           metadata?: Json | null
           next_follow_up?: string | null
           outcome?: string | null
@@ -1543,10 +1549,13 @@ export type Database = {
         Update: {
           company_id?: string | null
           contact_id?: string | null
+          conversation_status?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           interaction_date?: string | null
+          is_read?: boolean | null
+          last_response_date?: string | null
           metadata?: Json | null
           next_follow_up?: string | null
           outcome?: string | null
