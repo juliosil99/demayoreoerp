@@ -2,24 +2,23 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Building2, User, Circle } from "lucide-react";
+import { MessageSquare, Circle } from "lucide-react";
 import { ConversationsList } from "@/components/crm/chat/ConversationsList";
 import { ChatView } from "@/components/crm/chat/ChatView";
 import { useCrmConversations } from "@/hooks/useCrmConversations";
 
 const CrmChat = () => {
-  // Filtrado: "all" | "open" | "closed" | "unanswered"
   const [filter, setFilter] = useState<"all" | "open" | "closed" | "unanswered">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const { conversations, isLoading } = useCrmConversations({ filter });
+  const { data: conversations = [], isLoading } = useCrmConversations({ filter });
 
-  // Encontrar conversación abierta
+  // Encontrar conversación seleccionada (o la primera)
   const selectedConversation = conversations.find(c => c.id === selectedId) || conversations[0];
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-background">
-      {/* Lista de conversaciones (panel izquierdo) */}
+      {/* Lista de conversaciones */}
       <div className="w-full sm:w-96 border-r h-full flex flex-col">
         <Card className="h-full">
           <CardHeader className="border-b">
@@ -69,7 +68,7 @@ const CrmChat = () => {
         </Card>
       </div>
 
-      {/* Área de chat (panel derecho) */}
+      {/* Área de chat */}
       <div className="flex-1 flex flex-col h-full">
         {selectedConversation ? (
           <ChatView
@@ -77,7 +76,6 @@ const CrmChat = () => {
             contactId={selectedConversation.contact_id}
             companyName={selectedConversation.company_name}
             contactName={selectedConversation.contact_name}
-            conversationStatus={selectedConversation.conversation_status}
             key={selectedConversation.id}
           />
         ) : (
