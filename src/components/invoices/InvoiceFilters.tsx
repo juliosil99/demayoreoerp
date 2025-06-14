@@ -24,13 +24,34 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
 }) => {
   const [showFilters, setShowFilters] = useState(false);
 
-  // Memoize handlers to prevent them from being recreated on every render
+  // Debounced search to avoid too many requests
+  const [searchTerm, setSearchTerm] = useState(filters.search);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    // Set new timeout to update filters after 500ms
+    const newTimeout = setTimeout(() => {
+      onFilterChange({ ...filters, search: value });
+    }, 500);
+
+    setSearchTimeout(newTimeout);
+  }, [filters, onFilterChange, searchTimeout]);
+
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     onFilterChange({ ...filters, [name]: value });
   }, [filters, onFilterChange]);
 
   const clearFilters = useCallback(() => {
+    setSearchTerm("");
     onFilterChange({
       search: "",
       dateFrom: undefined,
@@ -45,17 +66,20 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
     setShowFilters(prevState => !prevState);
   }, []);
 
-  // Calculate active filters count once
-  const activeFiltersCount = Object.values(filters).filter(
-    (value) => value !== "" && value !== undefined
+  // Calculate active filters count
+  const activeFiltersCount = Object.entries(filters).filter(
+    ([key, value]) => {
+      if (key === 'search') return searchTerm !== "";
+      return value !== "" && value !== undefined;
+    }
   ).length;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <SearchInput 
-          value={filters.search} 
-          onChange={handleInputChange} 
+          value={searchTerm}
+          onChange={handleSearchChange} 
         />
         <FilterToggleButton 
           onClick={toggleFilters} 
