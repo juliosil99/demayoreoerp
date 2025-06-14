@@ -27,7 +27,7 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
   return useQuery({
     queryKey: ["crm-conversations", filter],
     queryFn: async (): Promise<CrmConversationPreview[]> => {
-      // Puedes modificar este query según convenga a tus tablas 
+      // Puedes modificar este query según convenga a tus tablas
       let query = supabase
         .from("interactions")
         .select(
@@ -46,11 +46,21 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
         );
 
       // Filtros de conversación (ajustar a tu lógica)
-      if (filter === "open") query = query.eq("conversation_status", "open");
-      if (filter === "closed") query = query.eq("conversation_status", "closed");
-      // Sin responder (pending_response o open con is_read=false)
-      // Aquí puedes personalizar según tus reglas de negocio
-      if (filter === "unanswered") query = query.eq("conversation_status", "pending_response");
+      if (filter === "open") {
+        query = query
+          .eq("conversation_status", "open")
+          .neq("type", "mercadolibre_question");
+      }
+      if (filter === "closed") {
+        // Incluye las marcadas como 'closed' Y también todas las de Mercado Libre
+        query = query.or("conversation_status.eq.closed,type.eq.mercadolibre_question");
+      }
+      if (filter === "unanswered") {
+        query = query
+          .eq("conversation_status", "pending_response")
+          .neq("type", "mercadolibre_question");
+      }
+
 
       query = query.order("created_at", { ascending: false });
 
@@ -72,7 +82,7 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
           last_message: item.description || "",
           last_message_time: item.created_at,
           last_message_type: item.type,
-          unread_count: item.is_read === false ? 1 : 0,
+          unread_count: isMercadoLibre ? 0 : (item.is_read === false ? 1 : 0), // Las de ML no cuentan como no leídas
           conversation_status: isMercadoLibre ? "closed" : (item.conversation_status || "open")
         };
       });
