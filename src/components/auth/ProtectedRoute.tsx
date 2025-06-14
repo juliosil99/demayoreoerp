@@ -8,7 +8,7 @@ import { Shield } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  permission: PermissionName;
+  permission?: PermissionName;
   fallback?: React.ReactNode;
 }
 
@@ -25,6 +25,12 @@ export function ProtectedRoute({ children, permission, fallback }: ProtectedRout
         </div>
       </div>
     );
+  }
+
+  // If no specific permission is required, render the children.
+  // Assumes that an authentication check has already happened higher up.
+  if (!permission) {
+    return <>{children}</>;
   }
 
   // Admins have access to everything

@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from 'react';
+import { Outlet } from 'react-router-dom';
 import { ProtectedSidebar } from './sidebar/ProtectedSidebar';
 import { Header } from './Header';
 import { Toaster } from "@/components/ui/toaster";
@@ -6,11 +8,7 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-export function Layout({ children }: LayoutProps) {
+export function Layout() {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
@@ -68,7 +66,7 @@ export function Layout({ children }: LayoutProps) {
         {/* Main content */}
         <main className="flex-1 min-h-0">
           <div className="p-2 md:p-6">
-            {children}
+            <Outlet />
           </div>
         </main>
       </div>
