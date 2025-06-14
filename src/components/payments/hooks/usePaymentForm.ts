@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Payment } from "../PaymentForm";
+import { formatDateForQuery } from "@/utils/dateUtils";
 
 export type PaymentFormData = {
   date: string;
@@ -33,7 +33,7 @@ export const usePaymentForm = ({ onSuccess, paymentToEdit }: UsePaymentFormProps
   
   // Initialize with isReturn field based on amount
   const initialFormData: PaymentFormData = {
-    date: paymentToEdit?.date || new Date().toISOString().split("T")[0],
+    date: paymentToEdit?.date || formatDateForQuery(new Date()),
     amount: paymentToEdit?.amount?.toString() || "",
     payment_method: paymentToEdit?.payment_method || "transfer",
     reference_number: paymentToEdit?.reference_number || "",
