@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -63,7 +62,7 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
           .neq("type", "mercadolibre_question");
       }
 
-      query = query.order("created_at", { ascending: false });
+      query = query.order("created_at", { ascending: true });
 
       const { data, error } = await query;
 
