@@ -9,7 +9,13 @@ import {
   Receipt,
   CreditCard,
   MessageSquare,
-  Send
+  Send,
+  HelpCircle,
+  ShieldAlert,
+  Shield,
+  Bot,
+  Wand2,
+  UserCheck
 } from 'lucide-react';
 
 export const getInteractionIcon = (type: string) => {
@@ -24,6 +30,12 @@ export const getInteractionIcon = (type: string) => {
     case 'payment': return CreditCard;
     case 'mercadolibre_question': return MessageSquare;
     case 'mercadolibre_answer': return Send;
+    case 'mercadolibre_purchase_inquiry': return HelpCircle;
+    case 'mercadolibre_claim_customer': return ShieldAlert;
+    case 'mercadolibre_claim_ml': return Shield;
+    case 'auto_response_pending': return Bot;
+    case 'auto_response_sent': return Wand2;
+    case 'escalated_to_human': return UserCheck;
     default: return FileText;
   }
 };
@@ -40,6 +52,12 @@ export const getInteractionColor = (type: string) => {
     case 'payment': return 'text-green-600 bg-green-50';
     case 'mercadolibre_question': return 'text-yellow-600 bg-yellow-50';
     case 'mercadolibre_answer': return 'text-blue-600 bg-blue-50';
+    case 'mercadolibre_purchase_inquiry': return 'text-cyan-600 bg-cyan-50';
+    case 'mercadolibre_claim_customer': return 'text-red-600 bg-red-50';
+    case 'mercadolibre_claim_ml': return 'text-orange-600 bg-orange-50';
+    case 'auto_response_pending': return 'text-gray-600 bg-gray-50';
+    case 'auto_response_sent': return 'text-indigo-600 bg-indigo-50';
+    case 'escalated_to_human': return 'text-pink-600 bg-pink-50';
     default: return 'text-gray-600 bg-gray-50';
   }
 };
@@ -56,6 +74,12 @@ export const getTypeLabel = (type: string) => {
     case 'payment': return 'Pago';
     case 'mercadolibre_question': return 'Pregunta ML';
     case 'mercadolibre_answer': return 'Respuesta ML';
+    case 'mercadolibre_purchase_inquiry': return 'Consulta Compra ML';
+    case 'mercadolibre_claim_customer': return 'Reclamo Cliente ML';
+    case 'mercadolibre_claim_ml': return 'Mensaje Reclamo ML';
+    case 'auto_response_pending': return 'Procesando Auto-Respuesta';
+    case 'auto_response_sent': return 'Respuesta Automática';
+    case 'escalated_to_human': return 'Escalado a Humano';
     default: return type;
   }
 };

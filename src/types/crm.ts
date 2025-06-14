@@ -1,4 +1,3 @@
-
 export interface Company {
   id: string;
   user_id: string;
@@ -18,6 +17,34 @@ export interface Company {
   created_at: string;
   updated_at: string;
 }
+
+export type InteractionType = 
+  | 'email' 
+  | 'call' 
+  | 'meeting' 
+  | 'note' 
+  | 'task' 
+  | 'sale' 
+  | 'invoice' 
+  | 'payment' 
+  | 'mercadolibre_question' 
+  | 'mercadolibre_answer'
+  | 'mercadolibre_purchase_inquiry'
+  | 'mercadolibre_claim_customer'
+  | 'mercadolibre_claim_ml'
+  | 'auto_response_pending'
+  | 'auto_response_sent'
+  | 'escalated_to_human';
+
+export type InteractionStatus = 
+  | 'open' 
+  | 'closed' 
+  | 'pending_response' 
+  | 'archived' 
+  | 'auto_processing' 
+  | 'auto_resolved' 
+  | 'needs_human_review' 
+  | 'escalated';
 
 export interface Contact {
   id: string;
@@ -49,7 +76,7 @@ export interface Interaction {
   user_id: string;
   company_id?: string;
   contact_id?: string;
-  type: 'email' | 'call' | 'meeting' | 'note' | 'task' | 'sale' | 'invoice' | 'payment' | 'mercadolibre_question' | 'mercadolibre_answer';
+  type: InteractionType;
   subject?: string;
   description?: string;
   interaction_date: string;
@@ -57,6 +84,7 @@ export interface Interaction {
   next_follow_up?: string;
   metadata: Record<string, any>;
   created_at: string;
+  conversation_status?: InteractionStatus;
   company?: Company;
   contact?: Contact;
 }
@@ -75,6 +103,7 @@ export interface RawInteractionData {
   next_follow_up?: string;
   metadata: any; // Json type from Supabase
   created_at: string;
+  conversation_status?: string; // Added field
   companies_crm?: {
     id: string;
     name: string;

@@ -1,17 +1,28 @@
+
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Interaction, InteractionFormData, RawInteractionData } from '@/types/crm';
+import { Interaction, InteractionFormData, RawInteractionData, InteractionType, InteractionStatus } from '@/types/crm';
 import { toast } from 'sonner';
 
 // Helper function to transform raw data to Interaction type
 const transformRawInteraction = (raw: RawInteractionData): Interaction => {
   // Safely cast type with validation
-  const validTypes: Interaction['type'][] = [
-    'email', 'call', 'meeting', 'note', 'task', 'sale', 'invoice', 'payment', 'mercadolibre_question'
+  const validTypes: InteractionType[] = [
+    'email', 'call', 'meeting', 'note', 'task', 'sale', 'invoice', 'payment', 'mercadolibre_question', 'mercadolibre_answer',
+    'mercadolibre_purchase_inquiry', 'mercadolibre_claim_customer', 'mercadolibre_claim_ml',
+    'auto_response_pending', 'auto_response_sent', 'escalated_to_human'
   ];
-  const type = validTypes.includes(raw.type as Interaction['type']) 
-    ? raw.type as Interaction['type'] 
+  const type = validTypes.includes(raw.type as InteractionType) 
+    ? raw.type as InteractionType 
     : 'note'; // Default fallback
+
+  const validStatuses: InteractionStatus[] = [
+    'open', 'closed', 'pending_response', 'archived', 'auto_processing', 
+    'auto_resolved', 'needs_human_review', 'escalated'
+  ];
+  const conversation_status = raw.conversation_status && validStatuses.includes(raw.conversation_status as InteractionStatus)
+    ? raw.conversation_status as InteractionStatus
+    : undefined;
 
   return {
     id: raw.id,
@@ -26,6 +37,7 @@ const transformRawInteraction = (raw: RawInteractionData): Interaction => {
     next_follow_up: raw.next_follow_up,
     metadata: (raw.metadata as Record<string, any>) || {},
     created_at: raw.created_at,
+    conversation_status,
     company: raw.companies_crm ? {
       id: raw.companies_crm.id,
       name: raw.companies_crm.name,
