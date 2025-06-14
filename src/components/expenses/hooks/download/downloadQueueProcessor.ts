@@ -1,63 +1,53 @@
 
 import { downloadInvoiceFile } from "@/utils/invoiceDownload";
 import { toast } from "sonner";
-import type { DownloadItem } from "./types";
+import type { DownloadTask } from "./types";
 
 export const processDownloadQueue = async (
-  items: DownloadItem[],
+  tasks: DownloadTask[],
   onLog: (message: string) => void,
   onProgressUpdate: (current: number, total: number) => void
 ): Promise<boolean> => {
-  onLog(`Starting download queue processing with ${items.length} items`);
-  const total = items.length;
+  onLog(`Starting download queue processing with ${tasks.length} tasks`);
+  const total = tasks.length;
   onProgressUpdate(0, total);
   
   let allSuccessful = true;
   
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
+  for (let i = 0; i < tasks.length; i++) {
+    const task = tasks[i];
     const currentIndex = i + 1;
     
-    onLog(`Processing download ${currentIndex}/${total}: ${item.fileName} (${item.filePath})`);
+    onLog(`Processing task ${currentIndex}/${total}: ${task.id}`);
     onProgressUpdate(currentIndex, total);
     
-    // Show progress toast for multiple files
+    // Show progress toast for multiple tasks
     if (total > 1) {
-      toast.info(`Descargando archivo ${currentIndex} de ${total}: ${item.fileName}`, {
+      toast.info(`Procesando tarea ${currentIndex} de ${total}`, {
         id: `download-progress-${i}`,
         duration: 3000,
       });
     }
     
     try {
-      // Download the file
-      onLog(`Calling downloadInvoiceFile for ${item.filePath}`);
-      const success = await downloadInvoiceFile(
-        item.filePath,
-        item.fileName,
-        item.contentType
-      );
-      
-      if (success) {
-        onLog(`Successfully downloaded file ${currentIndex}/${total}`);
-      } else {
-        onLog(`Failed to download file ${currentIndex}/${total}`);
-        allSuccessful = false;
-      }
+      // Execute the task
+      onLog(`Executing task ${task.id}`);
+      await task.task();
+      onLog(`Successfully completed task ${currentIndex}/${total}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      onLog(`Error downloading file ${currentIndex}/${total}: ${errorMessage}`);
+      onLog(`Error executing task ${currentIndex}/${total}: ${errorMessage}`);
       allSuccessful = false;
     }
     
-    // Add delay between downloads (only if there are more files)
-    if (i < items.length - 1) {
-      onLog(`Adding delay of 3 seconds between downloads (item ${currentIndex}/${total})`);
+    // Add delay between tasks (only if there are more tasks)
+    if (i < tasks.length - 1) {
+      onLog(`Adding delay of 3 seconds between tasks (task ${currentIndex}/${total})`);
       await new Promise(resolve => setTimeout(resolve, 3000));
-      onLog(`Delay completed, continuing to next download`);
+      onLog(`Delay completed, continuing to next task`);
     }
   }
   
-  onLog(`Download queue processing completed. All successful: ${allSuccessful}`);
+  onLog(`Task queue processing completed. All successful: ${allSuccessful}`);
   return allSuccessful;
 };

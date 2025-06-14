@@ -1,8 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { downloadInvoiceFile } from "@/utils/invoiceDownload";
 import { processDownloadQueue } from "./downloadQueueProcessor";
-import type { DownloadItem, Expense } from "./types";
+import type { DownloadTask, Expense } from "./types";
 
 export const handleManualReconciliation = async (
   expense: Expense, 
@@ -46,15 +47,26 @@ export const handleManualReconciliation = async (
     if (fileData) {
       onLog(`File data found: ${JSON.stringify(fileData)}`);
       
-      const downloadQueue: DownloadItem[] = [{
-        filePath: fileData.file_path,
-        fileName: fileData.filename.replace(/\.[^/.]+$/, ""), // Remove extension
-        contentType: fileData.content_type,
-        index: 1,
-        total: 1
+      const downloadTasks: DownloadTask[] = [{
+        id: `manual-file-${manualRec.file_id}`,
+        task: async () => {
+          onLog(`Downloading manual file: ${fileData.file_path}`);
+          const success = await downloadInvoiceFile(
+            fileData.file_path,
+            fileData.filename.replace(/\.[^/.]+$/, ""), // Remove extension
+            fileData.content_type
+          );
+          
+          if (!success) {
+            onLog(`Download failed for file: ${fileData.file_path}`);
+            throw new Error(`Failed to download file: ${fileData.filename}`);
+          }
+          
+          onLog(`Download completed successfully`);
+        }
       }];
       
-      const success = await processDownloadQueue(downloadQueue, onLog, onProgressUpdate);
+      const success = await processDownloadQueue(downloadTasks, onLog, onProgressUpdate);
       if (success) {
         toast.success("Archivo descargado correctamente");
         return true;
