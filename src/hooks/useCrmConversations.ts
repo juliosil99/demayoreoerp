@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -6,7 +7,7 @@ export type CrmConversationStatus = "open" | "closed" | "pending_response" | "ar
 
 // Estructura simplificada de una conversación agrupada
 export interface CrmConversationPreview {
-  id: string;
+  id: string; // Será el ID del grupo, ej: "comp_123-cont_456"
   company_id?: string;
   company_name?: string;
   contact_id?: string;
@@ -26,8 +27,8 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
   return useQuery({
     queryKey: ["crm-conversations", filter],
     queryFn: async (): Promise<CrmConversationPreview[]> => {
-      // Puedes modificar este query según convenga a tus tablas
-      let query = supabase
+      // 1. Obtener todas las interacciones, ordenadas por fecha de creación.
+      const { data, error } = await supabase
         .from("interactions")
         .select(
           `
@@ -42,52 +43,77 @@ export function useCrmConversations({ filter }: UseCrmConversationsOptions) {
             created_at,
             is_read
           `
-        );
-
-      // Filtros de conversación - CORREGIDO para excluir correctamente ML
-      if (filter === "open") {
-        // Excluir explícitamente las preguntas de Mercado Libre del filtro "open"
-        query = query
-          .eq("conversation_status", "open")
-          .neq("type", "mercadolibre_question");
-      }
-      if (filter === "closed") {
-        // Incluye las marcadas como 'closed' Y también todas las de Mercado Libre
-        query = query.or("conversation_status.eq.closed,type.eq.mercadolibre_question");
-      }
-      if (filter === "unanswered") {
-        // Excluir explícitamente las preguntas de Mercado Libre del filtro "unanswered"
-        query = query
-          .eq("conversation_status", "pending_response")
-          .neq("type", "mercadolibre_question");
-      }
-
-      query = query.order("created_at", { ascending: true });
-
-      const { data, error } = await query;
+        )
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
+      if (!data) return [];
 
-      // Agrupar: aquí cada interacción es una conversación,
-      // pero deberías agrupar por company_id+contact_id si hay varias
-      // (este mock asume que ya están agrupadas por backend)
-      return (data || []).map((item: any) => {
-        const isMercadoLibre = item.type === 'mercadolibre_question';
+      // 2. Agrupar interacciones en conversaciones únicas por cliente.
+      const conversationsMap = new Map<string, any[]>();
+      data.forEach((interaction) => {
+        // La clave de grupo es por compañía/contacto. Si no tiene, es una conversación individual.
+        const groupId =
+          interaction.company_id || interaction.contact_id
+            ? `comp_${interaction.company_id || 'none'}-cont_${interaction.contact_id || 'none'}`
+            : `int_${interaction.id}`;
+        
+        if (!conversationsMap.has(groupId)) {
+          conversationsMap.set(groupId, []);
+        }
+        conversationsMap.get(groupId)!.push(interaction);
+      });
+
+      // 3. Procesar cada grupo para crear una vista previa de la conversación.
+      const processedGroups = Array.from(conversationsMap.entries()).map(([groupId, group]) => {
+        const latestInteraction = group[group.length - 1]; // El último es el más reciente.
+        const containsML = group.some(i => i.type === 'mercadolibre_question');
+        
+        // Las conversaciones de ML no tienen "no leídos" y siempre están "cerradas".
+        const unread_count = containsML ? 0 : group.filter(i => i.is_read === false).length;
+        const effectiveStatus = containsML ? "closed" : (latestInteraction.conversation_status || "open");
+
         return {
-          id: item.id,
-          company_id: item.company_id,
-          company_name: item.company?.name ?? "",
-          contact_id: item.contact_id,
-          contact_name: item.contact?.name ?? "",
-          last_message: item.description || "",
-          last_message_time: item.created_at,
-          last_message_type: item.type,
-          // CORREGIDO: Las preguntas de ML nunca deben mostrar contador de no leídas
-          unread_count: isMercadoLibre ? 0 : (item.is_read === false ? 1 : 0),
-          // CORREGIDO: Las preguntas de ML siempre se marcan como cerradas
-          conversation_status: isMercadoLibre ? "closed" : (item.conversation_status || "open")
+          preview: {
+            id: groupId, // Usamos el ID del grupo para la selección en la UI.
+            company_id: latestInteraction.company_id,
+            company_name: latestInteraction.company?.name ?? "",
+            contact_id: latestInteraction.contact_id,
+            contact_name: latestInteraction.contact?.name ?? "",
+            last_message: latestInteraction.description || "",
+            last_message_time: latestInteraction.created_at,
+            last_message_type: latestInteraction.type,
+            unread_count,
+            conversation_status: effectiveStatus,
+          },
+          containsML
         };
       });
-    }
+
+      // 4. Aplicar filtros a las conversaciones ya agrupadas.
+      let filteredGroups = processedGroups;
+      if (filter !== "all") {
+        filteredGroups = processedGroups.filter(g => {
+          if (filter === 'open') {
+            return g.preview.conversation_status === 'open' && !g.containsML;
+          }
+          if (filter === 'closed') {
+            // El estado 'closed' ya incluye las conversaciones de ML.
+            return g.preview.conversation_status === 'closed';
+          }
+          if (filter === 'unanswered') {
+            return g.preview.conversation_status === 'pending_response' && !g.containsML;
+          }
+          return false;
+        });
+      }
+
+      // 5. Ordenar las conversaciones (más recientes arriba) y devolver el resultado.
+      const previews: CrmConversationPreview[] = filteredGroups
+        .map(g => g.preview)
+        .sort((a, b) => new Date(b.last_message_time).getTime() - new Date(a.last_message_time).getTime());
+
+      return previews;
+    },
   });
 }
