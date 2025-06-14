@@ -58,19 +58,19 @@ export const useOptimizedInvoices = ({
         .select('*', { count: 'exact' });
 
       // Apply search filter
-      if (filters.search.trim()) {
+      if (filters.search && filters.search.trim()) {
         const searchTerm = `%${filters.search.trim()}%`;
         query = query.or(`invoice_number.ilike.${searchTerm},issuer_name.ilike.${searchTerm},receiver_name.ilike.${searchTerm},uuid.ilike.${searchTerm}`);
       }
 
       // Apply issuer name filter
-      if (filters.issuerName.trim()) {
+      if (filters.issuerName && filters.issuerName.trim()) {
         const issuerTerm = `%${filters.issuerName.trim()}%`;
         query = query.ilike('issuer_name', issuerTerm);
       }
 
       // Apply receiver name filter
-      if (filters.receiverName.trim()) {
+      if (filters.receiverName && filters.receiverName.trim()) {
         const receiverTerm = `%${filters.receiverName.trim()}%`;
         query = query.ilike('receiver_name', receiverTerm);
       }
@@ -92,15 +92,15 @@ export const useOptimizedInvoices = ({
       }
 
       // Apply amount filters
-      if (filters.minAmount) {
-        const minAmount = parseFloat(filters.minAmount);
+      if (filters.minAmount && filters.minAmount.trim()) {
+        const minAmount = parseFloat(filters.minAmount.trim());
         if (!isNaN(minAmount)) {
           query = query.gte('total_amount', minAmount);
         }
       }
 
-      if (filters.maxAmount) {
-        const maxAmount = parseFloat(filters.maxAmount);
+      if (filters.maxAmount && filters.maxAmount.trim()) {
+        const maxAmount = parseFloat(filters.maxAmount.trim());
         if (!isNaN(maxAmount)) {
           query = query.lte('total_amount', maxAmount);
         }

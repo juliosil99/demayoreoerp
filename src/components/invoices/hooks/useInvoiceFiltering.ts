@@ -35,7 +35,7 @@ export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
     let results = [...invoices];
 
     // Apply search filter
-    if (filters.search) {
+    if (filters.search && filters.search.trim()) {
       const searchLower = filters.search.toLowerCase();
       results = results.filter(
         (invoice) =>
@@ -47,7 +47,7 @@ export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
     }
 
     // Apply issuer name filter
-    if (filters.issuerName) {
+    if (filters.issuerName && filters.issuerName.trim()) {
       const issuerLower = filters.issuerName.toLowerCase();
       results = results.filter(
         (invoice) => invoice.issuer_name && invoice.issuer_name.toLowerCase().includes(issuerLower)
@@ -55,7 +55,7 @@ export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
     }
 
     // Apply receiver name filter
-    if (filters.receiverName) {
+    if (filters.receiverName && filters.receiverName.trim()) {
       const receiverLower = filters.receiverName.toLowerCase();
       results = results.filter(
         (invoice) => invoice.receiver_name && invoice.receiver_name.toLowerCase().includes(receiverLower)
@@ -87,8 +87,8 @@ export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
     }
 
     // Apply amount filters
-    if (filters.minAmount) {
-      const minAmount = parseFloat(filters.minAmount);
+    if (filters.minAmount && filters.minAmount.trim()) {
+      const minAmount = parseFloat(filters.minAmount.trim());
       if (!isNaN(minAmount)) {
         results = results.filter(
           (invoice) => (invoice.total_amount || 0) >= minAmount
@@ -96,8 +96,8 @@ export const useInvoiceFiltering = (invoices: Invoice[] | null) => {
       }
     }
 
-    if (filters.maxAmount) {
-      const maxAmount = parseFloat(filters.maxAmount);
+    if (filters.maxAmount && filters.maxAmount.trim()) {
+      const maxAmount = parseFloat(filters.maxAmount.trim());
       if (!isNaN(maxAmount)) {
         results = results.filter(
           (invoice) => (invoice.total_amount || 0) <= maxAmount
