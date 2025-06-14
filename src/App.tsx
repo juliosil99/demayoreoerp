@@ -1,3 +1,4 @@
+
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -32,7 +33,6 @@ const ChartOfAccounts = lazy(() => import("./pages/ChartOfAccounts"));
 const Reports = lazy(() => import("./pages/Reports"));
 const CashFlowForecast = lazy(() => import("./pages/CashFlowForecast"));
 const ProductSearch = lazy(() => import("./pages/ProductSearch"));
-const PdfTemplates = lazy(() => import("./pages/PdfTemplates"));
 const UserManagement = lazy(() => import("./pages/UserManagement"));
 const CompanySetup = lazy(() => import("./pages/CompanySetup"));
 const SalesChannels = lazy(() => import("./pages/SalesChannels"));
@@ -278,16 +278,6 @@ function App() {
                     <Layout>
                       <Suspense fallback={<div>Loading...</div>}>
                         <ProductSearch />
-                      </Suspense>
-                    </Layout>
-                  </PathBasedProtectedRoute>
-                } />
-
-                <Route path="/pdf-templates" element={
-                  <PathBasedProtectedRoute>
-                    <Layout>
-                      <Suspense fallback={<div>Loading...</div>}>
-                        <PdfTemplates />
                       </Suspense>
                     </Layout>
                   </PathBasedProtectedRoute>

@@ -1,3 +1,4 @@
+
 import {
   Home,
   LayoutDashboard,
@@ -15,7 +16,6 @@ import {
   Calculator,
   TrendingUp,
   Search,
-  FileImage,
   Settings,
   ShoppingCart,
   Banknote,
@@ -88,12 +88,6 @@ const sidebarGroups: SidebarGroupType[] = [
         href: "/product-search",
         icon: Search,
         permission: "can_view_invoices" as PermissionName,
-      },
-      {
-        name: "Plantillas PDF",
-        href: "/pdf-templates",
-        icon: FileImage,
-        permission: "can_manage_invoices" as PermissionName,
       },
     ],
   },
