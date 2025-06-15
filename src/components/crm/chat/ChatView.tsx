@@ -1,15 +1,13 @@
 
 import { useEffect, useRef, useState, useLayoutEffect, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Building2, User, Loader2, ArrowLeft } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { useCrmInteractions } from '@/hooks/useCrmInteractions';
 import { useChatOperations } from '@/hooks/useChatOperations';
-import { MessageBubble } from './MessageBubble';
-import { QuickActions } from './QuickActions';
-import { ChatInput } from './ChatInput';
 import { InteractionFormData } from '@/types/crm';
-import { Button } from '@/components/ui/button';
+import { ChatHeader } from './ChatHeader';
+import { ChatLoading } from './ChatLoading';
+import { MessageList } from './MessageList';
+import { ChatFooter } from './ChatFooter';
 
 interface ChatViewProps {
   companyId?: string;
@@ -44,7 +42,7 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
   }, [companyId, contactId]);
 
   // Observer to trigger fetching older messages
-  const loadMoreTriggerRef = useCallback(node => {
+  const loadMoreTriggerRef = useCallback((node: HTMLDivElement | null) => {
     if (isLoading || isFetchingNextPage) return;
     if (observer.current) observer.current.disconnect();
 
@@ -127,124 +125,35 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
   }, [data]);
 
   if (isLoading && isInitialLoad) {
-    return (
-      <Card className="h-full">
-        <CardContent className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Cargando conversación...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <ChatLoading />;
   }
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="border-b bg-gray-50 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-1 text-lg truncate">
-            {onBack && (
-              <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden shrink-0 mr-2">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            )}
-            {onBack ? (
-              <span className="truncate">{contactName || companyName || 'Chat'}</span>
-            ) : (
-              <>
-                <MessageSquare className="h-5 w-5 text-blue-600" />
-                <span className="ml-1">Chat</span>
-              </>
-            )}
-          </CardTitle>
-          <div className="hidden md:flex items-center gap-2">
-            {companyName && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Building2 className="h-3 w-3" />
-                {companyName}
-              </Badge>
-            )}
-            {contactName && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <User className="h-3 w-3" />
-                {contactName}
-              </Badge>
-            )}
-          </div>
-        </div>
-      </CardHeader>
+      <ChatHeader 
+        onBack={onBack}
+        contactName={contactName}
+        companyName={companyName}
+      />
 
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
-        {/* Messages Area */}
-        <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto">
-          {/* Loader for older messages */}
-          <div ref={loadMoreTriggerRef}>
-            {isFetchingNextPage && (
-              <div className="flex justify-center items-center p-4">
-                <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
-                <span className="ml-2 text-muted-foreground">Cargando mensajes...</span>
-              </div>
-            )}
-          </div>
-          
-          {displayMessages.length === 0 && !isLoading ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                No hay conversaciones
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Inicia una conversación enviando un mensaje o usando las acciones rápidas
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {displayMessages.map((msg: any) => (
-                <MessageBubble
-                  key={msg.id}
-                  interaction={msg}
-                  isOutgoing={msg.isOutgoing}
-                />
-              ))}
-              
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </div>
-
-        {/* Controles fijos en la parte inferior */}
-        {!isReadOnly ? (
-          <div className="flex-shrink-0 border-t bg-white">
-            {/* Quick Actions */}
-            <div className="px-4 pt-3">
-              <QuickActions onQuickAction={handleQuickAction} />
-            </div>
-
-            {/* Chat Input */}
-            <ChatInput
-              onSendMessage={handleSendMessage}
-              disabled={isSending}
-              placeholder={`Escribe un mensaje${companyName ? ` para ${companyName}` : ''}...`}
-            />
-          </div>
-        ) : (
-          <div className="flex-shrink-0 p-4 border-t text-center text-sm text-muted-foreground bg-gray-50">
-            Esta conversación es de solo lectura.
-          </div>
-        )}
+        <MessageList
+          chatContainerRef={chatContainerRef}
+          loadMoreTriggerRef={loadMoreTriggerRef}
+          isFetchingNextPage={isFetchingNextPage}
+          displayMessages={displayMessages}
+          isLoading={isLoading}
+          isTyping={isTyping}
+          messagesEndRef={messagesEndRef}
+        />
+        
+        <ChatFooter 
+          isReadOnly={isReadOnly}
+          isSending={isSending}
+          companyName={companyName}
+          handleQuickAction={handleQuickAction}
+          handleSendMessage={handleSendMessage}
+        />
       </CardContent>
     </Card>
   );
