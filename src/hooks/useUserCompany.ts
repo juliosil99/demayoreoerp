@@ -10,6 +10,7 @@ export function useUserCompany() {
     queryKey: ["user-company", user?.id],
     queryFn: async () => {
       if (!user?.id) {
+        console.log('useUserCompany - No user ID available');
         return null;
       }
 
@@ -27,6 +28,8 @@ export function useUserCompany() {
         return companyUser.companies;
       }
 
+      console.log('useUserCompany - No company found in company_users, checking owned companies');
+
       // If not found, check if user owns a company
       const { data: ownedCompany, error: ownedCompanyError } = await supabase
         .from("companies")
@@ -40,6 +43,8 @@ export function useUserCompany() {
       }
 
       console.log('useUserCompany - No company found for user');
+      console.log('useUserCompany - Company user error:', companyUserError);
+      console.log('useUserCompany - Owned company error:', ownedCompanyError);
       return null;
     },
     enabled: !!user?.id,
