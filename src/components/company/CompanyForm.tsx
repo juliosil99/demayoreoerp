@@ -59,7 +59,6 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
           .select();
 
         if (error) {
-          console.error("Error updating company:", error);
           toast.error(error.code === '23505' 
             ? "El RFC ya está registrado en el sistema"
             : "Error al actualizar la información");
@@ -77,7 +76,6 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
           .select();
 
         if (error) {
-          console.error("Error creating company:", error);
           toast.error(error.code === '23505'
             ? "El RFC ya está registrado en el sistema"
             : "Error al guardar la información");
@@ -90,7 +88,7 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
       onSubmitSuccess?.();
       navigate("/dashboard");
     } catch (error) {
-      console.error("Unexpected error:", error);
+      // Silently catch
     } finally {
       setIsLoading(false);
     }
