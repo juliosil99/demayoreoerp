@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useExpenseForm } from "./hooks/useExpenseForm";
 import { useExpenseQueries } from "./hooks/useExpenseQueries";
@@ -45,10 +44,6 @@ export function ExpenseForm({ initialData, expenseData, onSuccess, onClose }: Ex
     hasRequiredData,
     errors 
   } = useExpenseQueries();
-
-  console.log("ExpenseForm render - isLoading:", isLoading);
-  console.log("ExpenseForm render - hasRequiredData:", hasRequiredData);
-  console.log("ExpenseForm render - missingData:", missingData);
 
   // Show loading state with details
   if (isLoading) {

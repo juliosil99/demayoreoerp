@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -29,8 +28,6 @@ export function useExpenseForm(initialExpense?: Expense, onSuccess?: () => void)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<ExpenseFormData>({...initialFormData});
   const [accountCurrency, setAccountCurrency] = useState<string>("MXN"); 
-
-  console.log("useExpenseForm initialized with onSuccess:", !!onSuccess);
 
   // Initialize form data if editing an existing expense
   useFormInitializer(initialExpense, setFormData, setAccountCurrency);
