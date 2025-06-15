@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -42,7 +41,6 @@ export const useOptimizedInvoices = ({
   const { data, isLoading, error } = useQuery({
     queryKey: ['optimized-invoices', page, itemsPerPage, filters],
     queryFn: async () => {
-      console.log(`Fetching invoices page ${page} with filters:`, filters);
       
       // First, get the list of reconciled invoice IDs if we need to filter by reconciliation status
       let reconciledInvoiceIds: number[] = [];
@@ -147,8 +145,6 @@ export const useOptimizedInvoices = ({
                               isManuallyReconciled ? 'manual' : null
         };
       }) || [];
-
-      console.log(`Fetched ${transformedInvoices.length} invoices out of ${count || 0} total`);
       
       return {
         invoices: transformedInvoices as (Partial<Invoice> & { 
