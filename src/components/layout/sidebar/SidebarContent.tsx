@@ -8,8 +8,8 @@ import { sidebarGroups } from "./sidebarConfig";
 import { filterGroupItems } from "./utils";
 import { SidebarContentProps } from "./types";
 
-export function SidebarContent({ isSuperAdmin }: SidebarContentProps) {
-  const { isAdmin } = useAuth();
+export function SidebarContent() {
+  const { isSuperAdmin } = useAuth();
   const { canAccess } = usePermissions();
   const location = useLocation();
 
