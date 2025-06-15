@@ -55,7 +55,6 @@ export function useExpenseQueries() {
       return data as BankAccount[];
     },
     enabled: !!(companyId && !isLoadingCompany),
-    initialData: [],
   });
 
   const { data: chartAccounts = [], isLoading: isLoadingChartAccounts, error: chartAccountsError } = useQuery<ChartAccount[], Error>({
@@ -83,7 +82,6 @@ export function useExpenseQueries() {
       return data as ChartAccount[];
     },
     enabled: !!userId,
-    initialData: [],
   });
 
   const { data: recipients = [], isLoading: isLoadingRecipients, error: recipientsError } = useQuery<Recipient[], Error>({
@@ -116,7 +114,6 @@ export function useExpenseQueries() {
       return mappedData;
     },
     enabled: !!userId,
-    initialData: [],
   });
 
   const isLoading = isLoadingCompany || isLoadingBankAccounts || isLoadingChartAccounts || isLoadingRecipients;
