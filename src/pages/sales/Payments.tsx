@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Container } from "@/components/ui/container";
 import { PaymentHeader } from "./components/PaymentHeader";
 import { PaymentsContent } from "./components/PaymentsContent";
@@ -36,7 +35,6 @@ function Payments() {
         filters={filters}
         onUpdateFilters={updateFilters}
         setPagination={setPagination}
-        onOpenAddPayment={handlers.handleFormOpen}
         onEdit={handlers.handleEdit}
         onDelete={handleDelete}
         onStatusUpdate={handleStatusUpdate}

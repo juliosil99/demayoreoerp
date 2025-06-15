@@ -1,7 +1,5 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
 import { PaymentTable } from "./PaymentTable";
 import { PaymentFilters } from "./PaymentFilters";
 import { PaymentPagination } from "./PaymentPagination";
@@ -13,7 +11,6 @@ interface PaymentsContentProps {
   filters: any;
   onUpdateFilters: (filters: any) => void;
   setPagination: (pagination: any) => void;
-  onOpenAddPayment: () => void;
   onEdit: (payment: any) => void;
   onDelete: (id: string) => void;
   onStatusUpdate: (id: string, status: 'confirmed' | 'pending') => void;
@@ -27,7 +24,6 @@ export function PaymentsContent({
   filters,
   onUpdateFilters,
   setPagination,
-  onOpenAddPayment,
   onEdit,
   onDelete,
   onStatusUpdate,
@@ -43,16 +39,12 @@ export function PaymentsContent({
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="flex justify-between mb-6">
+        <div className="mb-6">
           <PaymentFilters 
             filters={filters} 
             onChangeFilters={onUpdateFilters} 
             onToggleReconciled={showReconciledFilter}
           />
-          <Button onClick={onOpenAddPayment}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Nuevo Pago
-          </Button>
         </div>
 
         <PaymentTable 
