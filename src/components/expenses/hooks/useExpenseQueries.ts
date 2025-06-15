@@ -28,6 +28,20 @@ export function useExpenseQueries() {
   const userId = user?.id;
   const companyId = company?.id;
 
+  // DEBUG directo: sin filtro
+  const { data: bankAccountsDebug = [], error: bankAccountsDebugError } = useQuery({
+    queryKey: ["bankAccounts-DEBUG-ALL"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bank_accounts")
+        .select("*");
+      console.log("[DEBUG] bank_accounts (sin filtro company_id) - data:", data, "error:", error);
+      return data || [];
+    },
+    enabled: !!userId,
+    initialData: [],
+  });
+
   // LOG: Mostramos los datos actuales de usuario y empresa
   console.log("[useExpenseQueries] userId:", userId);
   console.log("[useExpenseQueries] companyId:", companyId);
