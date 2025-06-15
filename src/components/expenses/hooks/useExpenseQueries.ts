@@ -28,31 +28,10 @@ export function useExpenseQueries() {
   const userId = user?.id;
   const companyId = company?.id;
 
-  // DEBUG directo: sin filtro
-  const { data: bankAccountsDebug = [], error: bankAccountsDebugError } = useQuery({
-    queryKey: ["bankAccounts-DEBUG-ALL"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bank_accounts")
-        .select("*");
-      console.log("[DEBUG] bank_accounts (sin filtro company_id) - data:", data, "error:", error);
-      return data || [];
-    },
-    enabled: !!userId,
-    initialData: [],
-  });
-
-  // LOG: Mostramos los datos actuales de usuario y empresa
-  console.log("[useExpenseQueries] userId:", userId);
-  console.log("[useExpenseQueries] companyId:", companyId);
-  console.log("[useExpenseQueries] company data:", company);
-  console.log("[useExpenseQueries] Auth user object:", user);
-
   const { data: bankAccounts = [], isLoading: isLoadingBankAccounts, error: bankAccountsError } = useQuery<BankAccount[], Error>({
     queryKey: ["bankAccounts", companyId],
     queryFn: async () => {
       if (!companyId) {
-        console.log("[useExpenseQueries] No companyId, no se consultan cuentas bancarias");
         return [];
       }
 
@@ -61,9 +40,7 @@ export function useExpenseQueries() {
         .select("*")
         .eq("company_id", companyId);
 
-      console.log("[useExpenseQueries] bank_accounts - data:", data);
       if (error) {
-        console.error("[useExpenseQueries] ❌ Error en bank_accounts:", error);
         logError("Bank accounts query failed", error, "useExpenseQueries");
         throw error;
       }
@@ -77,7 +54,6 @@ export function useExpenseQueries() {
     queryKey: ["chartAccounts", userId],
     queryFn: async () => {
       if (!userId) {
-        console.log("[useExpenseQueries] No userId, no se consultan cuentas contables");
         return [];
       }
 
@@ -88,9 +64,7 @@ export function useExpenseQueries() {
         .in("account_type", ["expense", "asset", "liability"])
         .order('code');
 
-      console.log("[useExpenseQueries] chart_of_accounts - data:", data);
       if (error) {
-        console.error("[useExpenseQueries] ❌ Error en chart_of_accounts:", error);
         logError("Chart accounts query failed", error, "useExpenseQueries");
         throw error;
       }
@@ -104,7 +78,6 @@ export function useExpenseQueries() {
     queryKey: ["expenseRecipients", userId],
     queryFn: async () => {
       if (!userId) {
-        console.log("[useExpenseQueries] No userId, no se consultan destinatarios");
         return [];
       }
 
@@ -115,9 +88,7 @@ export function useExpenseQueries() {
         .in("type", ["supplier", "employee"])
         .order('name');
 
-      console.log("[useExpenseQueries] contacts (recipients) - data:", data);
       if (error) {
-        console.error("[useExpenseQueries] ❌ Error en recipients:", error);
         logError("Recipients query failed", error, "useExpenseQueries");
         throw error;
       }
@@ -131,11 +102,6 @@ export function useExpenseQueries() {
     enabled: !!userId,
     initialData: [],
   });
-
-  // LOG: Salida de datos
-  console.log("[useExpenseQueries] Final - bankAccounts:", bankAccounts, "error:", bankAccountsError);
-  console.log("[useExpenseQueries] Final - chartAccounts:", chartAccounts, "error:", chartAccountsError);
-  console.log("[useExpenseQueries] Final - recipients:", recipients, "error:", recipientsError);
 
   const isLoading = isLoadingCompany || isLoadingBankAccounts || isLoadingChartAccounts || isLoadingRecipients;
 
