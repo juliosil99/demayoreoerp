@@ -27,20 +27,21 @@ const MobileSidebarToggle = () => {
 
 function AppLayout() {
   return (
-    <div className="h-screen flex flex-col bg-background">
-      <Header>
-        <MobileSidebarToggle />
-      </Header>
-      
-      <div className="flex flex-1 overflow-hidden">
+    <div className="h-screen bg-background">
+      <div className="flex h-full">
         <ProtectedSidebar />
-        <main className="flex-1 min-h-0 overflow-y-auto">
-          <div className="p-2 md:p-6">
-            <Outlet />
-          </div>
-        </main>
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Header>
+            <MobileSidebarToggle />
+          </Header>
+          
+          <main className="flex-1 min-h-0 overflow-y-auto">
+            <div className="p-2 md:p-6">
+              <Outlet />
+            </div>
+          </main>
+        </div>
       </div>
-      
       <Toaster />
     </div>
   );
