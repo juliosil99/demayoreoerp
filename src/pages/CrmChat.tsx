@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Circle } from "lucide-react";
@@ -13,6 +14,7 @@ const CrmChat = () => {
   const [filter, setFilter] = useState<"all" | "open" | "closed" | "unanswered">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const [searchParams] = useSearchParams();
 
   const { 
     data, 
@@ -24,18 +26,32 @@ const CrmChat = () => {
 
   const conversations = data?.pages.flat() || [];
   
+  useEffect(() => {
+    // This handles selection from URL. It runs when the URL changes.
+    const conversationIdFromUrl = searchParams.get('conversation_id');
+    if (conversationIdFromUrl) {
+      setSelectedId(conversationIdFromUrl);
+    }
+  }, [searchParams]);
+
   // Resetear selección al cambiar el filtro para no mostrar un chat viejo.
   useEffect(() => {
-    setSelectedId(null);
-  }, [filter]);
+    // Don't reset if a conversation is specified in the URL.
+    if (!searchParams.has('conversation_id')) {
+      setSelectedId(null);
+    }
+  }, [filter, searchParams]);
 
   // Seleccionar la primera conversación si no hay ninguna seleccionada y la carga ha terminado.
   useEffect(() => {
-    if (!isMobile && !isLoading && !selectedId && conversations.length > 0) {
+    // Don't auto-select if a conversation is specified in the URL or already selected.
+    if (searchParams.has('conversation_id') || selectedId) return;
+
+    if (!isMobile && !isLoading && conversations.length > 0) {
       const firstConversationId = conversations[0].id;
       setSelectedId(firstConversationId);
     }
-  }, [isLoading, conversations, selectedId, isMobile]);
+  }, [isLoading, conversations, selectedId, isMobile, searchParams]);
 
   const selectedConversation = conversations.find(c => c.id === selectedId);
 

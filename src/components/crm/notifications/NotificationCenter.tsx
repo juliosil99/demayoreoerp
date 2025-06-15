@@ -5,19 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bell, BellRing, X, Clock, User, Target } from 'lucide-react';
+import { Bell, BellRing, X, Clock, User, Target, MessageSquare, AlertCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Tables } from '@/integrations/supabase/types';
+import { useNavigate } from 'react-router-dom';
 
-type Notification = Tables<'notifications'>;
+type Notification = Tables<'notifications'> & { related_id: string | null };
 
 export const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications'],
@@ -104,15 +106,31 @@ export const NotificationCenter = () => {
         return <Clock className="h-4 w-4 text-purple-500" />;
       case 'meeting_reminder':
         return <User className="h-4 w-4 text-green-500" />;
+      case 'mercadolibre_question':
+        return <MessageSquare className="h-4 w-4 text-yellow-500" />;
+      case 'conversation_needs_attention':
+        return <AlertCircle className="h-4 w-4 text-orange-500" />;
       default:
         return <Bell className="h-4 w-4" />;
+    }
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.is_read) {
+      markAsReadMutation.mutate(notification.id);
+    }
+
+    const crmNotificationTypes = ['mercadolibre_question', 'conversation_needs_attention'];
+    if (notification.related_id && crmNotificationTypes.includes(notification.type)) {
+      navigate(`/crm/chat?conversation_id=${notification.related_id}`);
+      setIsOpen(false);
     }
   };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
             <Badge 
@@ -169,11 +187,7 @@ export const NotificationCenter = () => {
                           ? 'bg-primary/5 border border-primary/20' 
                           : 'hover:bg-muted/50'
                       }`}
-                      onClick={() => {
-                        if (!notification.is_read) {
-                          markAsReadMutation.mutate(notification.id);
-                        }
-                      }}
+                      onClick={() => handleNotificationClick(notification)}
                     >
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5">

@@ -1,4 +1,3 @@
-
 import { Bell, Settings, LogOut, User, Building2, Palette, Sun, Moon, Laptop, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { NotificationCenter } from "@/components/crm/notifications";
 
 interface HeaderProps {
   children?: React.ReactNode;
@@ -103,9 +103,7 @@ export function Header({
           <h1 className="text-lg font-medium text-foreground">{companyName}</h1>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
-          <Button variant="ghost" size="icon" className="hidden md:inline-flex">
-            <Bell className="h-4 w-4" />
-          </Button>
+          <NotificationCenter />
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
