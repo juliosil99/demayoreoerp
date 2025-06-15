@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -66,26 +65,10 @@ export const ConversationsList = ({
 }: ConversationsListProps) => {
   const loadMoreRef = useRef<HTMLLIElement>(null);
 
-  console.log('📋 [ConversationsList] Component rendered with props:', {
-    conversationsCount: conversations.length,
-    isLoading,
-    selectedId,
-    hasNextPage,
-    isFetchingNextPage,
-    conversations: conversations.map(c => ({
-      id: c.id,
-      company_name: c.company_name,
-      contact_name: c.contact_name,
-      last_message: c.last_message?.substring(0, 30) + '...',
-      status: c.conversation_status
-    }))
-  });
-
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          console.log('🔄 [ConversationsList] Loading more conversations...');
           fetchNextPage();
         }
       },
@@ -105,7 +88,6 @@ export const ConversationsList = ({
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (isLoading) {
-    console.log('⏳ [ConversationsList] Showing loading state');
     return (
       <div className="py-4 space-y-2">
         {[...Array(10)].map((_, i) => (
@@ -116,7 +98,6 @@ export const ConversationsList = ({
   }
 
   if (conversations.length === 0) {
-    console.log('🕳️ [ConversationsList] No conversations to display');
     return (
       <div className="py-8 text-center text-muted-foreground">
         <MessageSquare className="mx-auto mb-2" />
@@ -125,22 +106,12 @@ export const ConversationsList = ({
     );
   }
 
-  console.log('📝 [ConversationsList] Rendering conversation list with', conversations.length, 'items');
-
   return (
     <div className="h-full overflow-y-auto">
       <ul>
-        {conversations.map((conv, index) => {
+        {conversations.map((conv) => {
           const statusProps = getStatusProps(conv);
           const timeAgo = formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: true, locale: es });
-
-          console.log(`📄 [ConversationsList] Rendering conversation ${index + 1}:`, {
-            id: conv.id,
-            company_name: conv.company_name,
-            contact_name: conv.contact_name,
-            isSelected: conv.id === selectedId,
-            status: conv.conversation_status
-          });
 
           return (
             <li
@@ -149,7 +120,6 @@ export const ConversationsList = ({
                 ${conv.id === selectedId ? "bg-muted" : "hover:bg-accent"}
               `}
               onClick={() => {
-                console.log('👆 [ConversationsList] Conversation clicked:', conv.id);
                 onSelect(conv.id);
               }}
             >
