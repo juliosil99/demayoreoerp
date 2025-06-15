@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { PlusIcon, ImportIcon } from "lucide-react";
 import { useState, useCallback } from "react";
@@ -154,6 +154,9 @@ export default function Expenses() {
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Agregar Nuevo Gasto</DialogTitle>
+                <DialogDescription>
+                  Completa los detalles para agregar un nuevo gasto al sistema.
+                </DialogDescription>
               </DialogHeader>
               <ExpenseForm 
                 onSuccess={handleSuccess} 

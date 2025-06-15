@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ExpenseActionMenu } from "./ExpenseActionMenu";
 import { ExpenseDeleteDialog } from "./ExpenseDeleteDialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Expense } from "./types";
@@ -57,6 +57,9 @@ export function ExpenseActions({
         <DialogContent className={`${isMobile ? "w-[95vw]" : "max-w-2xl"} max-h-[80vh] overflow-y-auto`}>
           <DialogHeader>
             <DialogTitle>Log de eliminación del gasto</DialogTitle>
+            <DialogDescription>
+              Aquí se muestran los detalles del proceso de eliminación del gasto.
+            </DialogDescription>
           </DialogHeader>
           <div className="mt-4 text-sm">
             <div className="bg-gray-100 p-4 rounded-md font-mono text-xs overflow-auto max-h-96">
@@ -78,3 +81,4 @@ export function ExpenseActions({
     </div>
   );
 }
+
