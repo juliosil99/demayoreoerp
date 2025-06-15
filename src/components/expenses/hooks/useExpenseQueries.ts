@@ -35,43 +35,6 @@ export function useExpenseQueries() {
   console.log("🏢 companyId:", companyId);
   console.log("⏳ isLoadingCompany:", isLoadingCompany);
 
-  // Test query: Count bank accounts for this company
-  const { data: bankAccountCount } = useQuery({
-    queryKey: ["bankAccountCount", companyId],
-    queryFn: async () => {
-      if (!companyId) return 0;
-      
-      console.log("🔍 TESTING: Counting bank accounts for company:", companyId);
-      const { count, error } = await supabase
-        .from("bank_accounts")
-        .select("*", { count: "exact", head: true })
-        .eq("company_id", companyId);
-        
-      console.log("🔍 BANK ACCOUNT COUNT RESULT:", { count, error });
-      return count || 0;
-    },
-    enabled: Boolean(companyId),
-  });
-
-  // Test query: Count chart accounts for this user
-  const { data: chartAccountCount } = useQuery({
-    queryKey: ["chartAccountCount", userId],
-    queryFn: async () => {
-      if (!userId) return 0;
-      
-      console.log("🔍 TESTING: Counting chart accounts for user:", userId);
-      const { count, error } = await supabase
-        .from("chart_of_accounts")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .in("account_type", ["expense", "asset", "liability"]);
-        
-      console.log("🔍 CHART ACCOUNT COUNT RESULT:", { count, error });
-      return count || 0;
-    },
-    enabled: Boolean(userId),
-  });
-
   // Actual bank accounts query (simplified)
   const { data: bankAccounts = [], isLoading: isLoadingBankAccounts, error: bankAccountsError } = useQuery<BankAccount[], Error>({
     queryKey: ["bankAccounts", companyId],
@@ -86,6 +49,11 @@ export function useExpenseQueries() {
         .from("bank_accounts")
         .select("*")
         .eq("company_id", companyId);
+        
+      console.log("🏦 BANK ACCOUNTS RESULT:", { 
+        data: data?.length || 0, 
+        error: error?.message 
+      });
         
       if (error) {
         console.error("❌ Bank accounts error:", error);
@@ -117,6 +85,11 @@ export function useExpenseQueries() {
         .in("account_type", ["expense", "asset", "liability"])
         .order('code');
         
+      console.log("📊 CHART ACCOUNTS RESULT:", { 
+        data: data?.length || 0, 
+        error: error?.message 
+      });
+        
       if (error) {
         console.error("❌ Chart accounts error:", error);
         logError("Chart accounts query failed", error, "useExpenseQueries");
@@ -146,6 +119,11 @@ export function useExpenseQueries() {
         .eq("user_id", userId)
         .in("type", ["supplier", "employee"])
         .order('name');
+        
+      console.log("👥 RECIPIENTS RESULT:", { 
+        data: data?.length || 0, 
+        error: error?.message 
+      });
         
       if (error) {
         console.error("❌ Recipients error:", error);
@@ -179,8 +157,8 @@ export function useExpenseQueries() {
   if (isLoadingRecipients) missingData.push("contactos");
 
   console.log("📋 SUMMARY:");
-  console.log("🏦 Bank accounts:", bankAccounts.length, "| Count test:", bankAccountCount);
-  console.log("📊 Chart accounts:", chartAccounts.length, "| Count test:", chartAccountCount);
+  console.log("🏦 Bank accounts:", bankAccounts.length);
+  console.log("📊 Chart accounts:", chartAccounts.length);
   console.log("👥 Recipients:", recipients.length);
   console.log("❌ Missing:", missingData);
 
