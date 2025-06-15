@@ -1,4 +1,3 @@
-
 import { BankAccountDialog } from "@/components/banking/BankAccountDialog";
 import { BankAccountsTable } from "@/components/banking/BankAccountsTable";
 import { BankingHeader } from "@/components/banking/BankingHeader";
@@ -29,14 +28,6 @@ export default function Banking() {
     userCompany,
   } = useBankAccounts();
 
-  // Log company information for debugging
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log("Banking page - user company:", userCompany);
-      console.log("Banking page - account count:", accounts?.length || 0);
-    }
-  }, [userCompany, accounts]);
-
   // Show error if no company is found
   if (!userCompany && !isLoadingAccounts) {
     return (
@@ -53,7 +44,6 @@ export default function Banking() {
   }
 
   if (accountsError) {
-    console.error("Banking page - accounts error:", accountsError);
     return (
       <div className="p-4">
         <Alert variant="destructive">

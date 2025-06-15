@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -28,8 +27,6 @@ export function useBankAccounts() {
   } = useQuery({
     queryKey: ["bank-accounts", userCompany?.id],
     queryFn: async () => {
-      console.log("Fetching bank accounts for company:", userCompany?.id);
-      
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*")
@@ -40,8 +37,6 @@ export function useBankAccounts() {
         console.error("Error fetching bank accounts:", error);
         throw error;
       }
-      
-      console.log("Fetched bank accounts:", data);
       
       // Convert the type string to AccountType and ensure currency is of type AccountCurrency
       return data.map(account => ({
