@@ -1,3 +1,4 @@
+
 import { BanknoteIcon, CreditCard, Pencil, Trash2, FileBarChart, FileText, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,8 +24,6 @@ interface BankAccountsTableProps {
 }
 
 export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTableProps) {
-  console.log('BankAccountsTable rendering with accounts:', accounts);
-  
   const navigate = useNavigate();
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [statementsDialogOpen, setStatementsDialogOpen] = useState(false);
@@ -92,8 +91,6 @@ export function BankAccountsTable({ accounts, onEdit, onDelete }: BankAccountsTa
         </TableHeader>
         <TableBody>
           {accounts?.map((account) => {
-            console.log('Rendering account row:', { id: account.id, type: account.type, name: account.name });
-            
             // Define ease-of-use booleans
             const isCredit = account.type === "Credit Card" || account.type === "Credit Simple";
             const canShowCalendar = isCredit;
