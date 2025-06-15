@@ -40,9 +40,9 @@ export function TriggerStatusAlert({
 
   if (!triggerStatus.hasPaymentTrigger || !triggerStatus.hasSalesTrigger) {
     return (
-      <Alert variant="warning">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
+      <Alert variant="default" className="border-yellow-200 bg-yellow-50">
+        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+        <AlertDescription className="text-yellow-800">
           Advertencia: La configuración de reconciliación automática no está completa.
           {!triggerStatus.hasPaymentTrigger && " Falta el trigger para actualizaciones de pagos."}
           {!triggerStatus.hasSalesTrigger && " Falta el trigger para actualizaciones de ventas."}
@@ -55,9 +55,9 @@ export function TriggerStatusAlert({
   }
 
   return (
-    <Alert variant="success" className="bg-green-50 border-green-200">
-      <CheckCircle2 className="h-4 w-4 text-green-500" />
-      <AlertDescription className="text-green-700">
+    <Alert variant="default" className="border-green-200 bg-green-50">
+      <CheckCircle2 className="h-4 w-4 text-green-600" />
+      <AlertDescription className="text-green-800">
         La configuración de reconciliación automática está completa y funcionando correctamente.
         {triggerStatus.usedFallback && " (Verificado mediante método alternativo)"}
       </AlertDescription>
