@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -110,6 +109,7 @@ export function usePaymentsQuery() {
 
       // Get paginated data
       const { data, error } = await query
+        .order('date', { ascending: false })
         .order('created_at', { ascending: false })
         .range(from, to);
 
