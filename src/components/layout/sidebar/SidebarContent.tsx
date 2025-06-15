@@ -6,17 +6,16 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useLocation } from "react-router-dom";
 import { sidebarGroups } from "./sidebarConfig";
 import { filterGroupItems } from "./utils";
-import { SidebarContentProps } from "./types";
 
 export function SidebarContent() {
-  const { isSuperAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const { canAccess } = usePermissions();
   const location = useLocation();
 
   return (
     <div className="flex flex-col gap-2">
       {sidebarGroups.map((group) => {
-        const filteredItems = filterGroupItems(group.items, isSuperAdmin, canAccess);
+        const filteredItems = filterGroupItems(group.items, isAdmin, canAccess);
         
         if (filteredItems.length === 0) {
           return null;

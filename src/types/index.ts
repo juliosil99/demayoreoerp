@@ -8,7 +8,3 @@ export interface MainNavItem {
   icon: LucideIcon;
   permission?: PermissionName;
 }
-
-export interface SidebarContentProps {
-  isSuperAdmin?: boolean;
-}
