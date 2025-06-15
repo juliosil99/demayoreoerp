@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState, useLayoutEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +22,7 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const scrollHeightBeforeLoad = useRef(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const observer = useRef<IntersectionObserver>();
 
   const { 
     data, 
@@ -43,8 +43,9 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
   // Observer to trigger fetching older messages
   const loadMoreTriggerRef = useCallback(node => {
     if (isLoading || isFetchingNextPage) return;
+    if (observer.current) observer.current.disconnect();
 
-    const observer = new IntersectionObserver(entries => {
+    observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasNextPage) {
         if (chatContainerRef.current) {
           scrollHeightBeforeLoad.current = chatContainerRef.current.scrollHeight;
@@ -53,11 +54,7 @@ export const ChatView = ({ companyId, contactId, companyName, contactName, isRea
       }
     });
 
-    if (node) observer.observe(node);
-
-    return () => {
-      if (node) observer.unobserve(node);
-    };
+    if (node) observer.current.observe(node);
   }, [hasNextPage, fetchNextPage, isLoading, isFetchingNextPage]);
 
   // Effect for scroll management after render
