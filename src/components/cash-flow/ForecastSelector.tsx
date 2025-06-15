@@ -30,17 +30,6 @@ export function ForecastSelector({
   onForecastChange,
   isMobile = false
 }: ForecastSelectorProps) {
-  console.log("[DEBUG] ForecastSelector - Render with props:", {
-    forecastsCount: forecasts?.length,
-    selectedForecastId,
-    forecastStatus: forecast?.status,
-    isLoading,
-    isGenerating,
-  });
-  
-  const showGenerateButton = selectedForecastId && forecast?.status !== 'draft';
-  console.log("[DEBUG] ForecastSelector - Should show Generate button:", showGenerateButton);
-  
   if (isLoading) {
     return <Skeleton className={`h-10 ${isMobile ? 'w-full' : 'w-[300px]'}`} />;
   }

@@ -25,15 +25,6 @@ export function GenerateForecastDialog({
   onClose,
   onGenerate
 }: GenerateForecastDialogProps) {
-  console.log("[DEBUG] GenerateForecastDialog - Render with balances:", {
-    isOpen,
-    isLoading,
-    availableCashBalance: historicalDataCount.availableCashBalance,
-    creditLiabilities: historicalDataCount.creditLiabilities,
-    netPosition: historicalDataCount.netPosition,
-    forecast
-  });
-  
   const isMobile = useIsMobile();
   
   // State for forecast options
@@ -75,12 +66,6 @@ export function GenerateForecastDialog({
   }, [isOpen, needsBalanceReconciliation]);
   
   const handleGenerate = () => {
-    console.log("[DEBUG] GenerateForecastDialog - Generating forecast with options:", {
-      ...options,
-      reconcileBalances,
-      availableCashBalance: historicalDataCount.availableCashBalance
-    });
-    
     onGenerate({
       ...options,
       reconcileBalances,

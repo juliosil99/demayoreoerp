@@ -23,12 +23,6 @@ export function ForecastHeader({
   selectedForecastId,
   isMobile = false
 }: ForecastHeaderProps) {
-  console.log("[DEBUG] ForecastHeader - Render with props:", {
-    forecastId: selectedForecastId,
-    forecastStatus: forecast?.status,
-    isGenerating
-  });
-  
   // Determine if the forecast needs to be updated
   const needsUpdate = React.useMemo(() => {
     if (!forecast || !forecast.last_reconciled_date) return true;
@@ -60,7 +54,6 @@ export function ForecastHeader({
                 <Button 
                   variant={needsUpdate ? "default" : "outline"} 
                   onClick={() => {
-                    console.log("[DEBUG] ForecastHeader - Update forecast button clicked");
                     onGenerateForecastClick();
                   }}
                   disabled={isGenerating}
@@ -84,7 +77,6 @@ export function ForecastHeader({
         {!selectedForecastId && (
           <Button 
             onClick={() => {
-              console.log("[DEBUG] ForecastHeader - New forecast button clicked");
               onCreateForecastClick();
             }}
             className={isMobile ? "text-xs px-2 py-1" : ""}
