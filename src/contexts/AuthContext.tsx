@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAdminStatus = async (userId: string) => {
     try {
-      console.log('👑 Checking admin status for user:', userId);
       const { data, error } = await supabase
         .rpc('is_admin', { user_id: userId });
       
@@ -33,7 +31,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       const adminStatus = !!data;
-      console.log('👑 Admin status result:', adminStatus);
       setIsAdmin(adminStatus);
       
     } catch (error) {
@@ -43,12 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   React.useEffect(() => {
-    console.log('🔐 AuthProvider - Setting up auth state listener');
-    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔐 Initial session:', !!session, session?.user?.id);
-      
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -60,8 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state change:', event, !!session, session?.user?.id);
-      
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -73,7 +64,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Si la sesión existe pero no hay token de actualización, cerrar sesión
       if (session && !session.refresh_token) {
-        console.log('⚠️ Session without refresh token, signing out');
         await supabase.auth.signOut();
         setSession(null);
         setUser(null);
@@ -82,13 +72,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
-      console.log('🔐 AuthProvider - Cleaning up auth listener');
       subscription.unsubscribe();
     };
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    console.log('🔑 Attempting sign in for:', email);
     const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -99,8 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
     
-    console.log('✅ Sign in successful:', data.user?.id);
-    
     // Verificar que tenemos un token de actualización válido
     if (!data.session?.refresh_token) {
       console.error('❌ No refresh token received');
@@ -109,7 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    console.log('📝 Attempting sign up for:', email);
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -121,17 +106,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('❌ Sign up error:', error);
       throw error;
     }
-    console.log('✅ Sign up successful');
   };
 
   const signOut = async () => {
-    console.log('🚪 Attempting sign out');
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('❌ Sign out error:', error);
       throw error;
     }
-    console.log('✅ Sign out successful');
     setSession(null);
     setUser(null);
     setIsAdmin(false);
@@ -139,7 +121,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateEmail = async (newEmail: string) => {
     try {
-      console.log('📧 Updating email to:', newEmail);
       const { error } = await supabase.auth.updateUser({ 
         email: newEmail,
       });
@@ -149,7 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      console.log('✅ Email update successful');
       toast.success("Se ha enviado un enlace de confirmación a tu nuevo correo electrónico");
     } catch (error: any) {
       console.error('💥 Email update exception:', error);
