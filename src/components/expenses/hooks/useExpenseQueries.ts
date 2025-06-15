@@ -30,54 +30,61 @@ export function useExpenseQueries() {
   const userId = user?.id;
   const companyId = company?.id;
 
-  console.log("🔍 EXPENSE QUERIES - Simple Debug");
+  console.log("🔍 EXPENSE QUERIES - Detailed Debug");
   console.log("📧 userId:", userId);
   console.log("🏢 companyId:", companyId);
   console.log("⏳ isLoadingCompany:", isLoadingCompany);
 
-  // Actual bank accounts query (simplified)
+  // Bank accounts query with detailed logging
   const { data: bankAccounts = [], isLoading: isLoadingBankAccounts, error: bankAccountsError } = useQuery<BankAccount[], Error>({
     queryKey: ["bankAccounts", companyId],
     queryFn: async () => {
       if (!companyId) {
-        console.log("❌ No companyId for bank accounts");
+        console.log("❌ BANK ACCOUNTS: No companyId provided");
         return [];
       }
       
-      console.log("🏦 Fetching bank accounts for company:", companyId);
+      console.log("🏦 BANK ACCOUNTS: Starting query for company:", companyId);
+      
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*")
         .eq("company_id", companyId);
         
-      console.log("🏦 BANK ACCOUNTS RESULT:", { 
-        data: data?.length || 0, 
-        error: error?.message 
-      });
-        
+      console.log("🏦 BANK ACCOUNTS QUERY RESULT:");
+      console.log("  - Raw data:", data);
+      console.log("  - Error:", error);
+      console.log("  - Data length:", data?.length || 0);
+      
       if (error) {
-        console.error("❌ Bank accounts error:", error);
+        console.error("❌ BANK ACCOUNTS ERROR DETAILS:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         logError("Bank accounts query failed", error, "useExpenseQueries");
         throw error;
       }
       
-      console.log("✅ Bank accounts fetched:", data?.length || 0);
+      console.log("✅ BANK ACCOUNTS: Query completed successfully, returning", data?.length || 0, "accounts");
       return data as BankAccount[];
     },
     enabled: Boolean(companyId && !isLoadingCompany && userId),
     initialData: [],
   });
 
-  // Chart accounts query (simplified)
+  // Chart accounts query with detailed logging
   const { data: chartAccounts = [], isLoading: isLoadingChartAccounts, error: chartAccountsError } = useQuery<ChartAccount[], Error>({
     queryKey: ["chartAccounts", userId],
     queryFn: async () => {
       if (!userId) {
-        console.log("❌ No userId for chart accounts");
+        console.log("❌ CHART ACCOUNTS: No userId provided");
         return [];
       }
       
-      console.log("📊 Fetching chart accounts for user:", userId);
+      console.log("📊 CHART ACCOUNTS: Starting query for user:", userId);
+      
       const { data, error } = await supabase
         .from("chart_of_accounts")
         .select("*")
@@ -85,34 +92,40 @@ export function useExpenseQueries() {
         .in("account_type", ["expense", "asset", "liability"])
         .order('code');
         
-      console.log("📊 CHART ACCOUNTS RESULT:", { 
-        data: data?.length || 0, 
-        error: error?.message 
-      });
-        
+      console.log("📊 CHART ACCOUNTS QUERY RESULT:");
+      console.log("  - Raw data:", data);
+      console.log("  - Error:", error);
+      console.log("  - Data length:", data?.length || 0);
+      
       if (error) {
-        console.error("❌ Chart accounts error:", error);
+        console.error("❌ CHART ACCOUNTS ERROR DETAILS:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         logError("Chart accounts query failed", error, "useExpenseQueries");
         throw error;
       }
       
-      console.log("✅ Chart accounts fetched:", data?.length || 0);
+      console.log("✅ CHART ACCOUNTS: Query completed successfully, returning", data?.length || 0, "accounts");
       return data as ChartAccount[];
     },
     enabled: Boolean(userId),
     initialData: [],
   });
 
-  // Recipients query (simplified)
+  // Recipients query with detailed logging
   const { data: recipients = [], isLoading: isLoadingRecipients, error: recipientsError } = useQuery<Recipient[], Error>({
     queryKey: ["expenseRecipients", userId],
     queryFn: async () => {
       if (!userId) {
-        console.log("❌ No userId for recipients");
+        console.log("❌ RECIPIENTS: No userId provided");
         return [];
       }
       
-      console.log("👥 Fetching recipients for user:", userId);
+      console.log("👥 RECIPIENTS: Starting query for user:", userId);
+      
       const { data, error } = await supabase
         .from("contacts")
         .select("id, name, type, rfc")
@@ -120,13 +133,18 @@ export function useExpenseQueries() {
         .in("type", ["supplier", "employee"])
         .order('name');
         
-      console.log("👥 RECIPIENTS RESULT:", { 
-        data: data?.length || 0, 
-        error: error?.message 
-      });
+      console.log("👥 RECIPIENTS QUERY RESULT:");
+      console.log("  - Raw data:", data);
+      console.log("  - Error:", error);
+      console.log("  - Data length:", data?.length || 0);
         
       if (error) {
-        console.error("❌ Recipients error:", error);
+        console.error("❌ RECIPIENTS ERROR DETAILS:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         logError("Recipients query failed", error, "useExpenseQueries");
         throw error;
       }
@@ -136,7 +154,7 @@ export function useExpenseQueries() {
         id: String(recipient.id)
       })) : [];
       
-      console.log("✅ Recipients fetched:", mappedData.length);
+      console.log("✅ RECIPIENTS: Query completed successfully, returning", mappedData.length, "recipients");
       return mappedData;
     },
     enabled: Boolean(userId),
@@ -156,7 +174,7 @@ export function useExpenseQueries() {
   if (chartAccounts.length === 0 && !isLoadingChartAccounts && userId) missingData.push("cuentas contables configuradas");
   if (isLoadingRecipients) missingData.push("contactos");
 
-  console.log("📋 SUMMARY:");
+  console.log("📋 FINAL SUMMARY:");
   console.log("🏦 Bank accounts:", bankAccounts.length);
   console.log("📊 Chart accounts:", chartAccounts.length);
   console.log("👥 Recipients:", recipients.length);
