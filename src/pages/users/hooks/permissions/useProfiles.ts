@@ -9,16 +9,21 @@ export function useProfiles() {
   const { user } = useAuth();
   const currentUserId = user?.id;
 
-  const { 
-    data: profiles, 
+  const {
+    data: profiles,
     isLoading,
     error,
     refetch
   } = useQuery({
-    queryKey: ["profiles"],
+    queryKey: ["profiles", currentUserId],
     queryFn: async () => {
+      // PREVENIR llamada inválida
+      if (!currentUserId) {
+        return [];
+      }
+
       console.log("🔍 Obteniendo perfiles...");
-      
+
       // Paso 1: Obtener todos los perfiles
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
@@ -30,9 +35,9 @@ export function useProfiles() {
         toast.error("Error al cargar perfiles: " + profilesError.message);
         throw profilesError;
       }
-      
+
       console.log("✅ Perfiles obtenidos:", profilesData);
-      
+
       // Filtrar duplicados basados en email (mantener el más reciente)
       const uniqueProfiles = profilesData.reduce((acc: any[], profile) => {
         const existing = acc.find(p => p.email === profile.email && profile.email);
@@ -47,7 +52,7 @@ export function useProfiles() {
         }
         return acc;
       }, []);
-      
+
       // Paso 2: Obtener todas las relaciones company_users e invitaciones para incluir usuarios sin perfiles completos
       const { data: companyUsersData, error: companyUsersError } = await supabase
         .from("company_users")
@@ -86,24 +91,24 @@ export function useProfiles() {
         Array.from(allUserIds).map(async (userId) => {
           // Buscar perfil existente
           let profile = uniqueProfiles.find(p => p.id === userId);
-          
+
           if (!profile) {
             // Para usuarios en company_users pero no en profiles, crear placeholder
             console.log(`⚠️ Perfil no encontrado para usuario ${userId}, creando placeholder`);
-            
+
             // Intentar obtener email de invitaciones completadas para este usuario
             const companyUser = companyUsersData?.find(cu => cu.user_id === userId);
             let emailFromInvitation = null;
-            
+
             // Si encontramos el usuario en company_users, buscar su email en invitaciones
             if (companyUser) {
               // Buscar en invitaciones completadas que puedan corresponder a este usuario
-              const matchingInvitation = invitationsData?.find(inv => 
+              const matchingInvitation = invitationsData?.find(inv =>
                 completedInvitationEmails.has(inv.email)
               );
               emailFromInvitation = matchingInvitation?.email || null;
             }
-            
+
             profile = {
               id: userId,
               email: emailFromInvitation,
@@ -132,23 +137,24 @@ export function useProfiles() {
               }
             }
           }
-          
+
           // Obtener información de la empresa desde company_users
           const companyUser = companyUsersData?.find(cu => cu.user_id === userId);
-          
+
           return {
             ...profile,
             company: companyUser?.company || null
           };
         })
       );
-      
+
       console.log("✅ Perfiles con información de empresa:", profilesWithCompany);
       return profilesWithCompany as Profile[];
     },
     retry: 1,
     retryDelay: 1000,
     staleTime: 5000,
+    enabled: !!currentUserId, // <-- Esto previene consultas con id undefined
   });
 
   return { profiles, isLoading, currentUserId, error, refetch };
