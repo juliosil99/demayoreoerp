@@ -10,8 +10,11 @@ export function useUserCompany() {
     queryKey: ["user-company", user?.id],
     queryFn: async () => {
       if (!user?.id) {
+        console.log('useUserCompany - No user ID available');
         return null;
       }
+
+      console.log('useUserCompany - Getting company for user:', user.id);
 
       // First check if user is in company_users table
       const { data: companyUser, error: companyUserError } = await supabase
@@ -21,10 +24,13 @@ export function useUserCompany() {
         .single();
 
       if (!companyUserError && companyUser) {
+        console.log('useUserCompany - Found company via company_users:', companyUser.companies);
         return companyUser.companies;
       }
 
-      // If not in company_users, check if they own a company directly
+      console.log('useUserCompany - No company found in company_users, checking owned companies');
+
+      // If not found, check if user owns a company
       const { data: ownedCompany, error: ownedCompanyError } = await supabase
         .from("companies")
         .select("*")
@@ -32,12 +38,17 @@ export function useUserCompany() {
         .single();
 
       if (!ownedCompanyError && ownedCompany) {
+        console.log('useUserCompany - Found owned company:', ownedCompany);
         return ownedCompany;
       }
 
+      console.log('useUserCompany - No company found for user');
+      console.log('useUserCompany - Company user error:', companyUserError);
+      console.log('useUserCompany - Owned company error:', ownedCompanyError);
       return null;
     },
     enabled: !!user?.id,
     staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: 1
   });
 }
