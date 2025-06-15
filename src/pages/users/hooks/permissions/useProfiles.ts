@@ -22,8 +22,6 @@ export function useProfiles() {
         return [];
       }
 
-      console.log("🔍 Obteniendo perfiles...");
-
       // Paso 1: Obtener todos los perfiles
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
@@ -31,12 +29,9 @@ export function useProfiles() {
         .order('created_at', { ascending: false });
 
       if (profilesError) {
-        console.error("❌ Error obteniendo perfiles:", profilesError);
         toast.error("Error al cargar perfiles: " + profilesError.message);
         throw profilesError;
       }
-
-      console.log("✅ Perfiles obtenidos:", profilesData);
 
       // Filtrar duplicados basados en email (mantener el más reciente)
       const uniqueProfiles = profilesData.reduce((acc: any[], profile) => {
@@ -63,7 +58,7 @@ export function useProfiles() {
         `);
 
       if (companyUsersError) {
-        console.error("❌ Error obteniendo usuarios de empresa:", companyUsersError);
+        // Silently fail for now
       }
 
       // Paso 3: Obtener invitaciones para correlacionar emails con usuarios sin perfil
@@ -73,7 +68,7 @@ export function useProfiles() {
         .eq("status", "completed");
 
       if (invitationsError) {
-        console.error("❌ Error obteniendo invitaciones:", invitationsError);
+        // Silently fail for now
       }
 
       // Paso 4: Crear un mapa de emails completados
@@ -94,7 +89,6 @@ export function useProfiles() {
 
           if (!profile) {
             // Para usuarios en company_users pero no en profiles, crear placeholder
-            console.log(`⚠️ Perfil no encontrado para usuario ${userId}, creando placeholder`);
 
             // Intentar obtener email de invitaciones completadas para este usuario
             const companyUser = companyUsersData?.find(cu => cu.user_id === userId);
@@ -119,7 +113,6 @@ export function useProfiles() {
 
             // Si tenemos email, intentar actualizar el perfil en la base de datos
             if (emailFromInvitation) {
-              console.log(`📝 Actualizando perfil con email para usuario ${userId}:`, emailFromInvitation);
               const { error: updateError } = await supabase
                 .from("profiles")
                 .upsert({
@@ -130,9 +123,8 @@ export function useProfiles() {
                 });
 
               if (updateError) {
-                console.error("❌ Error actualizando perfil:", updateError);
+                // Silently fail
               } else {
-                console.log("✅ Perfil actualizado con email");
                 profile.email = emailFromInvitation;
               }
             }
@@ -148,7 +140,6 @@ export function useProfiles() {
         })
       );
 
-      console.log("✅ Perfiles con información de empresa:", profilesWithCompany);
       return profilesWithCompany as Profile[];
     },
     retry: 1,

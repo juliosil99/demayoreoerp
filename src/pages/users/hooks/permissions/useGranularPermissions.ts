@@ -49,13 +49,10 @@ export function useGranularPermissions() {
   } = useQuery({
     queryKey: ["users-with-permissions"],
     queryFn: async () => {
-      console.log("🔍 Obteniendo usuarios con permisos granulares...");
-      
       try {
         // Paso 1: Obtener el usuario actual para determinar su empresa
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) {
-          console.error("❌ Error obteniendo usuario actual:", userError);
           throw userError;
         }
 
@@ -67,7 +64,6 @@ export function useGranularPermissions() {
           .single();
 
         if (companyError) {
-          console.error("❌ Error obteniendo empresa del usuario actual:", companyError);
           throw new Error("No se pudo obtener la empresa del usuario actual");
         }
 
@@ -78,7 +74,6 @@ export function useGranularPermissions() {
           .eq("company_id", currentUserCompany.company_id);
 
         if (companyUsersError) {
-          console.error("❌ Error obteniendo usuarios de la empresa:", companyUsersError);
           throw companyUsersError;
         }
 
@@ -90,7 +85,6 @@ export function useGranularPermissions() {
           .single();
 
         if (companyInfoError) {
-          console.error("❌ Error obteniendo información de la empresa:", companyInfoError);
           throw companyInfoError;
         }
 
@@ -103,11 +97,8 @@ export function useGranularPermissions() {
           .order('created_at', { ascending: false });
 
         if (profilesError) {
-          console.error("❌ Error obteniendo perfiles:", profilesError);
           throw profilesError;
         }
-
-        console.log("✅ Perfiles obtenidos:", profiles);
 
         // Paso 6: Obtener permisos para todos los usuarios
         const { data: permissions, error: permissionsError } = await supabase
@@ -116,11 +107,8 @@ export function useGranularPermissions() {
           .in("user_id", userIds);
 
         if (permissionsError) {
-          console.error("❌ Error obteniendo permisos:", permissionsError);
           throw permissionsError;
         }
-
-        console.log("✅ Permisos obtenidos:", permissions);
 
         // Paso 7: Combinar datos
         const usersWithPermissions: UserWithPermissions[] = profiles.map(profile => {
@@ -150,11 +138,9 @@ export function useGranularPermissions() {
           };
         });
 
-        console.log("✅ Usuarios con permisos combinados:", usersWithPermissions);
         return usersWithPermissions;
 
       } catch (error: any) {
-        console.error("❌ Error en la consulta de permisos granulares:", error);
         throw new Error(`Error al cargar permisos: ${error.message || 'Error desconocido'}`);
       }
     },
@@ -165,8 +151,6 @@ export function useGranularPermissions() {
 
   const updateUserPermission = async (userId: string, permissionName: string, canAccess: boolean) => {
     try {
-      console.log(`🔄 Actualizando permiso ${permissionName} para usuario ${userId}: ${canAccess}`);
-      
       const { error } = await supabase
         .from("user_permissions")
         .upsert({
@@ -179,18 +163,14 @@ export function useGranularPermissions() {
         });
 
       if (error) {
-        console.error("❌ Error actualizando permiso:", error);
         throw error;
       }
-
-      console.log("✅ Permiso actualizado exitosamente");
       
       // Invalidar cache para refrescar datos
       queryClient.invalidateQueries({ queryKey: ["users-with-permissions"] });
       
       toast.success(`Permiso ${permissionName} actualizado`);
     } catch (error: any) {
-      console.error("❌ Error en updateUserPermission:", error);
       toast.error("Error al actualizar permiso: " + error.message);
       throw error;
     }
@@ -198,8 +178,6 @@ export function useGranularPermissions() {
 
   const updateUserRole = async (userId: string, role: 'admin' | 'user') => {
     try {
-      console.log(`🔄 Actualizando rol para usuario ${userId}: ${role}`);
-      
       // Primero obtener la empresa del usuario actual
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
@@ -211,7 +189,6 @@ export function useGranularPermissions() {
         .single();
 
       if (companyError) {
-        console.error("❌ Error obteniendo empresa del usuario actual:", companyError);
         throw companyError;
       }
 
@@ -223,7 +200,6 @@ export function useGranularPermissions() {
         .eq("company_id", currentUserCompany.company_id);
 
       if (error) {
-        console.error("❌ Error actualizando rol:", error);
         throw error;
       }
 
@@ -244,15 +220,12 @@ export function useGranularPermissions() {
 
         await Promise.all(updatePromises);
       }
-
-      console.log("✅ Rol actualizado exitosamente");
       
       // Invalidar cache para refrescar datos
       queryClient.invalidateQueries({ queryKey: ["users-with-permissions"] });
       
       toast.success(`Rol actualizado a ${role === 'admin' ? 'Administrador' : 'Usuario'}`);
     } catch (error: any) {
-      console.error("❌ Error en updateUserRole:", error);
       toast.error("Error al actualizar rol: " + error.message);
       throw error;
     }

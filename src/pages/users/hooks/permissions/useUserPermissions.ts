@@ -27,7 +27,6 @@ export function useUserPermissions() {
 
   useEffect(() => {
     if (profiles) {
-      console.log("Building simplified user permissions map...");
       const permissionsMap: { [key: string]: UserPermissions } = {};
       
       // Initialize with all users
@@ -43,7 +42,6 @@ export function useUserPermissions() {
         };
       });
 
-      console.log("Simplified permissions map built:", permissionsMap);
       setUserPermissions(permissionsMap);
     }
   }, [profiles, companyUsers]);
@@ -52,7 +50,6 @@ export function useUserPermissions() {
   const error = profilesError || companyUsersError;
   
   const refetchData = () => {
-    console.log("Refetching all user data...");
     refetchProfiles();
     refetchCompanyUsers();
   };

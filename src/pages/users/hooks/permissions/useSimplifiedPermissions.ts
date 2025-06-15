@@ -26,7 +26,6 @@ export function useSimplifiedPermissions() {
 
   useEffect(() => {
     if (profiles && companyUsers) {
-      console.log("Building simplified user permissions map...");
       const permissionsMap: { [key: string]: UserPermissions } = {};
       
       // Filter out potential duplicates by email and ensure unique entries
@@ -60,7 +59,6 @@ export function useSimplifiedPermissions() {
         };
       });
 
-      console.log("Simplified permissions map built:", permissionsMap);
       setUserPermissions(permissionsMap);
     }
   }, [profiles, companyUsers]);
@@ -69,7 +67,6 @@ export function useSimplifiedPermissions() {
   const error = profilesError || companyUsersError;
   
   const refetchData = () => {
-    console.log("Refetching all user data...");
     refetchProfiles();
     refetchCompanyUsers();
   };
