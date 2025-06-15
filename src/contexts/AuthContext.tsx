@@ -47,13 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔐 Initial session:', {
-        hasSession: !!session,
-        userId: session?.user?.id,
-        userEmail: session?.user?.email,
-        accessToken: session?.access_token ? 'present' : 'missing',
-        refreshToken: session?.refresh_token ? 'present' : 'missing'
-      });
+      console.log('🔐 Initial session:', !!session, session?.user?.id);
       
       setSession(session);
       setUser(session?.user ?? null);
@@ -66,14 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state change:', {
-        event,
-        hasSession: !!session,
-        userId: session?.user?.id,
-        userEmail: session?.user?.email,
-        accessToken: session?.access_token ? 'present' : 'missing',
-        refreshToken: session?.refresh_token ? 'present' : 'missing'
-      });
+      console.log('🔐 Auth state change:', event, !!session, session?.user?.id);
       
       setSession(session);
       setUser(session?.user ?? null);
@@ -112,11 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
     
-    console.log('✅ Sign in successful:', {
-      userId: data.user?.id,
-      hasSession: !!data.session,
-      hasRefreshToken: !!data.session?.refresh_token
-    });
+    console.log('✅ Sign in successful:', data.user?.id);
     
     // Verificar que tenemos un token de actualización válido
     if (!data.session?.refresh_token) {
