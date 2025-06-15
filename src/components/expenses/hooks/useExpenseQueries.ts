@@ -24,14 +24,20 @@ export interface Recipient {
 export function useExpenseQueries() {
   const { user } = useAuth();
   const { data: company, isLoading: isLoadingCompany, error: companyError } = useUserCompany();
+  
+  console.log("DEBUG: useExpenseQueries -> Start", { user, company, isLoadingCompany, companyError });
 
   const userId = user?.id;
   const companyId = company?.id;
 
+  console.log("DEBUG: useExpenseQueries -> IDs", { userId, companyId });
+
   const { data: bankAccounts = [], isLoading: isLoadingBankAccounts, error: bankAccountsError } = useQuery<BankAccount[], Error>({
     queryKey: ["bankAccounts", companyId],
     queryFn: async () => {
+      console.log("DEBUG: bankAccounts query -> Firing for companyId:", companyId);
       if (!companyId) {
+        console.log("DEBUG: bankAccounts query -> SKIPPED (no companyId)");
         return [];
       }
 
@@ -41,9 +47,11 @@ export function useExpenseQueries() {
         .eq("company_id", companyId);
 
       if (error) {
+        console.error("DEBUG: bankAccounts query -> FAILED", error);
         logError("Bank accounts query failed", error, "useExpenseQueries");
         throw error;
       }
+      console.log("DEBUG: bankAccounts query -> SUCCESS", data);
       return data as BankAccount[];
     },
     enabled: !!(companyId && !isLoadingCompany),
@@ -53,7 +61,9 @@ export function useExpenseQueries() {
   const { data: chartAccounts = [], isLoading: isLoadingChartAccounts, error: chartAccountsError } = useQuery<ChartAccount[], Error>({
     queryKey: ["chartAccounts", userId],
     queryFn: async () => {
+      console.log("DEBUG: chartAccounts query -> Firing for userId:", userId);
       if (!userId) {
+        console.log("DEBUG: chartAccounts query -> SKIPPED (no userId)");
         return [];
       }
 
@@ -65,9 +75,11 @@ export function useExpenseQueries() {
         .order('code');
 
       if (error) {
+        console.error("DEBUG: chartAccounts query -> FAILED", error);
         logError("Chart accounts query failed", error, "useExpenseQueries");
         throw error;
       }
+      console.log("DEBUG: chartAccounts query -> SUCCESS", data);
       return data as ChartAccount[];
     },
     enabled: !!userId,
@@ -77,7 +89,9 @@ export function useExpenseQueries() {
   const { data: recipients = [], isLoading: isLoadingRecipients, error: recipientsError } = useQuery<Recipient[], Error>({
     queryKey: ["expenseRecipients", userId],
     queryFn: async () => {
+      console.log("DEBUG: recipients query -> Firing for userId:", userId);
       if (!userId) {
+        console.log("DEBUG: recipients query -> SKIPPED (no userId)");
         return [];
       }
 
@@ -89,6 +103,7 @@ export function useExpenseQueries() {
         .order('name');
 
       if (error) {
+        console.error("DEBUG: recipients query -> FAILED", error);
         logError("Recipients query failed", error, "useExpenseQueries");
         throw error;
       }
@@ -97,6 +112,7 @@ export function useExpenseQueries() {
         ...recipient,
         id: String(recipient.id)
       })) : [];
+      console.log("DEBUG: recipients query -> SUCCESS", mappedData);
       return mappedData;
     },
     enabled: !!userId,
@@ -114,7 +130,7 @@ export function useExpenseQueries() {
   if (chartAccounts.length === 0 && !isLoadingChartAccounts && userId) missingData.push("cuentas contables configuradas");
   if (isLoadingRecipients) missingData.push("contactos");
 
-  return {
+  const hookResult = {
     bankAccounts,
     chartAccounts,
     recipients,
@@ -128,4 +144,8 @@ export function useExpenseQueries() {
       recipients: recipientsError
     }
   };
+
+  console.log("DEBUG: useExpenseQueries -> Final Return", hookResult);
+
+  return hookResult;
 }
