@@ -23,13 +23,6 @@ export function ForecastDialogContent({
   needsBalanceReconciliation,
   historicalDataCount
 }: ForecastDialogContentProps) {
-  // Log balance information for debugging
-  console.log("[DEBUG] ForecastDialogContent - Received balances:", {
-    availableCashBalance: historicalDataCount.availableCashBalance,
-    creditLiabilities: historicalDataCount.creditLiabilities,
-    netPosition: historicalDataCount.netPosition
-  });
-
   return (
     <div className="space-y-6 my-4">
       {/* Reconciliation Section */}
