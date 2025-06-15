@@ -144,7 +144,7 @@ function App() {
                 />
                 
                 <Route 
-                  path="/accounting/banking/:accountId" 
+                  path="/accounting/banking/account/:accountId" 
                   element={
                     <PathBasedProtectedRoute>
                       <BankAccountMovements />
