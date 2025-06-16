@@ -2952,6 +2952,16 @@ export type Database = {
           total_records: number
         }[]
       }
+      get_top_skus_by_units: {
+        Args: { p_user_id: string; p_start_date: string; p_end_date: string }
+        Returns: {
+          sku: string
+          product_name: string
+          quantity: number
+          revenue: number
+          change_percentage: number
+        }[]
+      }
       has_company_permission: {
         Args: { user_id: string; permission_type: string }
         Returns: boolean

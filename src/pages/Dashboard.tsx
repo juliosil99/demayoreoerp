@@ -1,98 +1,105 @@
-
-import React, { useState } from "react";
-import { subDays } from "date-fns";
+import { useState } from "react";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { DashboardLoading } from "@/components/dashboard/DashboardLoading";
+import { cn } from "@/lib/utils";
 import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
-import { ContributionMarginSection } from "@/components/dashboard/sections/ContributionMarginSection";
-import { SalesSection } from "@/components/dashboard/sections/SalesSection";
 import { ChannelDistributionSection } from "@/components/dashboard/sections/ChannelDistributionSection";
 import { StateDistributionSection } from "@/components/dashboard/sections/StateDistributionSection";
 import { ChannelMetricsSection } from "@/components/dashboard/sections/ChannelMetricsSection";
-import { SkuChannelSearchBox } from "@/components/dashboard/sections/SkuChannelSearchBox";
+import { SalesSection } from "@/components/dashboard/sections/SalesSection";
 import { TopSkusByUnitsSection } from "@/components/dashboard/sections/TopSkusByUnitsSection";
-import { OldestExpenseCard } from "@/components/dashboard/OldestExpenseCard";
+import { ContributionMarginSection } from "@/components/dashboard/sections/ContributionMarginSection";
 import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
-import { useOldestExpense } from "@/hooks/dashboard/useOldestExpense";
-import { formatCurrency, formatDate } from "@/utils/formatters";
+import { OptimizedTopSkusByUnitsSection } from "@/components/dashboard/sections/OptimizedTopSkusByUnitsSection";
 
-export default function Dashboard() {
-  // Set default date range to last 30 days
+const Dashboard = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 30),
-    to: new Date()
+    from: new Date(new Date().getFullYear(), new Date().getMonth() - 1, new Date().getDate()),
+    to: new Date(),
   });
-  
-  const { 
-    combinedData, 
-    salesData, 
-    metricsData, 
-    isLoading, 
-    error 
-  } = useDashboardMetrics(dateRange);
 
-  const { oldestExpense, isLoading: expenseLoading } = useOldestExpense();
+  const formattedDateRange = {
+    from: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
+    to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
+  };
 
-  if (isLoading) {
-    return <DashboardLoading />;
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-red-600 mb-2">Error al cargar el dashboard</h2>
-          <p className="text-gray-600">{error.message}</p>
-        </div>
-      </div>
-    );
-  }
+  const { metrics, loading } = useDashboardMetrics(formattedDateRange);
 
   return (
-    <div className="container mx-auto p-2 sm:p-6">
-      <DashboardHeader 
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-      />
-      
-      <div className="space-y-6">
-        {/* Contribution Margin Section */}
-        <ContributionMarginSection 
-          contributionMargin={combinedData.contributionMargin}
-          contributionMarginChange={combinedData.contributionMarginChange}
-        />
-        
-        {/* Main Metrics Section */}
-        <MainMetricsSection metrics={combinedData} />
-        
-        {/* Sales Chart Section */}
-        <SalesSection metrics={combinedData} />
-        
-        {/* Distribution Sections */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <StateDistributionSection dateRange={dateRange} />
-          <ChannelDistributionSection dateRange={dateRange} />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between space-y-2">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground">
+            Vista general de tu negocio.
+          </p>
         </div>
+        <div className="flex items-center space-x-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="date"
+                variant={"outline"}
+                className={cn(
+                  "w-[300px] justify-start text-left font-normal",
+                  !dateRange?.from && "text-muted-foreground"
+                )}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    `${format(dateRange.from, "MMM dd, yyyy")} - ${format(
+                      dateRange.to,
+                      "MMM dd, yyyy"
+                    )}`
+                  ) : (
+                    format(dateRange.from, "MMM dd, yyyy")
+                  )
+                ) : (
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                pagedNavigation
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      
+      <div className="grid gap-6">
+        <MainMetricsSection metrics={metrics} loading={loading}/>
         
-        {/* Channel Metrics Section */}
-        <ChannelMetricsSection channelMetrics={combinedData.channelMetrics} />
-        
-        {/* SKU Search Box */}
-        <SkuChannelSearchBox dateRange={dateRange} />
-        
-        {/* Top SKUs Section */}
-        <TopSkusByUnitsSection dateRange={dateRange} />
-        
-        {/* Oldest Expense Card */}
-        {!expenseLoading && oldestExpense && (
-          <OldestExpenseCard 
-            expense={oldestExpense}
-            formatDate={formatDate}
-            formatCurrency={formatCurrency}
-          />
-        )}
+        <div className="grid gap-6 md:grid-cols-2">
+          <ChannelDistributionSection dateRange={dateRange} />
+          <StateDistributionSection dateRange={dateRange} />
+        </div>
+
+        <div className="grid gap-6">
+          <ChannelMetricsSection dateRange={dateRange} />
+        </div>
+
+        <div className="grid gap-6">
+          <SalesSection dateRange={dateRange} />
+        </div>
+
+        <div className="grid gap-6">
+          <OptimizedTopSkusByUnitsSection dateRange={dateRange} />
+          <ContributionMarginSection dateRange={dateRange} />
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default Dashboard;
