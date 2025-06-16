@@ -3,6 +3,7 @@ import { useOptimizedDashboardMetrics } from "./useOptimizedDashboardMetrics";
 import { useOptimizedSalesData } from "./useOptimizedSalesData";
 import { DateRange } from "react-day-picker";
 import { useMemo } from "react";
+import { ChannelMetrics } from "@/types/dashboard";
 
 // Combined hook that uses all optimized queries for the dashboard
 export function useEgressOptimizedDashboard(dateRange: DateRange | undefined) {
@@ -21,6 +22,22 @@ export function useEgressOptimizedDashboard(dateRange: DateRange | undefined) {
   // Calculate additional metrics from optimized data
   const combinedMetrics = useMemo(() => {
     if (!metricsData) return null;
+
+    // Transform channel metrics to include change properties
+    const transformedChannelMetrics: ChannelMetrics[] = (channelMetrics || []).map(channel => ({
+      name: channel.name,
+      revenue: channel.revenue,
+      orders: channel.orders,
+      aov: channel.aov,
+      contributionMargin: channel.contributionMargin,
+      marginPercentage: channel.marginPercentage,
+      // Add missing change properties with default values
+      revenueChange: 0,
+      ordersChange: 0,
+      aovChange: 0,
+      contributionMarginChange: 0,
+      marginPercentageChange: 0
+    }));
 
     // Use the pre-calculated metrics from SQL functions
     const contributionMargin = metricsData.totalProfit;
@@ -44,8 +61,8 @@ export function useEgressOptimizedDashboard(dateRange: DateRange | undefined) {
       // Chart data from optimized query
       chartData: chartData || [],
       
-      // Channel metrics from optimized query
-      channelMetrics: channelMetrics || [],
+      // Channel metrics with proper typing
+      channelMetrics: transformedChannelMetrics,
       
       // Legacy metrics for backward compatibility
       adSpend: 0,
