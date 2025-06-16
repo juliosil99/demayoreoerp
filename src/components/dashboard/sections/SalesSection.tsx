@@ -1,9 +1,10 @@
 
 import React from "react";
 import { ChartSection } from "@/components/dashboard/ChartSection";
+import { DateRange } from "react-day-picker";
 
 interface DashboardMetrics {
-  chartData: Array<{
+  chartData?: Array<{
     date: string;
     sales: number;
     adSpend?: number;
@@ -16,5 +17,5 @@ interface SalesSectionProps {
 }
 
 export const SalesSection = ({ metrics }: SalesSectionProps) => {
-  return <ChartSection chartData={metrics.chartData} />;
+  return <ChartSection chartData={metrics.chartData || []} />;
 };

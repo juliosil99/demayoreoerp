@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -10,10 +11,9 @@ import { ChannelDistributionSection } from "@/components/dashboard/sections/Chan
 import { StateDistributionSection } from "@/components/dashboard/sections/StateDistributionSection";
 import { ChannelMetricsSection } from "@/components/dashboard/sections/ChannelMetricsSection";
 import { SalesSection } from "@/components/dashboard/sections/SalesSection";
-import { TopSkusByUnitsSection } from "@/components/dashboard/sections/TopSkusByUnitsSection";
 import { ContributionMarginSection } from "@/components/dashboard/sections/ContributionMarginSection";
-import { useDashboardMetrics } from "@/hooks/dashboard/useDashboardMetrics";
 import { OptimizedTopSkusByUnitsSection } from "@/components/dashboard/sections/OptimizedTopSkusByUnitsSection";
+import { useEgressOptimizedDashboard } from "@/hooks/dashboard/useEgressOptimizedDashboard";
 
 const Dashboard = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -21,12 +21,7 @@ const Dashboard = () => {
     to: new Date(),
   });
 
-  const formattedDateRange = {
-    from: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
-    to: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
-  };
-
-  const { metrics, loading } = useDashboardMetrics(formattedDateRange);
+  const { combinedData: metrics, isLoading: loading } = useEgressOptimizedDashboard(dateRange);
 
   return (
     <div className="space-y-6">
@@ -78,7 +73,7 @@ const Dashboard = () => {
       </div>
       
       <div className="grid gap-6">
-        <MainMetricsSection metrics={metrics} loading={loading}/>
+        <MainMetricsSection metrics={metrics || {}} />
         
         <div className="grid gap-6 md:grid-cols-2">
           <ChannelDistributionSection dateRange={dateRange} />
@@ -86,16 +81,19 @@ const Dashboard = () => {
         </div>
 
         <div className="grid gap-6">
-          <ChannelMetricsSection dateRange={dateRange} />
+          <ChannelMetricsSection channelMetrics={metrics?.channelMetrics || []} />
         </div>
 
         <div className="grid gap-6">
-          <SalesSection dateRange={dateRange} />
+          <SalesSection metrics={metrics || {}} />
         </div>
 
         <div className="grid gap-6">
           <OptimizedTopSkusByUnitsSection dateRange={dateRange} />
-          <ContributionMarginSection dateRange={dateRange} />
+          <ContributionMarginSection 
+            contributionMargin={metrics?.contributionMargin || 0}
+            contributionMarginChange={metrics?.contributionMarginChange || 0}
+          />
         </div>
       </div>
     </div>
