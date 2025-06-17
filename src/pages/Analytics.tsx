@@ -6,37 +6,30 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
-import { MainMetricsSection } from "@/components/dashboard/MainMetricsSection";
-import { ChannelMetricsSection } from "@/components/dashboard/sections/ChannelMetricsSection";
-import { SalesSection } from "@/components/dashboard/sections/SalesSection";
-import { useOptimizedMainDashboard } from "@/hooks/dashboard/useOptimizedMainDashboard";
-import { Link } from "react-router-dom";
-import { BarChart3 } from "lucide-react";
+import { ChannelDistributionSection } from "@/components/dashboard/sections/ChannelDistributionSection";
+import { StateDistributionSection } from "@/components/dashboard/sections/StateDistributionSection";
+import { OptimizedTopSkusByUnitsSection } from "@/components/dashboard/sections/OptimizedTopSkusByUnitsSection";
+import { ContributionMarginSection } from "@/components/dashboard/sections/ContributionMarginSection";
+import { useOptimizedAnalytics } from "@/hooks/dashboard/useOptimizedAnalytics";
 
-const Dashboard = () => {
+const Analytics = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(new Date().getFullYear(), new Date().getMonth() - 1, new Date().getDate()),
     to: new Date(),
   });
 
-  const { combinedData: metrics, isLoading: loading } = useOptimizedMainDashboard(dateRange);
+  const { analyticsData, isLoading } = useOptimizedAnalytics(dateRange);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between space-y-2">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Analytics Dashboard</h2>
           <p className="text-muted-foreground">
-            Vista general de tu negocio.
+            Análisis detallado de ventas y distribución.
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Link to="/analytics">
-            <Button variant="outline" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Ver Analytics Detallado
-            </Button>
-          </Link>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -77,18 +70,21 @@ const Dashboard = () => {
       </div>
       
       <div className="grid gap-6">
-        <MainMetricsSection metrics={metrics || {}} />
-
-        <div className="grid gap-6">
-          <ChannelMetricsSection channelMetrics={metrics?.channelMetrics || []} />
+        <div className="grid gap-6 md:grid-cols-2">
+          <ChannelDistributionSection dateRange={dateRange} />
+          <StateDistributionSection dateRange={dateRange} />
         </div>
 
         <div className="grid gap-6">
-          <SalesSection metrics={metrics || {}} />
+          <OptimizedTopSkusByUnitsSection dateRange={dateRange} />
+          <ContributionMarginSection 
+            contributionMargin={analyticsData?.contributionMargin || 0}
+            contributionMarginChange={analyticsData?.contributionMarginChange || 0}
+          />
         </div>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default Analytics;

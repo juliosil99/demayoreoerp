@@ -20,6 +20,7 @@ import {
   ShoppingCart,
   Banknote,
   MessageSquare,
+  BarChart3,
 } from "lucide-react";
 
 import { SidebarGroupType } from "./types";
@@ -38,6 +39,12 @@ export const sidebarGroups: SidebarGroupType[] = [
         name: "Dashboard",
         href: "/dashboard",
         icon: LayoutDashboard,
+        permission: "can_view_dashboard" as PermissionName,
+      },
+      {
+        name: "Analytics",
+        href: "/analytics",
+        icon: BarChart3,
         permission: "can_view_dashboard" as PermissionName,
       },
     ],

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -12,6 +11,7 @@ import { PathBasedProtectedRoute } from '@/components/auth/PathBasedProtectedRou
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
+import Analytics from '@/pages/Analytics';
 import Sales from '@/pages/Sales';
 import Expenses from '@/pages/Expenses';
 import Reconciliation from '@/pages/Reconciliation';
@@ -67,6 +67,15 @@ function App() {
                   element={
                     <PathBasedProtectedRoute>
                       <Dashboard />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/analytics" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <Analytics />
                     </PathBasedProtectedRoute>
                   } 
                 />
