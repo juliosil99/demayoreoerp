@@ -1,8 +1,9 @@
 
 import { useState } from "react";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,7 @@ const Analytics = () => {
                   !dateRange?.from && "text-muted-foreground"
                 )}
               >
-                <Calendar className="mr-2 h-4 w-4" />
+                <CalendarIcon className="mr-2 h-4 w-4" />
                 {dateRange?.from ? (
                   dateRange.to ? (
                     `${format(dateRange.from, "MMM dd, yyyy")} - ${format(
@@ -55,7 +56,7 @@ const Analytics = () => {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
+            <PopoverContent className="w-auto p-0 z-50" align="end">
               <Calendar
                 mode="range"
                 defaultMonth={dateRange?.from}
@@ -63,6 +64,7 @@ const Analytics = () => {
                 onSelect={setDateRange}
                 numberOfMonths={2}
                 pagedNavigation
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
