@@ -47,6 +47,9 @@ export function InvoiceList({
         const currencyMatch = selectedExpense && 
           (selectedExpense.currency || 'MXN') === invoiceCurrency;
 
+        // Las notas de crédito (tipo 'E') no requieren conversión porque restan automáticamente
+        const requiresConversion = !isCredit && selectedExpense && !currencyMatch;
+
         return (
           <Card 
             key={invoice.id} 
@@ -74,7 +77,7 @@ export function InvoiceList({
                         exchangeRate={invoice.exchange_rate}
                         showConversion={!!displayInfo?.converted}
                       />
-                      {!currencyMatch && (
+                      {requiresConversion && (
                         <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
                           Conversión requerida
                         </span>
