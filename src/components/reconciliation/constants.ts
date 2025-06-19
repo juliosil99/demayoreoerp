@@ -7,11 +7,11 @@ export const ADJUSTMENT_ACCOUNTS = {
     name: "Anticipo a Proveedores",
     description: "Registra el excedente pagado como anticipo a proveedor"
   },
-  // When invoice amount > expense amount (we paid less)
+  // When invoice amount > expense amount (we paid less) - corrected to use liability account
   invoice_excess: {
-    code: "205.01", 
-    name: "Anticipo de Clientes",
-    description: "Registra la diferencia como anticipo recibido"
+    code: "201.01", 
+    name: "Cuentas por Pagar",
+    description: "Registra la diferencia como deuda pendiente por pagar"
   }
 } as const;
 
