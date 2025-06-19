@@ -90,18 +90,63 @@ const Reconciliation = () => {
       
       // Get company RFC to filter invoices
       const companyRfc = userCompany.rfc;
+      console.log("🔍 Reconciliation Debug - Company RFC:", companyRfc);
       
-      const { data, error } = await supabase
+      // Enhanced query to capture both received and issued invoices
+      const { data: allInvoices, error } = await supabase
         .from("invoices")
         .select("*, paid_amount")
-        .is("processed", false)
         .or(`issuer_rfc.eq.${companyRfc},receiver_rfc.eq.${companyRfc}`)
         .order("invoice_date", { ascending: false });
 
       if (error) {
+        console.error("❌ Error fetching invoices:", error);
         throw error;
       }
-      return data;
+
+      console.log("📊 Total invoices found:", allInvoices?.length || 0);
+      
+      // Separate invoices by type for better debugging
+      const issuedInvoices = allInvoices?.filter(inv => inv.issuer_rfc === companyRfc) || [];
+      const receivedInvoices = allInvoices?.filter(inv => inv.receiver_rfc === companyRfc) || [];
+      const payrollInvoices = issuedInvoices.filter(inv => inv.invoice_type === 'N');
+      
+      console.log("📤 Issued invoices (by company):", issuedInvoices.length);
+      console.log("📥 Received invoices (to company):", receivedInvoices.length); 
+      console.log("👥 Payroll invoices (type N):", payrollInvoices.length);
+      
+      // Log payroll invoice details for debugging
+      if (payrollInvoices.length > 0) {
+        console.log("👥 Payroll invoices details:", payrollInvoices.map(inv => ({
+          id: inv.id,
+          invoice_number: inv.invoice_number,
+          processed: inv.processed,
+          total_amount: inv.total_amount,
+          invoice_date: inv.invoice_date,
+          receiver_name: inv.receiver_name
+        })));
+      }
+
+      // Filter logic: Include unprocessed invoices AND processed payroll invoices
+      const filteredInvoices = allInvoices?.filter(invoice => {
+        // For payroll invoices (type N), include both processed and unprocessed
+        if (invoice.invoice_type === 'N' && invoice.issuer_rfc === companyRfc) {
+          console.log(`✅ Including payroll invoice ${invoice.invoice_number} (processed: ${invoice.processed})`);
+          return true;
+        }
+        
+        // For other invoices, only include unprocessed ones
+        const shouldInclude = !invoice.processed;
+        if (shouldInclude) {
+          console.log(`✅ Including invoice ${invoice.invoice_number} (not processed)`);
+        }
+        return shouldInclude;
+      }) || [];
+
+      console.log("🎯 Final filtered invoices:", filteredInvoices.length);
+      console.log("🎯 Payroll invoices in final list:", filteredInvoices.filter(inv => inv.invoice_type === 'N').length);
+      
+      return filteredInvoices;
     },
     enabled: !!userCompany?.id && canViewReconciliation,
   });
@@ -139,9 +184,19 @@ const Reconciliation = () => {
             Selecciona un gasto y busca la factura correspondiente
           </CardTitle>
           {userCompany && (
-            <p className="text-sm text-gray-500">
-              Mostrando datos de: {userCompany.nombre}
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm text-gray-500">
+                Mostrando datos de: {userCompany.nombre}
+              </p>
+              <p className="text-xs text-gray-400">
+                RFC: {userCompany.rfc} | Facturas disponibles: {invoices?.length || 0}
+              </p>
+              {invoices && invoices.length > 0 && (
+                <p className="text-xs text-gray-400">
+                  Facturas de nómina: {invoices.filter(inv => inv.invoice_type === 'N').length}
+                </p>
+              )}
+            </div>
           )}
         </CardHeader>
         <CardContent>

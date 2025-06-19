@@ -1,7 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, FileText } from "lucide-react";
+import { Check, FileText, Users, Building2 } from "lucide-react";
 import { formatCurrency, formatCardDate } from "@/utils/formatters";
 import { CurrencyBadge } from "../CurrencyBadge";
 import { useCurrencyCalculator } from "../../hooks/calculation/useCurrencyCalculator";
@@ -35,6 +35,7 @@ export function InvoiceList({
       {filteredInvoices.map((invoice) => {
         const isSelected = tempSelectedInvoices.some(inv => inv.id === invoice.id);
         const isCredit = invoice.invoice_type === 'E';
+        const isPayroll = invoice.invoice_type === 'N';
         const invoiceCurrency = invoice.currency || 'MXN';
         
         // Get display amounts if we have expense context
@@ -50,13 +51,48 @@ export function InvoiceList({
         // Las notas de crédito (tipo 'E') no requieren conversión porque restan automáticamente
         const requiresConversion = !isCredit && selectedExpense && !currencyMatch;
 
+        // Determine invoice type and styling
+        const getInvoiceTypeInfo = () => {
+          if (isPayroll) {
+            return {
+              icon: Users,
+              label: "Nómina",
+              bgColor: "bg-blue-50 border-blue-200",
+              selectedColor: "bg-blue-100 border-blue-300",
+              textColor: "text-blue-700",
+              description: "Factura de nómina emitida por la empresa"
+            };
+          } else if (isCredit) {
+            return {
+              icon: Building2,
+              label: "Nota de Crédito",
+              bgColor: "bg-red-50 border-red-200", 
+              selectedColor: "bg-red-100 border-red-300",
+              textColor: "text-red-700",
+              description: "Nota de crédito"
+            };
+          } else {
+            return {
+              icon: FileText,
+              label: "Factura",
+              bgColor: "bg-gray-50",
+              selectedColor: "bg-blue-50 border-blue-200",
+              textColor: "text-gray-700",
+              description: "Factura regular"
+            };
+          }
+        };
+
+        const typeInfo = getInvoiceTypeInfo();
+        const TypeIcon = typeInfo.icon;
+
         return (
           <Card 
             key={invoice.id} 
             className={`cursor-pointer transition-colors ${
               isSelected 
-                ? 'bg-blue-50 border-blue-200' 
-                : 'hover:bg-gray-50'
+                ? typeInfo.selectedColor
+                : `${typeInfo.bgColor} hover:bg-gray-100`
             }`}
             onClick={() => toggleInvoiceSelection(invoice)}
           >
@@ -64,10 +100,22 @@ export function InvoiceList({
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-medium text-sm">
-                      {invoice.issuer_name}
-                      {isCredit && <span className="ml-2 text-red-600">(Nota de Crédito)</span>}
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <TypeIcon className={`h-4 w-4 ${typeInfo.textColor}`} />
+                      <h4 className="font-medium text-sm">
+                        {isPayroll ? invoice.receiver_name : invoice.issuer_name}
+                      </h4>
+                      {isPayroll && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                          {typeInfo.label}
+                        </span>
+                      )}
+                      {isCredit && (
+                        <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+                          {typeInfo.label}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2">
                       <CurrencyBadge 
                         currency={invoiceCurrency}
@@ -89,6 +137,11 @@ export function InvoiceList({
                     <span>
                       Factura: {invoice.invoice_number || 'N/A'} | 
                       Fecha: {formatCardDate(invoice.invoice_date)}
+                      {isPayroll && (
+                        <span className="ml-2 text-blue-600 text-xs">
+                          (Emitida por empresa)
+                        </span>
+                      )}
                     </span>
                     <div className="text-right">
                       <div className="font-semibold text-gray-900">

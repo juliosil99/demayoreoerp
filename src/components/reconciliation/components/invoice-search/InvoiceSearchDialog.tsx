@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,7 @@ import { SearchBar } from "./SearchBar";
 import { SelectedInvoicesList } from "./SelectedInvoicesList";
 import { InvoiceList } from "./InvoiceList";
 import { InvoiceSelectionSummary } from "./InvoiceSelectionSummary";
+import { PayrollInvoiceInfo } from "./PayrollInvoiceInfo";
 import { useCurrencyCalculator } from "../../hooks/calculation/useCurrencyCalculator";
 import { calculateExpenseSelection } from "../../hooks/calculation/calculateExpenseSelection";
 
@@ -47,6 +49,10 @@ export function InvoiceSearchDialog({
   useEffect(() => {
     setTempSelectedInvoices(selectedInvoices);
   }, [selectedInvoices, open]);
+
+  // Calculate payroll invoice statistics
+  const payrollInvoices = filteredInvoices.filter(inv => inv.invoice_type === 'N');
+  const totalPayrollAmount = payrollInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
 
   // Calcular totales y restante usando SIEMPRE la moneda original del gasto
   const {
@@ -103,6 +109,11 @@ export function InvoiceSearchDialog({
             searchTerm={searchTerm}
             onSearchChange={onSearchChange}
             onManualReconciliation={onManualReconciliation}
+          />
+
+          <PayrollInvoiceInfo 
+            payrollCount={payrollInvoices.length}
+            totalPayrollAmount={totalPayrollAmount}
           />
 
           {tempSelectedInvoices.length > 0 && (
