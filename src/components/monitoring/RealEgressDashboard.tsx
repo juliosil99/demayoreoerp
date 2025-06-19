@@ -14,7 +14,10 @@ import {
   TrendingUp,
   BarChart3,
   Zap,
-  DollarSign
+  DollarSign,
+  Clock,
+  Target,
+  Info
 } from 'lucide-react';
 import { useRealEgressMonitor } from '@/hooks/useRealEgressMonitor';
 import { formatBytes } from '@/utils/formatters';
@@ -27,8 +30,13 @@ export function RealEgressDashboard() {
     acknowledgeAlert, 
     clearAcknowledgedAlerts, 
     refreshMetrics,
-    resetTracker
+    resetTracker,
+    getTopEndpoints,
+    getTrackerStats
   } = useRealEgressMonitor();
+
+  const topEndpoints = getTopEndpoints();
+  const trackerStats = getTrackerStats();
 
   const getAlertIcon = (level: string) => {
     switch (level) {
@@ -39,8 +47,8 @@ export function RealEgressDashboard() {
   };
 
   const getProgressColor = (percentage: number) => {
-    if (percentage > 300) return 'bg-red-500';
-    if (percentage > 150) return 'bg-yellow-500';
+    if (percentage > 200) return 'bg-red-500';
+    if (percentage > 80) return 'bg-yellow-500';
     return 'bg-green-500';
   };
 
@@ -51,14 +59,22 @@ export function RealEgressDashboard() {
       {/* Header con controles */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Monitor de Egress Real</h2>
+          <h2 className="text-2xl font-bold">Monitor de Egress Preciso</h2>
           <p className="text-muted-foreground">
-            Monitoreo en tiempo real del uso de datos con mediciones reales
+            Medición exacta del uso de datos con interceptor de respuestas real
           </p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="inline-flex items-center gap-1 text-sm text-blue-600">
+          <div className="flex items-center gap-4 mt-2 text-sm text-blue-600">
+            <span className="inline-flex items-center gap-1">
               <Activity className="h-3 w-3" />
-              Interceptando requests en tiempo real
+              {trackerStats.totalRequests} requests rastreadas
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {trackerStats.uptimeHours.toFixed(1)}h de monitoreo
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Target className="h-3 w-3" />
+              Promedio: {formatBytes(trackerStats.avgRequestSize)}/request
             </span>
           </div>
         </div>
@@ -99,7 +115,7 @@ export function RealEgressDashboard() {
             >
               {getAlertIcon(alert.level)}
               <AlertTitle className="flex items-center justify-between">
-                <span>Alerta de Egress Real - {alert.level.toUpperCase()}</span>
+                <span>Alerta de Egress Precisa - {alert.level.toUpperCase()}</span>
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -112,7 +128,7 @@ export function RealEgressDashboard() {
                 {alert.message}
                 {alert.source && (
                   <div className="mt-1 text-xs">
-                    <strong>Fuente:</strong> {alert.source} • <strong>Bytes:</strong> {formatBytes(alert.bytes)}
+                    <strong>Endpoint:</strong> {alert.source} • <strong>Bytes:</strong> {formatBytes(alert.bytes)}
                   </div>
                 )}
                 <br />
@@ -125,11 +141,24 @@ export function RealEgressDashboard() {
         </div>
       )}
 
+      {/* Información sobre datos reales de Supabase */}
+      {metrics.realSupabaseData && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Datos de Supabase Analytics Disponibles</AlertTitle>
+          <AlertDescription>
+            Se están usando datos reales de Supabase Analytics. Total Egress: {formatBytes(metrics.realSupabaseData.totalEgress)}
+            <br />
+            <small>Última actualización: {metrics.realSupabaseData.timestamp.toLocaleString()}</small>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Métricas principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Egress Hoy (Real)</CardTitle>
+            <CardTitle className="text-sm font-medium">Egress Hoy (Medido)</CardTitle>
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -142,7 +171,6 @@ export function RealEgressDashboard() {
             <Progress 
               value={Math.min(metrics.usagePercentage, 100)} 
               className="mt-2"
-              color={getProgressColor(metrics.usagePercentage)}
             />
             <div className="mt-1 text-xs text-muted-foreground">
               {metrics.usagePercentage.toFixed(1)}% del límite diario
@@ -152,7 +180,7 @@ export function RealEgressDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Egress Ayer</CardTitle>
+            <CardTitle className="text-sm font-medium">Egress Ayer (Referencia)</CardTitle>
             <TrendingUp className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
@@ -160,7 +188,7 @@ export function RealEgressDashboard() {
               {formatBytes(metrics.totalBytesYesterday)}
             </div>
             <div className="text-xs text-muted-foreground">
-              Dato real de Supabase
+              Dato reportado por Supabase
             </div>
             <Badge variant="destructive" className="mt-2">
               {((metrics.totalBytesYesterday / metrics.dailyLimit) * 100).toFixed(0)}% sobre límite
@@ -209,19 +237,53 @@ export function RealEgressDashboard() {
         </Card>
       </div>
 
-      {/* Análisis por fuente */}
+      {/* Top Endpoints que consumen más datos */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            Análisis por Fuente (Tiempo Real)
+            Top Endpoints por Consumo de Datos
           </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {topEndpoints.length > 0 ? (
+            <div className="space-y-3">
+              {topEndpoints.map((endpoint, index) => (
+                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-mono text-sm">{endpoint.endpoint}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {endpoint.count} requests • Promedio: {formatBytes(endpoint.avgSize)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold">{formatBytes(endpoint.bytes)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {((endpoint.bytes / metrics.totalBytesToday) * 100).toFixed(1)}% del total
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>Interceptando requests... Realiza algunas acciones en la app para ver datos.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Análisis por fuente/tabla */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Análisis por Tabla/Endpoint (Tiempo Real)</CardTitle>
         </CardHeader>
         <CardContent>
           {metrics.sourceBreakdown.length > 0 ? (
             <div className="space-y-3">
               {metrics.sourceBreakdown
-                .sort((a, b) => b.bytes - a.bytes)
+                .slice(0, 10) // Top 10
                 .map((source, index) => (
                   <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
@@ -242,13 +304,13 @@ export function RealEgressDashboard() {
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Interceptando requests... Realiza algunas acciones en la app para ver datos.</p>
+              <p>Recopilando datos de fuentes... Usa la aplicación para generar tráfico.</p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Análisis por hora */}
+      {/* Distribución por hora */}
       <Card>
         <CardHeader>
           <CardTitle>Distribución por Hora (Hoy)</CardTitle>
@@ -263,7 +325,7 @@ export function RealEgressDashboard() {
                 <div 
                   className="bg-blue-500 rounded-sm mx-auto"
                   style={{ 
-                    height: `${Math.max(4, (hour.bytes / Math.max(...metrics.hourlyBreakdown.map(h => h.bytes))) * 40)}px`,
+                    height: `${Math.max(4, (hour.bytes / Math.max(...metrics.hourlyBreakdown.map(h => h.bytes), 1)) * 40)}px`,
                     width: '20px'
                   }}
                   title={`${formatBytes(hour.bytes)} (${hour.requests} requests)`}
@@ -277,71 +339,63 @@ export function RealEgressDashboard() {
         </CardContent>
       </Card>
 
-      {/* Resumen semanal y mensual */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Tendencia Semanal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {formatBytes(metrics.totalBytesThisWeek)}
+      {/* Estadísticas del Tracker */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Estadísticas del Monitor</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <div className="text-muted-foreground">Total Requests</div>
+              <div className="text-lg font-bold">{trackerStats.totalRequests.toLocaleString()}</div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              Estimado basado en patrones recientes
+            <div>
+              <div className="text-muted-foreground">Total Rastreado</div>
+              <div className="text-lg font-bold">{formatBytes(trackerStats.totalBytes)}</div>
             </div>
-            <Progress 
-              value={(metrics.totalBytesThisWeek / (metrics.dailyLimit * 7)) * 100}
-              className="mt-2"
-            />
-          </CardContent>
-        </Card>
+            <div>
+              <div className="text-muted-foreground">Promedio/Hora</div>
+              <div className="text-lg font-bold">{formatBytes(trackerStats.avgBytesPerHour)}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Tiempo Activo</div>
+              <div className="text-lg font-bold">{trackerStats.uptimeHours.toFixed(1)}h</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Proyección Mensual</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {formatBytes(metrics.totalBytesThisMonth)}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Estimado basado en uso actual
-            </div>
-            <Progress 
-              value={(metrics.totalBytesThisMonth / (metrics.dailyLimit * 30)) * 100}
-              className="mt-2"
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recomendaciones */}
+      {/* Recomendaciones críticas */}
       {metrics.alertLevel !== 'normal' && (
         <Card>
           <CardHeader>
-            <CardTitle>🚨 Plan de Acción para Reducir Egress</CardTitle>
+            <CardTitle>🚨 Plan de Acción Inmediato</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 text-sm">
               <div className="p-3 bg-red-50 rounded-lg">
-                <h4 className="font-semibold text-red-800">Crítico - Acción Inmediata:</h4>
+                <h4 className="font-semibold text-red-800">Crítico - Revisar Inmediatamente:</h4>
                 <ul className="list-disc list-inside text-red-700 mt-1 space-y-1">
-                  <li>Verificar consultas que retornan grandes datasets (tabla Sales, invoices)</li>
-                  <li>Implementar paginación estricta en todas las consultas</li>
-                  <li>Revisar si hay loops infinitos o consultas repetitivas</li>
-                  <li>Activar compresión gzip en todas las respuestas</li>
+                  <li>Verificar los endpoints que aparecen en "Top Endpoints por Consumo"</li>
+                  <li>Implementar LIMIT en todas las consultas SELECT</li>
+                  <li>Revisar si hay consultas que retornan datasets completos</li>
+                  <li>Activar paginación en tablas grandes (Sales, invoices, expenses)</li>
                 </ul>
               </div>
-              <div className="p-3 bg-yellow-50 rounded-lg">
-                <h4 className="font-semibold text-yellow-800">Optimizaciones Técnicas:</h4>
-                <ul className="list-disc list-inside text-yellow-700 mt-1 space-y-1">
-                  <li>Usar SELECT específicos en lugar de SELECT *</li>
-                  <li>Implementar caché en el frontend para datos estáticos</li>
-                  <li>Reducir frecuencia de polling/actualizaciones automáticas</li>
-                  <li>Comprimir respuestas JSON del lado del servidor</li>
-                </ul>
-              </div>
+              {topEndpoints.length > 0 && (
+                <div className="p-3 bg-yellow-50 rounded-lg">
+                  <h4 className="font-semibold text-yellow-800">Endpoints Críticos Detectados:</h4>
+                  <ul className="list-disc list-inside text-yellow-700 mt-1 space-y-1">
+                    {topEndpoints.slice(0, 3).map((endpoint, i) => (
+                      <li key={i}>
+                        <code className="text-xs bg-yellow-200 px-1 rounded">{endpoint.endpoint}</code>
+                        {' '}consume {formatBytes(endpoint.bytes)} ({endpoint.count} requests)
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
