@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -54,9 +55,26 @@ export const useOptimizedInvoices = ({
         }
       }
 
+      // Build the main query with ONLY the fields we need for the UI
       let query = supabase
         .from("invoices")
-        .select('*', { count: 'exact' });
+        .select(`
+          id,
+          filename,
+          invoice_date,
+          created_at,
+          invoice_number,
+          serie,
+          invoice_type,
+          issuer_name,
+          issuer_rfc,
+          receiver_name,
+          receiver_rfc,
+          total_amount,
+          tax_amount,
+          status,
+          manually_reconciled
+        `, { count: 'exact' });
 
       // Apply search filter
       if (filters.search && filters.search.trim()) {
@@ -110,7 +128,11 @@ export const useOptimizedInvoices = ({
       // Apply reconciliation status filter with enhanced logic
       if (filters.reconciliationStatus === 'reconciled') {
         // Show invoices that are either in expense_invoice_relations OR manually_reconciled = true
-        query = query.or(`id.in.(${reconciledInvoiceIds.join(',')}),manually_reconciled.eq.true`);
+        if (reconciledInvoiceIds.length > 0) {
+          query = query.or(`id.in.(${reconciledInvoiceIds.join(',')}),manually_reconciled.eq.true`);
+        } else {
+          query = query.eq('manually_reconciled', true);
+        }
       } else if (filters.reconciliationStatus === 'unreconciled') {
         // Show invoices that are NOT in expense_invoice_relations AND manually_reconciled = false
         if (reconciledInvoiceIds.length > 0) {
