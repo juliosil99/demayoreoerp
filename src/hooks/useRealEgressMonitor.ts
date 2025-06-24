@@ -13,7 +13,6 @@ interface EgressSource {
 
 interface RealEgressMetrics {
   totalBytesToday: number;
-  totalBytesYesterday: number;
   totalBytesThisWeek: number;
   totalBytesThisMonth: number;
   sourceBreakdown: EgressSource[];
@@ -278,7 +277,6 @@ const installEgressInterceptor = () => {
 export const useRealEgressMonitor = () => {
   const [metrics, setMetrics] = useState<RealEgressMetrics>({
     totalBytesToday: 0,
-    totalBytesYesterday: 406000000, // 406MB dato real
     totalBytesThisWeek: 0,
     totalBytesThisMonth: 0,
     sourceBreakdown: [],
@@ -286,7 +284,7 @@ export const useRealEgressMonitor = () => {
     alertLevel: 'normal',
     lastUpdated: new Date(),
     estimatedDailyCost: 0,
-    dailyLimit: 100000000, // 100MB límite
+    dailyLimit: 50000000, // 50MB límite conservador
     usagePercentage: 0
   });
   
@@ -309,7 +307,7 @@ export const useRealEgressMonitor = () => {
         return data;
       }
     } catch (error) {
-      console.log('📊 Supabase Analytics not available, using local tracking');
+      console.log('📊 Supabase Analytics not available, using local tracking only');
     }
     return null;
   };
@@ -327,15 +325,14 @@ export const useRealEgressMonitor = () => {
       // Intentar obtener datos reales de Supabase
       const supabaseData = await fetchSupabaseAnalytics();
       
-      // Usar datos reales si están disponibles
+      // Usar datos reales si están disponibles, sino usar tracking local
       const actualTodayBytes = supabaseData?.egress_bytes_today || todayBytes;
-      const yesterdayBytes = 406000000; // 406MB dato real confirmado
       
-      // Calcular estimaciones basadas en datos reales
+      // Calcular estimaciones basadas en datos locales
       const thisWeekBytes = actualTodayBytes * 7 * 0.8;
       const thisMonthBytes = actualTodayBytes * 30 * 0.7;
       
-      const dailyLimit = 100000000; // 100MB límite conservador
+      const dailyLimit = 50000000; // 50MB límite conservador
       const usagePercentage = (actualTodayBytes / dailyLimit) * 100;
       
       let alertLevel: 'normal' | 'warning' | 'critical' = 'normal';
@@ -344,7 +341,6 @@ export const useRealEgressMonitor = () => {
       
       const newMetrics: RealEgressMetrics = {
         totalBytesToday: actualTodayBytes,
-        totalBytesYesterday: yesterdayBytes,
         totalBytesThisWeek: thisWeekBytes,
         totalBytesThisMonth: thisMonthBytes,
         sourceBreakdown,
@@ -448,7 +444,7 @@ export const useRealEgressMonitor = () => {
     installEgressInterceptor();
     calculatePreciseMetrics();
     
-    // Actualizar métricas cada 30 segundos para testing
+    // Actualizar métricas cada 30 segundos
     const interval = setInterval(calculatePreciseMetrics, 30 * 1000);
     
     return () => clearInterval(interval);

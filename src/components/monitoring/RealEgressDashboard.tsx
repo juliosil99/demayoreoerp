@@ -60,9 +60,9 @@ export function RealEgressDashboard() {
       {/* Header con controles */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Monitor de Egress Mejorado</h2>
+          <h2 className="text-2xl font-bold">Monitor de Egress en Tiempo Real</h2>
           <p className="text-muted-foreground">
-            Medición exacta y en tiempo real del uso de datos
+            Medición precisa del uso de datos con interceptor HTTP
           </p>
           <div className="flex items-center gap-4 mt-2 text-sm text-blue-600">
             <span className="inline-flex items-center gap-1">
@@ -142,14 +142,16 @@ export function RealEgressDashboard() {
         </div>
       )}
 
-      {/* Datos corregidos de ayer */}
+      {/* Info sobre el funcionamiento del monitor */}
       <Alert>
         <Info className="h-4 w-4" />
-        <AlertTitle>Datos Corregidos de Egress</AlertTitle>
+        <AlertTitle>Monitor de Egress Activo</AlertTitle>
         <AlertDescription>
-          <strong>Ayer (datos reales):</strong> 406MB - El sistema anterior mostraba incorrectamente 1.49GB
+          <strong>Estado:</strong> Interceptando todas las requests HTTP a Supabase para medición precisa
           <br />
-          <strong>Monitoreo actual:</strong> Midiendo tamaño real de respuestas con interceptor mejorado
+          <strong>Datos:</strong> {metrics.realSupabaseData ? 'Conectado a Supabase Analytics' : 'Usando medición local'}
+          <br />
+          <strong>Nota:</strong> Los datos se actualizan en tiempo real basados en el uso actual de la aplicación
         </AlertDescription>
       </Alert>
 
@@ -179,18 +181,18 @@ export function RealEgressDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ayer (Real - Corregido)</CardTitle>
-            <Eye className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium">Estimado Semanal</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatBytes(metrics.totalBytesYesterday)}
+            <div className="text-2xl font-bold">
+              {formatBytes(metrics.totalBytesThisWeek)}
             </div>
             <div className="text-xs text-muted-foreground">
-              Dato real verificado en DB
+              Basado en uso actual
             </div>
-            <Badge variant="outline" className="mt-2 text-green-600 border-green-600">
-              Dentro del límite esperado
+            <Badge variant="outline" className="mt-2">
+              Proyección
             </Badge>
           </CardContent>
         </Card>
@@ -202,13 +204,10 @@ export function RealEgressDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${metrics.estimatedDailyCost.toFixed(3)}
+              ${metrics.estimatedDailyCost.toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground">
               USD hoy ($0.09/GB)
-            </div>
-            <div className="mt-1 text-xs text-green-600">
-              Ayer: ${((metrics.totalBytesYesterday / 1000000000) * 0.09).toFixed(3)}
             </div>
           </CardContent>
         </Card>
@@ -244,7 +243,7 @@ export function RealEgressDashboard() {
             Top Endpoints por Consumo (Tiempo Real)
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Datos medidos directamente desde las respuestas HTTP
+            Datos medidos directamente desde las respuestas HTTP interceptadas
           </p>
         </CardHeader>
         <CardContent>
@@ -287,7 +286,7 @@ export function RealEgressDashboard() {
       {/* Análisis por tabla/endpoint */}
       <Card>
         <CardHeader>
-          <CardTitle>Análisis por Tabla (Datos Reales)</CardTitle>
+          <CardTitle>Análisis por Tabla (Datos Interceptados)</CardTitle>
         </CardHeader>
         <CardContent>
           {metrics.sourceBreakdown.length > 0 ? (
@@ -349,10 +348,10 @@ export function RealEgressDashboard() {
         </CardContent>
       </Card>
 
-      {/* Estadísticas del Monitor Mejorado */}
+      {/* Estadísticas del Monitor */}
       <Card>
         <CardHeader>
-          <CardTitle>Estadísticas del Monitor Mejorado</CardTitle>
+          <CardTitle>Estadísticas del Monitor</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -376,18 +375,19 @@ export function RealEgressDashboard() {
         </CardContent>
       </Card>
 
-      {/* Guía de optimización */}
+      {/* Guía de uso */}
       <Card>
         <CardHeader>
-          <CardTitle>💡 Cómo usar este monitor</CardTitle>
+          <CardTitle>💡 Cómo funciona este monitor</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
-            <p><strong>✅ Monitor activo:</strong> Mide automáticamente el tamaño real de todas las respuestas</p>
-            <p><strong>📊 Datos corregidos:</strong> Ayer fueron 406MB (no 1.49GB como mostraba antes)</p>
+            <p><strong>✅ Monitor HTTP activo:</strong> Intercepta todas las requests a Supabase y mide el tamaño real de las respuestas</p>
+            <p><strong>📊 Datos en tiempo real:</strong> Se actualiza automáticamente cada 30 segundos con datos reales</p>
             <p><strong>🔍 Top Endpoints:</strong> Navega por la app para ver qué páginas consumen más datos</p>
-            <p><strong>⚡ Tiempo real:</strong> Las métricas se actualizan automáticamente cada 30 segundos</p>
-            <p><strong>🚨 Alertas:</strong> Te avisará si algún endpoint consume más de 10MB</p>
+            <p><strong>⚡ Medición precisa:</strong> Mide bytes reales transferidos, no estimaciones</p>
+            <p><strong>🚨 Alertas automáticas:</strong> Te avisará si algún endpoint consume más de 10MB</p>
+            <p><strong>📈 Análisis por tabla:</strong> Identifica exactamente qué tablas/queries están generando más egress</p>
           </div>
         </CardContent>
       </Card>

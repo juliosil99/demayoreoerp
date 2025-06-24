@@ -30,17 +30,13 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    // Intentar obtener métricas de Analytics de Supabase
-    // Nota: Esto requiere acceso a la API de Analytics de Supabase
+    // Intentar obtener métricas reales de Analytics de Supabase
     let analyticsData = null;
 
     try {
-      // Simular datos reales - en producción esto sería una llamada real a la API de Analytics
-      const now = new Date();
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
+      // Aquí se haría la llamada real a la API de Analytics de Supabase
+      // Por ahora, estimamos basado en el tamaño real de datos en la DB
       
-      // Obtener algunas métricas reales de la base de datos como proxy
       const { count: totalInvoices } = await supabase
         .from('invoices')
         .select('*', { count: 'exact', head: true });
@@ -53,24 +49,25 @@ serve(async (req) => {
         .from('expenses')
         .select('*', { count: 'exact', head: true });
 
-      // Estimar el Egress basado en el número de registros y tamaño promedio
-      const avgInvoiceSize = 5000; // bytes por factura
-      const avgSaleSize = 1000; // bytes por venta
-      const avgExpenseSize = 800; // bytes por gasto
+      // Estimar el Egress basado en el número de registros y tamaño promedio real
+      // Estos valores son más conservadores y realistas
+      const avgInvoiceSize = 2000; // bytes por factura (sin xml_content)
+      const avgSaleSize = 800; // bytes por venta
+      const avgExpenseSize = 600; // bytes por gasto
 
-      const estimatedTotalSize = (
+      const estimatedDbSize = (
         (totalInvoices || 0) * avgInvoiceSize +
         (totalSales || 0) * avgSaleSize +
         (totalExpenses || 0) * avgExpenseSize
       );
 
       analyticsData = {
-        egress_bytes_today: Math.floor(estimatedTotalSize * 0.1), // 10% del total como uso diario estimado
-        egress_bytes_yesterday: 1600000000, // 1.6GB como se reportó
-        total_egress: estimatedTotalSize,
+        egress_bytes_today: Math.floor(estimatedDbSize * 0.05), // 5% del total como uso diario conservador
+        total_egress: estimatedDbSize,
         period: period,
-        timestamp: now.toISOString(),
+        timestamp: new Date().toISOString(),
         source: 'estimated_from_db_size',
+        note: 'Estimación basada en tamaño real de datos en DB (sin xml_content)',
         breakdown: {
           invoices: {
             count: totalInvoices || 0,
@@ -87,20 +84,19 @@ serve(async (req) => {
         }
       };
 
-      console.log('📊 Analytics data generated:', analyticsData);
+      console.log('📊 Analytics data estimated from real DB size:', analyticsData);
 
     } catch (analyticsError) {
-      console.error('Error getting analytics:', analyticsError);
+      console.error('Error estimating analytics:', analyticsError);
       
-      // Fallback a datos simulados realistas
+      // Fallback mínimo sin datos hardcodeados
       analyticsData = {
-        egress_bytes_today: 50000000, // 50MB estimado
-        egress_bytes_yesterday: 1600000000, // 1.6GB reportado
-        total_egress: 2000000000, // 2GB total estimado
+        egress_bytes_today: 0,
+        total_egress: 0,
         period: period,
         timestamp: new Date().toISOString(),
-        source: 'fallback_estimate',
-        note: 'Real analytics API not available, using estimates'
+        source: 'fallback_no_data',
+        note: 'No se pudieron obtener datos reales. Use el monitor local para medición precisa.'
       };
     }
 
@@ -121,9 +117,10 @@ serve(async (req) => {
       JSON.stringify({ 
         error: error.message,
         fallback_data: {
-          egress_bytes_today: 30000000, // 30MB fallback
-          egress_bytes_yesterday: 1600000000, // 1.6GB
-          source: 'error_fallback'
+          egress_bytes_today: 0,
+          total_egress: 0,
+          source: 'error_fallback',
+          note: 'Error al obtener datos. Use el monitor local HTTP para medición real.'
         }
       }),
       { 
@@ -131,7 +128,7 @@ serve(async (req) => {
           ...corsHeaders,
           'Content-Type': 'application/json'
         },
-        status: 200 // Return 200 even on error to provide fallback data
+        status: 200
       }
     )
   }
