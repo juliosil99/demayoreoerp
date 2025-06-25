@@ -48,6 +48,11 @@ export interface RequestLog {
   method: string;
   responseTime: number;
   table: string;
+  metadata?: {
+    sizeCalculationMethod?: string;
+    sizeConfidence?: string;
+    details?: string;
+  };
 }
 
 export interface TrackerStats {

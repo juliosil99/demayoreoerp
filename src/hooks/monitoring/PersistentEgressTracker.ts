@@ -99,7 +99,7 @@ export class PersistentEgressTracker {
     console.log('⏰ Auto-save started (every 3 seconds)');
   }
 
-  trackRequest(endpoint: string, responseSize: number, method: string, responseTime: number, metadata?: any) {
+  trackRequest(endpoint: string, responseSize: number, method: string, responseTime: number, metadata?: { sizeCalculationMethod?: string; sizeConfidence?: string; details?: string }) {
     const request: RequestLog = {
       endpoint,
       size: responseSize,
@@ -107,7 +107,7 @@ export class PersistentEgressTracker {
       method,
       responseTime,
       table: this.extractTableFromEndpoint(endpoint),
-      metadata // Store calculation method and confidence
+      metadata // This now matches the interface
     };
 
     this.requestsLog.push(request);
