@@ -1,49 +1,35 @@
 
 import type { RealEgressMetrics, EgressAlert, TrackerStats } from './types';
-import { toast } from 'sonner';
 
 export const checkAndGenerateAlerts = (
-  currentMetrics: RealEgressMetrics, 
+  metrics: RealEgressMetrics,
   stats: TrackerStats
 ): EgressAlert[] => {
-  const newAlerts: EgressAlert[] = [];
+  const alerts: EgressAlert[] = [];
 
-  // Alerta crítica para uso excesivo
-  if (currentMetrics.usagePercentage > 150) {
-    const criticalAlert: EgressAlert = {
+  // Critical alert for high usage
+  if (metrics.usagePercentage > 150) {
+    alerts.push({
       id: `critical-${Date.now()}`,
       level: 'critical',
-      message: `CRÍTICO: Egress de ${(currentMetrics.totalBytesToday / 1000000).toFixed(2)}MB supera límite de ${(currentMetrics.dailyLimit / 1000000).toFixed(0)}MB por ${(currentMetrics.usagePercentage / 100).toFixed(1)}x`,
-      bytes: currentMetrics.totalBytesToday,
+      message: `Uso crítico de Egress: ${(metrics.totalBytesToday / 1000000).toFixed(2)}MB supera el límite diario en ${(metrics.usagePercentage - 100).toFixed(1)}%`,
+      bytes: metrics.totalBytesToday,
       timestamp: new Date(),
       acknowledged: false
-    };
-    newAlerts.push(criticalAlert);
-    
-    toast.error(criticalAlert.message, {
-      duration: 15000,
-      action: {
-        label: 'Ver Detalles',
-        onClick: () => {}
-      }
+    });
+  }
+  
+  // Warning alert for elevated usage
+  else if (metrics.usagePercentage > 80) {
+    alerts.push({
+      id: `warning-${Date.now()}`,
+      level: 'warning',
+      message: `Uso elevado de Egress: ${(metrics.totalBytesToday / 1000000).toFixed(2)}MB representa ${metrics.usagePercentage.toFixed(1)}% del límite diario`,
+      bytes: metrics.totalBytesToday,
+      timestamp: new Date(),
+      acknowledged: false
     });
   }
 
-  // Alertas por fuente específica
-  currentMetrics.sourceBreakdown.forEach(source => {
-    if (source.bytes > 10000000) { // > 10MB de una sola fuente
-      const sourceAlert: EgressAlert = {
-        id: `source-${source.source}-${Date.now()}`,
-        level: 'warning',
-        message: `Endpoint "${source.source}" consume ${(source.bytes / 1000000).toFixed(2)}MB con ${source.requestCount} requests (promedio: ${(source.avgResponseSize / 1024).toFixed(2)}KB por request)`,
-        bytes: source.bytes,
-        source: source.source,
-        timestamp: new Date(),
-        acknowledged: false
-      };
-      newAlerts.push(sourceAlert);
-    }
-  });
-
-  return newAlerts;
+  return alerts;
 };

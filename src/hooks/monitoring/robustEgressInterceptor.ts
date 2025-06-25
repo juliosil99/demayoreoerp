@@ -1,5 +1,5 @@
 
-import { PreciseEgressTracker } from './EgressTracker';
+import { PersistentEgressTracker } from './PersistentEgressTracker';
 
 interface InterceptorState {
   isInstalled: boolean;
@@ -111,8 +111,8 @@ class RobustEgressInterceptor {
       // Get response size
       const responseSize = await this.calculateResponseSize(clonedResponse);
       
-      // Track in our system
-      const tracker = PreciseEgressTracker.getInstance();
+      // Track in our system using PersistentEgressTracker
+      const tracker = PersistentEgressTracker.getInstance();
       const parsedUrl = new URL(url);
       const endpoint = parsedUrl.pathname + parsedUrl.search;
       

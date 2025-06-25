@@ -398,7 +398,6 @@ export function RealEgressDashboard() {
         </CardContent>
       </Card>
 
-      {/* Resto de los componentes permanecen igual... */}
       {/* Análisis por tabla/endpoint */}
       <Card>
         <CardHeader>
