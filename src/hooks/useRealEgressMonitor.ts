@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import type { RealEgressMetrics, EgressAlert } from './monitoring/types';
 import { PersistentEgressTracker } from './monitoring/PersistentEgressTracker';
-import { deepNetworkInterceptor } from './monitoring/deepNetworkInterceptor';
+import { deepNetworkInterceptor } from './monitoring/interceptor/DeepNetworkInterceptor';
 import { fetchRealSupabaseAnalytics, getLocalTrackerData, combineAnalyticsData } from './monitoring/realAnalyticsService';
 import { checkAndGenerateAlerts } from './monitoring/alertUtils';
 
