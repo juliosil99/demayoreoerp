@@ -190,6 +190,20 @@ export type Database = {
             foreignKeyName: "accounting_adjustments_expense_id_fkey"
             columns: ["expense_id"]
             isOneToOne: false
+            referencedRelation: "duplicate_expenses_view"
+            referencedColumns: ["expense_id_1"]
+          },
+          {
+            foreignKeyName: "accounting_adjustments_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "duplicate_expenses_view"
+            referencedColumns: ["expense_id_2"]
+          },
+          {
+            foreignKeyName: "accounting_adjustments_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
             referencedRelation: "expenses"
             referencedColumns: ["id"]
           },
@@ -287,6 +301,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "contacts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_receivable_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "duplicate_expenses_view"
+            referencedColumns: ["expense_id_1"]
+          },
+          {
+            foreignKeyName: "accounts_receivable_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "duplicate_expenses_view"
+            referencedColumns: ["expense_id_2"]
           },
           {
             foreignKeyName: "accounts_receivable_expense_id_fkey"
@@ -1149,6 +1177,20 @@ export type Database = {
           tax_details?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "expense_invoice_relations_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "duplicate_expenses_view"
+            referencedColumns: ["expense_id_1"]
+          },
+          {
+            foreignKeyName: "expense_invoice_relations_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "duplicate_expenses_view"
+            referencedColumns: ["expense_id_2"]
+          },
           {
             foreignKeyName: "expense_invoice_relations_expense_id_fkey"
             columns: ["expense_id"]
@@ -2032,6 +2074,20 @@ export type Database = {
             foreignKeyName: "manual_reconciliations_expense_id_fkey"
             columns: ["expense_id"]
             isOneToOne: false
+            referencedRelation: "duplicate_expenses_view"
+            referencedColumns: ["expense_id_1"]
+          },
+          {
+            foreignKeyName: "manual_reconciliations_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "duplicate_expenses_view"
+            referencedColumns: ["expense_id_2"]
+          },
+          {
+            foreignKeyName: "manual_reconciliations_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
             referencedRelation: "expenses"
             referencedColumns: ["id"]
           },
@@ -2846,6 +2902,27 @@ export type Database = {
         }
         Relationships: []
       }
+      duplicate_expenses_view: {
+        Row: {
+          amount: number | null
+          created_1: string | null
+          created_2: string | null
+          date: string | null
+          description: string | null
+          expense_id_1: string | null
+          expense_id_2: string | null
+          supplier_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_access_bank_account: {
@@ -2859,6 +2936,10 @@ export type Database = {
       can_access_company_user: {
         Args: { user_id: string; company_id: string }
         Returns: boolean
+      }
+      clean_duplicate_expenses: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       create_annual_period: {
         Args: { user_uuid: string; year_param: number }

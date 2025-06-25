@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +27,7 @@ export function PayableRow({
   isDeleting 
 }: PayableRowProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { debugPayable, isDebugging, debugResults } = usePayableDebug();
 
   const formatCurrency = (amount: number) => {
@@ -71,6 +71,25 @@ export function PayableRow({
   const handleDebugClick = async () => {
     await debugPayable(payable.id);
   };
+
+  const handleMarkAsPaid = async () => {
+    if (isProcessing || isPending) {
+      return;
+    }
+    
+    setIsProcessing(true);
+    try {
+      await onMarkAsPaid(payable.id);
+    } finally {
+      // Keep processing state for a bit to prevent double clicks
+      setTimeout(() => {
+        setIsProcessing(false);
+      }, 2000);
+    }
+  };
+
+  // Check if the button should be disabled
+  const isPayButtonDisabled = isProcessing || isPending || payable.status === 'paid';
 
   return (
     <TableRow key={payable.id}>
@@ -148,25 +167,39 @@ export function PayableRow({
         <div className="flex space-x-2">
           {payable.status === 'pending' && (
             <>
-              <Button
-                size="sm"
-                onClick={() => onMarkAsPaid(payable.id)}
-                disabled={isPending}
-              >
-                Marcar como Pagado
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      onClick={handleMarkAsPaid}
+                      disabled={isPayButtonDisabled}
+                      className={isProcessing ? "opacity-50 cursor-not-allowed" : ""}
+                    >
+                      {isProcessing ? "Procesando..." : "Marcar como Pagado"}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isPayButtonDisabled ? (
+                      isProcessing ? "Procesando pago..." : "Ya está siendo procesado"
+                    ) : (
+                      "Marcar como pagado y crear gasto automáticamente"
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => onEdit(payable)}
-                disabled={isPending}
+                disabled={isPending || isProcessing}
               >
                 <Edit className="w-4 h-4 mr-1" />
                 Editar
               </Button>
               <DeletePayableButton
                 onClick={handleDeleteClick}
-                disabled={isPending || isDeleting}
+                disabled={isPending || isDeleting || isProcessing}
               />
             </>
           )}
@@ -200,10 +233,10 @@ export function PayableRow({
         isDeleting={isDeleting}
       />
       
-      {/* Debug results display */}
+      {/* Enhanced debug results display */}
       {debugResults && (
         <div className="fixed top-4 right-4 bg-white border rounded-lg p-4 shadow-lg z-50 max-w-md">
-          <h3 className="font-semibold mb-2">Debug Results</h3>
+          <h3 className="font-semibold mb-2">Enhanced Debug Results</h3>
           <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">
             {JSON.stringify(debugResults, null, 2)}
           </pre>
