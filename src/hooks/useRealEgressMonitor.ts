@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import type { RealEgressMetrics, EgressAlert } from './monitoring/types';
@@ -47,16 +46,18 @@ export const useRealEgressMonitor = () => {
       const stats = tracker.getStats();
       const diagnostics = tracker.getDiagnostics();
       
-      console.log('🔍 Monitor diagnostics:', {
+      console.log('🔍 Enhanced monitor diagnostics:', {
         interceptorActive: deepNetworkInterceptor.isActive(),
         trackerActive: diagnostics.isActive,
         todayRequests: diagnostics.todayRequests,
         todayBytes: combinedData.egress_bytes_today,
+        avgBytesPerRequest: diagnostics.avgBytesPerRequest,
         lastRequest: diagnostics.lastRequest,
         dataSource: combinedData.source,
         trackerVersion: diagnostics.version,
         sourceBreakdownCount: sourceBreakdown.length,
-        isInitialized: diagnostics.isInitialized
+        isInitialized: diagnostics.isInitialized,
+        totalBytesTracked: diagnostics.totalBytesTracked
       });
       
       // Calculate projections ONLY if we have real data
@@ -112,8 +113,8 @@ export const useRealEgressMonitor = () => {
       }
       
     } catch (error) {
-      console.error('❌ Error calculating real egress metrics:', error);
-      toast.error('Error al calcular métricas de Egress reales');
+      console.error('❌ Error calculating enhanced egress metrics:', error);
+      toast.error('Error al calcular métricas de Egress mejoradas');
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +136,7 @@ export const useRealEgressMonitor = () => {
 
   const resetTracker = () => {
     trackerRef.current.reset();
-    toast.success('Tracker de Egress reiniciado');
+    toast.success('Enhanced Tracker de Egress reiniciado');
     setTimeout(() => {
       calculateRealMetrics();
     }, 500);
@@ -164,40 +165,50 @@ export const useRealEgressMonitor = () => {
   };
 
   const runDiagnosticTest = async () => {
-    console.log('🔧 Running comprehensive diagnostic test...');
+    console.log('🔧 Running enhanced comprehensive diagnostic test...');
     
     const success = await deepNetworkInterceptor.testInterceptor();
     
     if (success) {
-      toast.success('Test del interceptor exitoso - datos deberían aparecer pronto');
+      toast.success('Test del interceptor mejorado exitoso - datos con bytes reales deberían aparecer pronto');
       setTimeout(() => {
         calculateRealMetrics();
       }, 2000);
     } else {
-      toast.error('Test del interceptor falló - revisar consola para detalles');
+      toast.error('Test del interceptor mejorado falló - revisar consola para detalles');
     }
     
     return success;
   };
 
   const forceRefresh = () => {
-    console.log('🔄 Forcing complete refresh...');
+    console.log('🔄 Forcing complete enhanced refresh...');
     calculateRealMetrics();
   };
 
-  // Initialize deep interceptor and monitoring
+  // Initialize enhanced deep interceptor and monitoring
   useEffect(() => {
     if (isInitialized.current) return;
     
-    console.log('🚀 Initializing real egress monitor with deep interceptor...');
+    console.log('🚀 Initializing enhanced real egress monitor with deep interceptor...');
     
-    // Install deep network interceptor with callback
+    // Install deep network interceptor with enhanced callback
     deepNetworkInterceptor.install((request) => {
       const tracker = trackerRef.current;
       const parsedUrl = new URL(request.url);
       const endpoint = parsedUrl.pathname + parsedUrl.search;
       
-      tracker.trackRequest(endpoint, request.size, request.method, request.responseTime);
+      // Pass enhanced metadata including calculation method and confidence
+      tracker.trackRequest(
+        endpoint, 
+        request.size, 
+        request.method, 
+        request.responseTime,
+        {
+          sizeCalculationMethod: (request as any).sizeCalculationMethod,
+          sizeConfidence: (request as any).sizeConfidence
+        }
+      );
     });
     
     // Calculate initial metrics
@@ -205,7 +216,7 @@ export const useRealEgressMonitor = () => {
     
     // Update metrics every 15 seconds
     const interval = setInterval(() => {
-      console.log('⏰ Auto-updating metrics...');
+      console.log('⏰ Auto-updating enhanced metrics...');
       calculateRealMetrics();
     }, 15 * 1000);
     
@@ -213,8 +224,7 @@ export const useRealEgressMonitor = () => {
     
     return () => {
       clearInterval(interval);
-      // NO limpiar el tracker - debe persistir entre navegaciones
-      console.log('🔄 Monitor cleanup - tracker remains persistent');
+      console.log('🔄 Enhanced monitor cleanup - tracker remains persistent');
     };
   }, []);
 

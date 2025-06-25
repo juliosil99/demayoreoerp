@@ -13,7 +13,7 @@ export class PersistentEgressTracker {
   private requestsLog: RequestLog[] = [];
   private totalBytesTracked: number = 0;
   private startTime: Date = new Date();
-  private storageKey = 'egress-tracker-data-v3'; // Nueva versión
+  private storageKey = 'egress-tracker-data-v4'; // Bumped version for enhanced data
   private saveInterval: NodeJS.Timeout | null = null;
   private lastVersion: number = 0;
   private isInitialized: boolean = false;
@@ -33,7 +33,7 @@ export class PersistentEgressTracker {
     this.startAutoSave();
     this.isInitialized = true;
     
-    console.log('🏗️ PersistentEgressTracker initialized with persistence');
+    console.log('🏗️ Enhanced PersistentEgressTracker initialized with better byte tracking');
   }
 
   private loadFromStorage() {
@@ -49,11 +49,12 @@ export class PersistentEgressTracker {
         this.startTime = new Date(data.startTime);
         this.lastVersion = data.version || 0;
         
-        console.log('📂 Loaded persistent egress data:', {
+        console.log('📂 Loaded enhanced persistent egress data:', {
           requests: this.requestsLog.length,
           totalBytes: this.totalBytesTracked,
           startTime: this.startTime,
-          version: this.lastVersion
+          version: this.lastVersion,
+          avgBytesPerRequest: this.requestsLog.length > 0 ? (this.totalBytesTracked / this.requestsLog.length).toFixed(0) : 0
         });
       } else {
         console.log('📂 No existing persistent data found, starting fresh');
@@ -76,9 +77,10 @@ export class PersistentEgressTracker {
       };
       localStorage.setItem(this.storageKey, JSON.stringify(data));
       
-      console.log('💾 Saved persistent egress data:', {
+      console.log('💾 Saved enhanced persistent egress data:', {
         requests: this.requestsLog.length,
         totalBytes: this.totalBytesTracked,
+        avgBytes: this.requestsLog.length > 0 ? (this.totalBytesTracked / this.requestsLog.length).toFixed(0) : 0,
         version: this.lastVersion
       });
     } catch (error) {
@@ -97,26 +99,29 @@ export class PersistentEgressTracker {
     console.log('⏰ Auto-save started (every 3 seconds)');
   }
 
-  trackRequest(endpoint: string, responseSize: number, method: string, responseTime: number) {
+  trackRequest(endpoint: string, responseSize: number, method: string, responseTime: number, metadata?: any) {
     const request: RequestLog = {
       endpoint,
       size: responseSize,
       timestamp: new Date(),
       method,
       responseTime,
-      table: this.extractTableFromEndpoint(endpoint)
+      table: this.extractTableFromEndpoint(endpoint),
+      metadata // Store calculation method and confidence
     };
 
     this.requestsLog.push(request);
     this.totalBytesTracked += responseSize;
 
-    console.log(`📊 [TRACKER] Request tracked:`, {
+    console.log(`📊 [ENHANCED TRACKER] Request tracked:`, {
       endpoint,
-      size: responseSize,
+      size: `${(responseSize / 1024).toFixed(2)}KB`,
       method,
       table: request.table,
       totalRequests: this.requestsLog.length,
-      totalBytes: this.totalBytesTracked
+      totalBytes: `${(this.totalBytesTracked / 1024).toFixed(2)}KB`,
+      calculationMethod: metadata?.sizeCalculationMethod || 'unknown',
+      confidence: metadata?.sizeConfidence || 'unknown'
     });
 
     // Keep only last 5000 requests to prevent memory issues
@@ -165,11 +170,12 @@ export class PersistentEgressTracker {
     const todayRequests = this.requestsLog.filter(req => req.timestamp >= today);
     const totalBytes = todayRequests.reduce((sum, req) => sum + req.size, 0);
     
-    console.log(`📊 Today's bytes calculation:`, {
+    console.log(`📊 Enhanced today's bytes calculation:`, {
       totalRequests: todayRequests.length,
       totalBytes,
       formattedSize: `${(totalBytes / 1024).toFixed(2)}KB`,
-      allRequests: this.requestsLog.length
+      allRequests: this.requestsLog.length,
+      avgRequestSize: todayRequests.length > 0 ? `${(totalBytes / todayRequests.length).toFixed(0)}B` : '0B'
     });
     
     return totalBytes;
@@ -254,10 +260,11 @@ export class PersistentEgressTracker {
       .sort((a, b) => b.bytes - a.bytes)
       .slice(0, limit);
     
-    console.log('🔝 Top endpoints calculated:', {
+    console.log('🔝 Enhanced top endpoints calculated:', {
       totalEndpoints: endpoints.size,
       topEndpoints: topEndpoints.length,
-      topEndpoint: topEndpoints[0]?.endpoint || 'none'
+      topEndpoint: topEndpoints[0]?.endpoint || 'none',
+      topEndpointSize: topEndpoints[0] ? `${(topEndpoints[0].bytes / 1024).toFixed(2)}KB` : '0KB'
     });
     
     return topEndpoints;
@@ -269,7 +276,7 @@ export class PersistentEgressTracker {
     this.startTime = new Date();
     this.lastVersion = 0;
     localStorage.removeItem(this.storageKey);
-    console.log('🔄 Persistent egress tracker reset completely');
+    console.log('🔄 Enhanced persistent egress tracker reset completely');
     this.saveToStorage();
   }
 
@@ -306,25 +313,26 @@ export class PersistentEgressTracker {
       memoryUsage: this.requestsLog.length * 200,
       isPersistent: true,
       version: this.lastVersion,
-      isInitialized: this.isInitialized
+      isInitialized: this.isInitialized,
+      totalBytesTracked: this.totalBytesTracked,
+      avgBytesPerRequest: this.requestsLog.length > 0 ? (this.totalBytesTracked / this.requestsLog.length).toFixed(0) : 0
     };
     
-    console.log('🔍 Persistent tracker diagnostics:', diagnostics);
+    console.log('🔍 Enhanced persistent tracker diagnostics:', diagnostics);
     return diagnostics;
   }
 
   forceRefresh() {
-    console.log('🔄 Force refreshing persistent tracker data from storage...');
+    console.log('🔄 Force refreshing enhanced persistent tracker data from storage...');
     this.loadFromStorage();
   }
 
-  // NO CLEANUP - La persistencia debe mantenerse entre navegaciones
   cleanup() {
     if (this.saveInterval) {
       clearInterval(this.saveInterval);
       this.saveInterval = null;
     }
     this.saveToStorage(); // Final save
-    console.log('💾 Final save completed - tracker remains persistent');
+    console.log('💾 Final save completed - enhanced tracker remains persistent');
   }
 }

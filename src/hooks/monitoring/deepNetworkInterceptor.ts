@@ -1,9 +1,13 @@
+import { ByteCalculationUtils } from './byteCalculationUtils';
+
 interface NetworkRequest {
   url: string;
   method: string;
   size: number;
   responseTime: number;
   timestamp: Date;
+  sizeCalculationMethod?: string;
+  sizeConfidence?: string;
 }
 
 interface InterceptorState {
@@ -26,6 +30,7 @@ class DeepNetworkInterceptor {
   private originalXHRSend: typeof XMLHttpRequest.prototype.send;
   private performanceObserver: PerformanceObserver | null = null;
   private onRequestCallback?: (request: NetworkRequest) => void;
+  private pendingRequests: Map<string, {startTime: number, url: string, method: string}> = new Map();
 
   static getInstance(): DeepNetworkInterceptor {
     if (!DeepNetworkInterceptor.instance) {
@@ -46,16 +51,11 @@ class DeepNetworkInterceptor {
       return;
     }
 
-    console.log('🚀 Installing deep network interceptor...');
+    console.log('🚀 Installing deep network interceptor with enhanced byte calculation...');
     this.onRequestCallback = onRequest;
 
-    // 1. Interceptar fetch
     this.interceptFetch();
-    
-    // 2. Interceptar XMLHttpRequest
     this.interceptXHR();
-    
-    // 3. Usar Performance Observer para respaldo
     this.setupPerformanceObserver();
 
     this.state.isActive = true;
@@ -63,25 +63,35 @@ class DeepNetworkInterceptor {
   }
 
   private interceptFetch() {
+    const self = this;
+    
     window.fetch = async (...args: Parameters<typeof fetch>): Promise<Response> => {
       const startTime = performance.now();
       const url = this.extractUrl(args[0]);
       const method = this.extractMethod(args[1]);
+      const requestId = `${url}-${startTime}`;
+      
+      // Store request info for performance observer correlation
+      this.pendingRequests.set(requestId, { startTime, url, method });
       
       console.log(`🌐 [FETCH] ${method} ${url}`);
       
       try {
-        const response = await this.originalFetch(...args);
+        const response = await self.originalFetch(...args);
         const endTime = performance.now();
         const responseTime = endTime - startTime;
         
         if (this.isSupabaseRequest(url)) {
-          await this.processResponse(url, method, response, responseTime);
+          await this.processSupabaseResponse(url, method, response, responseTime, requestId);
         }
+        
+        // Clean up pending request
+        this.pendingRequests.delete(requestId);
         
         return response;
       } catch (error) {
         console.error('❌ Fetch interceptor error:', error);
+        this.pendingRequests.delete(requestId);
         throw error;
       }
     };
@@ -94,7 +104,6 @@ class DeepNetworkInterceptor {
       const urlString = url.toString();
       console.log(`🌐 [XHR] ${method} ${urlString}`);
       
-      // Store request info on the XHR object
       (this as any)._interceptorData = {
         method,
         url: urlString,
@@ -107,21 +116,23 @@ class DeepNetworkInterceptor {
     XMLHttpRequest.prototype.send = function(body?: Document | XMLHttpRequestBodyInit | null) {
       const interceptorData = (this as any)._interceptorData;
       
-      if (interceptorData) {
+      if (interceptorData && self.isSupabaseRequest(interceptorData.url)) {
         this.addEventListener('loadend', () => {
           const endTime = performance.now();
           const responseTime = endTime - interceptorData.startTime;
           
-          if (self.isSupabaseRequest(interceptorData.url)) {
-            const responseSize = this.response ? new TextEncoder().encode(this.response).length : 0;
-            self.captureRequest({
-              url: interceptorData.url,
-              method: interceptorData.method,
-              size: responseSize,
-              responseTime,
-              timestamp: new Date()
-            });
-          }
+          // Calculate size using intelligent estimation
+          const sizeResult = ByteCalculationUtils.calculateResponseSize(interceptorData.url);
+          
+          self.captureRequest({
+            url: interceptorData.url,
+            method: interceptorData.method,
+            size: sizeResult.size,
+            responseTime,
+            timestamp: new Date(),
+            sizeCalculationMethod: sizeResult.method,
+            sizeConfidence: sizeResult.confidence
+          });
         });
       }
       
@@ -133,16 +144,27 @@ class DeepNetworkInterceptor {
     if ('PerformanceObserver' in window) {
       try {
         this.performanceObserver = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
+          const entries = list.getEntries() as PerformanceResourceTiming[];
+          
           entries.forEach((entry) => {
-            if (entry.entryType === 'resource' && this.isSupabaseRequest(entry.name)) {
+            if (this.isSupabaseRequest(entry.name)) {
               console.log(`📊 [PERF] Resource: ${entry.name}`);
+              
+              // Calculate size using performance data
+              const sizeResult = ByteCalculationUtils.calculateResponseSize(
+                entry.name, 
+                undefined, 
+                entry
+              );
+              
               this.captureRequest({
                 url: entry.name,
                 method: 'GET', // Performance API doesn't provide method
-                size: (entry as any).transferSize || 0,
+                size: sizeResult.size,
                 responseTime: entry.duration,
-                timestamp: new Date()
+                timestamp: new Date(),
+                sizeCalculationMethod: sizeResult.method,
+                sizeConfidence: sizeResult.confidence
               });
             }
           });
@@ -156,42 +178,50 @@ class DeepNetworkInterceptor {
     }
   }
 
-  private async processResponse(url: string, method: string, response: Response, responseTime: number) {
+  private async processSupabaseResponse(
+    url: string, 
+    method: string, 
+    response: Response, 
+    responseTime: number,
+    requestId: string
+  ) {
     try {
-      const clonedResponse = response.clone();
-      const responseSize = await this.calculateResponseSize(clonedResponse);
+      // Don't clone the response - calculate size from headers and estimation
+      const sizeResult = ByteCalculationUtils.calculateResponseSize(url, response);
       
       this.captureRequest({
         url,
         method,
-        size: responseSize,
+        size: sizeResult.size,
         responseTime,
-        timestamp: new Date()
+        timestamp: new Date(),
+        sizeCalculationMethod: sizeResult.method,
+        sizeConfidence: sizeResult.confidence
       });
       
       console.log(`📊 [CAPTURED] ${method} ${url}:`, {
-        size: `${(responseSize / 1024).toFixed(2)}KB`,
+        size: `${(sizeResult.size / 1024).toFixed(2)}KB`,
         responseTime: `${responseTime.toFixed(0)}ms`,
-        status: response.status
+        status: response.status,
+        method: sizeResult.method,
+        confidence: sizeResult.confidence,
+        details: sizeResult.details
       });
       
     } catch (error) {
       console.warn('⚠️ Error processing response:', error);
-    }
-  }
-
-  private async calculateResponseSize(response: Response): Promise<number> {
-    try {
-      const contentLength = response.headers.get('content-length');
-      if (contentLength) {
-        return parseInt(contentLength, 10);
-      }
       
-      const text = await response.text();
-      return new TextEncoder().encode(text).length;
-    } catch (error) {
-      console.warn('Could not calculate response size:', error);
-      return 0;
+      // Fallback: use estimation only
+      const fallbackSize = ByteCalculationUtils.calculateResponseSize(url);
+      this.captureRequest({
+        url,
+        method,
+        size: fallbackSize.size,
+        responseTime,
+        timestamp: new Date(),
+        sizeCalculationMethod: 'estimation',
+        sizeConfidence: 'low'
+      });
     }
   }
 
@@ -244,7 +274,6 @@ class DeepNetworkInterceptor {
   }
 
   reset() {
-    // Restore original functions
     if (this.state.isActive) {
       window.fetch = this.originalFetch;
       XMLHttpRequest.prototype.open = this.originalXHROpen;
@@ -259,13 +288,14 @@ class DeepNetworkInterceptor {
       this.state.requestCount = 0;
       this.state.lastRequestTime = 0;
       this.state.capturedRequests = [];
+      this.pendingRequests.clear();
       
       console.log('🔄 Deep network interceptor reset');
     }
   }
 
   async testInterceptor(): Promise<boolean> {
-    console.log('🧪 Testing deep network interceptor...');
+    console.log('🧪 Testing deep network interceptor with enhanced byte calculation...');
     
     try {
       const testUrl = 'https://dulmmxtkgqkcfovvfxzu.supabase.co/rest/v1/';
@@ -278,17 +308,17 @@ class DeepNetworkInterceptor {
         }
       });
       
-      // Wait a moment for processing
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const newCount = this.state.requestCount;
       const success = newCount > initialCount;
       
-      console.log(`✅ Test completed - Requests captured: ${newCount - initialCount}`, {
+      console.log(`✅ Enhanced test completed - Requests captured: ${newCount - initialCount}`, {
         status: response.status,
         initialCount,
         newCount,
-        success
+        success,
+        lastCapturedRequest: this.state.capturedRequests[this.state.capturedRequests.length - 1]
       });
       
       return success;
