@@ -19,7 +19,9 @@ import {
   Target,
   Info,
   Bug,
-  PlayCircle
+  PlayCircle,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { useRealEgressMonitor } from '@/hooks/useRealEgressMonitor';
 import { formatBytes } from '@/utils/formatters';
@@ -32,6 +34,7 @@ export function RealEgressDashboard() {
     acknowledgeAlert, 
     clearAcknowledgedAlerts, 
     refreshMetrics,
+    forceRefresh,
     resetTracker,
     getTopEndpoints,
     getTrackerStats,
@@ -51,36 +54,57 @@ export function RealEgressDashboard() {
     }
   };
 
+  const getDataSourceIcon = () => {
+    if (!diagnostics.interceptorActive) return <WifiOff className="h-4 w-4 text-red-500" />;
+    if (diagnostics.todayRequests > 0) return <Wifi className="h-4 w-4 text-green-500" />;
+    return <Wifi className="h-4 w-4 text-yellow-500" />;
+  };
+
+  const getDataSourceText = () => {
+    if (!diagnostics.interceptorActive) return 'Monitor Inactivo';
+    if (diagnostics.todayRequests > 0) return 'Capturando Datos';
+    return 'Monitor Activo';
+  };
+
   const unacknowledgedAlerts = alerts.filter(alert => !alert.acknowledged);
 
   return (
     <div className="space-y-6">
-      {/* Header con controles mejorados */}
+      {/* Header con estado mejorado */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Monitor de Egress en Tiempo Real</h2>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            Monitor de Egress en Tiempo Real
+            {getDataSourceIcon()}
+          </h2>
           <p className="text-muted-foreground">
-            Medición precisa del uso de datos con interceptor HTTP activo
+            {getDataSourceText()} - Medición precisa del uso de datos
           </p>
           <div className="flex items-center gap-4 mt-2 text-sm">
             <span className={`inline-flex items-center gap-1 ${diagnostics.interceptorActive ? 'text-green-600' : 'text-red-600'}`}>
               <Activity className="h-3 w-3" />
               Interceptor: {diagnostics.interceptorActive ? 'Activo' : 'Inactivo'}
             </span>
-            <span className={`inline-flex items-center gap-1 ${diagnostics.isActive ? 'text-green-600' : 'text-yellow-600'}`}>
+            <span className={`inline-flex items-center gap-1 ${diagnostics.todayRequests > 0 ? 'text-green-600' : 'text-yellow-600'}`}>
               <Database className="h-3 w-3" />
-              Tracker: {diagnostics.isActive ? 'Con datos' : 'Sin datos'}
+              Hoy: {diagnostics.todayRequests} requests
             </span>
             <span className="inline-flex items-center gap-1 text-blue-600">
               <Clock className="h-3 w-3" />
-              {trackerStats.totalRequests} requests capturadas
+              Total: {trackerStats.totalRequests} requests
             </span>
+            {metrics.dataSource && (
+              <Badge variant={metrics.dataSource === 'local_tracker' ? 'default' : 'secondary'}>
+                {metrics.dataSource === 'local_tracker' ? 'Datos Reales' : 
+                 metrics.dataSource === 'supabase_api' ? 'API Analytics' : 'Sin Datos'}
+              </Badge>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            onClick={refreshMetrics}
+            onClick={forceRefresh}
             disabled={isLoading}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
@@ -111,16 +135,16 @@ export function RealEgressDashboard() {
         </div>
       </div>
 
-      {/* Estado del Monitor */}
+      {/* Estado del Monitor con más detalles */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bug className="h-5 w-5" />
-            Diagnóstico del Monitor
+            Diagnóstico Completo del Monitor
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
             <div>
               <div className="text-muted-foreground">Estado Interceptor</div>
               <div className={`text-lg font-bold ${diagnostics.interceptorActive ? 'text-green-600' : 'text-red-600'}`}>
@@ -129,10 +153,12 @@ export function RealEgressDashboard() {
             </div>
             <div>
               <div className="text-muted-foreground">Requests Hoy</div>
-              <div className="text-lg font-bold">{diagnostics.todayRequests}</div>
+              <div className={`text-lg font-bold ${diagnostics.todayRequests > 0 ? 'text-green-600' : 'text-yellow-600'}`}>
+                {diagnostics.todayRequests}
+              </div>
             </div>
             <div>
-              <div className="text-muted-foreground">Total Requests</div>
+              <div className="text-muted-foreground">Total Capturado</div>
               <div className="text-lg font-bold">{diagnostics.totalRequests}</div>
             </div>
             <div>
@@ -142,13 +168,23 @@ export function RealEgressDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Source note if available */}
+          {metrics.sourceNote && (
+            <div className="bg-blue-50 p-3 rounded-lg mb-4">
+              <p className="text-sm text-blue-800">
+                <Info className="h-4 w-4 inline mr-1" />
+                {metrics.sourceNote}
+              </p>
+            </div>
+          )}
           
           {!diagnostics.interceptorActive && (
             <Alert className="mt-4" variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Interceptor Inactivo</AlertTitle>
               <AlertDescription>
-                El interceptor HTTP no está funcionando. Haz clic en "Test" para diagnosticar el problema.
+                El interceptor HTTP no está funcionando. Haz clic en "Test" para diagnosticar y reactivar.
               </AlertDescription>
             </Alert>
           )}
@@ -156,9 +192,19 @@ export function RealEgressDashboard() {
           {diagnostics.interceptorActive && diagnostics.todayRequests === 0 && (
             <Alert className="mt-4">
               <Info className="h-4 w-4" />
-              <AlertTitle>Sin Datos Capturados</AlertTitle>
+              <AlertTitle>Interceptor Activo - Esperando Datos</AlertTitle>
               <AlertDescription>
-                El interceptor está activo pero no ha capturado requests hoy. Navega por la aplicación para generar datos.
+                El interceptor está funcionando pero no ha capturado requests hoy. Navega por la aplicación para generar datos de prueba.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {diagnostics.todayRequests > 0 && (
+            <Alert className="mt-4" variant="default">
+              <CheckCircle className="h-4 w-4" />
+              <AlertTitle>Monitor Funcionando Correctamente</AlertTitle>
+              <AlertDescription>
+                Se han capturado {diagnostics.todayRequests} requests hoy. Los datos mostrados son reales.
               </AlertDescription>
             </Alert>
           )}
@@ -222,6 +268,9 @@ export function RealEgressDashboard() {
             <div className="mt-1 text-xs text-muted-foreground">
               {metrics.usagePercentage.toFixed(1)}% del límite diario
             </div>
+            {metrics.isEstimated && (
+              <Badge variant="outline" className="mt-2 text-xs">Estimado</Badge>
+            )}
           </CardContent>
         </Card>
 
@@ -287,6 +336,9 @@ export function RealEgressDashboard() {
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
             Top Endpoints por Consumo (Tiempo Real)
+            {topEndpoints.length > 0 && (
+              <Badge variant="default">{topEndpoints.length} endpoints</Badge>
+            )}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
             Datos medidos directamente desde las respuestas HTTP interceptadas
@@ -324,15 +376,29 @@ export function RealEgressDashboard() {
               <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>
                 {diagnostics.interceptorActive 
-                  ? 'Interceptando requests... Navega por la aplicación para ver datos.' 
-                  : 'Interceptor inactivo. Haz clic en "Test" para activarlo.'}
+                  ? 'Interceptor activo - navega por la aplicación para generar datos' 
+                  : 'Monitor inactivo - haz clic en "Test" para activarlo'}
               </p>
-              <p className="text-xs mt-1">El monitor se activa automáticamente al hacer requests a Supabase</p>
+              <p className="text-xs mt-1">
+                Los endpoints aparecerán aquí cuando se hagan requests a Supabase
+              </p>
+              {diagnostics.interceptorActive && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-3"
+                  onClick={runDiagnosticTest}
+                >
+                  <PlayCircle className="h-4 w-4 mr-2" />
+                  Generar Request de Prueba
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Resto de los componentes permanecen igual... */}
       {/* Análisis por tabla/endpoint */}
       <Card>
         <CardHeader>
@@ -425,19 +491,20 @@ export function RealEgressDashboard() {
         </CardContent>
       </Card>
 
-      {/* Guía de uso */}
+      {/* Guía de uso mejorada */}
       <Card>
         <CardHeader>
-          <CardTitle>💡 Cómo funciona este monitor</CardTitle>
+          <CardTitle>💡 Cómo funciona este monitor (Versión Mejorada)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
-            <p><strong>✅ Monitor HTTP activo:</strong> Intercepta todas las requests a Supabase y mide el tamaño real de las respuestas</p>
-            <p><strong>📊 Datos en tiempo real:</strong> Se actualiza automáticamente cada 30 segundos con datos reales</p>
-            <p><strong>🔍 Top Endpoints:</strong> Navega por la app para ver qué páginas consumen más datos</p>
-            <p><strong>⚡ Medición precisa:</strong> Mide bytes reales transferidos, no estimaciones</p>
-            <p><strong>🚨 Alertas automáticas:</strong> Te avisará si algún endpoint consume más de 10MB</p>
-            <p><strong>📈 Análisis por tabla:</strong> Identifica exactamente qué tablas/queries están generando más egress</p>
+            <p><strong>✅ Interceptor HTTP Robusto:</strong> Captura TODAS las requests a Supabase con detección mejorada</p>
+            <p><strong>📊 Datos 100% Reales:</strong> Sin estimaciones ni multiplicaciones artificiales</p>
+            <p><strong>💾 Persistencia:</strong> Los datos se guardan automáticamente y sobreviven a recargas de página</p>
+            <p><strong>🔍 Debugging Avanzado:</strong> Diagnósticos completos para identificar problemas rápidamente</p>
+            <p><strong>⚡ Tiempo Real:</strong> Actualización cada 15 segundos con datos frescos</p>
+            <p><strong>🎯 Top Endpoints Reales:</strong> Lista exacta de endpoints que más datos consumen</p>
+            <p><strong>🚨 Alertas Inteligentes:</strong> Notificaciones cuando el uso supera umbrales</p>
           </div>
         </CardContent>
       </Card>

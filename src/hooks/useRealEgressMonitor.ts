@@ -2,9 +2,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import type { RealEgressMetrics, EgressAlert } from './monitoring/types';
-import { PreciseEgressTracker } from './monitoring/EgressTracker';
-import { installEgressInterceptor, isInterceptorActive, testInterceptor } from './monitoring/egressInterceptor';
-import { fetchSupabaseAnalytics } from './monitoring/analyticsService';
+import { PersistentEgressTracker } from './monitoring/PersistentEgressTracker';
+import { robustEgressInterceptor } from './monitoring/robustEgressInterceptor';
+import { fetchRealSupabaseAnalytics, getLocalTrackerData, combineAnalyticsData } from './monitoring/realAnalyticsService';
 import { checkAndGenerateAlerts } from './monitoring/alertUtils';
 
 export const useRealEgressMonitor = () => {
@@ -17,91 +17,90 @@ export const useRealEgressMonitor = () => {
     alertLevel: 'normal',
     lastUpdated: new Date(),
     estimatedDailyCost: 0,
-    dailyLimit: 50000000, // 50MB límite conservador
+    dailyLimit: 50000000, // 50MB conservative limit
     usagePercentage: 0
   });
   
   const [alerts, setAlerts] = useState<EgressAlert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const trackerRef = useRef(PreciseEgressTracker.getInstance());
+  const trackerRef = useRef(PersistentEgressTracker.getInstance());
 
-  const calculatePreciseMetrics = async () => {
+  const calculateRealMetrics = async () => {
     try {
       setIsLoading(true);
       
       const tracker = trackerRef.current;
       
-      // Obtener datos reales del tracker (sin hardcoding)
-      const todayBytes = tracker.getTodayBytes();
+      // Get real data from local tracker
+      const localData = getLocalTrackerData(tracker);
+      
+      // Try to get Supabase analytics
+      const supabaseData = await fetchRealSupabaseAnalytics();
+      
+      // Combine data sources intelligently
+      const combinedData = combineAnalyticsData(supabaseData, localData);
+      
+      // Get detailed breakdowns from tracker
       const sourceBreakdown = tracker.getSourceBreakdown();
       const hourlyBreakdown = tracker.getHourlyBreakdown();
       const stats = tracker.getStats();
       const diagnostics = tracker.getDiagnostics();
       
       console.log('🔍 Monitor diagnostics:', {
-        interceptorActive: isInterceptorActive(),
+        interceptorActive: robustEgressInterceptor.isActive(),
         trackerActive: diagnostics.isActive,
         todayRequests: diagnostics.todayRequests,
-        todayBytes: todayBytes,
-        lastRequest: diagnostics.lastRequest
+        todayBytes: combinedData.egress_bytes_today,
+        lastRequest: diagnostics.lastRequest,
+        dataSource: combinedData.source
       });
       
-      // Intentar obtener datos reales de Supabase (sin usar como fallback hardcodeado)
-      const supabaseData = await fetchSupabaseAnalytics();
-      
-      // Usar SOLO datos reales - no estimates artificiales
-      let actualTodayBytes = todayBytes;
+      // Calculate projections ONLY if we have real data
       let thisWeekBytes = 0;
       let thisMonthBytes = 0;
       
-      // Si tenemos datos de Supabase Analytics, usarlos
-      if (supabaseData?.egress_bytes_today) {
-        actualTodayBytes = Math.max(todayBytes, supabaseData.egress_bytes_today);
-        console.log('📊 Using Supabase Analytics data as primary source');
-      } else if (todayBytes > 0) {
-        console.log('📊 Using local tracker data as primary source');
-      } else {
-        console.log('⚠️ No data available - neither tracker nor analytics');
-      }
-      
-      // Solo calcular proyecciones si tenemos datos reales
-      if (actualTodayBytes > 0) {
+      if (combinedData.egress_bytes_today > 0) {
         const currentHour = new Date().getHours();
         const hoursInDay = 24;
-        const projectedDailyBytes = currentHour > 0 ? (actualTodayBytes / currentHour) * hoursInDay : actualTodayBytes;
+        const projectedDailyBytes = currentHour > 0 
+          ? (combinedData.egress_bytes_today / currentHour) * hoursInDay 
+          : combinedData.egress_bytes_today;
         
         thisWeekBytes = projectedDailyBytes * 7;
         thisMonthBytes = projectedDailyBytes * 30;
       }
       
-      const dailyLimit = 50000000; // 50MB límite conservador
-      const usagePercentage = (actualTodayBytes / dailyLimit) * 100;
+      const dailyLimit = 50000000; // 50MB conservative limit
+      const usagePercentage = (combinedData.egress_bytes_today / dailyLimit) * 100;
       
       let alertLevel: 'normal' | 'warning' | 'critical' = 'normal';
       if (usagePercentage > 150) alertLevel = 'critical';
       else if (usagePercentage > 80) alertLevel = 'warning';
       
       const newMetrics: RealEgressMetrics = {
-        totalBytesToday: actualTodayBytes,
+        totalBytesToday: combinedData.egress_bytes_today,
         totalBytesThisWeek: thisWeekBytes,
         totalBytesThisMonth: thisMonthBytes,
         sourceBreakdown,
         hourlyBreakdown,
         alertLevel,
         lastUpdated: new Date(),
-        estimatedDailyCost: (actualTodayBytes / 1000000000) * 0.09, // $0.09 per GB
+        estimatedDailyCost: (combinedData.egress_bytes_today / 1000000000) * 0.09, // $0.09 per GB
         dailyLimit,
         usagePercentage,
         realSupabaseData: supabaseData ? {
           totalEgress: supabaseData.total_egress || 0,
           timestamp: new Date()
-        } : undefined
+        } : undefined,
+        dataSource: combinedData.source,
+        isEstimated: combinedData.isEstimate,
+        sourceNote: combinedData.note
       };
 
       setMetrics(newMetrics);
       
-      // Solo generar alertas si tenemos datos reales
-      if (actualTodayBytes > 0) {
+      // Generate alerts only if we have real data
+      if (combinedData.egress_bytes_today > 0) {
         const newAlerts = checkAndGenerateAlerts(newMetrics, stats);
         if (newAlerts.length > 0) {
           setAlerts(prev => [...prev, ...newAlerts]);
@@ -109,8 +108,8 @@ export const useRealEgressMonitor = () => {
       }
       
     } catch (error) {
-      console.error('❌ Error calculating precise egress metrics:', error);
-      toast.error('Error al calcular métricas de Egress precisas');
+      console.error('❌ Error calculating real egress metrics:', error);
+      toast.error('Error al calcular métricas de Egress reales');
     } finally {
       setIsLoading(false);
     }
@@ -133,7 +132,7 @@ export const useRealEgressMonitor = () => {
   const resetTracker = () => {
     trackerRef.current.reset();
     toast.success('Tracker de Egress reiniciado');
-    calculatePreciseMetrics(); // Recalcular inmediatamente
+    calculateRealMetrics();
   };
 
   const getTopEndpoints = () => {
@@ -146,42 +145,59 @@ export const useRealEgressMonitor = () => {
 
   const getDiagnostics = () => {
     const tracker = trackerRef.current;
+    const interceptorState = robustEgressInterceptor.getState();
+    
     return {
-      interceptorActive: isInterceptorActive(),
+      interceptorActive: robustEgressInterceptor.isActive(),
+      interceptorRequestCount: interceptorState.requestCount,
+      lastInterceptorRequest: interceptorState.lastRequestTime,
       ...tracker.getDiagnostics()
     };
   };
 
   const runDiagnosticTest = async () => {
-    console.log('🔧 Running full diagnostic test...');
+    console.log('🔧 Running comprehensive diagnostic test...');
     
-    const success = await testInterceptor();
+    const success = await robustEgressInterceptor.testInterceptor();
     
     if (success) {
-      toast.success('Test del interceptor exitoso');
-      calculatePreciseMetrics();
+      toast.success('Test del interceptor exitoso - datos deberían aparecer pronto');
+      // Wait a moment for the request to be processed, then update metrics
+      setTimeout(() => {
+        calculateRealMetrics();
+      }, 1000);
     } else {
-      toast.error('Test del interceptor falló');
+      toast.error('Test del interceptor falló - revisar consola para detalles');
     }
     
     return success;
   };
 
-  // Instalar interceptor y monitoreo automático
+  const forceRefresh = () => {
+    console.log('🔄 Forcing complete refresh...');
+    calculateRealMetrics();
+  };
+
+  // Initialize interceptor and monitoring
   useEffect(() => {
-    console.log('🚀 Initializing real egress monitor...');
+    console.log('🚀 Initializing real egress monitor with robust interceptor...');
     
-    installEgressInterceptor();
-    calculatePreciseMetrics();
+    // Install robust interceptor
+    robustEgressInterceptor.install();
     
-    // Actualizar métricas cada 30 segundos
+    // Calculate initial metrics
+    calculateRealMetrics();
+    
+    // Update metrics every 15 seconds (more frequent for real-time feel)
     const interval = setInterval(() => {
-      console.log('⏰ Updating metrics automatically...');
-      calculatePreciseMetrics();
-    }, 30 * 1000);
+      console.log('⏰ Auto-updating metrics...');
+      calculateRealMetrics();
+    }, 15 * 1000);
     
     return () => {
       clearInterval(interval);
+      // Cleanup tracker
+      trackerRef.current.cleanup();
       console.log('🛑 Egress monitor cleanup completed');
     };
   }, []);
@@ -192,7 +208,8 @@ export const useRealEgressMonitor = () => {
     isLoading,
     acknowledgeAlert,
     clearAcknowledgedAlerts,
-    refreshMetrics: calculatePreciseMetrics,
+    refreshMetrics: calculateRealMetrics,
+    forceRefresh,
     resetTracker,
     getTopEndpoints,
     getTrackerStats,

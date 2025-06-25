@@ -26,6 +26,9 @@ export interface RealEgressMetrics {
     totalEgress: number;
     timestamp: Date;
   };
+  dataSource?: 'supabase_api' | 'local_tracker' | 'unavailable';
+  isEstimated?: boolean;
+  sourceNote?: string;
 }
 
 export interface EgressAlert {
