@@ -5,6 +5,7 @@ interface PersistedData {
   totalBytes: number;
   startTime: string;
   lastSaved: string;
+  version: number; // Para detectar cambios
 }
 
 export class PersistentEgressTracker {
@@ -12,14 +13,16 @@ export class PersistentEgressTracker {
   private requestsLog: RequestLog[] = [];
   private totalBytesTracked: number = 0;
   private startTime: Date = new Date();
-  private storageKey = 'egress-tracker-data';
+  private storageKey = 'egress-tracker-data-v2'; // Cambiar versión para forzar reset
   private saveInterval: NodeJS.Timeout | null = null;
+  private lastVersion: number = 0;
 
   static getInstance(): PersistentEgressTracker {
     if (!PersistentEgressTracker.instance) {
       PersistentEgressTracker.instance = new PersistentEgressTracker();
       PersistentEgressTracker.instance.loadFromStorage();
       PersistentEgressTracker.instance.startAutoSave();
+      console.log('🏗️ PersistentEgressTracker instance created and initialized');
     }
     return PersistentEgressTracker.instance;
   }
@@ -33,39 +36,56 @@ export class PersistentEgressTracker {
           ...req,
           timestamp: new Date(req.timestamp)
         }));
-        this.totalBytesTracked = data.totalBytes;
+        this.totalBytesTracked = data.totalBytes || 0;
         this.startTime = new Date(data.startTime);
+        this.lastVersion = data.version || 0;
         
         console.log('📂 Loaded egress data from storage:', {
           requests: this.requestsLog.length,
           totalBytes: this.totalBytesTracked,
-          startTime: this.startTime
+          startTime: this.startTime,
+          version: this.lastVersion
         });
+      } else {
+        console.log('📂 No existing egress data found, starting fresh');
       }
     } catch (error) {
       console.warn('⚠️ Could not load egress data from storage:', error);
+      // Reset en caso de error
+      this.reset();
     }
   }
 
   private saveToStorage() {
     try {
+      this.lastVersion++;
       const data: PersistedData = {
         requests: this.requestsLog,
         totalBytes: this.totalBytesTracked,
         startTime: this.startTime.toISOString(),
-        lastSaved: new Date().toISOString()
+        lastSaved: new Date().toISOString(),
+        version: this.lastVersion
       };
       localStorage.setItem(this.storageKey, JSON.stringify(data));
+      console.log('💾 Saved egress data to storage:', {
+        requests: this.requestsLog.length,
+        totalBytes: this.totalBytesTracked,
+        version: this.lastVersion
+      });
     } catch (error) {
       console.warn('⚠️ Could not save egress data to storage:', error);
     }
   }
 
   private startAutoSave() {
-    // Save every 10 seconds
+    if (this.saveInterval) {
+      clearInterval(this.saveInterval);
+    }
+    // Save every 5 seconds for more frequent updates
     this.saveInterval = setInterval(() => {
       this.saveToStorage();
-    }, 10000);
+    }, 5000);
+    console.log('⏰ Auto-save started (every 5 seconds)');
   }
 
   trackRequest(endpoint: string, responseSize: number, method: string, responseTime: number) {
@@ -81,17 +101,25 @@ export class PersistentEgressTracker {
     this.requestsLog.push(request);
     this.totalBytesTracked += responseSize;
 
-    // Keep only last 5000 requests to prevent memory issues
-    if (this.requestsLog.length > 5000) {
-      const removed = this.requestsLog.splice(0, 1000);
+    console.log(`📊 [TRACKER] Request tracked:`, {
+      endpoint,
+      size: responseSize,
+      method,
+      table: request.table,
+      totalRequests: this.requestsLog.length,
+      totalBytes: this.totalBytesTracked
+    });
+
+    // Keep only last 3000 requests to prevent memory issues
+    if (this.requestsLog.length > 3000) {
+      const removed = this.requestsLog.splice(0, 500);
       removed.forEach(req => this.totalBytesTracked -= req.size);
       console.log('🧹 Cleaned old requests from tracker');
     }
 
-    // Save immediately for large requests
-    if (responseSize > 1000000) { // > 1MB
+    // Save immediately for important requests
+    if (responseSize > 100000 || this.requestsLog.length % 10 === 0) { // Save every 10 requests or >100KB
       this.saveToStorage();
-      console.warn(`🚨 Large response: ${method} ${endpoint} - ${(responseSize / 1024 / 1024).toFixed(2)}MB`);
     }
   }
 
@@ -131,7 +159,8 @@ export class PersistentEgressTracker {
     console.log(`📊 Today's bytes calculation:`, {
       totalRequests: todayRequests.length,
       totalBytes,
-      formattedSize: `${(totalBytes / 1024).toFixed(2)}KB`
+      formattedSize: `${(totalBytes / 1024).toFixed(2)}KB`,
+      allRequests: this.requestsLog.length
     });
     
     return totalBytes;
@@ -205,7 +234,7 @@ export class PersistentEgressTracker {
         });
       });
 
-    return Array.from(endpoints.entries())
+    const topEndpoints = Array.from(endpoints.entries())
       .map(([endpoint, data]) => ({ 
         endpoint, 
         bytes: data.bytes,
@@ -215,14 +244,24 @@ export class PersistentEgressTracker {
       }))
       .sort((a, b) => b.bytes - a.bytes)
       .slice(0, limit);
+    
+    console.log('🔝 Top endpoints calculated:', {
+      totalEndpoints: endpoints.size,
+      topEndpoints: topEndpoints.length,
+      topEndpoint: topEndpoints[0]?.endpoint || 'none'
+    });
+    
+    return topEndpoints;
   }
 
   reset() {
     this.requestsLog = [];
     this.totalBytesTracked = 0;
     this.startTime = new Date();
+    this.lastVersion = 0;
     localStorage.removeItem(this.storageKey);
     console.log('🔄 Persistent egress tracker reset completely');
+    this.saveToStorage(); // Save the reset state
   }
 
   getStats(): TrackerStats {
@@ -247,7 +286,7 @@ export class PersistentEgressTracker {
     const uniqueTables = new Set(this.requestsLog.map(req => req.table));
     const uniqueEndpoints = new Set(this.requestsLog.map(req => req.endpoint));
     
-    return {
+    const diagnostics = {
       isActive: this.requestsLog.length > 0,
       totalRequests: this.requestsLog.length,
       todayRequests: todayRequests.length,
@@ -256,8 +295,18 @@ export class PersistentEgressTracker {
       lastRequest: this.requestsLog[this.requestsLog.length - 1]?.timestamp,
       startTime: this.startTime,
       memoryUsage: this.requestsLog.length * 200,
-      isPersistent: true
+      isPersistent: true,
+      version: this.lastVersion
     };
+    
+    console.log('🔍 Tracker diagnostics:', diagnostics);
+    return diagnostics;
+  }
+
+  // Force refresh data from storage
+  forceRefresh() {
+    console.log('🔄 Force refreshing tracker data from storage...');
+    this.loadFromStorage();
   }
 
   cleanup() {
@@ -266,5 +315,6 @@ export class PersistentEgressTracker {
       this.saveInterval = null;
     }
     this.saveToStorage(); // Final save
+    console.log('🛑 Tracker cleanup completed');
   }
 }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import type { RealEgressMetrics, EgressAlert } from './monitoring/types';
@@ -31,6 +30,9 @@ export const useRealEgressMonitor = () => {
       
       const tracker = trackerRef.current;
       
+      // Force refresh tracker data from storage to get latest state
+      tracker.forceRefresh();
+      
       // Get real data from local tracker
       const localData = getLocalTrackerData(tracker);
       
@@ -52,7 +54,9 @@ export const useRealEgressMonitor = () => {
         todayRequests: diagnostics.todayRequests,
         todayBytes: combinedData.egress_bytes_today,
         lastRequest: diagnostics.lastRequest,
-        dataSource: combinedData.source
+        dataSource: combinedData.source,
+        trackerVersion: diagnostics.version,
+        sourceBreakdownCount: sourceBreakdown.length
       });
       
       // Calculate projections ONLY if we have real data
@@ -132,19 +136,27 @@ export const useRealEgressMonitor = () => {
   const resetTracker = () => {
     trackerRef.current.reset();
     toast.success('Tracker de Egress reiniciado');
-    calculateRealMetrics();
+    // Wait a moment for reset to complete, then recalculate
+    setTimeout(() => {
+      calculateRealMetrics();
+    }, 500);
   };
 
   const getTopEndpoints = () => {
-    return trackerRef.current.getTopEndpoints();
+    const tracker = trackerRef.current;
+    tracker.forceRefresh(); // Ensure we have latest data
+    return tracker.getTopEndpoints();
   };
 
   const getTrackerStats = () => {
-    return trackerRef.current.getStats();
+    const tracker = trackerRef.current;
+    tracker.forceRefresh(); // Ensure we have latest data
+    return tracker.getStats();
   };
 
   const getDiagnostics = () => {
     const tracker = trackerRef.current;
+    tracker.forceRefresh(); // Ensure we have latest data
     const interceptorState = robustEgressInterceptor.getState();
     
     return {
@@ -165,7 +177,7 @@ export const useRealEgressMonitor = () => {
       // Wait a moment for the request to be processed, then update metrics
       setTimeout(() => {
         calculateRealMetrics();
-      }, 1000);
+      }, 2000); // Increased wait time
     } else {
       toast.error('Test del interceptor falló - revisar consola para detalles');
     }
@@ -175,6 +187,8 @@ export const useRealEgressMonitor = () => {
 
   const forceRefresh = () => {
     console.log('🔄 Forcing complete refresh...');
+    // Force refresh tracker first
+    trackerRef.current.forceRefresh();
     calculateRealMetrics();
   };
 
@@ -188,11 +202,11 @@ export const useRealEgressMonitor = () => {
     // Calculate initial metrics
     calculateRealMetrics();
     
-    // Update metrics every 15 seconds (more frequent for real-time feel)
+    // Update metrics every 10 seconds (more responsive)
     const interval = setInterval(() => {
       console.log('⏰ Auto-updating metrics...');
       calculateRealMetrics();
-    }, 15 * 1000);
+    }, 10 * 1000);
     
     return () => {
       clearInterval(interval);
