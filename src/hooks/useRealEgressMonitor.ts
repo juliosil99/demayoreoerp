@@ -1,8 +1,9 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import type { RealEgressMetrics, EgressAlert } from './monitoring/types';
 import { PersistentEgressTracker } from './monitoring/PersistentEgressTracker';
-import { robustEgressInterceptor } from './monitoring/robustEgressInterceptor';
+import { deepNetworkInterceptor } from './monitoring/deepNetworkInterceptor';
 import { fetchRealSupabaseAnalytics, getLocalTrackerData, combineAnalyticsData } from './monitoring/realAnalyticsService';
 import { checkAndGenerateAlerts } from './monitoring/alertUtils';
 
@@ -23,6 +24,7 @@ export const useRealEgressMonitor = () => {
   const [alerts, setAlerts] = useState<EgressAlert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const trackerRef = useRef(PersistentEgressTracker.getInstance());
+  const isInitialized = useRef(false);
 
   const calculateRealMetrics = async () => {
     try {
@@ -30,10 +32,7 @@ export const useRealEgressMonitor = () => {
       
       const tracker = trackerRef.current;
       
-      // Force refresh tracker data from storage to get latest state
-      tracker.forceRefresh();
-      
-      // Get real data from local tracker
+      // Get real data from persistent tracker
       const localData = getLocalTrackerData(tracker);
       
       // Try to get Supabase analytics
@@ -49,14 +48,15 @@ export const useRealEgressMonitor = () => {
       const diagnostics = tracker.getDiagnostics();
       
       console.log('🔍 Monitor diagnostics:', {
-        interceptorActive: robustEgressInterceptor.isActive(),
+        interceptorActive: deepNetworkInterceptor.isActive(),
         trackerActive: diagnostics.isActive,
         todayRequests: diagnostics.todayRequests,
         todayBytes: combinedData.egress_bytes_today,
         lastRequest: diagnostics.lastRequest,
         dataSource: combinedData.source,
         trackerVersion: diagnostics.version,
-        sourceBreakdownCount: sourceBreakdown.length
+        sourceBreakdownCount: sourceBreakdown.length,
+        isInitialized: diagnostics.isInitialized
       });
       
       // Calculate projections ONLY if we have real data
@@ -136,7 +136,6 @@ export const useRealEgressMonitor = () => {
   const resetTracker = () => {
     trackerRef.current.reset();
     toast.success('Tracker de Egress reiniciado');
-    // Wait a moment for reset to complete, then recalculate
     setTimeout(() => {
       calculateRealMetrics();
     }, 500);
@@ -144,23 +143,20 @@ export const useRealEgressMonitor = () => {
 
   const getTopEndpoints = () => {
     const tracker = trackerRef.current;
-    tracker.forceRefresh(); // Ensure we have latest data
     return tracker.getTopEndpoints();
   };
 
   const getTrackerStats = () => {
     const tracker = trackerRef.current;
-    tracker.forceRefresh(); // Ensure we have latest data
     return tracker.getStats();
   };
 
   const getDiagnostics = () => {
     const tracker = trackerRef.current;
-    tracker.forceRefresh(); // Ensure we have latest data
-    const interceptorState = robustEgressInterceptor.getState();
+    const interceptorState = deepNetworkInterceptor.getState();
     
     return {
-      interceptorActive: robustEgressInterceptor.isActive(),
+      interceptorActive: deepNetworkInterceptor.isActive(),
       interceptorRequestCount: interceptorState.requestCount,
       lastInterceptorRequest: interceptorState.lastRequestTime,
       ...tracker.getDiagnostics()
@@ -170,14 +166,13 @@ export const useRealEgressMonitor = () => {
   const runDiagnosticTest = async () => {
     console.log('🔧 Running comprehensive diagnostic test...');
     
-    const success = await robustEgressInterceptor.testInterceptor();
+    const success = await deepNetworkInterceptor.testInterceptor();
     
     if (success) {
       toast.success('Test del interceptor exitoso - datos deberían aparecer pronto');
-      // Wait a moment for the request to be processed, then update metrics
       setTimeout(() => {
         calculateRealMetrics();
-      }, 2000); // Increased wait time
+      }, 2000);
     } else {
       toast.error('Test del interceptor falló - revisar consola para detalles');
     }
@@ -187,32 +182,39 @@ export const useRealEgressMonitor = () => {
 
   const forceRefresh = () => {
     console.log('🔄 Forcing complete refresh...');
-    // Force refresh tracker first
-    trackerRef.current.forceRefresh();
     calculateRealMetrics();
   };
 
-  // Initialize interceptor and monitoring
+  // Initialize deep interceptor and monitoring
   useEffect(() => {
-    console.log('🚀 Initializing real egress monitor with robust interceptor...');
+    if (isInitialized.current) return;
     
-    // Install robust interceptor
-    robustEgressInterceptor.install();
+    console.log('🚀 Initializing real egress monitor with deep interceptor...');
+    
+    // Install deep network interceptor with callback
+    deepNetworkInterceptor.install((request) => {
+      const tracker = trackerRef.current;
+      const parsedUrl = new URL(request.url);
+      const endpoint = parsedUrl.pathname + parsedUrl.search;
+      
+      tracker.trackRequest(endpoint, request.size, request.method, request.responseTime);
+    });
     
     // Calculate initial metrics
     calculateRealMetrics();
     
-    // Update metrics every 10 seconds (more responsive)
+    // Update metrics every 15 seconds
     const interval = setInterval(() => {
       console.log('⏰ Auto-updating metrics...');
       calculateRealMetrics();
-    }, 10 * 1000);
+    }, 15 * 1000);
+    
+    isInitialized.current = true;
     
     return () => {
       clearInterval(interval);
-      // Cleanup tracker
-      trackerRef.current.cleanup();
-      console.log('🛑 Egress monitor cleanup completed');
+      // NO limpiar el tracker - debe persistir entre navegaciones
+      console.log('🔄 Monitor cleanup - tracker remains persistent');
     };
   }, []);
 

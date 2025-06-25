@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -21,7 +20,8 @@ import {
   Bug,
   PlayCircle,
   Wifi,
-  WifiOff
+  WifiOff,
+  Shield
 } from 'lucide-react';
 import { useRealEgressMonitor } from '@/hooks/useRealEgressMonitor';
 import { formatBytes } from '@/utils/formatters';
@@ -56,14 +56,14 @@ export function RealEgressDashboard() {
 
   const getDataSourceIcon = () => {
     if (!diagnostics.interceptorActive) return <WifiOff className="h-4 w-4 text-red-500" />;
-    if (diagnostics.todayRequests > 0) return <Wifi className="h-4 w-4 text-green-500" />;
+    if (diagnostics.todayRequests > 0) return <Shield className="h-4 w-4 text-green-500" />;
     return <Wifi className="h-4 w-4 text-yellow-500" />;
   };
 
   const getDataSourceText = () => {
     if (!diagnostics.interceptorActive) return 'Monitor Inactivo';
-    if (diagnostics.todayRequests > 0) return 'Capturando Datos';
-    return 'Monitor Activo';
+    if (diagnostics.todayRequests > 0) return 'Capturando Datos en Tiempo Real';
+    return 'Monitor Activo - Esperando Datos';
   };
 
   const unacknowledgedAlerts = alerts.filter(alert => !alert.acknowledged);
@@ -74,24 +74,28 @@ export function RealEgressDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            Monitor de Egress en Tiempo Real
+            Monitor de Egress Definitivo
             {getDataSourceIcon()}
           </h2>
           <p className="text-muted-foreground">
-            {getDataSourceText()} - Medición precisa del uso de datos
+            {getDataSourceText()} - Interceptor de Red Profundo Activado
           </p>
           <div className="flex items-center gap-4 mt-2 text-sm">
             <span className={`inline-flex items-center gap-1 ${diagnostics.interceptorActive ? 'text-green-600' : 'text-red-600'}`}>
               <Activity className="h-3 w-3" />
-              Interceptor: {diagnostics.interceptorActive ? 'Activo' : 'Inactivo'}
+              Deep Interceptor: {diagnostics.interceptorActive ? 'Activo' : 'Inactivo'}
             </span>
             <span className={`inline-flex items-center gap-1 ${diagnostics.todayRequests > 0 ? 'text-green-600' : 'text-yellow-600'}`}>
               <Database className="h-3 w-3" />
-              Hoy: {diagnostics.todayRequests} requests
+              Hoy: {diagnostics.todayRequests} requests capturadas
             </span>
             <span className="inline-flex items-center gap-1 text-blue-600">
               <Clock className="h-3 w-3" />
               Total: {trackerStats.totalRequests} requests
+            </span>
+            <span className="inline-flex items-center gap-1 text-purple-600">
+              <Shield className="h-3 w-3" />
+              Persistente: {diagnostics.isInitialized ? 'Sí' : 'No'}
             </span>
             {metrics.dataSource && (
               <Badge variant={metrics.dataSource === 'local_tracker' ? 'default' : 'secondary'}>
@@ -115,7 +119,7 @@ export function RealEgressDashboard() {
             onClick={runDiagnosticTest}
           >
             <Bug className="h-4 w-4 mr-2" />
-            Test
+            Test Profundo
           </Button>
           <Button 
             variant="secondary" 
@@ -135,36 +139,36 @@ export function RealEgressDashboard() {
         </div>
       </div>
 
-      {/* Estado del Monitor con más detalles */}
+      {/* Estado del Deep Interceptor */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bug className="h-5 w-5" />
-            Diagnóstico Completo del Monitor
+            <Shield className="h-5 w-5" />
+            Estado del Deep Network Interceptor
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
             <div>
-              <div className="text-muted-foreground">Estado Interceptor</div>
+              <div className="text-muted-foreground">Deep Interceptor</div>
               <div className={`text-lg font-bold ${diagnostics.interceptorActive ? 'text-green-600' : 'text-red-600'}`}>
-                {diagnostics.interceptorActive ? '✅ Activo' : '❌ Inactivo'}
+                {diagnostics.interceptorActive ? '🛡️ Activo' : '❌ Inactivo'}
               </div>
             </div>
             <div>
-              <div className="text-muted-foreground">Requests Hoy</div>
+              <div className="text-muted-foreground">Requests Capturadas Hoy</div>
               <div className={`text-lg font-bold ${diagnostics.todayRequests > 0 ? 'text-green-600' : 'text-yellow-600'}`}>
                 {diagnostics.todayRequests}
               </div>
             </div>
             <div>
-              <div className="text-muted-foreground">Total Capturado</div>
-              <div className="text-lg font-bold">{diagnostics.totalRequests}</div>
+              <div className="text-muted-foreground">Total Interceptado</div>
+              <div className="text-lg font-bold">{diagnostics.interceptorRequestCount || diagnostics.totalRequests}</div>
             </div>
             <div>
-              <div className="text-muted-foreground">Última Request</div>
-              <div className="text-lg font-bold">
-                {diagnostics.lastRequest ? new Date(diagnostics.lastRequest).toLocaleTimeString() : 'Ninguna'}
+              <div className="text-muted-foreground">Persistencia</div>
+              <div className={`text-lg font-bold ${diagnostics.isInitialized ? 'text-green-600' : 'text-yellow-600'}`}>
+                {diagnostics.isInitialized ? '💾 Activa' : '⚠️ Iniciando'}
               </div>
             </div>
           </div>
@@ -182,9 +186,9 @@ export function RealEgressDashboard() {
           {!diagnostics.interceptorActive && (
             <Alert className="mt-4" variant="destructive">
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Interceptor Inactivo</AlertTitle>
+              <AlertTitle>Deep Interceptor Inactivo</AlertTitle>
               <AlertDescription>
-                El interceptor HTTP no está funcionando. Haz clic en "Test" para diagnosticar y reactivar.
+                El interceptor de red profundo no está funcionando. Haz clic en "Test Profundo" para diagnosticar y reactivar.
               </AlertDescription>
             </Alert>
           )}
@@ -192,7 +196,7 @@ export function RealEgressDashboard() {
           {diagnostics.interceptorActive && diagnostics.todayRequests === 0 && (
             <Alert className="mt-4">
               <Info className="h-4 w-4" />
-              <AlertTitle>Interceptor Activo - Esperando Datos</AlertTitle>
+              <AlertTitle>Deep Interceptor Activo - Esperando Datos</AlertTitle>
               <AlertDescription>
                 El interceptor está funcionando pero no ha capturado requests hoy. Navega por la aplicación para generar datos de prueba.
               </AlertDescription>
@@ -202,9 +206,9 @@ export function RealEgressDashboard() {
           {diagnostics.todayRequests > 0 && (
             <Alert className="mt-4" variant="default">
               <CheckCircle className="h-4 w-4" />
-              <AlertTitle>Monitor Funcionando Correctamente</AlertTitle>
+              <AlertTitle>Deep Monitor Funcionando Perfectamente</AlertTitle>
               <AlertDescription>
-                Se han capturado {diagnostics.todayRequests} requests hoy. Los datos mostrados son reales.
+                Se han capturado {diagnostics.todayRequests} requests hoy con el interceptor profundo. Los datos mostrados son 100% reales y persistentes.
               </AlertDescription>
             </Alert>
           )}
@@ -247,11 +251,11 @@ export function RealEgressDashboard() {
         </div>
       )}
 
-      {/* Métricas principales - SOLO datos reales */}
+      {/* Métricas principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Egress Medido Hoy</CardTitle>
+            <CardTitle className="text-sm font-medium">Egress Interceptado Hoy</CardTitle>
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -284,7 +288,7 @@ export function RealEgressDashboard() {
               {metrics.totalBytesToday > 0 ? formatBytes(metrics.totalBytesThisWeek) : 'N/A'}
             </div>
             <div className="text-xs text-muted-foreground">
-              {metrics.totalBytesToday > 0 ? 'Basado en uso actual' : 'Sin datos suficientes'}
+              {metrics.totalBytesToday > 0 ? 'Basado en uso real' : 'Sin datos suficientes'}
             </div>
             <Badge variant="outline" className="mt-2">
               {metrics.totalBytesToday > 0 ? 'Proyección' : 'Sin datos'}
@@ -330,18 +334,18 @@ export function RealEgressDashboard() {
         </Card>
       </div>
 
-      {/* Top Endpoints EN TIEMPO REAL */}
+      {/* Top Endpoints TIEMPO REAL */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            Top Endpoints por Consumo (Tiempo Real)
+            Top Endpoints Interceptados (Tiempo Real)
             {topEndpoints.length > 0 && (
               <Badge variant="default">{topEndpoints.length} endpoints</Badge>
             )}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Datos medidos directamente desde las respuestas HTTP interceptadas
+            🛡️ Datos capturados directamente con Deep Network Interceptor
           </p>
         </CardHeader>
         <CardContent>
@@ -376,23 +380,21 @@ export function RealEgressDashboard() {
               <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>
                 {diagnostics.interceptorActive 
-                  ? 'Interceptor activo - navega por la aplicación para generar datos' 
-                  : 'Monitor inactivo - haz clic en "Test" para activarlo'}
+                  ? 'Deep Interceptor activo - navega por la aplicación para capturar requests' 
+                  : 'Deep Interceptor inactivo - haz clic en "Test Profundo" para activarlo'}
               </p>
               <p className="text-xs mt-1">
-                Los endpoints aparecerán aquí cuando se hagan requests a Supabase
+                Los endpoints aparecerán aquí cuando el interceptor capture requests a Supabase
               </p>
-              {diagnostics.interceptorActive && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-3"
-                  onClick={runDiagnosticTest}
-                >
-                  <PlayCircle className="h-4 w-4 mr-2" />
-                  Generar Request de Prueba
-                </Button>
-              )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-3"
+                onClick={runDiagnosticTest}
+              >
+                <PlayCircle className="h-4 w-4 mr-2" />
+                Ejecutar Test Profundo
+              </Button>
             </div>
           )}
         </CardContent>
