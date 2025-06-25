@@ -1,4 +1,6 @@
 
+import type { RealEgressMetrics, EgressAlert } from '../types';
+
 export interface EgressMonitorState {
   metrics: RealEgressMetrics;
   alerts: EgressAlert[];
