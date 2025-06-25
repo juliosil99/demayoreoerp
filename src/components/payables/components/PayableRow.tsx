@@ -3,11 +3,12 @@ import React, { useState } from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Edit, Repeat, AlertCircle } from "lucide-react";
+import { FileText, Edit, Repeat, AlertCircle, Bug } from "lucide-react";
 import { AccountPayable } from "@/types/payables";
 import { formatCardDate } from "@/utils/formatters";
 import { DeletePayableButton, DeletePayableDialog } from "./DeletePayableDialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { usePayableDebug } from "../hooks/usePayableDebug";
 
 interface PayableRowProps {
   payable: AccountPayable;
@@ -27,6 +28,7 @@ export function PayableRow({
   isDeleting 
 }: PayableRowProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { debugPayable, isDebugging, debugResults } = usePayableDebug();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -64,6 +66,10 @@ export function PayableRow({
   const handleConfirmDelete = () => {
     onDelete(payable.id);
     setIsDeleteDialogOpen(false);
+  };
+
+  const handleDebugClick = async () => {
+    await debugPayable(payable.id);
   };
 
   return (
@@ -164,6 +170,26 @@ export function PayableRow({
               />
             </>
           )}
+          {/* Debug button - only show in development or for troubleshooting */}
+          {process.env.NODE_ENV === 'development' && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleDebugClick}
+                    disabled={isDebugging}
+                  >
+                    <Bug className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Debug payable expenses</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </TableCell>
       
@@ -173,6 +199,19 @@ export function PayableRow({
         onConfirm={handleConfirmDelete}
         isDeleting={isDeleting}
       />
+      
+      {/* Debug results display */}
+      {debugResults && (
+        <div className="fixed top-4 right-4 bg-white border rounded-lg p-4 shadow-lg z-50 max-w-md">
+          <h3 className="font-semibold mb-2">Debug Results</h3>
+          <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">
+            {JSON.stringify(debugResults, null, 2)}
+          </pre>
+          <Button size="sm" variant="outline" className="mt-2" onClick={() => window.location.reload()}>
+            Close
+          </Button>
+        </div>
+      )}
     </TableRow>
   );
 }
