@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Download, Eye } from 'lucide-react';
 import { formatCardDate, formatCurrency } from '@/utils/formatters';
 import { ReconciliationBatchDetail } from './ReconciliationBatchDetail';
+import { generateReconciliationBatchPdf } from '@/services/reconciliationBatchPdfService';
 import {
   Dialog,
   DialogContent,
@@ -58,6 +58,10 @@ export function ReconciliationBatchesList({
     const adjustments = items.filter(item => item.item_type === 'adjustment').length;
     
     return { expenses, invoices, adjustments };
+  };
+
+  const handleDownloadPdf = async (batch: ReconciliationBatch) => {
+    await generateReconciliationBatchPdf(batch.id);
   };
 
   if (isLoading) {
@@ -136,10 +140,7 @@ export function ReconciliationBatchesList({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        // TODO: Implementar descarga de PDF
-                        console.log('Descargar PDF del lote:', batch.id);
-                      }}
+                      onClick={() => handleDownloadPdf(batch)}
                     >
                       <Download className="w-4 h-4 mr-2" />
                       PDF

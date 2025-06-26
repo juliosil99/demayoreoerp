@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -111,9 +110,8 @@ export function ReconciliationBatchDetail({ batch, onClose }: ReconciliationBatc
   const invoices = batchItems?.filter(item => item.item_type === 'invoice') || [];
   const adjustments = batchItems?.filter(item => item.item_type === 'adjustment') || [];
 
-  const handleDownloadPDF = () => {
-    // TODO: Implementar descarga de PDF del resumen del lote
-    console.log('Descargar PDF del lote:', batch.id);
+  const handleDownloadPDF = async () => {
+    await generateReconciliationBatchPdf(batch.id);
   };
 
   const handleDownloadAllInvoices = () => {
