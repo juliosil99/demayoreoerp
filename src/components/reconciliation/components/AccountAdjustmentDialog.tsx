@@ -53,9 +53,12 @@ export function AccountAdjustmentDialog({
   });
 
   const handleConfirm = () => {
-    if (!selectedAccountId && amount > 0.01) {
+    const isPerfectMatch = Math.abs(amount) <= 0.01;
+    
+    if (!isPerfectMatch && !selectedAccountId) {
       return;
     }
+    
     onConfirm(selectedAccountId, notes);
     setSelectedAccountId("");
     setNotes("");
