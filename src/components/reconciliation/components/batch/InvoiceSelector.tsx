@@ -1,4 +1,5 @@
 
+
 import { useOptimizedInvoices } from "../../hooks/useOptimizedInvoices";
 import { useInvoiceSearch } from "../../hooks/useInvoiceSearch";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,12 +19,41 @@ export function InvoiceSelector({ onAddItem, selectedItems }: InvoiceSelectorPro
   const { data: invoices, isLoading } = useOptimizedInvoices();
   const { searchTerm, setSearchTerm, filterInvoices } = useInvoiceSearch();
 
-  // First filter out reconciled invoices, then apply search
-  const availableInvoices = invoices?.filter(invoice => 
-    !invoice.reconciliation_batch_id // Solo facturas no reconciliadas por lote
-  ) || [];
+  // Filter out all types of reconciled invoices
+  const availableInvoices = invoices?.filter(invoice => {
+    // Exclude invoices that have been reconciled by any method
+    const isReconciledByBatch = !!invoice.reconciliation_batch_id;
+    const isManuallyReconciled = invoice.manually_reconciled === true;
+    const isProcessed = invoice.processed === true;
+    
+    // For payroll invoices (type N), we might want to include them even if processed
+    // based on the existing logic in useOptimizedInvoices
+    const isPayrollInvoice = invoice.invoice_type === 'N';
+    
+    // Exclude if reconciled by any method, except for payroll which follows special rules
+    if (isPayrollInvoice) {
+      // For payroll, only exclude if reconciled by batch or manually reconciled
+      return !isReconciledByBatch && !isManuallyReconciled;
+    } else {
+      // For regular invoices, exclude if reconciled by any method
+      return !isReconciledByBatch && !isManuallyReconciled && !isProcessed;
+    }
+  }) || [];
 
+  // Apply search filter
   const filteredInvoices = filterInvoices(availableInvoices, searchTerm);
+
+  // Logging for debugging
+  console.log("🔍 InvoiceSelector Debug:", {
+    totalInvoices: invoices?.length || 0,
+    availableAfterFilter: availableInvoices.length,
+    filteredBySearch: filteredInvoices.length,
+    searchTerm,
+    payrollInvoices: invoices?.filter(inv => inv.invoice_type === 'N').length || 0,
+    reconciledByBatch: invoices?.filter(inv => !!inv.reconciliation_batch_id).length || 0,
+    manuallyReconciled: invoices?.filter(inv => inv.manually_reconciled === true).length || 0,
+    processed: invoices?.filter(inv => inv.processed === true).length || 0
+  });
 
   const isSelected = (invoiceId: string) => {
     return selectedItems.some(item => item.id === invoiceId && item.type === 'invoice');
@@ -62,7 +92,7 @@ export function InvoiceSelector({ onAddItem, selectedItems }: InvoiceSelectorPro
         <div className="space-y-2">
           {filteredInvoices.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
-              {searchTerm ? 'No se encontraron facturas que coincidan con la búsqueda' : 'No se encontraron facturas disponibles'}
+              {searchTerm ? 'No se encontraron facturas que coincidan con la búsqueda' : 'No se encontraron facturas disponibles para reconciliar'}
             </div>
           ) : (
             filteredInvoices.map((invoice) => {
@@ -127,3 +157,4 @@ export function InvoiceSelector({ onAddItem, selectedItems }: InvoiceSelectorPro
     </div>
   );
 }
+
