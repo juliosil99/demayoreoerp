@@ -1,203 +1,234 @@
-
-import { useState } from "react";
-import { useReconciliation } from "./hooks/useReconciliation";
+import React, { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Search, Filter } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ExpenseCard } from "./components/ExpenseCard";
+import { InvoiceSearchDialog } from "./components/invoice-search/InvoiceSearchDialog";
+import { SimpleAccountAdjustmentDialog } from "./components/SimpleAccountAdjustmentDialog";
+import { BatchReconciliationDialog } from "./components/BatchReconciliationDialog";
+import { ReconciliationPagination } from "./components/ReconciliationPagination";
 import { useOptimizedExpenses } from "./hooks/useOptimizedExpenses";
 import { useOptimizedInvoices } from "./hooks/useOptimizedInvoices";
-import { ExpenseCard } from "./components/ExpenseCard";
-import { InvoiceSearchDialog } from "./components/invoice-search";
-import { AccountAdjustmentDialog } from "./components/AccountAdjustmentDialog";
-import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
-import { BatchReconciliationDialog } from "./components/BatchReconciliationDialog";
-import { ReconciliationSkeleton } from "./components/ReconciliationSkeleton";
-import { ReconciliationPagination } from "./components/ReconciliationPagination";
-import { Button } from "@/components/ui/button";
-import { Calculator } from "lucide-react";
+import { useReconciliationProcess } from "./hooks/useReconciliationProcess";
+import { useSelectedItems } from "./hooks/useSelectedItems";
+import { useInvoiceSelection } from "./hooks/useInvoiceSelection";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface ReconciliationTableProps {
-  expenses?: any[]; // Keep for backward compatibility but won't be used
-  invoices?: any[]; // Keep for backward compatibility but won't be used
-}
-
-export function ReconciliationTable({ expenses: _expenses, invoices: _invoices }: ReconciliationTableProps) {
-  const [currentPage, setCurrentPage] = useState(1);
+export function ReconciliationTable() {
+  const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedExpense, setSelectedExpense] = useState<any>(null);
+  const [showInvoiceSearch, setShowInvoiceSearch] = useState(false);
+  const [showAdjustmentDialog, setShowAdjustmentDialog] = useState(false);
+  const [adjustmentType, setAdjustmentType] = useState<"expense_excess" | "invoice_excess">("expense_excess");
+  const [remainingAmount, setRemainingAmount] = useState(0);
   const [showBatchDialog, setShowBatchDialog] = useState(false);
-  const pageSize = 12;
+  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'description'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filterBy, setFilterBy] = useState<'all' | 'high' | 'medium' | 'low'>('all');
 
-  // Use optimized hooks instead of props
-  const { 
-    data: expensesResult, 
-    isLoading: expensesLoading,
-    refetch: refetchExpenses 
-  } = useOptimizedExpenses({ 
-    page: currentPage, 
-    pageSize 
-  });
-  
-  const { 
-    data: invoices, 
-    isLoading: invoicesLoading 
-  } = useOptimizedInvoices();
+  const itemsPerPage = 10;
 
-  const expenses = expensesResult?.data || [];
-  const totalExpenses = expensesResult?.count || 0;
-
-  const {
-    // Selected items state
-    selectedExpense,
-    setSelectedExpense,
-    selectedInvoices,
-    remainingAmount,
-    
-    // Adjustment dialog state and handlers
-    showAdjustmentDialog,
-    setShowAdjustmentDialog,
-    adjustmentType,
-    handleAdjustmentConfirm,
-    
-    // Manual reconciliation state and handlers
-    showManualReconciliation,
-    setShowManualReconciliation,
-    handleManualReconciliation,
-    handleManualReconciliationConfirm,
-    chartAccounts,
-    
-    // Invoice search state and handlers
-    showInvoiceSearch,
-    setShowInvoiceSearch,
+  const { data: expenses, isLoading: expensesLoading, totalCount } = useOptimizedExpenses({
+    page,
+    itemsPerPage,
     searchTerm,
-    setSearchTerm,
-    filterInvoices,
-    
-    // Core reconciliation handlers
-    handleInvoiceSelect,
-    resetState,
-  } = useReconciliation();
+    sortBy,
+    sortOrder,
+    filterBy
+  });
 
-  // Use the filterInvoices function from our hook
-  const filteredInvoices = filterInvoices(invoices || [], searchTerm);
+  const { data: invoices, isLoading: invoicesLoading } = useOptimizedInvoices();
 
-  const handleExpenseSelect = (expense: any) => {
+  const { selectedExpenses, selectedInvoices, setSelectedInvoices, toggleExpenseSelection } = useSelectedItems();
+
+  const { handleReconcile } = useReconciliationProcess();
+
+  const { handleInvoiceSelect } = useInvoiceSelection(
+    selectedExpense,
+    selectedInvoices,
+    setSelectedInvoices,
+    setRemainingAmount,
+    setAdjustmentType,
+    setShowAdjustmentDialog,
+    handleReconcile
+  );
+
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  const handleExpenseClick = (expense: any) => {
     setSelectedExpense(expense);
     setShowInvoiceSearch(true);
   };
 
-  // Fixed handler to ensure single invoices are converted to arrays
-  const handleInvoiceSelectionWrapper = (invoiceOrInvoices: any) => {
-    console.log("🔍 ReconciliationTable - handleInvoiceSelectionWrapper received:", invoiceOrInvoices);
-    
-    // Check if it's already an array
-    if (Array.isArray(invoiceOrInvoices)) {
-      console.log("📋 Already an array, passing through:", invoiceOrInvoices.length, "invoices");
-      handleInvoiceSelect(invoiceOrInvoices);
-    } else {
-      // Convert single invoice to array
-      console.log("🔄 Converting single invoice to array");
-      handleInvoiceSelect([invoiceOrInvoices]);
+  const handleAdjustmentConfirm = async (chartAccountId: string, notes: string) => {
+    if (!selectedExpense) return;
+
+    const success = await handleReconcile(selectedExpense, selectedInvoices, {
+      adjustmentAmount: remainingAmount,
+      adjustmentType,
+      chartAccountId,
+      notes
+    });
+
+    if (success) {
+      setShowAdjustmentDialog(false);
+      setShowInvoiceSearch(false);
+      setSelectedExpense(null);
+      setSelectedInvoices([]);
     }
   };
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    resetState(); // Clear any selected items when changing pages
+  const handleBatchReconciliation = () => {
+    if (selectedExpenses.length === 0) return;
+    setShowBatchDialog(true);
   };
 
-  // Refresh data after successful reconciliation
-  const handleReconciliationSuccess = () => {
-    refetchExpenses();
-    resetState();
-  };
+  const filteredExpenses = useMemo(() => {
+    if (!expenses) return [];
+    return expenses;
+  }, [expenses]);
 
-  const handleBatchSuccess = () => {
-    refetchExpenses();
-    setShowBatchDialog(false);
-  };
-
-  // Show loading skeleton
-  if (expensesLoading && currentPage === 1) {
-    return <ReconciliationSkeleton />;
+  if (expensesLoading || invoicesLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <Skeleton key={i} className="h-24 w-full" />
+        ))}
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4 max-w-full">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold px-2 sm:px-0">Gastos sin Conciliar</h3>
-          <div className="flex items-center gap-2">
-            {expensesLoading && (
-              <div className="text-sm text-muted-foreground">Cargando...</div>
-            )}
-            <Button
-              onClick={() => setShowBatchDialog(true)}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Calculator className="h-4 w-4" />
-              Reconciliación por Lotes
-            </Button>
+    <div className="space-y-6">
+      {/* Filters and Search */}
+      <div className="flex flex-wrap gap-4 items-end">
+        <div className="flex-1 min-w-[200px]">
+          <Label htmlFor="search">Buscar gastos</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              id="search"
+              placeholder="Buscar por descripción, proveedor o monto..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </div>
-        
-        {expenses.length === 0 && !expensesLoading ? (
-          <div className="text-center p-8 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">No hay gastos pendientes de conciliar</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {expenses.map((expense) => (
-                <ExpenseCard
-                  key={expense.id}
-                  expense={expense}
-                  onSelectExpense={handleExpenseSelect}
-                />
-              ))}
+
+        <div className="min-w-[120px]">
+          <Label>Ordenar por</Label>
+          <Select value={sortBy} onValueChange={(value: 'date' | 'amount' | 'description') => setSortBy(value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date">Fecha</SelectItem>
+              <SelectItem value="amount">Monto</SelectItem>
+              <SelectItem value="description">Descripción</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="min-w-[120px]">
+          <Label>Orden</Label>
+          <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="desc">Descendente</SelectItem>
+              <SelectItem value="asc">Ascendente</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="min-w-[120px]">
+          <Label>Filtrar por</Label>
+          <Select value={filterBy} onValueChange={(value: 'all' | 'high' | 'medium' | 'low') => setFilterBy(value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="high">Monto alto</SelectItem>
+              <SelectItem value="medium">Monto medio</SelectItem>
+              <SelectItem value="low">Monto bajo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Batch Actions */}
+      {selectedExpenses.length > 0 && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-blue-700">
+                {selectedExpenses.length} gastos seleccionados
+              </span>
+              <Button onClick={handleBatchReconciliation} size="sm">
+                Reconciliar por Lotes
+              </Button>
             </div>
-            
-            <ReconciliationPagination
-              currentPage={currentPage}
-              totalItems={totalExpenses}
-              pageSize={pageSize}
-              onPageChange={handlePageChange}
-              isLoading={expensesLoading}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Expenses List */}
+      <div className="space-y-4">
+        {filteredExpenses.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <p className="text-muted-foreground">No se encontraron gastos para reconciliar</p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredExpenses.map((expense) => (
+            <ExpenseCard
+              key={expense.id}
+              expense={expense}
+              isSelected={selectedExpenses.some(e => e.id === expense.id)}
+              onToggleSelection={() => toggleExpenseSelection(expense)}
+              onClick={() => handleExpenseClick(expense)}
             />
-          </>
+          ))
         )}
       </div>
 
+      {/* Pagination */}
+      <ReconciliationPagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
+
+      {/* Dialogs */}
       <InvoiceSearchDialog
         open={showInvoiceSearch}
         onOpenChange={setShowInvoiceSearch}
-        selectedExpense={selectedExpense}
-        remainingAmount={remainingAmount}
-        selectedInvoices={selectedInvoices}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        filteredInvoices={filteredInvoices}
-        onInvoiceSelect={handleInvoiceSelectionWrapper}
-        onManualReconciliation={handleManualReconciliation}
-        isLoadingInvoices={invoicesLoading}
+        expense={selectedExpense}
+        invoices={invoices || []}
+        onInvoiceSelect={handleInvoiceSelect}
+      />
+
+      <SimpleAccountAdjustmentDialog
+        open={showAdjustmentDialog}
+        onOpenChange={setShowAdjustmentDialog}
+        amount={remainingAmount}
+        type={adjustmentType}
+        onConfirm={handleAdjustmentConfirm}
       />
 
       <BatchReconciliationDialog
         open={showBatchDialog}
         onOpenChange={setShowBatchDialog}
-        onSuccess={handleBatchSuccess}
-      />
-
-      <AccountAdjustmentDialog
-        open={showAdjustmentDialog}
-        onOpenChange={setShowAdjustmentDialog}
-        amount={Math.abs(remainingAmount)}
-        type={adjustmentType}
-        onConfirm={handleAdjustmentConfirm}
-      />
-
-      <ManualReconciliationDialog
-        open={showManualReconciliation}
-        onOpenChange={setShowManualReconciliation}
-        expense={selectedExpense}
-        onConfirm={handleManualReconciliationConfirm}
-        chartAccounts={chartAccounts || []}
+        selectedExpenses={selectedExpenses}
+        availableInvoices={invoices || []}
       />
     </div>
   );
