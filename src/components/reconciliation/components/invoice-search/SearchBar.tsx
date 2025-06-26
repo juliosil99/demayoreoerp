@@ -14,7 +14,7 @@ export function SearchBar({ searchTerm, onSearchChange }: SearchBarProps) {
       <div className="relative flex-1">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por emisor o monto..."
+          placeholder="Buscar por emisor, número de factura o monto..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-8"
