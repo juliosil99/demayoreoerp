@@ -3,6 +3,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatCardDate, formatCurrency } from "@/utils/formatters";
 import { ExpenseActions } from "./ExpenseActions";
+import { useNavigate } from "react-router-dom";
 import type { Expense } from "./types";
 
 interface ExpenseRowProps {
@@ -16,6 +17,7 @@ export function ExpenseRow({
   onDelete,
   onEdit,
 }: ExpenseRowProps) {
+  const navigate = useNavigate();
 
   // Create wrapper functions to handle the proper signature
   const handleDelete = () => onDelete(expense);
@@ -23,6 +25,12 @@ export function ExpenseRow({
 
   // Check if this is a refund/return (negative amount)
   const isReturn = expense.amount < 0;
+
+  const handleBatchClick = () => {
+    if (expense.reconciliation_batch_id) {
+      navigate(`/expenses/reconciliation-batches?batch=${expense.reconciliation_batch_id}`);
+    }
+  };
 
   return (
     <TableRow key={expense.id} className={!!expense.accounts_payable ? "bg-gray-50" : "odd:bg-white even:bg-gray-50"}>
@@ -120,7 +128,10 @@ export function ExpenseRow({
     if (expense.reconciliation_batch_id) {
       return (
         <div className="flex items-center gap-1">
-          <Badge className="bg-purple-100 text-purple-800 text-xs">
+          <Badge 
+            className="bg-purple-100 text-purple-800 text-xs cursor-pointer hover:bg-purple-200 transition-colors"
+            onClick={handleBatchClick}
+          >
             Lote de Reconciliación
           </Badge>
         </div>

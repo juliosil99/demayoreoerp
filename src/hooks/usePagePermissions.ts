@@ -13,6 +13,7 @@ const PAGE_PERMISSIONS: PagePermissionMap = {
   '/sales/invoices': 'can_view_invoices',
   '/expenses': 'can_view_expenses',
   '/expenses/reconciliation': 'can_view_reconciliation',
+  '/expenses/reconciliation-batches': 'can_view_reconciliation',
   '/expenses/receivables': 'can_view_expenses',
   '/expenses/payables': 'can_view_expenses',
   '/contacts': 'can_manage_contacts',

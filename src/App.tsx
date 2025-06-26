@@ -15,6 +15,7 @@ import Analytics from '@/pages/Analytics';
 import Sales from '@/pages/Sales';
 import Expenses from '@/pages/Expenses';
 import Reconciliation from '@/pages/Reconciliation';
+import ReconciliationBatches from '@/pages/ReconciliationBatches';
 import Banking from '@/pages/Banking';
 import BankAccountMovements from '@/pages/BankAccountMovements';
 import AccountTransfers from '@/pages/AccountTransfers';
@@ -121,6 +122,15 @@ function App() {
                   element={
                     <PathBasedProtectedRoute>
                       <Reconciliation />
+                    </PathBasedProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/expenses/reconciliation-batches" 
+                  element={
+                    <PathBasedProtectedRoute>
+                      <ReconciliationBatches />
                     </PathBasedProtectedRoute>
                   } 
                 />
