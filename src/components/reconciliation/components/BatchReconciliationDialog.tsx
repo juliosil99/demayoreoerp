@@ -107,7 +107,7 @@ export function BatchReconciliationDialog({
               <div className="p-3 border-b bg-muted/30">
                 <h4 className="font-medium">Items en el Lote</h4>
               </div>
-              <ScrollArea className="max-h-40">
+              <ScrollArea className="h-48">
                 <div className="p-3 space-y-2">
                   {selectedItems.map((item, index) => (
                     <div key={`${item.type}-${item.id}-${index}`} 
