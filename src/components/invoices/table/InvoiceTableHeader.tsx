@@ -1,6 +1,6 @@
 
 import React from "react";
-import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableHeader, TableRow, TableHead } from "@/components/ui/table";
 
 export const InvoiceTableHeader = () => {
   return (
@@ -9,13 +9,13 @@ export const InvoiceTableHeader = () => {
         <TableHead>Archivo</TableHead>
         <TableHead>Fecha</TableHead>
         <TableHead>Folio</TableHead>
+        <TableHead>Serie</TableHead>
         <TableHead>Tipo</TableHead>
         <TableHead>Emisor</TableHead>
         <TableHead>Receptor</TableHead>
         <TableHead className="text-right">Total</TableHead>
-        <TableHead className="text-right">Impuestos</TableHead>
         <TableHead>Estado</TableHead>
-        <TableHead>Reconciliación</TableHead>
+        <TableHead>Acciones</TableHead>
       </TableRow>
     </TableHeader>
   );

@@ -1,27 +1,16 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
-import { FileText, Check, X, Link, Unlink, CheckCircle, MoreHorizontal } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Download, FileText, FilePdf } from "lucide-react";
+import { formatCurrency, formatCardDate } from "@/utils/formatters";
+import { InvoiceTypeBadge } from "../InvoiceTypeBadge";
+import { downloadInvoiceFile } from "@/utils/invoiceDownload";
+import { generateInvoicePdf } from "@/services/invoicePdfService";
+import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
-import { formatDate } from "@/utils/formatters";
-import { 
-  formatInvoiceAmount,
-  formatInvoiceTaxAmount,
-  formatInvoiceNumber
-} from "@/utils/invoiceFormatters";
-import { InvoiceTypeBadge } from "@/components/invoices/InvoiceTypeBadge";
-import { ManualReconciliationDialog } from "@/components/invoices/ManualReconciliationDialog";
-import { useManualInvoiceReconciliation } from "@/hooks/invoices/useManualInvoiceReconciliation";
 
-type PartialInvoice = Partial<Database["public"]["Tables"]["invoices"]["Row"]> & { 
+type PartialInvoice = Partial<Database["public"]["Tables"]["invoices"]["Row"]> & {
   is_reconciled?: boolean;
   reconciliation_type?: 'automatic' | 'manual' | null;
 };
@@ -30,147 +19,99 @@ interface OptimizedInvoiceRowProps {
   invoice: PartialInvoice;
 }
 
-export const OptimizedInvoiceRow: React.FC<OptimizedInvoiceRowProps> = ({ invoice }) => {
-  const [showReconciliationDialog, setShowReconciliationDialog] = useState(false);
-  const { markAsReconciled, unmarkAsReconciled, isLoading } = useManualInvoiceReconciliation();
-
-  const getStatusIcon = (status: string | null | undefined) => {
-    if (status === 'completed') return <Check className="h-4 w-4 text-green-500" />;
-    if (status === 'error') return <X className="h-4 w-4 text-red-500" />;
-    return null;
+export const OptimizedInvoiceRow = ({ invoice }: OptimizedInvoiceRowProps) => {
+  const handleDownloadXml = async () => {
+    if (!invoice.file_path || !invoice.filename) {
+      toast.error("No se encontró el archivo XML para esta factura");
+      return;
+    }
+    
+    try {
+      await downloadInvoiceFile(invoice.file_path, invoice.filename);
+    } catch (error) {
+      console.error("Error downloading XML:", error);
+      toast.error("Error al descargar el archivo XML");
+    }
   };
 
-  const getReconciliationBadge = (isReconciled: boolean | undefined, reconciliationType: 'automatic' | 'manual' | null | undefined) => {
-    if (isReconciled) {
-      if (reconciliationType === 'manual') {
-        return (
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Manual
-          </Badge>
-        );
+  const handleDownloadPdf = async () => {
+    if (!invoice.id || !invoice.issuer_rfc) {
+      toast.error("Información insuficiente para generar el PDF");
+      return;
+    }
+
+    try {
+      toast.info("Generando PDF...");
+      const result = await generateInvoicePdf(invoice.id, invoice.issuer_rfc);
+      
+      if (result.success) {
+        toast.success(`PDF generado: ${result.filename}`);
       } else {
-        return (
-          <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">
-            <Link className="h-3 w-3 mr-1" />
-            Reconciliada
-          </Badge>
-        );
+        toast.error(result.error || "Error al generar el PDF");
       }
-    } else {
-      return (
-        <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-200">
-          <Unlink className="h-3 w-3 mr-1" />
-          Sin reconciliar
-        </Badge>
-      );
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Error al generar el PDF");
     }
   };
 
-  const handleMarkAsReconciled = async (notes?: string) => {
-    if (invoice.id) {
-      await markAsReconciled(invoice.id, notes);
-    }
-  };
-
-  const handleUnmarkAsReconciled = async () => {
-    if (invoice.id) {
-      await unmarkAsReconciled(invoice.id);
-    }
-  };
-
-  const canMarkManually = !invoice.is_reconciled;
-  const canUnmarkManually = invoice.is_reconciled && invoice.reconciliation_type === 'manual';
+  const reconciliationStatus = invoice.is_reconciled 
+    ? (invoice.reconciliation_type === 'manual' ? 'Manual' : 'Automática')
+    : 'No conciliada';
 
   return (
-    <>
-      <TableRow key={invoice.id}>
-        <TableCell className="font-medium">
-          <div className="flex items-center gap-2">
+    <TableRow>
+      <TableCell className="font-medium">
+        {invoice.filename || "Sin archivo"}
+      </TableCell>
+      <TableCell>
+        {invoice.invoice_date ? formatCardDate(invoice.invoice_date) : "N/A"}
+      </TableCell>
+      <TableCell>{invoice.invoice_number || "N/A"}</TableCell>
+      <TableCell>{invoice.serie || "N/A"}</TableCell>
+      <TableCell>
+        <InvoiceTypeBadge type={invoice.invoice_type || ""} />
+      </TableCell>
+      <TableCell className="max-w-[200px] truncate">
+        {invoice.issuer_name || "N/A"}
+      </TableCell>
+      <TableCell className="max-w-[200px] truncate">
+        {invoice.receiver_name || "N/A"}
+      </TableCell>
+      <TableCell className="text-right">
+        {formatCurrency(invoice.total_amount)}
+      </TableCell>
+      <TableCell>
+        <span className={`text-xs px-2 py-1 rounded ${
+          invoice.is_reconciled 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-yellow-100 text-yellow-800'
+        }`}>
+          {reconciliationStatus}
+        </span>
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDownloadXml}
+            className="h-8 w-8 p-0"
+            title="Descargar XML"
+          >
             <FileText className="h-4 w-4" />
-            {invoice.filename || "-"}
-          </div>
-        </TableCell>
-        <TableCell>
-          {invoice.invoice_date 
-            ? formatDate(invoice.invoice_date)
-            : formatDate(invoice.created_at || "")}
-        </TableCell>
-        <TableCell>
-          {formatInvoiceNumber(invoice as any)}
-        </TableCell>
-        <TableCell>
-          <InvoiceTypeBadge invoiceType={invoice.invoice_type} />
-        </TableCell>
-        <TableCell>
-          <div className="flex flex-col">
-            <span>{invoice.issuer_name || "-"}</span>
-            <span className="text-xs text-muted-foreground">{invoice.issuer_rfc}</span>
-          </div>
-        </TableCell>
-        <TableCell>
-          <div className="flex flex-col">
-            <span>{invoice.receiver_name || "-"}</span>
-            <span className="text-xs text-muted-foreground">{invoice.receiver_rfc}</span>
-          </div>
-        </TableCell>
-        <TableCell className={`text-right ${invoice.invoice_type === 'E' ? 'text-red-600 font-medium' : ''}`}>
-          {formatInvoiceAmount(invoice as any)}
-        </TableCell>
-        <TableCell className={`text-right ${invoice.invoice_type === 'E' ? 'text-red-600 font-medium' : ''}`}>
-          {formatInvoiceTaxAmount(invoice as any)}
-        </TableCell>
-        <TableCell>
-          <div className="flex items-center gap-2">
-            {getStatusIcon(invoice.status)}
-            <span>{invoice.status === 'completed' ? 'Completado' : 
-                   invoice.status === 'error' ? 'Error' : 
-                   invoice.status}</span>
-          </div>
-        </TableCell>
-        <TableCell>
-          <div className="flex items-center gap-2">
-            {getReconciliationBadge(invoice.is_reconciled, invoice.reconciliation_type)}
-            {(canMarkManually || canUnmarkManually) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    <MoreHorizontal className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {canMarkManually && (
-                    <DropdownMenuItem
-                      onClick={() => setShowReconciliationDialog(true)}
-                      disabled={isLoading}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Marcar como reconciliada
-                    </DropdownMenuItem>
-                  )}
-                  {canUnmarkManually && (
-                    <DropdownMenuItem
-                      onClick={handleUnmarkAsReconciled}
-                      disabled={isLoading}
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Desmarcar reconciliación
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </TableCell>
-      </TableRow>
-
-      <ManualReconciliationDialog
-        open={showReconciliationDialog}
-        onOpenChange={setShowReconciliationDialog}
-        invoice={invoice}
-        onConfirm={handleMarkAsReconciled}
-        isLoading={isLoading}
-      />
-    </>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDownloadPdf}
+            className="h-8 w-8 p-0"
+            title="Descargar PDF"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
   );
 };

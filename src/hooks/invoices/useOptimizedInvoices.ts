@@ -73,7 +73,8 @@ export const useOptimizedInvoices = ({
           total_amount,
           tax_amount,
           status,
-          manually_reconciled
+          manually_reconciled,
+          file_path
         `, { count: 'exact' });
 
       // Apply search filter
@@ -141,11 +142,24 @@ export const useOptimizedInvoices = ({
         query = query.eq('manually_reconciled', false);
       }
 
-      // Apply pagination
-      const from = (page - 1) * itemsPerPage;
-      const to = from + itemsPerPage - 1;
+      // Get total count first
+      const { count: totalCount, error: countError } = await query;
+      
+      if (countError) {
+        console.error("Error getting count:", countError);
+        throw countError;
+      }
 
-      const { data: invoices, error, count } = await query
+      // Validate pagination parameters
+      const safeItemsPerPage = Math.max(1, itemsPerPage);
+      const maxPage = Math.max(1, Math.ceil((totalCount || 0) / safeItemsPerPage));
+      const safePage = Math.min(Math.max(1, page), maxPage);
+      
+      // Apply pagination with validated parameters
+      const from = (safePage - 1) * safeItemsPerPage;
+      const to = from + safeItemsPerPage - 1;
+
+      const { data: invoices, error } = await query
         .order("created_at", { ascending: false })
         .range(from, to);
 
@@ -173,7 +187,7 @@ export const useOptimizedInvoices = ({
           is_reconciled?: boolean;
           reconciliation_type?: 'automatic' | 'manual' | null;
         })[],
-        totalCount: count || 0
+        totalCount: totalCount || 0
       };
     },
     staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh
