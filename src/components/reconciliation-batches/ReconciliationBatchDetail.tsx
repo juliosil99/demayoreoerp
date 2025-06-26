@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Download, FileText, Receipt } from 'lucide-react';
 import { formatCardDate, formatCurrency } from '@/utils/formatters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { generateReconciliationBatchPdf } from '@/services/reconciliationBatchPdfService';
 
 interface ReconciliationBatch {
   id: string;
