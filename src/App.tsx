@@ -19,30 +19,9 @@ import { Layout } from "./components/layout/Layout";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ReconciliationBatches from "./pages/ReconciliationBatches";
+import { PathBasedProtectedRoute } from "./components/auth/PathBasedProtectedRoute";
 
 const queryClient = new QueryClient();
-
-function PathBasedProtectedRoute({
-  children,
-  requiredPermission,
-}: {
-  children: React.ReactNode;
-  requiredPermission: string;
-}) {
-  const { user, isAdmin } = useAuth();
-
-  if (!user) {
-    // Redirect to login if not authenticated
-    return <Navigate to="/login" />;
-  }
-
-  if (!isAdmin() && !user.permissions?.includes(requiredPermission)) {
-    // Redirect to dashboard or show an unauthorized page if no permission
-    return <Navigate to="/dashboard" />;
-  }
-
-  return children;
-}
 
 function App() {
   return (
@@ -56,7 +35,7 @@ function App() {
             <Route
               path="/"
               element={
-                <PathBasedProtectedRoute requiredPermission="can_view_dashboard">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Dashboard />
                   </Layout>
@@ -66,7 +45,7 @@ function App() {
             <Route
               path="/dashboard"
               element={
-                <PathBasedProtectedRoute requiredPermission="can_view_dashboard">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Dashboard />
                   </Layout>
@@ -76,7 +55,7 @@ function App() {
             <Route
               path="/expenses"
               element={
-                <PathBasedProtectedRoute requiredPermission="can_view_expenses">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Expenses />
                   </Layout>
@@ -86,7 +65,7 @@ function App() {
             <Route
               path="/invoices"
               element={
-                <PathBasedProtectedRoute requiredPermission="can_view_invoices">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Invoices />
                   </Layout>
@@ -96,7 +75,7 @@ function App() {
             <Route
               path="/payables"
               element={
-                <PathBasedProtectedRoute requiredPermission="can_view_expenses">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Payables />
                   </Layout>
@@ -106,7 +85,7 @@ function App() {
             <Route
               path="/chart-of-accounts"
               element={
-                <PathBasedProtectedRoute requiredPermission="can_view_reports">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <ChartOfAccounts />
                   </Layout>
@@ -116,7 +95,7 @@ function App() {
             <Route
               path="/reconciliation"
               element={
-                <PathBasedProtectedRoute requiredPermission="can_view_reconciliation">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Reconciliation />
                   </Layout>
@@ -126,7 +105,7 @@ function App() {
             <Route
               path="/reconciliation-batches"
               element={
-                <PathBasedProtectedRoute requiredPermission="can_view_reconciliation">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <ReconciliationBatches />
                   </Layout>
@@ -136,7 +115,7 @@ function App() {
             <Route
               path="/reports"
               element={
-                <PathBasedProtectedRoute requiredPermission="can_view_reports">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Reports />
                   </Layout>
