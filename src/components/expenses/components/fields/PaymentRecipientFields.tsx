@@ -10,9 +10,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import type { BaseFieldProps, SelectOption } from "../types";
+import type { SelectOption } from "../types";
 
-interface Props extends BaseFieldProps {
+interface Props {
+  formData: any;
+  setFormData: (data: any) => void;
   recipients: SelectOption[];
   onRecipientSelect?: (recipientId: string, defaultChartAccountId?: string) => void;
 }

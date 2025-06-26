@@ -40,3 +40,14 @@ export interface Expense {
   } | null;
   isReturn?: boolean;
 }
+
+export interface BaseFieldProps {
+  formData: any;
+  setFormData: (data: any) => void;
+}
+
+export interface SelectOption {
+  id: string | number;
+  name: string;
+  type?: string;
+}
