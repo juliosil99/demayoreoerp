@@ -1,14 +1,20 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { ADJUSTMENT_ACCOUNTS } from "../constants";
+import { useUserCompany } from "@/hooks/useUserCompany";
+import { formatCurrency } from "@/utils/formatters";
 
 interface AccountAdjustmentDialogProps {
   open: boolean;
@@ -23,100 +29,103 @@ export function AccountAdjustmentDialog({
   onOpenChange,
   amount,
   type,
-  onConfirm
+  onConfirm,
 }: AccountAdjustmentDialogProps) {
-  const [selectedAccount, setSelectedAccount] = useState("");
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [notes, setNotes] = useState("");
+  const { data: userCompany } = useUserCompany();
 
-  // Query chart accounts
   const { data: chartAccounts } = useQuery({
-    queryKey: ["chart-accounts"],
+    queryKey: ["chart-accounts", userCompany?.id],
     queryFn: async () => {
+      if (!userCompany?.id) return [];
+      
       const { data, error } = await supabase
         .from("chart_of_accounts")
-        .select("*")
+        .select("id, name, code")
+        .eq("company_id", userCompany.id)
         .order("code");
-      
+
       if (error) throw error;
-      return data;
-    }
+      return data || [];
+    },
+    enabled: !!userCompany?.id,
   });
 
-  // Pre-select the appropriate account based on adjustment type
-  useEffect(() => {
-    if (chartAccounts && type) {
-      const accountToFind = ADJUSTMENT_ACCOUNTS[type];
-      const account = chartAccounts.find(acc => acc.code === accountToFind.code);
-      if (account) {
-        setSelectedAccount(account.id);
-      }
-    }
-  }, [chartAccounts, type]);
-
-  // Auto-generate notes based on type
-  useEffect(() => {
-    const adjustmentType = ADJUSTMENT_ACCOUNTS[type];
-    setNotes(adjustmentType.description);
-  }, [type]);
-
   const handleConfirm = () => {
-    if (!selectedAccount) {
-      toast.error("Por favor selecciona una cuenta contable");
+    if (!selectedAccountId && amount > 0.01) {
       return;
     }
-    onConfirm(selectedAccount, notes);
-    setSelectedAccount("");
+    onConfirm(selectedAccountId, notes);
+    setSelectedAccountId("");
     setNotes("");
-    onOpenChange(false);
   };
+
+  // Check if this is a perfect match (no adjustment needed)
+  const isPerfectMatch = Math.abs(amount) <= 0.01;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Ajuste por {type === "expense_excess" ? "Excedente de Pago" : "Excedente de Factura"}</DialogTitle>
+          <DialogTitle>
+            {isPerfectMatch ? "Confirmar Reconciliación" : "Ajuste de Cuenta"}
+          </DialogTitle>
+          <DialogDescription>
+            {isPerfectMatch 
+              ? "Los montos coinciden perfectamente. ¿Deseas proceder con la reconciliación?"
+              : `Se requiere un ajuste de ${formatCurrency(amount)} por ${
+                  type === "expense_excess" ? "exceso en el gasto" : "exceso en las facturas"
+                }.`
+            }
+          </DialogDescription>
         </DialogHeader>
+
         <div className="space-y-4">
-          <div>
-            <Label>Monto del Ajuste</Label>
-            <Input value={`$${amount.toFixed(2)}`} disabled />
-          </div>
-          <div>
-            <Label>Tipo de Ajuste</Label>
-            <Input 
-              value={type === "expense_excess" ? "Excedente de Pago" : "Excedente de Factura"} 
-              disabled 
-            />
-          </div>
-          <div>
-            <Label>Cuenta Contable</Label>
-            <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar cuenta" />
-              </SelectTrigger>
-              <SelectContent>
-                {chartAccounts?.map((account) => (
-                  <SelectItem 
-                    key={account.id} 
-                    value={account.id}
-                    className={account.code === ADJUSTMENT_ACCOUNTS[type].code ? "font-bold" : ""}
-                  >
-                    {account.code} - {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Notas</Label>
-            <Input
+          {!isPerfectMatch && (
+            <div className="space-y-2">
+              <Label htmlFor="account">Cuenta Contable para el Ajuste</Label>
+              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona una cuenta" />
+                </SelectTrigger>
+                <SelectContent>
+                  {chartAccounts?.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.code} - {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">
+              {isPerfectMatch ? "Notas (opcional)" : "Notas sobre el ajuste"}
+            </Label>
+            <Textarea
+              id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Agregar notas sobre el ajuste"
+              placeholder={isPerfectMatch 
+                ? "Agrega cualquier comentario sobre esta reconciliación..."
+                : "Describe la razón del ajuste..."
+              }
+              rows={3}
             />
           </div>
-          <Button onClick={handleConfirm} className="w-full">
-            Confirmar Ajuste
+        </div>
+
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleConfirm}
+            disabled={!isPerfectMatch && !selectedAccountId}
+          >
+            {isPerfectMatch ? "Confirmar Reconciliación" : "Confirmar Ajuste"}
           </Button>
         </div>
       </DialogContent>
