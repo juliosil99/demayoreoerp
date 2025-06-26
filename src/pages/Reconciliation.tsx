@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,6 +53,7 @@ const Reconciliation = () => {
       }
       
       // Query for unreconciled expenses from all company users
+      // Now includes both positive expenses and negative amounts (reimbursements/refunds)
       const { data, error } = await supabase
         .from("expenses")
         .select(`
@@ -73,6 +73,20 @@ const Reconciliation = () => {
 
       if (error) {
         throw error;
+      }
+      
+      console.log('📊 Unreconciled expenses found:', data?.length || 0);
+      
+      // Log reimbursements/refunds specifically
+      const reimbursements = data?.filter(expense => expense.amount < 0) || [];
+      if (reimbursements.length > 0) {
+        console.log('💰 Reimbursements/refunds found:', reimbursements.length);
+        console.log('💰 Reimbursement details:', reimbursements.map(r => ({
+          id: r.id,
+          description: r.description,
+          amount: r.amount,
+          date: r.date
+        })));
       }
       
       return data;
@@ -195,6 +209,12 @@ const Reconciliation = () => {
                 <p className="text-xs text-gray-400">
                   Facturas de nómina: {invoices.filter(inv => inv.invoice_type === 'N').length}
                 </p>
+              )}
+              {expenses && (
+                <div className="text-xs text-gray-400 space-y-1">
+                  <p>Gastos sin conciliar: {expenses.filter(e => e.amount > 0).length}</p>
+                  <p>Reembolsos sin conciliar: {expenses.filter(e => e.amount < 0).length}</p>
+                </div>
               )}
             </div>
           )}
