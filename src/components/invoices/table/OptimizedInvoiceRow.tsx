@@ -2,7 +2,7 @@
 import React from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, FilePdf } from "lucide-react";
+import { Download, FileText, FileDown } from "lucide-react";
 import { formatCurrency, formatCardDate } from "@/utils/formatters";
 import { InvoiceTypeBadge } from "../InvoiceTypeBadge";
 import { downloadInvoiceFile } from "@/utils/invoiceDownload";
@@ -70,7 +70,7 @@ export const OptimizedInvoiceRow = ({ invoice }: OptimizedInvoiceRowProps) => {
       <TableCell>{invoice.invoice_number || "N/A"}</TableCell>
       <TableCell>{invoice.serie || "N/A"}</TableCell>
       <TableCell>
-        <InvoiceTypeBadge type={invoice.invoice_type || ""} />
+        <InvoiceTypeBadge invoiceType={invoice.invoice_type || ""} />
       </TableCell>
       <TableCell className="max-w-[200px] truncate">
         {invoice.issuer_name || "N/A"}
@@ -108,7 +108,7 @@ export const OptimizedInvoiceRow = ({ invoice }: OptimizedInvoiceRowProps) => {
             className="h-8 w-8 p-0"
             title="Descargar PDF"
           >
-            <Download className="h-4 w-4" />
+            <FileDown className="h-4 w-4" />
           </Button>
         </div>
       </TableCell>
