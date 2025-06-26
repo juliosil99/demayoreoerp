@@ -11,7 +11,7 @@ interface PathBasedProtectedRouteProps {
   fallback?: React.ReactNode;
 }
 
-export const PathBasedProtectedRoute: React.FC<PathBasedProtectedRouteProps> = ({ children, fallback }) => {
+export function PathBasedProtectedRoute({ children, fallback }: PathBasedProtectedRouteProps) {
   const location = useLocation();
   const { canAccessPage, isLoading, isAdmin } = usePagePermissions();
   const { user } = useAuth();
@@ -61,4 +61,4 @@ export const PathBasedProtectedRoute: React.FC<PathBasedProtectedRouteProps> = (
   }
 
   return <>{children}</>;
-};
+}

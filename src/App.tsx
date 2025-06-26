@@ -19,7 +19,7 @@ import { Layout } from "./components/layout/Layout";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ReconciliationBatches from "./pages/ReconciliationBatches";
-import { RouteProtector } from "./components/auth/RouteProtector";
+import { PathBasedProtectedRoute } from "./components/auth/PathBasedProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -35,91 +35,91 @@ function App() {
             <Route
               path="/"
               element={
-                <RouteProtector>
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Dashboard />
                   </Layout>
-                </RouteProtector>
+                </PathBasedProtectedRoute>
               }
             />
             <Route
               path="/dashboard"
               element={
-                <RouteProtector>
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Dashboard />
                   </Layout>
-                </RouteProtector>
+                </PathBasedProtectedRoute>
               }
             />
             <Route
               path="/expenses"
               element={
-                <RouteProtector requiredPermission="can_view_expenses">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Expenses />
                   </Layout>
-                </RouteProtector>
+                </PathBasedProtectedRoute>
               }
             />
             <Route
               path="/invoices"
               element={
-                <RouteProtector requiredPermission="can_view_invoices">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Invoices />
                   </Layout>
-                </RouteProtector>
+                </PathBasedProtectedRoute>
               }
             />
             <Route
               path="/payables"
               element={
-                <RouteProtector requiredPermission="can_view_expenses">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Payables />
                   </Layout>
-                </RouteProtector>
+                </PathBasedProtectedRoute>
               }
             />
             <Route
               path="/chart-of-accounts"
               element={
-                <RouteProtector requiredPermission="can_view_reports">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <ChartOfAccounts />
                   </Layout>
-                </RouteProtector>
+                </PathBasedProtectedRoute>
               }
             />
             <Route
               path="/reconciliation"
               element={
-                <RouteProtector requiredPermission="can_view_reconciliation">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Reconciliation />
                   </Layout>
-                </RouteProtector>
+                </PathBasedProtectedRoute>
               }
             />
             <Route
               path="/reconciliation-batches"
               element={
-                <RouteProtector requiredPermission="can_view_reconciliation">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <ReconciliationBatches />
                   </Layout>
-                </RouteProtector>
+                </PathBasedProtectedRoute>
               }
             />
             <Route
               path="/reports"
               element={
-                <RouteProtector requiredPermission="can_view_reports">
+                <PathBasedProtectedRoute>
                   <Layout>
                     <Reports />
                   </Layout>
-                </RouteProtector>
+                </PathBasedProtectedRoute>
               }
             />
           </Routes>
