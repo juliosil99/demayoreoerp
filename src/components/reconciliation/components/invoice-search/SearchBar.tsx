@@ -6,10 +6,9 @@ import { Search, FileText } from "lucide-react";
 interface SearchBarProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  onManualReconciliation: () => void;
 }
 
-export function SearchBar({ searchTerm, onSearchChange, onManualReconciliation }: SearchBarProps) {
+export function SearchBar({ searchTerm, onSearchChange }: SearchBarProps) {
   return (
     <div className="flex items-center space-x-2">
       <div className="relative flex-1">
@@ -21,10 +20,6 @@ export function SearchBar({ searchTerm, onSearchChange, onManualReconciliation }
           className="pl-8"
         />
       </div>
-      <Button variant="outline" onClick={onManualReconciliation} className="whitespace-nowrap">
-        <FileText className="h-4 w-4 mr-2" />
-        Reconciliación Manual
-      </Button>
     </div>
   );
 }

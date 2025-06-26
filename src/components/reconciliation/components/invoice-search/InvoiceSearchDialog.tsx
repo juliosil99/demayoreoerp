@@ -66,6 +66,8 @@ export function InvoiceSearchDialog({
             {selectedInvoices.length > 0 ? (
               <SelectedInvoicesList
                 selectedInvoices={selectedInvoices}
+                remainingAmount={remainingAmount}
+                selectedExpense={selectedExpense}
                 onInvoiceSelect={onInvoiceSelect}
               />
             ) : (
