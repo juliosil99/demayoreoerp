@@ -13,6 +13,21 @@ interface BatchFilters {
   batchNumber?: string;
 }
 
+interface ReconciliationBatch {
+  id: string;
+  batch_number: string;
+  description: string | null;
+  total_amount: number;
+  status: 'active' | 'cancelled';
+  created_at: string;
+  notes: string | null;
+  reconciliation_batch_items: {
+    id: string;
+    item_type: string;
+    amount: number;
+  }[];
+}
+
 export default function ReconciliationBatches() {
   const { user } = useAuth();
   const [filters, setFilters] = useState<BatchFilters>({});
@@ -50,7 +65,14 @@ export default function ReconciliationBatches() {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match our interface
+      const transformedData: ReconciliationBatch[] = (data || []).map(batch => ({
+        ...batch,
+        status: batch.status as 'active' | 'cancelled'
+      }));
+      
+      return transformedData;
     },
     enabled: !!user?.id,
   });

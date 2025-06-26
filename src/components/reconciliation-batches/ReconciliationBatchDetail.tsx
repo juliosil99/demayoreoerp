@@ -24,37 +24,87 @@ interface ReconciliationBatchDetailProps {
   onClose: () => void;
 }
 
+interface BatchItem {
+  id: string;
+  item_type: string;
+  item_id: string;
+  amount: number;
+  description: string | null;
+}
+
 export function ReconciliationBatchDetail({ batch, onClose }: ReconciliationBatchDetailProps) {
   const { data: batchItems, isLoading } = useQuery({
     queryKey: ['reconciliation-batch-detail', batch.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('reconciliation_batch_items')
-        .select(`
-          *,
-          expenses:item_id (
-            id,
-            description,
-            amount,
-            date,
-            contacts (name),
-            bank_accounts (name)
-          ),
-          invoices:item_id (
-            id,
-            invoice_number,
-            total_amount,
-            invoice_date,
-            issuer_name,
-            file_path,
-            uuid
-          )
-        `)
+        .select('*')
         .eq('batch_id', batch.id);
 
       if (error) throw error;
       return data || [];
     },
+  });
+
+  // Fetch expense details for expense items
+  const { data: expenseDetails } = useQuery({
+    queryKey: ['batch-expenses', batch.id],
+    queryFn: async () => {
+      if (!batchItems?.length) return [];
+      
+      const expenseIds = batchItems
+        .filter(item => item.item_type === 'expense')
+        .map(item => item.item_id);
+      
+      if (expenseIds.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from('expenses')
+        .select(`
+          id,
+          description,
+          amount,
+          date,
+          contacts (name),
+          bank_accounts (name)
+        `)
+        .in('id', expenseIds);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!batchItems?.length,
+  });
+
+  // Fetch invoice details for invoice items
+  const { data: invoiceDetails } = useQuery({
+    queryKey: ['batch-invoices', batch.id],
+    queryFn: async () => {
+      if (!batchItems?.length) return [];
+      
+      const invoiceIds = batchItems
+        .filter(item => item.item_type === 'invoice')
+        .map(item => parseInt(item.item_id));
+      
+      if (invoiceIds.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from('invoices')
+        .select(`
+          id,
+          invoice_number,
+          total_amount,
+          invoice_date,
+          issuer_name,
+          file_path,
+          uuid
+        `)
+        .in('id', invoiceIds);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!batchItems?.length,
   });
 
   const expenses = batchItems?.filter(item => item.item_type === 'expense') || [];
@@ -153,23 +203,26 @@ export function ReconciliationBatchDetail({ batch, onClose }: ReconciliationBatc
             <div className="text-center py-8 text-gray-500">No hay gastos en este lote</div>
           ) : (
             <div className="space-y-3">
-              {expenses.map((item) => (
-                <Card key={item.id} className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{item.description}</h4>
-                      <div className="text-sm text-gray-500 mt-1">
-                        <div>Proveedor: {item.expenses?.contacts?.name || 'N/A'}</div>
-                        <div>Cuenta: {item.expenses?.bank_accounts?.name}</div>
-                        <div>Fecha: {formatCardDate(item.expenses?.date)}</div>
+              {expenses.map((item) => {
+                const expenseDetail = expenseDetails?.find(e => e.id === item.item_id);
+                return (
+                  <Card key={item.id} className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{item.description || expenseDetail?.description || 'Sin descripción'}</h4>
+                        <div className="text-sm text-gray-500 mt-1">
+                          <div>Proveedor: {expenseDetail?.contacts?.name || 'N/A'}</div>
+                          <div>Cuenta: {expenseDetail?.bank_accounts?.name || 'N/A'}</div>
+                          <div>Fecha: {expenseDetail?.date ? formatCardDate(expenseDetail.date) : 'N/A'}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold">{formatCurrency(item.amount)}</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-semibold">{formatCurrency(item.amount)}</div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
@@ -181,34 +234,37 @@ export function ReconciliationBatchDetail({ batch, onClose }: ReconciliationBatc
             <div className="text-center py-8 text-gray-500">No hay facturas en este lote</div>
           ) : (
             <div className="space-y-3">
-              {invoices.map((item) => (
-                <Card key={item.id} className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{item.invoices?.invoice_number}</h4>
-                      <div className="text-sm text-gray-500 mt-1">
-                        <div>Emisor: {item.invoices?.issuer_name}</div>
-                        <div>Fecha: {formatCardDate(item.invoices?.invoice_date)}</div>
+              {invoices.map((item) => {
+                const invoiceDetail = invoiceDetails?.find(inv => inv.id === parseInt(item.item_id));
+                return (
+                  <Card key={item.id} className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{invoiceDetail?.invoice_number || 'Sin número'}</h4>
+                        <div className="text-sm text-gray-500 mt-1">
+                          <div>Emisor: {invoiceDetail?.issuer_name || 'N/A'}</div>
+                          <div>Fecha: {invoiceDetail?.invoice_date ? formatCardDate(invoiceDetail.invoice_date) : 'N/A'}</div>
+                        </div>
+                      </div>
+                      <div className="text-right flex items-center gap-2">
+                        <div className="font-semibold">{formatCurrency(item.amount)}</div>
+                        {invoiceDetail?.file_path && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const url = `https://dulmmxtkgqkcfovvfxzu.supabase.co/storage/v1/object/public/invoices/${invoiceDetail?.uuid}`;
+                              window.open(url, '_blank');
+                            }}
+                          >
+                            <Receipt className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
-                    <div className="text-right flex items-center gap-2">
-                      <div className="font-semibold">{formatCurrency(item.amount)}</div>
-                      {item.invoices?.file_path && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const url = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/invoices/${item.invoices?.uuid}`;
-                            window.open(url, '_blank');
-                          }}
-                        >
-                          <Receipt className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
@@ -224,7 +280,7 @@ export function ReconciliationBatchDetail({ batch, onClose }: ReconciliationBatc
                 <Card key={item.id} className="p-4">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h4 className="font-medium">{item.description}</h4>
+                      <h4 className="font-medium">{item.description || 'Ajuste'}</h4>
                     </div>
                     <div className="text-right">
                       <div className="font-semibold">{formatCurrency(item.amount)}</div>

@@ -20,6 +20,7 @@ interface ReconciliationBatch {
   total_amount: number;
   status: 'active' | 'cancelled';
   created_at: string;
+  notes: string | null;
   reconciliation_batch_items: {
     id: string;
     item_type: string;
