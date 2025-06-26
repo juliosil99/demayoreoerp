@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -14,11 +15,12 @@ import Payables from "./pages/Payables";
 import ChartOfAccounts from "./pages/ChartOfAccounts";
 import Reconciliation from "./pages/Reconciliation";
 import Reports from "./pages/Reports";
-import Settings from "./pages/Settings";
-import Layout from "./components/layout/Layout";
+import { Layout } from "./components/layout/Layout";
 import { Toaster } from "@/components/ui/toaster";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ReconciliationBatches from "./pages/ReconciliationBatches";
+
+const queryClient = new QueryClient();
 
 function PathBasedProtectedRoute({
   children,
@@ -27,14 +29,14 @@ function PathBasedProtectedRoute({
   children: React.ReactNode;
   requiredPermission: string;
 }) {
-  const { user, hasPermission, isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   if (!user) {
     // Redirect to login if not authenticated
     return <Navigate to="/login" />;
   }
 
-  if (!isAdmin() && !hasPermission(requiredPermission)) {
+  if (!isAdmin() && !user.permissions?.includes(requiredPermission)) {
     // Redirect to dashboard or show an unauthorized page if no permission
     return <Navigate to="/dashboard" />;
   }
@@ -46,8 +48,8 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <Toaster />
-        <QueryClient>
+        <QueryClientProvider client={queryClient}>
+          <Toaster />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -141,18 +143,8 @@ function App() {
                 </PathBasedProtectedRoute>
               }
             />
-            <Route
-              path="/settings"
-              element={
-                <PathBasedProtectedRoute requiredPermission="can_edit_settings">
-                  <Layout>
-                    <Settings />
-                  </Layout>
-                </PathBasedProtectedRoute>
-              }
-            />
           </Routes>
-        </QueryClient>
+        </QueryClientProvider>
       </AuthProvider>
     </Router>
   );
