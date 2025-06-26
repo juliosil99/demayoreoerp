@@ -15,15 +15,6 @@ const Reconciliation = () => {
   // Check if user has reconciliation permission
   const canViewReconciliation = hasPermission('can_view_reconciliation');
 
-  // Get summary data for display (first page only for counts)
-  const { data: expensesResult } = useOptimizedExpenses({ 
-    page: 1, 
-    pageSize: 1, 
-    enabled: canViewReconciliation 
-  });
-  
-  const { data: invoices } = useOptimizedInvoices();
-
   // Show access denied if user doesn't have permission
   if (!canViewReconciliation) {
     return (
@@ -56,29 +47,6 @@ const Reconciliation = () => {
           <CardTitle className="text-lg sm:text-xl">
             Selecciona un gasto y busca la factura correspondiente
           </CardTitle>
-          {userCompany && (
-            <div className="space-y-1">
-              <p className="text-sm text-gray-500">
-                Mostrando datos de: {userCompany.nombre}
-              </p>
-              <p className="text-xs text-gray-400">
-                RFC: {userCompany.rfc} | Facturas disponibles: {invoices?.length || 0}
-              </p>
-              {invoices && invoices.length > 0 && (
-                <p className="text-xs text-gray-400">
-                  Facturas de nómina: {invoices.filter(inv => inv.invoice_type === 'N').length}
-                </p>
-              )}
-              {expensesResult && (
-                <div className="text-xs text-gray-400 space-y-1">
-                  <p>Total gastos sin conciliar: {expensesResult.count || 0}</p>
-                  <p className="text-green-600 font-medium">
-                    ⚡ Optimizado con paginación para mejor rendimiento
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
         </CardHeader>
         <CardContent>
           <ReconciliationTable />
