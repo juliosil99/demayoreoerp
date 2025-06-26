@@ -1,11 +1,10 @@
-
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
 } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -15,27 +14,47 @@ import Payables from "./pages/Payables";
 import ChartOfAccounts from "./pages/ChartOfAccounts";
 import Reconciliation from "./pages/Reconciliation";
 import Reports from "./pages/Reports";
-import { Layout } from "./components/layout/Layout";
+import Settings from "./pages/Settings";
+import Layout from "./components/layout/Layout";
 import { Toaster } from "@/components/ui/toaster";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import ReconciliationBatches from "./pages/ReconciliationBatches";
-import { PathBasedProtectedRoute } from "./components/auth/PathBasedProtectedRoute";
 
-const queryClient = new QueryClient();
+function PathBasedProtectedRoute({
+  children,
+  requiredPermission,
+}: {
+  children: React.ReactNode;
+  requiredPermission: string;
+}) {
+  const { user, hasPermission, isAdmin } = useAuth();
+
+  if (!user) {
+    // Redirect to login if not authenticated
+    return <Navigate to="/login" />;
+  }
+
+  if (!isAdmin() && !hasPermission(requiredPermission)) {
+    // Redirect to dashboard or show an unauthorized page if no permission
+    return <Navigate to="/dashboard" />;
+  }
+
+  return children;
+}
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <Toaster />
+        <Toaster />
+        <QueryClient>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route
               path="/"
               element={
-                <PathBasedProtectedRoute>
+                <PathBasedProtectedRoute requiredPermission="can_view_dashboard">
                   <Layout>
                     <Dashboard />
                   </Layout>
@@ -45,7 +64,7 @@ function App() {
             <Route
               path="/dashboard"
               element={
-                <PathBasedProtectedRoute>
+                <PathBasedProtectedRoute requiredPermission="can_view_dashboard">
                   <Layout>
                     <Dashboard />
                   </Layout>
@@ -55,7 +74,7 @@ function App() {
             <Route
               path="/expenses"
               element={
-                <PathBasedProtectedRoute>
+                <PathBasedProtectedRoute requiredPermission="can_view_expenses">
                   <Layout>
                     <Expenses />
                   </Layout>
@@ -65,7 +84,7 @@ function App() {
             <Route
               path="/invoices"
               element={
-                <PathBasedProtectedRoute>
+                <PathBasedProtectedRoute requiredPermission="can_view_invoices">
                   <Layout>
                     <Invoices />
                   </Layout>
@@ -75,7 +94,7 @@ function App() {
             <Route
               path="/payables"
               element={
-                <PathBasedProtectedRoute>
+                <PathBasedProtectedRoute requiredPermission="can_view_expenses">
                   <Layout>
                     <Payables />
                   </Layout>
@@ -85,7 +104,7 @@ function App() {
             <Route
               path="/chart-of-accounts"
               element={
-                <PathBasedProtectedRoute>
+                <PathBasedProtectedRoute requiredPermission="can_view_reports">
                   <Layout>
                     <ChartOfAccounts />
                   </Layout>
@@ -95,7 +114,7 @@ function App() {
             <Route
               path="/reconciliation"
               element={
-                <PathBasedProtectedRoute>
+                <PathBasedProtectedRoute requiredPermission="can_view_reconciliation">
                   <Layout>
                     <Reconciliation />
                   </Layout>
@@ -105,7 +124,7 @@ function App() {
             <Route
               path="/reconciliation-batches"
               element={
-                <PathBasedProtectedRoute>
+                <PathBasedProtectedRoute requiredPermission="can_view_reconciliation">
                   <Layout>
                     <ReconciliationBatches />
                   </Layout>
@@ -115,15 +134,25 @@ function App() {
             <Route
               path="/reports"
               element={
-                <PathBasedProtectedRoute>
+                <PathBasedProtectedRoute requiredPermission="can_view_reports">
                   <Layout>
                     <Reports />
                   </Layout>
                 </PathBasedProtectedRoute>
               }
             />
+            <Route
+              path="/settings"
+              element={
+                <PathBasedProtectedRoute requiredPermission="can_edit_settings">
+                  <Layout>
+                    <Settings />
+                  </Layout>
+                </PathBasedProtectedRoute>
+              }
+            />
           </Routes>
-        </QueryClientProvider>
+        </QueryClient>
       </AuthProvider>
     </Router>
   );

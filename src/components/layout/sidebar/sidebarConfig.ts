@@ -1,4 +1,3 @@
-
 import {
   BookOpen,
   Calculator,
@@ -13,7 +12,6 @@ import {
   FileText,
   Gauge,
   Home,
-  Key,
   LayoutDashboard,
   ListChecks,
   LucideIcon,

@@ -2,7 +2,7 @@
 import React from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
-import { useAuth } from '@/contexts/AuthContext';
+import { useDefaultRedirect } from '@/hooks/useDefaultRedirect';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Shield } from 'lucide-react';
 
@@ -14,10 +14,9 @@ interface PathBasedProtectedRouteProps {
 export function PathBasedProtectedRoute({ children, fallback }: PathBasedProtectedRouteProps) {
   const location = useLocation();
   const { canAccessPage, isLoading, isAdmin } = usePagePermissions();
-  const { user } = useAuth();
+  const { defaultRoute, isLoading: isLoadingRedirect } = useDefaultRedirect();
 
-  // Show loading while checking permissions
-  if (isLoading) {
+  if (isLoading || isLoadingRedirect) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -26,11 +25,6 @@ export function PathBasedProtectedRoute({ children, fallback }: PathBasedProtect
         </div>
       </div>
     );
-  }
-
-  // Redirect to login if not authenticated
-  if (!user) {
-    return <Navigate to="/login" replace />;
   }
 
   // Admins have access to everything
@@ -46,7 +40,12 @@ export function PathBasedProtectedRoute({ children, fallback }: PathBasedProtect
       return <>{fallback}</>;
     }
 
-    // Show access denied for users without permission
+    // If user has a default route available, redirect there
+    if (defaultRoute) {
+      return <Navigate to={defaultRoute} replace />;
+    }
+
+    // Fallback to error message if no accessible routes
     return (
       <div className="container mx-auto p-6">
         <Alert variant="destructive">
