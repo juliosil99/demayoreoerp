@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserCompany } from "@/hooks/useUserCompany";
@@ -52,9 +52,11 @@ export function AccountAdjustmentDialog({
     enabled: !!userCompany?.id,
   });
 
+  // Use useMemo to optimize and avoid type inference issues
+  const isPerfectMatch = useMemo(() => Math.abs(amount) <= 0.01, [amount]);
+
   const handleConfirm = () => {
-    const isPerfectMatch = Math.abs(amount) <= 0.01;
-    
+    // Simplified logic without redeclaring isPerfectMatch
     if (!isPerfectMatch && !selectedAccountId) {
       return;
     }
@@ -64,24 +66,39 @@ export function AccountAdjustmentDialog({
     setNotes("");
   };
 
-  // Check if this is a perfect match (no adjustment needed)
-  const isPerfectMatch = Math.abs(amount) <= 0.01;
+  const getDialogTitle = () => {
+    return isPerfectMatch ? "Confirmar Reconciliación" : "Ajuste de Cuenta";
+  };
+
+  const getDialogDescription = () => {
+    if (isPerfectMatch) {
+      return "Los montos coinciden perfectamente. ¿Deseas proceder con la reconciliación?";
+    }
+    return `Se requiere un ajuste de ${formatCurrency(amount)} por ${
+      type === "expense_excess" ? "exceso en el gasto" : "exceso en las facturas"
+    }.`;
+  };
+
+  const getNotesLabel = () => {
+    return isPerfectMatch ? "Notas (opcional)" : "Notas sobre el ajuste";
+  };
+
+  const getNotesPlaceholder = () => {
+    return isPerfectMatch 
+      ? "Agrega cualquier comentario sobre esta reconciliación..."
+      : "Describe la razón del ajuste...";
+  };
+
+  const getConfirmButtonText = () => {
+    return isPerfectMatch ? "Confirmar Reconciliación" : "Confirmar Ajuste";
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {isPerfectMatch ? "Confirmar Reconciliación" : "Ajuste de Cuenta"}
-          </DialogTitle>
-          <DialogDescription>
-            {isPerfectMatch 
-              ? "Los montos coinciden perfectamente. ¿Deseas proceder con la reconciliación?"
-              : `Se requiere un ajuste de ${formatCurrency(amount)} por ${
-                  type === "expense_excess" ? "exceso en el gasto" : "exceso en las facturas"
-                }.`
-            }
-          </DialogDescription>
+          <DialogTitle>{getDialogTitle()}</DialogTitle>
+          <DialogDescription>{getDialogDescription()}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -104,17 +121,12 @@ export function AccountAdjustmentDialog({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="notes">
-              {isPerfectMatch ? "Notas (opcional)" : "Notas sobre el ajuste"}
-            </Label>
+            <Label htmlFor="notes">{getNotesLabel()}</Label>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={isPerfectMatch 
-                ? "Agrega cualquier comentario sobre esta reconciliación..."
-                : "Describe la razón del ajuste..."
-              }
+              placeholder={getNotesPlaceholder()}
               rows={3}
             />
           </div>
@@ -128,7 +140,7 @@ export function AccountAdjustmentDialog({
             onClick={handleConfirm}
             disabled={!isPerfectMatch && !selectedAccountId}
           >
-            {isPerfectMatch ? "Confirmar Reconciliación" : "Confirmar Ajuste"}
+            {getConfirmButtonText()}
           </Button>
         </div>
       </DialogContent>
