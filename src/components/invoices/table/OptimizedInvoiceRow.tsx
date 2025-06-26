@@ -1,12 +1,13 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, FileDown } from "lucide-react";
+import { FileText, FileDown, CheckCircle, XCircle } from "lucide-react";
 import { formatCurrency, formatCardDate } from "@/utils/formatters";
 import { InvoiceTypeBadge } from "../InvoiceTypeBadge";
 import { downloadInvoiceFile } from "@/utils/invoiceDownload";
 import { generateInvoicePdf } from "@/services/invoicePdfService";
+import { useManualInvoiceReconciliation } from "@/hooks/invoices/useManualInvoiceReconciliation";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -20,6 +21,9 @@ interface OptimizedInvoiceRowProps {
 }
 
 export const OptimizedInvoiceRow = ({ invoice }: OptimizedInvoiceRowProps) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { markAsReconciled, unmarkAsReconciled } = useManualInvoiceReconciliation();
+
   const handleDownloadXml = async () => {
     if (!invoice.file_path || !invoice.filename) {
       toast.error("No se encontró el archivo XML para esta factura");
@@ -55,9 +59,26 @@ export const OptimizedInvoiceRow = ({ invoice }: OptimizedInvoiceRowProps) => {
     }
   };
 
+  const handleToggleReconciliation = async () => {
+    if (!invoice.id) return;
+    
+    setIsProcessing(true);
+    try {
+      if (invoice.is_reconciled && invoice.reconciliation_type === 'manual') {
+        await unmarkAsReconciled(invoice.id);
+      } else if (!invoice.is_reconciled) {
+        await markAsReconciled(invoice.id);
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const reconciliationStatus = invoice.is_reconciled 
     ? (invoice.reconciliation_type === 'manual' ? 'Manual' : 'Automática')
     : 'No conciliada';
+
+  const canToggleReconciliation = !invoice.is_reconciled || invoice.reconciliation_type === 'manual';
 
   return (
     <TableRow>
@@ -110,6 +131,22 @@ export const OptimizedInvoiceRow = ({ invoice }: OptimizedInvoiceRowProps) => {
           >
             <FileDown className="h-4 w-4" />
           </Button>
+          {canToggleReconciliation && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleToggleReconciliation}
+              disabled={isProcessing}
+              className="h-8 w-8 p-0"
+              title={invoice.is_reconciled ? "Desmarcar como reconciliada" : "Marcar como reconciliada"}
+            >
+              {invoice.is_reconciled ? (
+                <XCircle className="h-4 w-4 text-red-500" />
+              ) : (
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              )}
+            </Button>
+          )}
         </div>
       </TableCell>
     </TableRow>
