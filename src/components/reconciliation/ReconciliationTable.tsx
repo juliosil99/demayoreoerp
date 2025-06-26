@@ -7,8 +7,11 @@ import { ExpenseCard } from "./components/ExpenseCard";
 import { InvoiceSearchDialog } from "./components/invoice-search";
 import { AccountAdjustmentDialog } from "./components/AccountAdjustmentDialog";
 import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
+import { BatchReconciliationDialog } from "./components/BatchReconciliationDialog";
 import { ReconciliationSkeleton } from "./components/ReconciliationSkeleton";
 import { ReconciliationPagination } from "./components/ReconciliationPagination";
+import { Button } from "@/components/ui/button";
+import { Calculator } from "lucide-react";
 
 interface ReconciliationTableProps {
   expenses?: any[]; // Keep for backward compatibility but won't be used
@@ -17,6 +20,7 @@ interface ReconciliationTableProps {
 
 export function ReconciliationTable({ expenses: _expenses, invoices: _invoices }: ReconciliationTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [showBatchDialog, setShowBatchDialog] = useState(false);
   const pageSize = 12;
 
   // Use optimized hooks instead of props
@@ -88,6 +92,11 @@ export function ReconciliationTable({ expenses: _expenses, invoices: _invoices }
     resetState();
   };
 
+  const handleBatchSuccess = () => {
+    refetchExpenses();
+    setShowBatchDialog(false);
+  };
+
   // Show loading skeleton
   if (expensesLoading && currentPage === 1) {
     return <ReconciliationSkeleton />;
@@ -98,9 +107,19 @@ export function ReconciliationTable({ expenses: _expenses, invoices: _invoices }
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold px-2 sm:px-0">Gastos sin Conciliar</h3>
-          {expensesLoading && (
-            <div className="text-sm text-muted-foreground">Cargando...</div>
-          )}
+          <div className="flex items-center gap-2">
+            {expensesLoading && (
+              <div className="text-sm text-muted-foreground">Cargando...</div>
+            )}
+            <Button
+              onClick={() => setShowBatchDialog(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Calculator className="h-4 w-4" />
+              Reconciliación por Lotes
+            </Button>
+          </div>
         </div>
         
         {expenses.length === 0 && !expensesLoading ? (
@@ -142,6 +161,12 @@ export function ReconciliationTable({ expenses: _expenses, invoices: _invoices }
         onInvoiceSelect={handleInvoiceSelect}
         onManualReconciliation={handleManualReconciliation}
         isLoadingInvoices={invoicesLoading}
+      />
+
+      <BatchReconciliationDialog
+        open={showBatchDialog}
+        onOpenChange={setShowBatchDialog}
+        onSuccess={handleBatchSuccess}
       />
 
       <AccountAdjustmentDialog

@@ -1223,6 +1223,7 @@ export type Database = {
           original_amount: number
           payment_method: string
           reconciled: boolean | null
+          reconciliation_batch_id: string | null
           reconciliation_date: string | null
           reconciliation_type: string | null
           reference_number: string | null
@@ -1245,6 +1246,7 @@ export type Database = {
           original_amount: number
           payment_method: string
           reconciled?: boolean | null
+          reconciliation_batch_id?: string | null
           reconciliation_date?: string | null
           reconciliation_type?: string | null
           reference_number?: string | null
@@ -1267,6 +1269,7 @@ export type Database = {
           original_amount?: number
           payment_method?: string
           reconciled?: boolean | null
+          reconciliation_batch_id?: string | null
           reconciliation_date?: string | null
           reconciliation_type?: string | null
           reference_number?: string | null
@@ -1287,6 +1290,13 @@ export type Database = {
             columns: ["chart_account_id"]
             isOneToOne: false
             referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_reconciliation_batch_id_fkey"
+            columns: ["reconciliation_batch_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_batches"
             referencedColumns: ["id"]
           },
           {
@@ -1737,6 +1747,7 @@ export type Database = {
           receiver_rfc: string | null
           receiver_tax_regime: string | null
           receiver_zip_code: string | null
+          reconciliation_batch_id: string | null
           sat_certificate_number: string | null
           sat_stamp: string | null
           serie: string | null
@@ -1783,6 +1794,7 @@ export type Database = {
           receiver_rfc?: string | null
           receiver_tax_regime?: string | null
           receiver_zip_code?: string | null
+          reconciliation_batch_id?: string | null
           sat_certificate_number?: string | null
           sat_stamp?: string | null
           serie?: string | null
@@ -1829,6 +1841,7 @@ export type Database = {
           receiver_rfc?: string | null
           receiver_tax_regime?: string | null
           receiver_zip_code?: string | null
+          reconciliation_batch_id?: string | null
           sat_certificate_number?: string | null
           sat_stamp?: string | null
           serie?: string | null
@@ -1843,7 +1856,15 @@ export type Database = {
           xml_content?: string | null
           year_period?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "invoices_reconciliation_batch_id_fkey"
+            columns: ["reconciliation_batch_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_batches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       Invoices: {
         Row: {
@@ -2418,6 +2439,80 @@ export type Database = {
         }
         Relationships: []
       }
+      reconciliation_batch_items: {
+        Row: {
+          amount: number
+          batch_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          item_id: string
+          item_type: string
+        }
+        Insert: {
+          amount: number
+          batch_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          item_id: string
+          item_type: string
+        }
+        Update: {
+          amount?: number
+          batch_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          item_id?: string
+          item_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliation_batch_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reconciliation_batches: {
+        Row: {
+          batch_number: string
+          created_at: string | null
+          description: string | null
+          id: string
+          notes: string | null
+          status: string
+          total_amount: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          batch_number: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          batch_number?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       report_configurations: {
         Row: {
           created_at: string | null
@@ -2969,6 +3064,10 @@ export type Database = {
           invited_by: string
           status: string | null
         }[]
+      }
+      generate_batch_number: {
+        Args: { user_uuid: string }
+        Returns: string
       }
       get_channel_distribution: {
         Args: { p_start_date?: string; p_end_date?: string }

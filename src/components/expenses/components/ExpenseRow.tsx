@@ -75,11 +75,7 @@ export function ExpenseRow({
       <TableCell>{expense.reference_number || '-'}</TableCell>
       <TableCell className="max-w-[150px]">
         <div className="truncate">
-          {expense.expense_invoice_relations?.length ? 
-            expense.expense_invoice_relations.map(relation => 
-              relation.invoice.invoice_number || relation.invoice.uuid
-            ).join(', ') : 
-            expense.reconciled ? 'Conciliación manual' : 'Sin conciliar'}
+          {getReconciliationStatus()}
         </div>
       </TableCell>
       <TableCell>
@@ -117,5 +113,32 @@ export function ExpenseRow({
     }
     
     return '-';
+  }
+
+  function getReconciliationStatus() {
+    // Check if it's part of a batch reconciliation
+    if (expense.reconciliation_batch_id) {
+      return (
+        <div className="flex items-center gap-1">
+          <Badge className="bg-purple-100 text-purple-800 text-xs">
+            Lote de Reconciliación
+          </Badge>
+        </div>
+      );
+    }
+
+    // Check for invoice relations
+    if (expense.expense_invoice_relations?.length) {
+      return expense.expense_invoice_relations.map(relation => 
+        relation.invoice.invoice_number || relation.invoice.uuid
+      ).join(', ');
+    }
+
+    // Check for manual reconciliation
+    if (expense.reconciled) {
+      return 'Conciliación manual';
+    }
+
+    return 'Sin conciliar';
   }
 }

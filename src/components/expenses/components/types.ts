@@ -1,26 +1,11 @@
 
-import type { ExpenseFormData } from "../hooks/useExpenseForm";
-
-export interface BaseFieldProps {
-  formData: ExpenseFormData;
-  setFormData: (data: ExpenseFormData) => void;
-}
-
-export interface SelectOption {
-  id: string | number;
-  name: string;
-  code?: string;
-  type?: string;
-}
-
-export type Expense = {
+export interface Expense {
   id: string;
   created_at: string;
   user_id: string;
   date: string;
   description: string;
   amount: number;
-  original_amount: number;
   account_id: number;
   chart_account_id: string;
   payment_method: string;
@@ -31,8 +16,10 @@ export type Expense = {
   reconciled: boolean | null;
   reconciliation_date: string | null;
   reconciliation_type: string | null;
+  reconciliation_batch_id?: string | null;
   currency: string;
   exchange_rate: number;
+  original_amount: number;
   bank_accounts: { name: string; currency: string };
   chart_of_accounts: { name: string; code: string };
   contacts: { name: string; type?: string } | null;
@@ -51,4 +38,5 @@ export type Expense = {
       name: string;
     };
   } | null;
-};
+  isReturn?: boolean;
+}
