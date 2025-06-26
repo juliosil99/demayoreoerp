@@ -81,6 +81,21 @@ export function ReconciliationTable({ expenses: _expenses, invoices: _invoices }
     setShowInvoiceSearch(true);
   };
 
+  // Fixed handler to ensure single invoices are converted to arrays
+  const handleInvoiceSelectionWrapper = (invoiceOrInvoices: any) => {
+    console.log("🔍 ReconciliationTable - handleInvoiceSelectionWrapper received:", invoiceOrInvoices);
+    
+    // Check if it's already an array
+    if (Array.isArray(invoiceOrInvoices)) {
+      console.log("📋 Already an array, passing through:", invoiceOrInvoices.length, "invoices");
+      handleInvoiceSelect(invoiceOrInvoices);
+    } else {
+      // Convert single invoice to array
+      console.log("🔄 Converting single invoice to array");
+      handleInvoiceSelect([invoiceOrInvoices]);
+    }
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     resetState(); // Clear any selected items when changing pages
@@ -158,7 +173,7 @@ export function ReconciliationTable({ expenses: _expenses, invoices: _invoices }
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         filteredInvoices={filteredInvoices}
-        onInvoiceSelect={handleInvoiceSelect}
+        onInvoiceSelect={handleInvoiceSelectionWrapper}
         onManualReconciliation={handleManualReconciliation}
         isLoadingInvoices={invoicesLoading}
       />
