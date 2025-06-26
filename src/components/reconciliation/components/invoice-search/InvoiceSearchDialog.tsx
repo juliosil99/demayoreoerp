@@ -1,22 +1,11 @@
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FileText, Check } from "lucide-react";
-import { useState, useEffect } from "react";
 import { SearchBar } from "./SearchBar";
-import { SelectedInvoicesList } from "./SelectedInvoicesList";
 import { InvoiceList } from "./InvoiceList";
 import { InvoiceSelectionSummary } from "./InvoiceSelectionSummary";
-import { PayrollInvoiceInfo } from "./PayrollInvoiceInfo";
-import { useCurrencyCalculator } from "../../hooks/calculation/useCurrencyCalculator";
-import { calculateExpenseSelection } from "../../hooks/calculation/calculateExpenseSelection";
+import { SelectedInvoicesList } from "./SelectedInvoicesList";
+import { formatCurrency } from "@/utils/formatters";
 
 interface InvoiceSearchDialogProps {
   open: boolean;
@@ -27,8 +16,9 @@ interface InvoiceSearchDialogProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   filteredInvoices: any[];
-  onInvoiceSelect: (invoices: any[]) => void;
+  onInvoiceSelect: (invoice: any) => void;
   onManualReconciliation: () => void;
+  isLoadingInvoices?: boolean;
 }
 
 export function InvoiceSearchDialog({
@@ -42,110 +32,66 @@ export function InvoiceSearchDialog({
   filteredInvoices,
   onInvoiceSelect,
   onManualReconciliation,
+  isLoadingInvoices = false
 }: InvoiceSearchDialogProps) {
-  const [tempSelectedInvoices, setTempSelectedInvoices] = useState<any[]>([]);
-
-  // Initialize temporary selections with current selections
-  useEffect(() => {
-    setTempSelectedInvoices(selectedInvoices);
-  }, [selectedInvoices, open]);
-
-  // Calculate payroll invoice statistics
-  const payrollInvoices = filteredInvoices.filter(inv => inv.invoice_type === 'N');
-  const totalPayrollAmount = payrollInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
-
-  // Calcular totales y restante usando SIEMPRE la moneda original del gasto
-  const {
-    totalSelectedAmount,
-    remainingAmount: calcRemaining,
-    currency,
-  } = selectedExpense && tempSelectedInvoices.length > 0
-    ? calculateExpenseSelection(selectedExpense, tempSelectedInvoices)
-    : { totalSelectedAmount: 0, remainingAmount: selectedExpense?.currency === "USD" ? selectedExpense?.original_amount : selectedExpense?.amount, currency: selectedExpense?.currency || "MXN" };
-
-  const toggleInvoiceSelection = (invoice: any) => {
-    const isSelected = tempSelectedInvoices.some(inv => inv.id === invoice.id);
-    if (isSelected) {
-      setTempSelectedInvoices(prev => prev.filter(inv => inv.id !== invoice.id));
-    } else {
-      setTempSelectedInvoices(prev => [...prev, invoice]);
-    }
-  };
-
-  const handleConfirmSelection = () => {
-    // Process all selected invoices at once
-    if (tempSelectedInvoices.length > 0) {
-      onInvoiceSelect(tempSelectedInvoices);
-    }
-  };
-
   if (!selectedExpense) return null;
-
-  // Mostrar siempre el monto original en el header
-  const originalAmount =
-    selectedExpense.currency === "USD"
-      ? selectedExpense.original_amount
-      : selectedExpense.amount;
-  const currencyCode = selectedExpense.currency || "MXN";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Buscar Factura para Conciliar</DialogTitle>
-          <DialogDescription>
-            Gasto: {selectedExpense.description} – {originalAmount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currencyCode}
-          </DialogDescription>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Buscar Factura para Conciliar</span>
+            {isLoadingInvoices && (
+              <span className="text-sm text-muted-foreground">Cargando facturas...</span>
+            )}
+          </DialogTitle>
+          <div className="text-sm text-gray-600">
+            Gasto: {selectedExpense.description} - {formatCurrency(selectedExpense.amount)}
+          </div>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <SelectedInvoicesList
-            selectedInvoices={selectedInvoices}
-            remainingAmount={remainingAmount}
-            selectedExpense={selectedExpense}
-          />
-
-          <SearchBar
-            searchTerm={searchTerm}
-            onSearchChange={onSearchChange}
-            onManualReconciliation={onManualReconciliation}
-          />
-
-          <PayrollInvoiceInfo 
-            payrollCount={payrollInvoices.length}
-            totalPayrollAmount={totalPayrollAmount}
-          />
-
-          {tempSelectedInvoices.length > 0 && (
+        <div className="flex-1 overflow-hidden flex flex-col space-y-4">
+          <SearchBar searchTerm={searchTerm} onSearchChange={onSearchChange} />
+          
+          {selectedInvoices.length > 0 && (
             <InvoiceSelectionSummary
-              totalSelectedAmount={totalSelectedAmount}
-              calculatedRemaining={calcRemaining}
-              invoiceCount={tempSelectedInvoices.length}
-              isConverted={false}
+              selectedExpense={selectedExpense}
+              selectedInvoices={selectedInvoices}
+              remainingAmount={remainingAmount}
             />
           )}
 
-          <InvoiceList
-            filteredInvoices={filteredInvoices}
-            tempSelectedInvoices={tempSelectedInvoices}
-            toggleInvoiceSelection={toggleInvoiceSelection}
-            selectedExpense={selectedExpense}
-          />
-        </div>
+          <div className="flex-1 overflow-hidden">
+            {selectedInvoices.length > 0 ? (
+              <SelectedInvoicesList
+                selectedInvoices={selectedInvoices}
+                onInvoiceSelect={onInvoiceSelect}
+              />
+            ) : (
+              <InvoiceList
+                invoices={filteredInvoices}
+                onInvoiceSelect={onInvoiceSelect}
+                isLoading={isLoadingInvoices}
+              />
+            )}
+          </div>
 
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleConfirmSelection}
-            disabled={tempSelectedInvoices.length === 0}
-            className="ml-2"
-          >
-            <Check className="h-4 w-4 mr-2" />
-            Confirmar Selección
-          </Button>
-        </DialogFooter>
+          <div className="flex justify-end space-x-2 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={onManualReconciliation}
+            >
+              Conciliación Manual
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

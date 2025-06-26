@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserCompany } from "@/hooks/useUserCompany";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReconciliationTable } from "@/components/reconciliation/ReconciliationTable";
+import { useOptimizedExpenses } from "@/components/reconciliation/hooks/useOptimizedExpenses";
+import { useOptimizedInvoices } from "@/components/reconciliation/hooks/useOptimizedInvoices";
 
 const Reconciliation = () => {
   const { user } = useAuth();
@@ -14,156 +15,14 @@ const Reconciliation = () => {
   // Check if user has reconciliation permission
   const canViewReconciliation = hasPermission('can_view_reconciliation');
 
-  const { data: expenses, refetch: refetchExpenses } = useQuery({
-    queryKey: ["unreconciled-expenses", userCompany?.id],
-    queryFn: async () => {
-      if (!userCompany?.id || !canViewReconciliation) {
-        return [];
-      }
-      
-      // Get all users from the same company
-      const { data: companyUsers, error: companyUsersError } = await supabase
-        .from("company_users")
-        .select("user_id")
-        .eq("company_id", userCompany.id);
-
-      if (companyUsersError) {
-        throw companyUsersError;
-      }
-
-      // Also include the company owner
-      const { data: companyOwner, error: ownerError } = await supabase
-        .from("companies")
-        .select("user_id")
-        .eq("id", userCompany.id)
-        .single();
-
-      if (ownerError && ownerError.code !== 'PGRST116') {
-        throw ownerError;
-      }
-
-      // Combine all user IDs
-      const allUserIds = [
-        ...companyUsers.map(cu => cu.user_id),
-        ...(companyOwner ? [companyOwner.user_id] : [])
-      ];
-
-      if (allUserIds.length === 0) {
-        return [];
-      }
-      
-      // Query for unreconciled expenses from all company users
-      // Now includes both positive expenses and negative amounts (reimbursements/refunds)
-      const { data, error } = await supabase
-        .from("expenses")
-        .select(`
-          *,
-          bank_accounts (name),
-          chart_of_accounts (name, code),
-          contacts (name),
-          accounts_payable!expense_id (
-            id,
-            invoice_id,
-            client:contacts!client_id (name)
-          )
-        `)
-        .in("user_id", allUserIds)
-        .or("reconciled.is.null,reconciled.eq.false") // Check for both NULL and FALSE
-        .order('date', { ascending: false }); // Order by date, newest first
-
-      if (error) {
-        throw error;
-      }
-      
-      console.log('📊 Unreconciled expenses found:', data?.length || 0);
-      
-      // Log reimbursements/refunds specifically
-      const reimbursements = data?.filter(expense => expense.amount < 0) || [];
-      if (reimbursements.length > 0) {
-        console.log('💰 Reimbursements/refunds found:', reimbursements.length);
-        console.log('💰 Reimbursement details:', reimbursements.map(r => ({
-          id: r.id,
-          description: r.description,
-          amount: r.amount,
-          date: r.date
-        })));
-      }
-      
-      return data;
-    },
-    enabled: !!userCompany?.id && canViewReconciliation,
-    refetchOnWindowFocus: true, // Refresh data when window regains focus
+  // Get summary data for display (first page only for counts)
+  const { data: expensesResult } = useOptimizedExpenses({ 
+    page: 1, 
+    pageSize: 1, 
+    enabled: canViewReconciliation 
   });
-
-  const { data: invoices } = useQuery({
-    queryKey: ["unreconciled-invoices", userCompany?.id],
-    queryFn: async () => {
-      if (!userCompany?.id || !canViewReconciliation) {
-        return [];
-      }
-      
-      // Get company RFC to filter invoices
-      const companyRfc = userCompany.rfc;
-      console.log("🔍 Reconciliation Debug - Company RFC:", companyRfc);
-      
-      // Enhanced query to capture both received and issued invoices
-      const { data: allInvoices, error } = await supabase
-        .from("invoices")
-        .select("*, paid_amount")
-        .or(`issuer_rfc.eq.${companyRfc},receiver_rfc.eq.${companyRfc}`)
-        .order("invoice_date", { ascending: false });
-
-      if (error) {
-        console.error("❌ Error fetching invoices:", error);
-        throw error;
-      }
-
-      console.log("📊 Total invoices found:", allInvoices?.length || 0);
-      
-      // Separate invoices by type for better debugging
-      const issuedInvoices = allInvoices?.filter(inv => inv.issuer_rfc === companyRfc) || [];
-      const receivedInvoices = allInvoices?.filter(inv => inv.receiver_rfc === companyRfc) || [];
-      const payrollInvoices = issuedInvoices.filter(inv => inv.invoice_type === 'N');
-      
-      console.log("📤 Issued invoices (by company):", issuedInvoices.length);
-      console.log("📥 Received invoices (to company):", receivedInvoices.length); 
-      console.log("👥 Payroll invoices (type N):", payrollInvoices.length);
-      
-      // Log payroll invoice details for debugging
-      if (payrollInvoices.length > 0) {
-        console.log("👥 Payroll invoices details:", payrollInvoices.map(inv => ({
-          id: inv.id,
-          invoice_number: inv.invoice_number,
-          processed: inv.processed,
-          total_amount: inv.total_amount,
-          invoice_date: inv.invoice_date,
-          receiver_name: inv.receiver_name
-        })));
-      }
-
-      // Filter logic: Include unprocessed invoices AND processed payroll invoices
-      const filteredInvoices = allInvoices?.filter(invoice => {
-        // For payroll invoices (type N), include both processed and unprocessed
-        if (invoice.invoice_type === 'N' && invoice.issuer_rfc === companyRfc) {
-          console.log(`✅ Including payroll invoice ${invoice.invoice_number} (processed: ${invoice.processed})`);
-          return true;
-        }
-        
-        // For other invoices, only include unprocessed ones
-        const shouldInclude = !invoice.processed;
-        if (shouldInclude) {
-          console.log(`✅ Including invoice ${invoice.invoice_number} (not processed)`);
-        }
-        return shouldInclude;
-      }) || [];
-
-      console.log("🎯 Final filtered invoices:", filteredInvoices.length);
-      console.log("🎯 Payroll invoices in final list:", filteredInvoices.filter(inv => inv.invoice_type === 'N').length);
-      
-      return filteredInvoices;
-    },
-    enabled: !!userCompany?.id && canViewReconciliation,
-  });
+  
+  const { data: invoices } = useOptimizedInvoices();
 
   // Show access denied if user doesn't have permission
   if (!canViewReconciliation) {
@@ -210,20 +69,19 @@ const Reconciliation = () => {
                   Facturas de nómina: {invoices.filter(inv => inv.invoice_type === 'N').length}
                 </p>
               )}
-              {expenses && (
+              {expensesResult && (
                 <div className="text-xs text-gray-400 space-y-1">
-                  <p>Gastos sin conciliar: {expenses.filter(e => e.amount > 0).length}</p>
-                  <p>Reembolsos sin conciliar: {expenses.filter(e => e.amount < 0).length}</p>
+                  <p>Total gastos sin conciliar: {expensesResult.count || 0}</p>
+                  <p className="text-green-600 font-medium">
+                    ⚡ Optimizado con paginación para mejor rendimiento
+                  </p>
                 </div>
               )}
             </div>
           )}
         </CardHeader>
         <CardContent>
-          <ReconciliationTable 
-            expenses={expenses || []} 
-            invoices={invoices || []} 
-          />
+          <ReconciliationTable />
         </CardContent>
       </Card>
     </div>
