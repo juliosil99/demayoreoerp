@@ -1,13 +1,13 @@
 
-import { useState } from "react";
 import { useOptimizedInvoices } from "../../hooks/useOptimizedInvoices";
+import { useInvoiceSearch } from "../../hooks/useInvoiceSearch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { formatCurrency, formatCardDate } from "@/utils/formatters";
+import { SearchBar } from "../invoice-search/SearchBar";
 
 interface InvoiceSelectorProps {
   onAddItem: (item: any) => void;
@@ -15,15 +15,15 @@ interface InvoiceSelectorProps {
 }
 
 export function InvoiceSelector({ onAddItem, selectedItems }: InvoiceSelectorProps) {
-  const [searchTerm, setSearchTerm] = useState("");
   const { data: invoices, isLoading } = useOptimizedInvoices();
+  const { searchTerm, setSearchTerm, filterInvoices } = useInvoiceSearch();
 
-  const filteredInvoices = invoices?.filter(invoice =>
-    !invoice.reconciliation_batch_id && // Solo facturas no reconciliadas por lote
-    (invoice.issuer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     invoice.receiver_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     invoice.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()))
+  // First filter out reconciled invoices, then apply search
+  const availableInvoices = invoices?.filter(invoice => 
+    !invoice.reconciliation_batch_id // Solo facturas no reconciliadas por lote
   ) || [];
+
+  const filteredInvoices = filterInvoices(availableInvoices, searchTerm);
 
   const isSelected = (invoiceId: string) => {
     return selectedItems.some(item => item.id === invoiceId && item.type === 'invoice');
@@ -52,22 +52,17 @@ export function InvoiceSelector({ onAddItem, selectedItems }: InvoiceSelectorPro
   return (
     <div className="space-y-4">
       {/* Búsqueda */}
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar facturas por emisor o número..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-8"
-        />
-      </div>
+      <SearchBar 
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
 
       {/* Lista de facturas */}
       <ScrollArea className="h-80">
         <div className="space-y-2">
           {filteredInvoices.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
-              No se encontraron facturas disponibles
+              {searchTerm ? 'No se encontraron facturas que coincidan con la búsqueda' : 'No se encontraron facturas disponibles'}
             </div>
           ) : (
             filteredInvoices.map((invoice) => {
