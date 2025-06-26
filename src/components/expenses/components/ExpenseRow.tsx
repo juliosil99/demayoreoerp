@@ -1,20 +1,8 @@
-import { useState } from "react";
-import { formatCurrency, formatCardDate } from "@/utils/formatters";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { TableCell, TableRow } from "@/components/ui/table";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Edit, Trash2, FileText } from "lucide-react";
-import { BatchQuickViewDialog } from "@/components/reconciliation/batches/BatchQuickViewDialog";
+import { Badge } from "@/components/ui/badge";
+import { formatCardDate, formatCurrency } from "@/utils/formatters";
+import { ExpenseActions } from "./ExpenseActions";
 import type { Expense } from "./types";
 
 interface ExpenseRowProps {
@@ -23,111 +11,134 @@ interface ExpenseRowProps {
   onEdit: (expense: Expense) => void;
 }
 
-export function ExpenseRow({ expense, onDelete, onEdit }: ExpenseRowProps) {
-  const [open, setOpen] = useState(false);
+export function ExpenseRow({ 
+  expense,
+  onDelete,
+  onEdit,
+}: ExpenseRowProps) {
 
-  const handleDeleteClick = () => {
-    setOpen(true);
-  };
+  // Create wrapper functions to handle the proper signature
+  const handleDelete = () => onDelete(expense);
+  const handleEdit = () => onEdit(expense);
 
-  const handleConfirmDelete = async () => {
-    await onDelete(expense);
-    setOpen(false);
-  };
-
-  const handleEditClick = () => {
-    onEdit(expense);
-  };
-
-  const [showBatchDetails, setShowBatchDetails] = useState(false);
-
-  const handleBatchClick = () => {
-    if (expense.reconciliation_batch_id) {
-      setShowBatchDetails(true);
-    }
-  };
+  // Check if this is a refund/return (negative amount)
+  const isReturn = expense.amount < 0;
 
   return (
-    <>
-      <TableRow className="hover:bg-gray-50">
-        <TableCell className="font-medium">{expense.description}</TableCell>
-        <TableCell>{expense.bank_accounts?.name}</TableCell>
-        <TableCell>{expense.chart_of_accounts?.name}</TableCell>
-        <TableCell>{formatCurrency(expense.amount)}</TableCell>
-        <TableCell>{expense.contacts?.name}</TableCell>
-        <TableCell>
-          {expense.reconciled ? (
-            <div className="space-y-1">
-              {expense.reconciliation_type === 'batch' && expense.reconciliation_batch_id ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleBatchClick}
-                  className="h-6 px-2 text-xs hover:bg-blue-50"
-                >
-                  <FileText className="h-3 w-3 mr-1" />
-                  Lote de Reconciliación
-                </Button>
-              ) : (
-                <Badge variant="default" className="text-xs">
-                  {expense.reconciliation_type === 'manual' ? 'Reconciliado Manualmente' : 'Reconciliado'}
-                </Badge>
-              )}
-              {expense.reconciliation_date && (
-                <div className="text-xs text-gray-500">
-                  {formatCardDate(expense.reconciliation_date)}
-                </div>
-              )}
-            </div>
-          ) : (
-            <Badge variant="secondary" className="text-xs">
-              Sin Reconciliar
+    <TableRow key={expense.id} className={!!expense.accounts_payable ? "bg-gray-50" : "odd:bg-white even:bg-gray-50"}>
+      <TableCell className="whitespace-nowrap">{formatCardDate(expense.date)}</TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2 max-w-[250px] md:max-w-none">
+          <span className="truncate">{expense.description}</span>
+          {!!expense.accounts_payable && (
+            <Badge className="bg-blue-200 text-blue-800 rounded-full px-2 py-1 text-xs shrink-0">
+              CxP
             </Badge>
           )}
-        </TableCell>
-        <TableCell className="text-right">
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleEditClick}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta acción eliminará el gasto permanentemente.
-                    ¿Estás seguro de que quieres continuar?
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleConfirmDelete}>
-                    Eliminar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </TableCell>
-      </TableRow>
-
-      {/* Batch Details Dialog */}
-      {expense.reconciliation_batch_id && (
-        <BatchQuickViewDialog
-          open={showBatchDetails}
-          onOpenChange={setShowBatchDetails}
-          batchId={expense.reconciliation_batch_id}
+          {isReturn && (
+            <Badge className="bg-red-200 text-red-800 rounded-full px-2 py-1 text-xs shrink-0">
+              Reembolso
+            </Badge>
+          )}
+        </div>
+      </TableCell>
+      <TableCell className="text-right font-medium whitespace-nowrap">
+        {expense.currency !== 'MXN' ? (
+          <>
+            {expense.currency} {formatCurrency(Math.abs(expense.original_amount), expense.currency)}
+            <div className={`text-xs ${isReturn ? "text-red-600" : "text-muted-foreground"}`}>
+              {isReturn ? "- " : ""}MXN {formatCurrency(Math.abs(expense.amount))}
+            </div>
+          </>
+        ) : (
+          <span className={isReturn ? "text-red-600" : ""}>
+            {isReturn ? "- " : ""}{formatCurrency(Math.abs(expense.amount))}
+          </span>
+        )}
+      </TableCell>
+      <TableCell className="whitespace-nowrap">{expense.bank_accounts.name}</TableCell>
+      <TableCell>
+        <span className="whitespace-nowrap">
+          {expense.chart_of_accounts.code} - {expense.chart_of_accounts.name}
+        </span>
+      </TableCell>
+      <TableCell className="max-w-[150px]">
+        <div className="truncate">{getRecipientDisplay()}</div>
+      </TableCell>
+      <TableCell className="capitalize whitespace-nowrap">
+        {expense.payment_method === 'cash' ? 'Efectivo' :
+          expense.payment_method === 'transfer' ? 'Transferencia' :
+          expense.payment_method === 'check' ? 'Cheque' :
+          expense.payment_method === 'credit_card' ? 'TC' :
+          expense.payment_method.replace('_', ' ')}
+      </TableCell>
+      <TableCell>{expense.reference_number || '-'}</TableCell>
+      <TableCell className="max-w-[150px]">
+        <div className="truncate">
+          {getReconciliationStatus()}
+        </div>
+      </TableCell>
+      <TableCell>
+        <ExpenseActions 
+          expense={expense}
+          onDelete={handleDelete}
+          onEdit={handleEdit}
         />
-      )}
-    </>
+      </TableCell>
+    </TableRow>
   );
+
+  function getRecipientDisplay() {
+    const isFromPayable = !!expense.accounts_payable;
+    const recipientType = expense.contacts?.type || 'supplier';
+    
+    if (isFromPayable && expense.accounts_payable?.client?.name) {
+      return (
+        <>
+          {expense.accounts_payable.client.name} <Badge variant="outline" className="ml-1 text-xs">CxP</Badge>
+        </>
+      );
+    }
+    
+    if (expense.contacts?.name) {
+      const name = expense.contacts.name;
+      if (recipientType === 'employee') {
+        return (
+          <>
+            {name} <Badge variant="outline" className="ml-1 text-xs">Empleado</Badge>
+          </>
+        );
+      }
+      return name;
+    }
+    
+    return '-';
+  }
+
+  function getReconciliationStatus() {
+    // Check if it's part of a batch reconciliation
+    if (expense.reconciliation_batch_id) {
+      return (
+        <div className="flex items-center gap-1">
+          <Badge className="bg-purple-100 text-purple-800 text-xs">
+            Lote de Reconciliación
+          </Badge>
+        </div>
+      );
+    }
+
+    // Check for invoice relations
+    if (expense.expense_invoice_relations?.length) {
+      return expense.expense_invoice_relations.map(relation => 
+        relation.invoice.invoice_number || relation.invoice.uuid
+      ).join(', ');
+    }
+
+    // Check for manual reconciliation
+    if (expense.reconciled) {
+      return 'Conciliación manual';
+    }
+
+    return 'Sin conciliar';
+  }
 }

@@ -1,395 +1,203 @@
+
 import {
-  BookOpen,
-  Calculator,
-  Calendar,
-  ChartBar,
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  CircleUserRound,
-  ClipboardList,
-  CreditCard,
-  FileText,
-  Gauge,
   Home,
   LayoutDashboard,
   ListChecks,
-  LucideIcon,
-  Mail,
-  MessagesSquare,
-  Package,
-  Plus,
-  Receipt,
-  Settings,
-  ShoppingBag,
-  SlidersHorizontal,
-  SquareKanban,
-  Star,
-  Tags,
-  Ticket,
-  User,
+  Calendar,
+  DollarSign,
+  FileText,
   Users,
+  Contact,
+  Receipt,
+  Activity,
+  Building2,
+  CreditCard,
+  ArrowLeftRight,
+  Calculator,
+  TrendingUp,
+  Search,
+  Settings,
+  ShoppingCart,
+  Banknote,
+  MessageSquare,
+  BarChart3,
 } from "lucide-react";
 
-export type SidebarItem = {
-  name: string;
-  href: string;
-  icon: LucideIcon;
-  label?: string;
-  badge?: string;
-  requiresAdmin?: boolean;
-  requiresPermission?: string;
-};
+import { SidebarGroupType } from "./types";
+import { PermissionName } from "@/hooks/usePermissions";
 
-export type SidebarGroup = {
-  title: string;
-  items: SidebarItem[];
-  defaultOpen?: boolean;
-};
-
-export const marketingItems: SidebarItem[] = [
+export const sidebarGroups: SidebarGroupType[] = [
   {
-    name: "Overview",
-    href: "/marketing",
-    icon: Gauge,
-  },
-  {
-    name: "Analytics",
-    href: "/marketing/analytics",
-    icon: ChartBar,
-  },
-  {
-    name: "Automation",
-    href: "/marketing/automation",
-    icon: SlidersHorizontal,
-  },
-  {
-    name: "Email",
-    href: "/marketing/email",
-    icon: Mail,
-  },
-  {
-    name: "Social Media",
-    href: "/marketing/social-media",
-    icon: MessagesSquare,
-  },
-];
-
-export const settingsItems: SidebarItem[] = [
-  {
-    name: "Profile",
-    href: "/settings/profile",
-    icon: CircleUserRound,
-  },
-  {
-    name: "Account",
-    href: "/settings/account",
-    icon: User,
-  },
-  {
-    name: "Appearance",
-    href: "/settings/appearance",
-    icon: LayoutDashboard,
-  },
-  {
-    name: "Notifications",
-    href: "/settings/notifications",
-    icon: Mail,
-  },
-  {
-    name: "Integrations",
-    href: "/settings/integrations",
-    icon: Package,
-  },
-  {
-    name: "API Keys",
-    href: "/settings/api-keys",
-    icon: Key,
-  },
-];
-
-export const platformItems: SidebarItem[] = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: Home,
-  },
-  {
-    name: "Projects",
-    href: "/projects",
-    icon: SquareKanban,
-  },
-  {
-    name: "Tasks",
-    href: "/tasks",
-    icon: ListChecks,
-  },
-  {
-    name: "Reporting",
-    href: "/reporting",
-    icon: ClipboardList,
-  },
-  {
-    name: "Customers",
-    href: "/customers",
-    icon: Users,
-  },
-];
-
-export const applicationItems: SidebarItem[] = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: Home,
-  },
-  {
-    name: "Orders",
-    href: "/orders",
-    icon: ShoppingBag,
-    badge: "12",
-  },
-  {
-    name: "Products",
-    href: "/products",
-    icon: Package,
-  },
-  {
-    name: "Categories",
-    href: "/categories",
-    icon: Tags,
-  },
-  {
-    name: "Reviews",
-    href: "/reviews",
-    icon: Star,
-  },
-];
-
-export const accountingItems: SidebarItem[] = [
-  {
-    name: "Dashboard",
-    href: "/accounting",
-    icon: Home,
-  },
-  {
-    name: "Invoices",
-    href: "/accounting/invoices",
-    icon: FileText,
-  },
-  {
-    name: "Bills",
-    href: "/accounting/bills",
-    icon: Ticket,
-  },
-  {
-    name: "Transactions",
-    href: "/accounting/transactions",
-    icon: CreditCard,
-  },
-  {
-    name: "Reporting",
-    href: "/accounting/reporting",
-    icon: ClipboardList,
-  },
-];
-
-export const adminItems: SidebarItem[] = [
-  {
-    name: "Dashboard",
-    href: "/admin",
-    icon: Home,
-    requiresAdmin: true,
-  },
-  {
-    name: "Users",
-    href: "/admin/users",
-    icon: Users,
-    requiresAdmin: true,
-  },
-  {
-    name: "Roles",
-    href: "/admin/roles",
-    icon: CheckCircle,
-    requiresAdmin: true,
-  },
-  {
-    name: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
-    requiresAdmin: true,
-  },
-];
-
-export const sidebarGroups: SidebarGroup[] = [
-  {
-    title: "Getting Started",
+    title: "Principal",
     items: [
       {
-        name: "Dashboard",
-        href: "/dashboard",
-        icon: Home,
-      },
-    ],
-  },
-  {
-    title: "Platform",
-    items: [
-      {
-        name: "Dashboard",
-        href: "/dashboard",
+        name: "Inicio",
+        href: "/",
         icon: Home,
       },
       {
-        name: "Projects",
-        href: "/projects",
-        icon: SquareKanban,
-      },
-      {
-        name: "Tasks",
-        href: "/tasks",
-        icon: ListChecks,
-      },
-      {
-        name: "Reporting",
-        href: "/reporting",
-        icon: ClipboardList,
-      },
-      {
-        name: "Customers",
-        href: "/customers",
-        icon: Users,
-      },
-    ],
-  },
-  {
-    title: "Application",
-    items: [
-      {
         name: "Dashboard",
         href: "/dashboard",
-        icon: Home,
+        icon: LayoutDashboard,
+        permission: "can_view_dashboard" as PermissionName,
       },
       {
-        name: "Orders",
-        href: "/orders",
-        icon: ShoppingBag,
-        badge: "12",
-      },
-      {
-        name: "Products",
-        href: "/products",
-        icon: Package,
-      },
-      {
-        name: "Categories",
-        href: "/categories",
-        icon: Tags,
-      },
-      {
-        name: "Reviews",
-        href: "/reviews",
-        icon: Star,
+        name: "Analytics",
+        href: "/analytics",
+        icon: BarChart3,
+        permission: "can_view_dashboard" as PermissionName,
       },
     ],
-  },
-  {
-    title: "Contabilidad",
     defaultOpen: true,
+  },
+  {
+    title: "Ventas",
+    items: [
+      {
+        name: "Ventas",
+        href: "/sales",
+        icon: DollarSign,
+        permission: "can_view_sales" as PermissionName,
+      },
+      {
+        name: "Pagos",
+        href: "/sales/payments",
+        icon: Banknote,
+        permission: "can_view_sales" as PermissionName,
+      },
+    ],
+  },
+  {
+    title: "Facturas",
+    items: [
+      {
+        name: "Facturas",
+        href: "/sales/invoices",
+        icon: Receipt,
+        permission: "can_view_invoices" as PermissionName,
+      },
+      {
+        name: "Búsqueda de Productos",
+        href: "/product-search",
+        icon: Search,
+        permission: "can_view_invoices" as PermissionName,
+      },
+    ],
+  },
+  {
+    title: "Finanzas",
     items: [
       {
         name: "Gastos",
         href: "/expenses",
-        icon: Receipt,
-        requiresPermission: "can_view_expenses"
+        icon: ListChecks,
+        permission: "can_view_expenses" as PermissionName,
       },
       {
-        name: "Conciliación",
-        href: "/reconciliation",
-        icon: Calculator,
-        requiresPermission: "can_view_reconciliation"
+        name: "Reconciliación",
+        href: "/expenses/reconciliation",
+        icon: Calendar,
+        permission: "can_view_reconciliation" as PermissionName,
       },
       {
-        name: "Lotes de Reconciliación",
-        href: "/reconciliation-batches",
-        icon: FileText,
-        requiresPermission: "can_view_reconciliation"
+        name: "Por Cobrar",
+        href: "/expenses/receivables",
+        icon: TrendingUp,
+        permission: "can_view_expenses" as PermissionName,
       },
       {
-        name: "Facturas",
-        href: "/invoices",
-        icon: FileText,
-        requiresPermission: "can_view_invoices"
+        name: "Por Pagar",
+        href: "/expenses/payables",
+        icon: ListChecks,
+        permission: "can_view_expenses" as PermissionName,
       },
       {
-        name: "Cuentas por Pagar",
-        href: "/payables",
+        name: "Bancos",
+        href: "/accounting/banking",
         icon: CreditCard,
-        requiresPermission: "can_view_expenses"
+        permission: "can_view_banking" as PermissionName,
+      },
+      {
+        name: "Transferencias",
+        href: "/accounting/transfers",
+        icon: ArrowLeftRight,
+        permission: "can_manage_banking" as PermissionName,
       },
       {
         name: "Catálogo de Cuentas",
-        href: "/chart-of-accounts",
-        icon: BookOpen,
-        requiresPermission: "can_view_reports"
-      }
-    ]
-  },
-  {
-    title: "Marketing",
-    items: [
-      {
-        name: "Overview",
-        href: "/marketing",
-        icon: Gauge,
+        href: "/accounting/chart-of-accounts",
+        icon: Calculator,
+        permission: "can_view_reports" as PermissionName,
       },
       {
-        name: "Analytics",
-        href: "/marketing/analytics",
-        icon: ChartBar,
+        name: "Reportes",
+        href: "/accounting/reports",
+        icon: FileText,
+        permission: "can_view_reports" as PermissionName,
       },
       {
-        name: "Automation",
-        href: "/marketing/automation",
-        icon: SlidersHorizontal,
-      },
-      {
-        name: "Email",
-        href: "/marketing/email",
-        icon: Mail,
-      },
-      {
-        name: "Social Media",
-        href: "/marketing/social-media",
-        icon: MessagesSquare,
+        name: "Pronóstico de Flujo",
+        href: "/accounting/cash-flow-forecast",
+        icon: TrendingUp,
+        permission: "can_view_reports" as PermissionName,
       },
     ],
   },
   {
-    title: "Admin",
+    title: "CRM",
     items: [
       {
-        name: "Dashboard",
-        href: "/admin",
-        icon: Home,
-        requiresAdmin: true,
+        name: "CRM Dashboard",
+        href: "/crm",
+        icon: LayoutDashboard,
+        permission: "can_manage_contacts" as PermissionName,
       },
       {
-        name: "Users",
-        href: "/admin/users",
+        name: "Chat",
+        href: "/crm/chat",
+        icon: MessageSquare,
+        permission: "can_manage_contacts" as PermissionName,
+      },
+      {
+        name: "Empresas",
+        href: "/companies",
+        icon: Building2,
+        permission: "can_manage_contacts" as PermissionName,
+      },
+    ],
+  },
+  {
+    title: "Configuración",
+    items: [
+      {
+        name: "Contactos",
+        href: "/contacts",
+        icon: Contact,
+        permission: "can_manage_contacts" as PermissionName,
+      },
+      {
+        name: "Usuarios",
+        href: "/users",
         icon: Users,
-        requiresAdmin: true,
+        permission: "can_manage_users" as PermissionName,
       },
       {
-        name: "Roles",
-        href: "/admin/roles",
-        icon: CheckCircle,
-        requiresAdmin: true,
+        name: "Canales de Venta",
+        href: "/sales-channels",
+        icon: ShoppingCart,
+        permission: "can_view_sales" as PermissionName,
       },
       {
-        name: "Settings",
-        href: "/admin/settings",
+        name: "Configuración Empresa",
+        href: "/company-setup?edit=true",
         icon: Settings,
-        requiresAdmin: true,
+        permission: "can_manage_users" as PermissionName,
+      },
+      {
+        name: "Monitoreo",
+        href: "/monitoring",
+        icon: Activity,
+        permission: "can_view_dashboard" as PermissionName,
       },
     ],
   },
