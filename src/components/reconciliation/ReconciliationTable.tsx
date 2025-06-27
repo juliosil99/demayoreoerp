@@ -15,8 +15,10 @@ import { useReconciliationProcess } from "./hooks/useReconciliationProcess";
 import { useInvoiceSelection } from "./hooks/useInvoiceSelection";
 import { useManualReconciliation } from "./hooks/useManualReconciliation";
 import { useInvoiceSearch } from "./hooks/useInvoiceSearch";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function ReconciliationTable() {
+  const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
@@ -48,7 +50,7 @@ export function ReconciliationTable() {
   };
 
   const { handleReconcile } = useReconciliationProcess(
-    undefined, // userId not needed here
+    user?.id,
     resetState
   );
 
@@ -67,7 +69,7 @@ export function ReconciliationTable() {
     setShowManualReconciliation,
     chartAccounts,
     handleManualReconciliationConfirm,
-  } = useManualReconciliation(undefined);
+  } = useManualReconciliation(user?.id);
 
   const {
     searchTerm: invoiceSearchTerm,
