@@ -7,12 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExpenseCard } from "./components/ExpenseCard";
-import { SimpleAccountAdjustmentDialog } from "./components/SimpleAccountAdjustmentDialog";
+import { FixedAccountAdjustmentDialog } from "./components/FixedAccountAdjustmentDialog";
 import { useOptimizedExpenses } from "./hooks/useOptimizedExpenses";
 import { useOptimizedInvoices } from "./hooks/useOptimizedInvoices";
 import { useReconciliationProcess } from "./hooks/useReconciliationProcess";
 import { useInvoiceSelection } from "./hooks/useInvoiceSelection";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function ReconciliationTable() {
   const [page, setPage] = useState(1);
@@ -173,8 +172,8 @@ export function ReconciliationTable() {
         </div>
       )}
 
-      {/* Simple Adjustment Dialog */}
-      <SimpleAccountAdjustmentDialog
+      {/* Fixed Adjustment Dialog */}
+      <FixedAccountAdjustmentDialog
         open={showAdjustmentDialog}
         onOpenChange={setShowAdjustmentDialog}
         amount={remainingAmount}
