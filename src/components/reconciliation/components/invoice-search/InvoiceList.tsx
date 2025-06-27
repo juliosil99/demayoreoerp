@@ -6,7 +6,7 @@ import { CurrencyBadge } from "../CurrencyBadge";
 
 interface InvoiceListProps {
   invoices: any[];
-  onInvoiceSelect: (invoice: any) => void;
+  onInvoiceSelect: (invoices: any[]) => void;
   isLoading?: boolean;
 }
 
@@ -76,7 +76,7 @@ export function InvoiceList({
           <Card 
             key={invoice.id} 
             className={`cursor-pointer transition-colors ${typeInfo.bgColor} hover:bg-gray-100`}
-            onClick={() => onInvoiceSelect(invoice)}
+            onClick={() => onInvoiceSelect([invoice])}
           >
             <CardContent className="p-4">
               <div className="flex justify-between items-start">
