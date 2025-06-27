@@ -124,9 +124,14 @@ export const useReconciliationProcess = (
 
       console.log("✅ Reconciliation completed successfully");
       toast.success("Gasto conciliado exitosamente");
-      queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["unreconciled-invoices"] });
+      
+      // Immediately reset selections to close dialogs
       resetSelections();
+      
+      // Invalidate with correct query keys - use the exact same keys as useOptimizedExpenses
+      await queryClient.invalidateQueries({ queryKey: ["optimized-unreconciled-expenses"] });
+      await queryClient.invalidateQueries({ queryKey: ["unreconciled-invoices"] });
+      
       return true;
     } catch (error) {
       console.error("❌ Error al conciliar:", error);

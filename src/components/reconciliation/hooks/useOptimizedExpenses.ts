@@ -101,7 +101,7 @@ export const useOptimizedExpenses = ({
       };
     },
     enabled: !!userCompany?.id && canViewReconciliation && enabled,
-    staleTime: 30000, // 30 seconds
+    staleTime: 1000, // Reduced from 30 seconds to 1 second for faster updates
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
 };
