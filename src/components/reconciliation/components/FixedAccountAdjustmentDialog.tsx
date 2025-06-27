@@ -12,13 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { formatCurrency } from "@/utils/formatters";
-
-// Simple auxiliary types to break circular dependencies
-type SimpleChartAccount = {
-  readonly id: string;
-  readonly name: string;
-  readonly code: string;
-};
+import { ADJUSTMENT_ACCOUNTS } from "../constants";
 
 type AdjustmentType = "expense_excess" | "invoice_excess";
 
@@ -29,15 +23,6 @@ interface FixedAccountAdjustmentDialogProps {
   type: AdjustmentType;
   onConfirm: (chartAccountId: string, notes: string) => void;
 }
-
-// Hardcoded chart accounts with explicit typing to avoid Supabase complexity
-const CHART_ACCOUNTS: readonly SimpleChartAccount[] = [
-  { id: "adj-001", name: "Gastos Generales", code: "601" },
-  { id: "adj-002", name: "Diferencias de Cambio", code: "731" },
-  { id: "adj-003", name: "Otros Gastos", code: "702" },
-  { id: "adj-004", name: "Ajustes Contables", code: "799" },
-  { id: "adj-005", name: "Gastos de Operación", code: "605" },
-] as const;
 
 export function FixedAccountAdjustmentDialog({
   open,
@@ -51,12 +36,26 @@ export function FixedAccountAdjustmentDialog({
 
   const isPerfectMatch = Math.abs(amount) <= 0.01;
 
+  // Usar las cuentas correctas según el tipo de ajuste
+  const getAdjustmentAccount = () => {
+    if (type === "expense_excess") {
+      return ADJUSTMENT_ACCOUNTS.expense_excess;
+    } else {
+      return ADJUSTMENT_ACCOUNTS.invoice_excess;
+    }
+  };
+
+  const adjustmentAccount = getAdjustmentAccount();
+
   const handleConfirm = () => {
     if (!isPerfectMatch && !selectedAccountId) {
       return;
     }
     
-    onConfirm(selectedAccountId, notes);
+    // Para ajustes, usar la cuenta específica del tipo de ajuste
+    const accountToUse = isPerfectMatch ? "" : (selectedAccountId || adjustmentAccount.code);
+    
+    onConfirm(accountToUse, notes);
     setSelectedAccountId("");
     setNotes("");
   };
@@ -70,8 +69,18 @@ export function FixedAccountAdjustmentDialog({
       return "Los montos coinciden perfectamente. ¿Deseas proceder con la reconciliación?";
     }
     
-    const typeText = type === "expense_excess" ? "exceso en el gasto" : "exceso en las facturas";
-    return `Se requiere un ajuste de ${formatCurrency(amount)} por ${typeText}.`;
+    const typeText = type === "expense_excess" 
+      ? `exceso en el gasto (se pagó más de lo facturado)` 
+      : `exceso en las facturas (se facturó más de lo pagado)`;
+    return `Se requiere un ajuste de ${formatCurrency(Math.abs(amount))} por ${typeText}.`;
+  };
+
+  const getAccountDescription = (): string => {
+    if (type === "expense_excess") {
+      return "El exceso se registrará como anticipo a proveedor";
+    } else {
+      return "La diferencia se registrará como deuda pendiente por pagar";
+    }
   };
 
   const getNotesLabel = (): string => {
@@ -79,9 +88,14 @@ export function FixedAccountAdjustmentDialog({
   };
 
   const getNotesPlaceholder = (): string => {
-    return isPerfectMatch 
-      ? "Agrega cualquier comentario sobre esta reconciliación..."
-      : "Describe la razón del ajuste...";
+    if (isPerfectMatch) {
+      return "Agrega cualquier comentario sobre esta reconciliación...";
+    }
+    
+    const suggestion = type === "expense_excess" 
+      ? "Ej: Pago adelantado por servicios futuros, error en el cálculo, etc."
+      : "Ej: Factura pendiente de pago parcial, diferencia en tipos de cambio, etc.";
+    return suggestion;
   };
 
   const getConfirmButtonText = (): string => {
@@ -98,20 +112,21 @@ export function FixedAccountAdjustmentDialog({
 
         <div className="space-y-4">
           {!isPerfectMatch && (
-            <div className="space-y-2">
-              <Label htmlFor="account">Cuenta Contable para el Ajuste</Label>
-              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una cuenta" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CHART_ACCOUNTS.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.code} - {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-3">
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="font-medium text-sm text-blue-900">Cuenta de Ajuste Seleccionada</span>
+                </div>
+                <div className="text-sm text-blue-800">
+                  <div className="font-mono">{adjustmentAccount.code} - {adjustmentAccount.name}</div>
+                  <div className="text-xs mt-1 text-blue-600">{adjustmentAccount.description}</div>
+                </div>
+              </div>
+              
+              <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                <strong>Explicación:</strong> {getAccountDescription()}
+              </div>
             </div>
           )}
 
@@ -131,10 +146,7 @@ export function FixedAccountAdjustmentDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleConfirm} 
-            disabled={!isPerfectMatch && !selectedAccountId}
-          >
+          <Button onClick={handleConfirm}>
             {getConfirmButtonText()}
           </Button>
         </div>

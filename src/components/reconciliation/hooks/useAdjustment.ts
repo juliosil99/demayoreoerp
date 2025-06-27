@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ADJUSTMENT_ACCOUNTS } from "../constants";
 
 export const useAdjustment = (userId: string | undefined) => {
   const [showAdjustmentDialog, setShowAdjustmentDialog] = useState(false);
@@ -18,6 +19,12 @@ export const useAdjustment = (userId: string | undefined) => {
     try {
       if (!userId) throw new Error("User ID is required");
       
+      // Usar la cuenta correcta según el tipo de ajuste
+      const adjustmentAccount = ADJUSTMENT_ACCOUNTS[type];
+      const accountCodeToUse = chartAccountId || adjustmentAccount.code;
+      
+      console.log(`Creating adjustment: type=${type}, account=${accountCodeToUse}, amount=${amount}`);
+      
       const { error: adjustmentError } = await supabase
         .from("accounting_adjustments")
         .insert([{
@@ -26,11 +33,16 @@ export const useAdjustment = (userId: string | undefined) => {
           invoice_id: invoiceId,
           amount: Math.abs(amount),
           type: type,
-          chart_account_id: chartAccountId,
-          notes
+          chart_account_id: accountCodeToUse, // Usar código de cuenta como ID temporal
+          notes: notes || `Ajuste automático: ${adjustmentAccount.description}`
         }]);
 
-      if (adjustmentError) throw adjustmentError;
+      if (adjustmentError) {
+        console.error("Error creating adjustment:", adjustmentError);
+        throw adjustmentError;
+      }
+      
+      toast.success(`Ajuste contable creado: ${adjustmentAccount.code} - ${adjustmentAccount.name}`);
       return true;
     } catch (error) {
       console.error("Error al crear el ajuste:", error);

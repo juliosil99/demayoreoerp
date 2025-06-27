@@ -1,17 +1,17 @@
 
-// Default chart accounts for adjustments
+// Cuentas contables específicas para ajustes de reconciliación
 export const ADJUSTMENT_ACCOUNTS = {
-  // When expense amount > invoice amount (we paid more)
+  // Cuando el gasto es mayor que la factura (se pagó de más)
   expense_excess: {
     code: "107.05",
     name: "Anticipo a Proveedores",
-    description: "Registra el excedente pagado como anticipo a proveedor"
+    description: "Registra el exceso pagado como anticipo que se aplicará en futuras compras"
   },
-  // When invoice amount > expense amount (we paid less) - corrected to use liability account
+  // Cuando la factura es mayor que el gasto (se pagó de menos)
   invoice_excess: {
     code: "201.01", 
     name: "Cuentas por Pagar",
-    description: "Registra la diferencia como deuda pendiente por pagar"
+    description: "Registra el saldo pendiente por pagar al proveedor"
   }
 } as const;
 
@@ -20,3 +20,7 @@ export const RECONCILIATION_TYPES = {
   manual: "Conciliación Manual",
   partial: "Conciliación Parcial"
 } as const;
+
+// Tipos para TypeScript
+export type AdjustmentAccountType = keyof typeof ADJUSTMENT_ACCOUNTS;
+export type ReconciliationType = keyof typeof RECONCILIATION_TYPES;
