@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { Table } from "@/components/ui/table";
 import type { Database } from "@/integrations/supabase/types";
 import { InvoiceFilters } from "./InvoiceFilters";
-import { InvoiceTableHeader } from "./table/InvoiceTableHeader";
+import { OptimizedInvoiceTableHeader } from "./table/OptimizedInvoiceTableHeader";
 import { OptimizedInvoiceTableBody } from "./table/OptimizedInvoiceTableBody";
 import { NoInvoicesMessage } from "./table/NoInvoicesMessage";
 import { InvoicePagination } from "./pagination/InvoicePagination";
@@ -66,7 +66,7 @@ export const OptimizedInvoiceTable = () => {
       ) : (
         <>
           <Table>
-            <InvoiceTableHeader />
+            <OptimizedInvoiceTableHeader />
             <OptimizedInvoiceTableBody invoices={invoices} />
           </Table>
 
