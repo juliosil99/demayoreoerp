@@ -100,9 +100,11 @@ export function ReconciliationTable() {
   if (expensesLoading || invoicesLoading) {
     return (
       <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full" />
-        ))}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -126,7 +128,7 @@ export function ReconciliationTable() {
         </div>
       </div>
 
-      {/* Expenses List */}
+      {/* Expenses Grid */}
       <div className="space-y-4">
         {filteredExpenses.length === 0 ? (
           <Card>
@@ -135,13 +137,15 @@ export function ReconciliationTable() {
             </CardContent>
           </Card>
         ) : (
-          filteredExpenses.map((expense) => (
-            <ExpenseCard
-              key={expense.id}
-              expense={expense}
-              onSelectExpense={handleExpenseClick}
-            />
-          ))
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredExpenses.map((expense) => (
+              <ExpenseCard
+                key={expense.id}
+                expense={expense}
+                onSelectExpense={handleExpenseClick}
+              />
+            ))}
+          </div>
         )}
       </div>
 
