@@ -58,8 +58,6 @@ const mapDatabaseExpenseToExpense = (dbExpense: DatabaseExpense): Expense => {
     // Explicitly map any fields that need special handling
     accounts_payable: dbExpense.accounts_payable || null,
     contacts: dbExpense.contacts || null,
-    reconciliation_batch_id: dbExpense.reconciliation_batch_id || null,
-    tax_regime: dbExpense.tax_regime || null
   };
 };
 

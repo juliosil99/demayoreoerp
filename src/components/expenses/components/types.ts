@@ -23,8 +23,6 @@ export interface Expense extends ExpenseRow {
       name: string;
     };
   } | null;
-  reconciliation_batch_id?: string | null;
-  tax_regime?: string | null;
 }
 
 export interface SelectOption {
