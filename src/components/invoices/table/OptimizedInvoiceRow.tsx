@@ -82,9 +82,6 @@ export const OptimizedInvoiceRow = ({ invoice }: OptimizedInvoiceRowProps) => {
 
   return (
     <TableRow>
-      <TableCell className="font-medium">
-        {invoice.filename || "Sin archivo"}
-      </TableCell>
       <TableCell>
         {invoice.invoice_date ? formatCardDate(invoice.invoice_date) : "N/A"}
       </TableCell>
