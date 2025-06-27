@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +27,7 @@ type DatabaseExpense = Database['public']['Tables']['expenses']['Row'] & {
   contacts: { name: string; type?: string } | null;
   expense_invoice_relations?: {
     invoice: {
+      id: number;
       uuid: string;
       invoice_number: string;
       file_path: string;
@@ -76,7 +78,7 @@ export default function Expenses() {
           chart_of_accounts (name, code),
           contacts (name, type),
           expense_invoice_relations (
-            invoice:invoices (uuid, invoice_number, file_path, filename, content_type)
+            invoice:invoices (id, uuid, invoice_number, file_path, filename, content_type)
           ),
           accounts_payable!expense_id (
             id,

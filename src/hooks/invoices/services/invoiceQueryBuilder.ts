@@ -22,6 +22,7 @@ export const buildInvoiceQuery = (filters: InvoiceFilters, reconciledInvoiceIds:
       tax_amount,
       status,
       manually_reconciled,
+      processed,
       file_path
     `, { count: 'exact' });
 
@@ -76,18 +77,18 @@ export const buildInvoiceQuery = (filters: InvoiceFilters, reconciledInvoiceIds:
 
   // Apply reconciliation status filter with enhanced logic
   if (filters.reconciliationStatus === 'reconciled') {
-    // Show invoices that are either in expense_invoice_relations OR manually_reconciled = true
+    // Show invoices that are either in expense_invoice_relations OR manually_reconciled = true OR processed = true
     if (reconciledInvoiceIds.length > 0) {
-      query = query.or(`id.in.(${reconciledInvoiceIds.join(',')}),manually_reconciled.eq.true`);
+      query = query.or(`id.in.(${reconciledInvoiceIds.join(',')}),manually_reconciled.eq.true,processed.eq.true`);
     } else {
-      query = query.eq('manually_reconciled', true);
+      query = query.or('manually_reconciled.eq.true,processed.eq.true');
     }
   } else if (filters.reconciliationStatus === 'unreconciled') {
-    // Show invoices that are NOT in expense_invoice_relations AND manually_reconciled = false
+    // Show invoices that are NOT in expense_invoice_relations AND manually_reconciled = false AND processed = false
     if (reconciledInvoiceIds.length > 0) {
       query = query.not('id', 'in', `(${reconciledInvoiceIds.join(',')})`);
     }
-    query = query.eq('manually_reconciled', false);
+    query = query.eq('manually_reconciled', false).eq('processed', false);
   }
 
   return query;

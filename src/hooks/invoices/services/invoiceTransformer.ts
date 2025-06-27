@@ -8,13 +8,23 @@ export const transformInvoices = (
   return invoices?.map((invoice: any) => {
     const hasExpenseRelation = reconciledInvoiceIds.includes(invoice.id);
     const isManuallyReconciled = invoice.manually_reconciled === true;
-    const isReconciled = hasExpenseRelation || isManuallyReconciled;
+    const isProcessed = invoice.processed === true;
+    const isReconciled = hasExpenseRelation || isManuallyReconciled || isProcessed;
+    
+    // Determine reconciliation type
+    let reconciliationType: 'automatic' | 'manual' | null = null;
+    if (hasExpenseRelation) {
+      reconciliationType = 'automatic';
+    } else if (isManuallyReconciled) {
+      reconciliationType = 'manual';
+    } else if (isProcessed) {
+      reconciliationType = 'automatic'; // Processed invoices are automatically reconciled
+    }
     
     return {
       ...invoice,
       is_reconciled: isReconciled,
-      reconciliation_type: hasExpenseRelation ? 'automatic' : 
-                          isManuallyReconciled ? 'manual' : null
+      reconciliation_type: reconciliationType
     };
   }) || [];
 };

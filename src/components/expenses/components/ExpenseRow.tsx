@@ -4,6 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { formatCardDate, formatCurrency } from "@/utils/formatters";
 import { ExpenseActions } from "./ExpenseActions";
 import { useNavigate } from "react-router-dom";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { Expense } from "./types";
 
 interface ExpenseRowProps {
@@ -29,6 +33,27 @@ export function ExpenseRow({
   const handleBatchClick = () => {
     if (expense.reconciliation_batch_id) {
       navigate(`/expenses/reconciliation-batches?batch=${expense.reconciliation_batch_id}`);
+    }
+  };
+
+  const handleInvoiceDownload = async (invoiceId: number, filename: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('invoices')
+        .createSignedUrl(`invoices/${invoiceId}/${filename}`, 60);
+
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        toast.error('Error al descargar la factura');
+        return;
+      }
+
+      // Open the file in a new tab for download
+      window.open(data.signedUrl, '_blank');
+      toast.success('Descarga iniciada');
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast.error('Error al descargar la factura');
     }
   };
 
@@ -87,11 +112,28 @@ export function ExpenseRow({
         </div>
       </TableCell>
       <TableCell>
-        <ExpenseActions 
-          expense={expense}
-          onDelete={handleDelete}
-          onEdit={handleEdit}
-        />
+        <div className="flex items-center gap-2">
+          <ExpenseActions 
+            expense={expense}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+          />
+          {/* Show download button if expense has invoice relations */}
+          {expense.expense_invoice_relations && expense.expense_invoice_relations.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const relation = expense.expense_invoice_relations[0];
+                handleInvoiceDownload(relation.invoice.id, relation.invoice.filename);
+              }}
+              className="h-8 w-8 p-0"
+              title="Descargar factura"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </TableCell>
     </TableRow>
   );
@@ -140,14 +182,27 @@ export function ExpenseRow({
 
     // Check for invoice relations
     if (expense.expense_invoice_relations?.length) {
-      return expense.expense_invoice_relations.map(relation => 
-        relation.invoice.invoice_number || relation.invoice.uuid
-      ).join(', ');
+      return (
+        <div className="flex items-center gap-1">
+          <span className="text-sm">
+            {expense.expense_invoice_relations.map(relation => 
+              relation.invoice.invoice_number || relation.invoice.uuid.substring(0, 8)
+            ).join(', ')}
+          </span>
+          <Badge className="bg-green-100 text-green-800 text-xs">
+            Conciliado
+          </Badge>
+        </div>
+      );
     }
 
     // Check for manual reconciliation
     if (expense.reconciled) {
-      return 'Conciliación manual';
+      return (
+        <Badge className="bg-blue-100 text-blue-800 text-xs">
+          Conciliación manual
+        </Badge>
+      );
     }
 
     return 'Sin conciliar';
