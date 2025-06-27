@@ -7,6 +7,7 @@ import { useManualReconciliation } from "./useManualReconciliation";
 import { useInvoiceSearch } from "./useInvoiceSearch";
 import { useReconciliationProcess } from "./useReconciliationProcess";
 import { useInvoiceSelection } from "./useInvoiceSelection";
+import { toast } from "sonner";
 
 export const useReconciliation = () => {
   const { user } = useAuth();
@@ -55,25 +56,44 @@ export const useReconciliation = () => {
     return rawHandleReconcile(selectedExpense, invoicesToReconcile);
   }, [rawHandleReconcile, selectedExpense]);
 
-  const handleAdjustmentConfirm = useCallback((chartAccountId: string, notes: string) => {
+  const handleAdjustmentConfirm = useCallback(async (chartAccountId: string, notes: string) => {
     if (!selectedExpense || !selectedInvoices.length) {
+      toast.error("No hay gasto o facturas seleccionadas");
       return;
     }
     
-    const result = rawHandleAdjustmentConfirm(
-      selectedExpense.id,
-      selectedInvoices[selectedInvoices.length - 1].id,
-      chartAccountId,
-      Math.abs(remainingAmount),
-      adjustmentType,
-      notes
-    );
-    
-    if (result) {
-      handleReconcile(selectedInvoices);
+    try {
+      console.log("Starting adjustment confirmation process...");
+      
+      // Wait for the adjustment to be created
+      const adjustmentSuccess = await rawHandleAdjustmentConfirm(
+        selectedExpense.id,
+        selectedInvoices[selectedInvoices.length - 1].id,
+        chartAccountId,
+        Math.abs(remainingAmount),
+        adjustmentType,
+        notes
+      );
+      
+      if (adjustmentSuccess) {
+        console.log("Adjustment created successfully, proceeding with reconciliation...");
+        
+        // Directly call reconciliation after successful adjustment
+        await handleReconcile(selectedInvoices);
+        
+        console.log("Reconciliation completed successfully");
+        toast.success("Ajuste y reconciliación completados exitosamente");
+      } else {
+        console.error("Failed to create adjustment");
+        toast.error("Error al crear el ajuste contable");
+      }
+    } catch (error) {
+      console.error("Error in adjustment confirmation process:", error);
+      toast.error("Error en el proceso de ajuste y reconciliación");
+    } finally {
+      // Always close the dialog regardless of success or failure
+      setShowAdjustmentDialog(false);
     }
-    
-    setShowAdjustmentDialog(false);
   }, [
     selectedExpense, 
     selectedInvoices, 
