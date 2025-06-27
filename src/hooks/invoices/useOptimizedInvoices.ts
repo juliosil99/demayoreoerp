@@ -43,17 +43,17 @@ export const useOptimizedInvoices = ({
     queryKey: ['optimized-invoices', page, itemsPerPage, filters],
     queryFn: async () => {
       
-      // First, get the list of reconciled invoice IDs if we need to filter by reconciliation status
-      let reconciledInvoiceIds: number[] = [];
-      if (filters.reconciliationStatus !== 'all') {
-        const { data: relations, error: relationsError } = await supabase
-          .from('expense_invoice_relations')
-          .select('invoice_id');
-        
-        if (!relationsError && relations) {
-          reconciledInvoiceIds = relations.map(rel => rel.invoice_id);
-        }
+      // Always get the list of reconciled invoice IDs to determine reconciliation status correctly
+      const { data: relations, error: relationsError } = await supabase
+        .from('expense_invoice_relations')
+        .select('invoice_id');
+      
+      if (relationsError) {
+        console.error("Error fetching reconciled invoice IDs:", relationsError);
+        throw relationsError;
       }
+      
+      const reconciledInvoiceIds = relations?.map(rel => rel.invoice_id) || [];
 
       // Build the main query with ONLY the fields we need for the UI
       let query = supabase
@@ -169,6 +169,7 @@ export const useOptimizedInvoices = ({
       }
 
       // Transform the data to include reconciliation status and type
+      // Now we always have reconciledInvoiceIds available for accurate status determination
       const transformedInvoices = invoices?.map((invoice: any) => {
         const hasExpenseRelation = reconciledInvoiceIds.includes(invoice.id);
         const isManuallyReconciled = invoice.manually_reconciled === true;
