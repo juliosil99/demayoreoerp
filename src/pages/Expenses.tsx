@@ -18,30 +18,7 @@ import {
 import { PlusIcon, ImportIcon } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { Database } from "@/integrations/supabase/types/base";
 import type { Expense } from "@/components/expenses/components/types";
-
-type DatabaseExpense = Database['public']['Tables']['expenses']['Row'] & {
-  bank_accounts: { name: string; currency: string };
-  chart_of_accounts: { name: string; code: string };
-  contacts: { name: string; type?: string } | null;
-  expense_invoice_relations?: {
-    invoice: {
-      id: number;
-      uuid: string;
-      invoice_number: string;
-      file_path: string;
-      filename: string;
-      content_type?: string;
-    }
-  }[];
-  accounts_payable?: {
-    id: string;
-    client: {
-      name: string;
-    };
-  } | null;
-};
 
 type Filters = {
   supplier_id?: string;
@@ -51,23 +28,13 @@ type Filters = {
   from_payable?: boolean;
 };
 
-// Convert database expense to component expense
-const mapDatabaseExpenseToExpense = (dbExpense: DatabaseExpense): Expense => {
-  return {
-    ...dbExpense,
-    // Explicitly map any fields that need special handling
-    accounts_payable: dbExpense.accounts_payable || null,
-    contacts: dbExpense.contacts || null,
-  };
-};
-
 export default function Expenses() {
   const { user } = useAuth();
   const [filters, setFilters] = useState<Filters>({});
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const { data: dbExpenses, isLoading, refetch } = useQuery({
+  const { data: expenses, isLoading, refetch } = useQuery({
     queryKey: ["expenses", user?.id, filters],
     queryFn: async () => {
       let query = supabase
@@ -117,13 +84,10 @@ export default function Expenses() {
         throw error;
       }
       
-      return data as unknown as DatabaseExpense[];
+      return data as unknown as Expense[];
     },
     enabled: !!user,
   });
-
-  // Map database expenses to component expenses
-  const expenses: Expense[] = (dbExpenses || []).map(mapDatabaseExpenseToExpense);
 
   const handleSuccess = useCallback(() => {
     refetch();
@@ -176,7 +140,7 @@ export default function Expenses() {
           <ExpenseFilters filters={filters} onFiltersChange={setFilters} />
         </div>
         
-        <ExpenseList expenses={expenses} isLoading={isLoading} />
+        <ExpenseList expenses={expenses || []} isLoading={isLoading} />
       </div>
     </div>
   );
