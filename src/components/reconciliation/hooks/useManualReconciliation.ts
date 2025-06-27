@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,7 +15,7 @@ export const useManualReconciliation = (userId: string | undefined) => {
       
       const { data, error } = await supabase
         .from('chart_of_accounts')
-        .select('id, name, code')
+        .select('id, name, code, account_type')
         .eq('user_id', userId)
         .order('code');
       
