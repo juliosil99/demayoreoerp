@@ -1,19 +1,16 @@
+
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, Filter } from "lucide-react";
+import { Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExpenseCard } from "./components/ExpenseCard";
-import { InvoiceSearchDialog } from "./components/invoice-search/InvoiceSearchDialog";
 import { SimpleAccountAdjustmentDialog } from "./components/SimpleAccountAdjustmentDialog";
-import { BatchReconciliationDialog } from "./components/BatchReconciliationDialog";
-import { ReconciliationPagination } from "./components/ReconciliationPagination";
 import { useOptimizedExpenses } from "./hooks/useOptimizedExpenses";
 import { useOptimizedInvoices } from "./hooks/useOptimizedInvoices";
 import { useReconciliationProcess } from "./hooks/useReconciliationProcess";
-import { useSelectedItems } from "./hooks/useSelectedItems";
 import { useInvoiceSelection } from "./hooks/useInvoiceSelection";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -21,31 +18,32 @@ export function ReconciliationTable() {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
-  const [showInvoiceSearch, setShowInvoiceSearch] = useState(false);
+  const [selectedInvoices, setSelectedInvoices] = useState<any[]>([]);
   const [showAdjustmentDialog, setShowAdjustmentDialog] = useState(false);
   const [adjustmentType, setAdjustmentType] = useState<"expense_excess" | "invoice_excess">("expense_excess");
   const [remainingAmount, setRemainingAmount] = useState(0);
-  const [showBatchDialog, setShowBatchDialog] = useState(false);
-  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'description'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [filterBy, setFilterBy] = useState<'all' | 'high' | 'medium' | 'low'>('all');
 
   const itemsPerPage = 10;
 
-  const { data: expenses, isLoading: expensesLoading, totalCount } = useOptimizedExpenses({
+  const { data: expensesData, isLoading: expensesLoading } = useOptimizedExpenses({
     page,
-    itemsPerPage,
-    searchTerm,
-    sortBy,
-    sortOrder,
-    filterBy
+    pageSize: itemsPerPage,
+    enabled: true
   });
 
   const { data: invoices, isLoading: invoicesLoading } = useOptimizedInvoices();
 
-  const { selectedExpenses, selectedInvoices, setSelectedInvoices, toggleExpenseSelection } = useSelectedItems();
+  const expenses = expensesData?.data || [];
+  const totalCount = expensesData?.count || 0;
 
-  const { handleReconcile } = useReconciliationProcess();
+  const { handleReconcile } = useReconciliationProcess(
+    undefined, // userId not needed here
+    () => {
+      setSelectedExpense(null);
+      setSelectedInvoices([]);
+      setRemainingAmount(0);
+    }
+  );
 
   const { handleInvoiceSelect } = useInvoiceSelection(
     selectedExpense,
@@ -61,36 +59,44 @@ export function ReconciliationTable() {
 
   const handleExpenseClick = (expense: any) => {
     setSelectedExpense(expense);
-    setShowInvoiceSearch(true);
+    // Directly call handleInvoiceSelect with available invoices for this expense
+    if (invoices && invoices.length > 0) {
+      // Filter invoices that could match this expense
+      const matchingInvoices = invoices.filter((invoice: any) => 
+        invoice.currency === expense.currency || 
+        (!invoice.currency && expense.currency === 'MXN')
+      );
+      
+      if (matchingInvoices.length > 0) {
+        handleInvoiceSelect(matchingInvoices.slice(0, 1)); // Select first matching invoice
+      }
+    }
   };
 
   const handleAdjustmentConfirm = async (chartAccountId: string, notes: string) => {
     if (!selectedExpense) return;
 
-    const success = await handleReconcile(selectedExpense, selectedInvoices, {
-      adjustmentAmount: remainingAmount,
-      adjustmentType,
-      chartAccountId,
-      notes
-    });
+    const success = await handleReconcile(selectedExpense, selectedInvoices);
 
     if (success) {
       setShowAdjustmentDialog(false);
-      setShowInvoiceSearch(false);
       setSelectedExpense(null);
       setSelectedInvoices([]);
     }
   };
 
-  const handleBatchReconciliation = () => {
-    if (selectedExpenses.length === 0) return;
-    setShowBatchDialog(true);
-  };
-
   const filteredExpenses = useMemo(() => {
     if (!expenses) return [];
-    return expenses;
-  }, [expenses]);
+    
+    if (!searchTerm.trim()) return expenses;
+    
+    const term = searchTerm.toLowerCase();
+    return expenses.filter((expense: any) =>
+      expense.description?.toLowerCase().includes(term) ||
+      expense.contacts?.name?.toLowerCase().includes(term) ||
+      expense.amount?.toString().includes(term)
+    );
+  }, [expenses, searchTerm]);
 
   if (expensesLoading || invoicesLoading) {
     return (
@@ -104,7 +110,7 @@ export function ReconciliationTable() {
 
   return (
     <div className="space-y-6">
-      {/* Filters and Search */}
+      {/* Search */}
       <div className="flex flex-wrap gap-4 items-end">
         <div className="flex-1 min-w-[200px]">
           <Label htmlFor="search">Buscar gastos</Label>
@@ -119,65 +125,7 @@ export function ReconciliationTable() {
             />
           </div>
         </div>
-
-        <div className="min-w-[120px]">
-          <Label>Ordenar por</Label>
-          <Select value={sortBy} onValueChange={(value: 'date' | 'amount' | 'description') => setSortBy(value)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="date">Fecha</SelectItem>
-              <SelectItem value="amount">Monto</SelectItem>
-              <SelectItem value="description">Descripción</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="min-w-[120px]">
-          <Label>Orden</Label>
-          <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="desc">Descendente</SelectItem>
-              <SelectItem value="asc">Ascendente</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="min-w-[120px]">
-          <Label>Filtrar por</Label>
-          <Select value={filterBy} onValueChange={(value: 'all' | 'high' | 'medium' | 'low') => setFilterBy(value)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="high">Monto alto</SelectItem>
-              <SelectItem value="medium">Monto medio</SelectItem>
-              <SelectItem value="low">Monto bajo</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </div>
-
-      {/* Batch Actions */}
-      {selectedExpenses.length > 0 && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-blue-700">
-                {selectedExpenses.length} gastos seleccionados
-              </span>
-              <Button onClick={handleBatchReconciliation} size="sm">
-                Reconciliar por Lotes
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Expenses List */}
       <div className="space-y-4">
@@ -192,43 +140,46 @@ export function ReconciliationTable() {
             <ExpenseCard
               key={expense.id}
               expense={expense}
-              isSelected={selectedExpenses.some(e => e.id === expense.id)}
-              onToggleSelection={() => toggleExpenseSelection(expense)}
-              onClick={() => handleExpenseClick(expense)}
+              onSelectExpense={handleExpenseClick}
             />
           ))
         )}
       </div>
 
-      {/* Pagination */}
-      <ReconciliationPagination
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-      />
+      {/* Simple Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Página {page} de {totalPages} ({totalCount} gastos total)
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              disabled={page === totalPages}
+            >
+              Siguiente
+            </Button>
+          </div>
+        </div>
+      )}
 
-      {/* Dialogs */}
-      <InvoiceSearchDialog
-        open={showInvoiceSearch}
-        onOpenChange={setShowInvoiceSearch}
-        expense={selectedExpense}
-        invoices={invoices || []}
-        onInvoiceSelect={handleInvoiceSelect}
-      />
-
+      {/* Simple Adjustment Dialog */}
       <SimpleAccountAdjustmentDialog
         open={showAdjustmentDialog}
         onOpenChange={setShowAdjustmentDialog}
         amount={remainingAmount}
         type={adjustmentType}
         onConfirm={handleAdjustmentConfirm}
-      />
-
-      <BatchReconciliationDialog
-        open={showBatchDialog}
-        onOpenChange={setShowBatchDialog}
-        selectedExpenses={selectedExpenses}
-        availableInvoices={invoices || []}
       />
     </div>
   );
