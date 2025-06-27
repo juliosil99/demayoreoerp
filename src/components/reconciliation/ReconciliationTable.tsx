@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,23 +12,11 @@ import { InvoiceSearchDialog } from "./components/invoice-search/InvoiceSearchDi
 import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
 import { useOptimizedExpenses } from "./hooks/useOptimizedExpenses";
 import { useOptimizedInvoices } from "./hooks/useOptimizedInvoices";
-import { useReconciliationProcess } from "./hooks/useReconciliationProcess";
-import { useInvoiceSelection } from "./hooks/useInvoiceSelection";
-import { useManualReconciliation } from "./hooks/useManualReconciliation";
-import { useInvoiceSearch } from "./hooks/useInvoiceSearch";
-import { useAuth } from "@/contexts/AuthContext";
+import { useReconciliation } from "./hooks/useReconciliation";
 
 export function ReconciliationTable() {
-  const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedExpense, setSelectedExpense] = useState<any>(null);
-  const [selectedInvoices, setSelectedInvoices] = useState<any[]>([]);
-  const [showAdjustmentDialog, setShowAdjustmentDialog] = useState(false);
-  const [showInvoiceSearch, setShowInvoiceSearch] = useState(false);
-  const [adjustmentType, setAdjustmentType] = useState<"expense_excess" | "invoice_excess">("expense_excess");
-  const [remainingAmount, setRemainingAmount] = useState(0);
-
   const itemsPerPage = 10;
 
   const { data: expensesData, isLoading: expensesLoading } = useOptimizedExpenses({
@@ -38,72 +27,37 @@ export function ReconciliationTable() {
 
   const { data: invoices, isLoading: invoicesLoading } = useOptimizedInvoices();
 
-  const expenses = expensesData?.data || [];
-  const totalCount = expensesData?.count || 0;
-
-  const resetState = () => {
-    setSelectedExpense(null);
-    setSelectedInvoices([]);
-    setRemainingAmount(0);
-    setShowInvoiceSearch(false);
-    setShowAdjustmentDialog(false);
-  };
-
-  const { handleReconcile } = useReconciliationProcess(
-    user?.id,
-    resetState
-  );
-
-  const { handleInvoiceSelect } = useInvoiceSelection(
-    selectedExpense,
-    selectedInvoices,
-    setSelectedInvoices,
-    setRemainingAmount,
-    setAdjustmentType,
-    setShowAdjustmentDialog,
-    handleReconcile
-  );
-
+  // Use the centralized reconciliation hook
   const {
+    selectedExpense,
+    setSelectedExpense,
+    selectedInvoices,
+    remainingAmount,
+    showAdjustmentDialog,
+    setShowAdjustmentDialog,
+    adjustmentType,
+    handleAdjustmentConfirm,
     showManualReconciliation,
     setShowManualReconciliation,
-    chartAccounts,
+    handleManualReconciliation,
     handleManualReconciliationConfirm,
-  } = useManualReconciliation(user?.id);
-
-  const {
+    chartAccounts,
+    showInvoiceSearch,
+    setShowInvoiceSearch,
     searchTerm: invoiceSearchTerm,
     setSearchTerm: setInvoiceSearchTerm,
     filterInvoices,
-  } = useInvoiceSearch();
+    handleInvoiceSelect,
+    resetState,
+  } = useReconciliation();
 
+  const expenses = expensesData?.data || [];
+  const totalCount = expensesData?.count || 0;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   const handleExpenseClick = (expense: any) => {
     setSelectedExpense(expense);
-    setSelectedInvoices([]);
-    setRemainingAmount(0);
     setShowInvoiceSearch(true);
-  };
-
-  const handleAdjustmentConfirm = async (chartAccountId: string, notes: string) => {
-    if (!selectedExpense) return;
-
-    const success = await handleReconcile(selectedExpense, selectedInvoices);
-
-    if (success) {
-      setShowAdjustmentDialog(false);
-      resetState();
-    }
-  };
-
-  const handleManualReconciliation = () => {
-    setShowInvoiceSearch(false);
-    setShowManualReconciliation(true);
-    
-    if (selectedExpense) {
-      setRemainingAmount(selectedExpense.amount);
-    }
   };
 
   const handleManualReconciliationComplete = async (data: {
@@ -113,14 +67,7 @@ export function ReconciliationTable() {
     fileId?: string;
     chartAccountId?: string;
   }) => {
-    if (!selectedExpense) return;
-
-    const success = await handleManualReconciliationConfirm(selectedExpense.id, data);
-
-    if (success) {
-      setShowManualReconciliation(false);
-      resetState();
-    }
+    await handleManualReconciliationConfirm(data);
   };
 
   const filteredExpenses = useMemo(() => {

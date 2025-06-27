@@ -21,9 +21,49 @@ export const useAdjustment = (userId: string | undefined) => {
       
       // Usar la cuenta correcta según el tipo de ajuste
       const adjustmentAccount = ADJUSTMENT_ACCOUNTS[type];
-      const accountCodeToUse = chartAccountId || adjustmentAccount.code;
       
-      console.log(`Creating adjustment: type=${type}, account=${accountCodeToUse}, amount=${amount}`);
+      console.log(`Creating adjustment: type=${type}, account=${adjustmentAccount.code}, amount=${amount}`);
+      
+      // Buscar o crear la cuenta contable con el código específico
+      let { data: existingAccount, error: searchError } = await supabase
+        .from("chart_of_accounts")
+        .select("id")
+        .eq("code", adjustmentAccount.code)
+        .eq("user_id", userId)
+        .single();
+
+      if (searchError && searchError.code !== 'PGRST116') {
+        console.error("Error searching for chart account:", searchError);
+        throw searchError;
+      }
+
+      let accountId: string;
+      
+      if (!existingAccount) {
+        // Crear la cuenta si no existe
+        const { data: newAccount, error: createError } = await supabase
+          .from("chart_of_accounts")
+          .insert([{
+            code: adjustmentAccount.code,
+            name: adjustmentAccount.name,
+            account_type: type === "expense_excess" ? "asset" : "liability",
+            level: 1,
+            user_id: userId
+          }])
+          .select("id")
+          .single();
+
+        if (createError) {
+          console.error("Error creating chart account:", createError);
+          throw createError;
+        }
+
+        accountId = newAccount.id;
+        console.log(`Created new chart account: ${adjustmentAccount.code} with ID: ${accountId}`);
+      } else {
+        accountId = existingAccount.id;
+        console.log(`Using existing chart account: ${adjustmentAccount.code} with ID: ${accountId}`);
+      }
       
       const { error: adjustmentError } = await supabase
         .from("accounting_adjustments")
@@ -33,7 +73,7 @@ export const useAdjustment = (userId: string | undefined) => {
           invoice_id: invoiceId,
           amount: Math.abs(amount),
           type: type,
-          chart_account_id: accountCodeToUse, // Usar código de cuenta como ID temporal
+          chart_account_id: accountId, // Usar el ID real de la cuenta
           notes: notes || `Ajuste automático: ${adjustmentAccount.description}`
         }]);
 
