@@ -94,6 +94,14 @@ export function ReconciliationTable() {
     );
   }
 
+  // Format chart accounts for the dialogs (ensure account_type is included)
+  const formattedChartAccounts = chartAccounts?.map(account => ({
+    id: account.id,
+    name: account.name,
+    code: account.code,
+    account_type: account.account_type || 'other'
+  })) || [];
+
   return (
     <div className="space-y-6">
       {/* Search */}
@@ -152,7 +160,7 @@ export function ReconciliationTable() {
         isLoadingInvoices={invoicesLoading}
         showManualReconciliation={showManualReconciliation}
         setShowManualReconciliation={setShowManualReconciliation}
-        chartAccounts={chartAccounts}
+        chartAccounts={formattedChartAccounts}
         onManualReconciliationConfirm={handleManualReconciliationComplete}
         showAdjustmentDialog={showAdjustmentDialog}
         setShowAdjustmentDialog={setShowAdjustmentDialog}

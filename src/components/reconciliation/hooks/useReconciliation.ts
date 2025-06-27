@@ -56,7 +56,7 @@ export const useReconciliation = () => {
     return rawHandleReconcile(selectedExpense, invoicesToReconcile);
   }, [rawHandleReconcile, selectedExpense]);
 
-  const handleAdjustmentConfirm = useCallback(async (chartAccountId: string, notes: string) => {
+  const handleAdjustmentConfirm = useCallback(async (accountId: string, notes: string) => {
     if (!selectedExpense || !selectedInvoices.length) {
       toast.error("No hay gasto o facturas seleccionadas");
       return;
@@ -65,11 +65,11 @@ export const useReconciliation = () => {
     try {
       console.log("Starting adjustment confirmation process...");
       
-      // Wait for the adjustment to be created
+      // Wait for the adjustment to be created using the user-selected account
       const adjustmentSuccess = await rawHandleAdjustmentConfirm(
         selectedExpense.id,
         selectedInvoices[selectedInvoices.length - 1].id,
-        chartAccountId,
+        accountId, // Use the account ID selected by the user
         Math.abs(remainingAmount),
         adjustmentType,
         notes

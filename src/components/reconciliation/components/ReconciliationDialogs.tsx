@@ -2,7 +2,7 @@
 import React from "react";
 import { InvoiceSearchDialog } from "./invoice-search/InvoiceSearchDialog";
 import { ManualReconciliationDialog } from "./ManualReconciliationDialog";
-import { FixedAccountAdjustmentDialog } from "./FixedAccountAdjustmentDialog";
+import { AccountSelectionDialog } from "./AccountSelectionDialog";
 
 interface ReconciliationDialogsProps {
   // Invoice Search Dialog props
@@ -21,7 +21,7 @@ interface ReconciliationDialogsProps {
   // Manual Reconciliation Dialog props
   showManualReconciliation: boolean;
   setShowManualReconciliation: (show: boolean) => void;
-  chartAccounts: { id: string; name: string; code: string }[];
+  chartAccounts: { id: string; name: string; code: string; account_type: string }[];
   onManualReconciliationConfirm: (data: {
     reconciliationType: string;
     referenceNumber?: string;
@@ -30,11 +30,11 @@ interface ReconciliationDialogsProps {
     chartAccountId?: string;
   }) => void;
 
-  // Fixed Adjustment Dialog props
+  // Account Selection Dialog props (replacing Fixed Adjustment Dialog)
   showAdjustmentDialog: boolean;
   setShowAdjustmentDialog: (show: boolean) => void;
   adjustmentType: "expense_excess" | "invoice_excess";
-  onAdjustmentConfirm: (chartAccountId: string, notes: string) => void;
+  onAdjustmentConfirm: (accountId: string, notes: string) => void;
 }
 
 export function ReconciliationDialogs({
@@ -84,12 +84,13 @@ export function ReconciliationDialogs({
         onConfirm={onManualReconciliationConfirm}
       />
 
-      {/* Fixed Adjustment Dialog */}
-      <FixedAccountAdjustmentDialog
+      {/* Account Selection Dialog (replaces Fixed Adjustment Dialog) */}
+      <AccountSelectionDialog
         open={showAdjustmentDialog}
         onOpenChange={setShowAdjustmentDialog}
         amount={remainingAmount}
         type={adjustmentType}
+        chartAccounts={chartAccounts || []}
         onConfirm={onAdjustmentConfirm}
       />
     </>

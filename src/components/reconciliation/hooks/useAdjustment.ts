@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ADJUSTMENT_ACCOUNTS } from "../constants";
 
 export const useAdjustment = (userId: string | undefined) => {
   const [showAdjustmentDialog, setShowAdjustmentDialog] = useState(false);
@@ -19,52 +18,24 @@ export const useAdjustment = (userId: string | undefined) => {
     try {
       if (!userId) throw new Error("User ID is required");
       
-      // Usar la cuenta correcta según el tipo de ajuste
-      const adjustmentAccount = ADJUSTMENT_ACCOUNTS[type];
+      console.log(`Creating adjustment: type=${type}, accountId=${chartAccountId}, amount=${amount}`);
       
-      console.log(`Creating adjustment: type=${type}, account=${adjustmentAccount.code}, amount=${amount}`);
-      
-      // Buscar o crear la cuenta contable con el código específico
-      let { data: existingAccount, error: searchError } = await supabase
+      // Verify that the chart account exists and belongs to the user
+      const { data: chartAccount, error: accountError } = await supabase
         .from("chart_of_accounts")
-        .select("id")
-        .eq("code", adjustmentAccount.code)
+        .select("id, code, name")
+        .eq("id", chartAccountId)
         .eq("user_id", userId)
         .single();
 
-      if (searchError && searchError.code !== 'PGRST116') {
-        console.error("Error searching for chart account:", searchError);
-        throw searchError;
+      if (accountError || !chartAccount) {
+        console.error("Error verifying chart account:", accountError);
+        throw new Error("La cuenta contable seleccionada no es válida");
       }
 
-      let accountId: string;
+      console.log(`Using chart account: ${chartAccount.code} - ${chartAccount.name}`);
       
-      if (!existingAccount) {
-        // Crear la cuenta si no existe
-        const { data: newAccount, error: createError } = await supabase
-          .from("chart_of_accounts")
-          .insert([{
-            code: adjustmentAccount.code,
-            name: adjustmentAccount.name,
-            account_type: type === "expense_excess" ? "asset" : "liability",
-            level: 1,
-            user_id: userId
-          }])
-          .select("id")
-          .single();
-
-        if (createError) {
-          console.error("Error creating chart account:", createError);
-          throw createError;
-        }
-
-        accountId = newAccount.id;
-        console.log(`Created new chart account: ${adjustmentAccount.code} with ID: ${accountId}`);
-      } else {
-        accountId = existingAccount.id;
-        console.log(`Using existing chart account: ${adjustmentAccount.code} with ID: ${accountId}`);
-      }
-      
+      // Create the accounting adjustment
       const { error: adjustmentError } = await supabase
         .from("accounting_adjustments")
         .insert([{
@@ -73,8 +44,8 @@ export const useAdjustment = (userId: string | undefined) => {
           invoice_id: invoiceId,
           amount: Math.abs(amount),
           type: type,
-          chart_account_id: accountId, // Usar el ID real de la cuenta
-          notes: notes || `Ajuste automático: ${adjustmentAccount.description}`
+          chart_account_id: chartAccountId,
+          notes: notes
         }]);
 
       if (adjustmentError) {
@@ -82,7 +53,7 @@ export const useAdjustment = (userId: string | undefined) => {
         throw adjustmentError;
       }
       
-      toast.success(`Ajuste contable creado: ${adjustmentAccount.code} - ${adjustmentAccount.name}`);
+      toast.success(`Ajuste contable creado en cuenta: ${chartAccount.code} - ${chartAccount.name}`);
       return true;
     } catch (error) {
       console.error("Error al crear el ajuste:", error);

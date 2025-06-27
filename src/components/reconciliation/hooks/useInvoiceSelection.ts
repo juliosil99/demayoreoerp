@@ -12,7 +12,7 @@ export const useInvoiceSelection = (
   setShowAdjustmentDialog: (show: boolean) => void,
   handleReconcile: (expense: any, invoices: any[]) => Promise<boolean>
 ) => {
-  const handleInvoiceSelect = useCallback((invoices: any[]) => {
+  const handleInvoiceSelect = useCallback(async (invoices: any[]) => {
     if (!expense) return;
 
     console.log("🔍 useInvoiceSelection - handleInvoiceSelect received:");
@@ -46,15 +46,26 @@ export const useInvoiceSelection = (
     console.log("💲 Total selected amount:", totalSelectedAmount);
     console.log("💰 Remaining amount:", remainingAmount);
 
-    // Show adjustment dialog for user confirmation
-    if (Math.abs(remainingAmount) > 0.01) {
+    // Check if it's an exact match (difference <= 0.01)
+    const isExactMatch = Math.abs(remainingAmount) <= 0.01;
+
+    if (isExactMatch) {
+      console.log("✅ Perfect match detected, proceeding directly to reconciliation");
+      // Proceed directly to reconciliation without showing adjustment dialog
+      try {
+        const success = await handleReconcile(expense, invoices);
+        if (success) {
+          console.log("✅ Direct reconciliation completed successfully");
+        }
+      } catch (error) {
+        console.error("❌ Error in direct reconciliation:", error);
+        toast.error("Error al realizar la reconciliación");
+      }
+    } else {
+      // Show adjustment dialog for user to select account
       const adjustmentType = remainingAmount > 0 ? "expense_excess" : "invoice_excess";
       console.log("⚖️ Adjustment needed, type:", adjustmentType);
       setAdjustmentType(adjustmentType);
-      setShowAdjustmentDialog(true);
-    } else {
-      console.log("✅ Perfect match, showing confirmation dialog");
-      setAdjustmentType("expense_excess"); // Default type for perfect matches
       setShowAdjustmentDialog(true);
     }
   }, [
