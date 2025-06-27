@@ -18,7 +18,7 @@ type SimpleChartAccount = {
   readonly id: string;
   readonly name: string;
   readonly code: string;
-} as const;
+};
 
 type AdjustmentType = "expense_excess" | "invoice_excess";
 
@@ -31,13 +31,13 @@ interface FixedAccountAdjustmentDialogProps {
 }
 
 // Hardcoded chart accounts with explicit typing to avoid Supabase complexity
-const CHART_ACCOUNTS = [
+const CHART_ACCOUNTS: readonly SimpleChartAccount[] = [
   { id: "adj-001", name: "Gastos Generales", code: "601" },
   { id: "adj-002", name: "Diferencias de Cambio", code: "731" },
   { id: "adj-003", name: "Otros Gastos", code: "702" },
   { id: "adj-004", name: "Ajustes Contables", code: "799" },
   { id: "adj-005", name: "Gastos de Operación", code: "605" },
-] as const satisfies readonly SimpleChartAccount[];
+] as const;
 
 export function FixedAccountAdjustmentDialog({
   open,
