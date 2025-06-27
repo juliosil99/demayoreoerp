@@ -1,15 +1,10 @@
 
 import React, { useState, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExpenseCard } from "./components/ExpenseCard";
-import { FixedAccountAdjustmentDialog } from "./components/FixedAccountAdjustmentDialog";
-import { InvoiceSearchDialog } from "./components/invoice-search/InvoiceSearchDialog";
-import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
+import { ReconciliationSearch } from "./components/ReconciliationSearch";
+import { ReconciliationExpenseGrid } from "./components/ReconciliationExpenseGrid";
+import { ReconciliationDialogs } from "./components/ReconciliationDialogs";
 import { useOptimizedExpenses } from "./hooks/useOptimizedExpenses";
 import { useOptimizedInvoices } from "./hooks/useOptimizedInvoices";
 import { useReconciliation } from "./hooks/useReconciliation";
@@ -30,7 +25,6 @@ export function ReconciliationTable() {
   // Use the centralized reconciliation hook
   const {
     selectedExpense,
-    setSelectedExpense,
     selectedInvoices,
     remainingAmount,
     showAdjustmentDialog,
@@ -48,7 +42,7 @@ export function ReconciliationTable() {
     setSearchTerm: setInvoiceSearchTerm,
     filterInvoices,
     handleInvoiceSelect,
-    resetState,
+    setSelectedExpense,
   } = useReconciliation();
 
   const expenses = expensesData?.data || [];
@@ -103,41 +97,17 @@ export function ReconciliationTable() {
   return (
     <div className="space-y-6">
       {/* Search */}
-      <div className="flex flex-wrap gap-4 items-end">
-        <div className="flex-1 min-w-[200px]">
-          <Label htmlFor="search">Buscar gastos</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              id="search"
-              placeholder="Buscar por descripción, proveedor o monto..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-      </div>
+      <ReconciliationSearch 
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
 
       {/* Expenses Grid */}
       <div className="space-y-4">
-        {filteredExpenses.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-muted-foreground">No se encontraron gastos para reconciliar</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredExpenses.map((expense) => (
-              <ExpenseCard
-                key={expense.id}
-                expense={expense}
-                onSelectExpense={handleExpenseClick}
-              />
-            ))}
-          </div>
-        )}
+        <ReconciliationExpenseGrid
+          expenses={filteredExpenses}
+          onExpenseClick={handleExpenseClick}
+        />
       </div>
 
       {/* Simple Pagination */}
@@ -167,37 +137,27 @@ export function ReconciliationTable() {
         </div>
       )}
 
-      {/* Invoice Search Dialog */}
-      <InvoiceSearchDialog
-        open={showInvoiceSearch}
-        onOpenChange={setShowInvoiceSearch}
+      {/* All Dialogs */}
+      <ReconciliationDialogs
+        showInvoiceSearch={showInvoiceSearch}
+        setShowInvoiceSearch={setShowInvoiceSearch}
         selectedExpense={selectedExpense}
         remainingAmount={remainingAmount}
         selectedInvoices={selectedInvoices}
-        searchTerm={invoiceSearchTerm}
-        onSearchChange={setInvoiceSearchTerm}
+        invoiceSearchTerm={invoiceSearchTerm}
+        onInvoiceSearchChange={setInvoiceSearchTerm}
         filteredInvoices={filteredInvoices}
         onInvoiceSelect={handleInvoiceSelect}
         onManualReconciliation={handleManualReconciliation}
         isLoadingInvoices={invoicesLoading}
-      />
-
-      {/* Manual Reconciliation Dialog */}
-      <ManualReconciliationDialog
-        open={showManualReconciliation}
-        onOpenChange={setShowManualReconciliation}
-        expense={selectedExpense}
-        chartAccounts={chartAccounts || []}
-        onConfirm={handleManualReconciliationComplete}
-      />
-
-      {/* Fixed Adjustment Dialog */}
-      <FixedAccountAdjustmentDialog
-        open={showAdjustmentDialog}
-        onOpenChange={setShowAdjustmentDialog}
-        amount={remainingAmount}
-        type={adjustmentType}
-        onConfirm={handleAdjustmentConfirm}
+        showManualReconciliation={showManualReconciliation}
+        setShowManualReconciliation={setShowManualReconciliation}
+        chartAccounts={chartAccounts}
+        onManualReconciliationConfirm={handleManualReconciliationComplete}
+        showAdjustmentDialog={showAdjustmentDialog}
+        setShowAdjustmentDialog={setShowAdjustmentDialog}
+        adjustmentType={adjustmentType}
+        onAdjustmentConfirm={handleAdjustmentConfirm}
       />
     </div>
   );
