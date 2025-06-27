@@ -8,10 +8,14 @@ import { Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExpenseCard } from "./components/ExpenseCard";
 import { FixedAccountAdjustmentDialog } from "./components/FixedAccountAdjustmentDialog";
+import { InvoiceSearchDialog } from "./components/invoice-search/InvoiceSearchDialog";
+import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
 import { useOptimizedExpenses } from "./hooks/useOptimizedExpenses";
 import { useOptimizedInvoices } from "./hooks/useOptimizedInvoices";
 import { useReconciliationProcess } from "./hooks/useReconciliationProcess";
 import { useInvoiceSelection } from "./hooks/useInvoiceSelection";
+import { useManualReconciliation } from "./hooks/useManualReconciliation";
+import { useInvoiceSearch } from "./hooks/useInvoiceSearch";
 
 export function ReconciliationTable() {
   const [page, setPage] = useState(1);
@@ -19,6 +23,7 @@ export function ReconciliationTable() {
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
   const [selectedInvoices, setSelectedInvoices] = useState<any[]>([]);
   const [showAdjustmentDialog, setShowAdjustmentDialog] = useState(false);
+  const [showInvoiceSearch, setShowInvoiceSearch] = useState(false);
   const [adjustmentType, setAdjustmentType] = useState<"expense_excess" | "invoice_excess">("expense_excess");
   const [remainingAmount, setRemainingAmount] = useState(0);
 
@@ -35,13 +40,17 @@ export function ReconciliationTable() {
   const expenses = expensesData?.data || [];
   const totalCount = expensesData?.count || 0;
 
+  const resetState = () => {
+    setSelectedExpense(null);
+    setSelectedInvoices([]);
+    setRemainingAmount(0);
+    setShowInvoiceSearch(false);
+    setShowAdjustmentDialog(false);
+  };
+
   const { handleReconcile } = useReconciliationProcess(
     undefined, // userId not needed here
-    () => {
-      setSelectedExpense(null);
-      setSelectedInvoices([]);
-      setRemainingAmount(0);
-    }
+    resetState
   );
 
   const { handleInvoiceSelect } = useInvoiceSelection(
@@ -54,22 +63,26 @@ export function ReconciliationTable() {
     handleReconcile
   );
 
+  const {
+    showManualReconciliation,
+    setShowManualReconciliation,
+    chartAccounts,
+    handleManualReconciliationConfirm,
+  } = useManualReconciliation(undefined);
+
+  const {
+    searchTerm: invoiceSearchTerm,
+    setSearchTerm: setInvoiceSearchTerm,
+    filterInvoices,
+  } = useInvoiceSearch();
+
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   const handleExpenseClick = (expense: any) => {
     setSelectedExpense(expense);
-    // Directly call handleInvoiceSelect with available invoices for this expense
-    if (invoices && invoices.length > 0) {
-      // Filter invoices that could match this expense
-      const matchingInvoices = invoices.filter((invoice: any) => 
-        invoice.currency === expense.currency || 
-        (!invoice.currency && expense.currency === 'MXN')
-      );
-      
-      if (matchingInvoices.length > 0) {
-        handleInvoiceSelect(matchingInvoices.slice(0, 1)); // Select first matching invoice
-      }
-    }
+    setSelectedInvoices([]);
+    setRemainingAmount(0);
+    setShowInvoiceSearch(true);
   };
 
   const handleAdjustmentConfirm = async (chartAccountId: string, notes: string) => {
@@ -79,8 +92,33 @@ export function ReconciliationTable() {
 
     if (success) {
       setShowAdjustmentDialog(false);
-      setSelectedExpense(null);
-      setSelectedInvoices([]);
+      resetState();
+    }
+  };
+
+  const handleManualReconciliation = () => {
+    setShowInvoiceSearch(false);
+    setShowManualReconciliation(true);
+    
+    if (selectedExpense) {
+      setRemainingAmount(selectedExpense.amount);
+    }
+  };
+
+  const handleManualReconciliationComplete = async (data: {
+    reconciliationType: string;
+    referenceNumber?: string;
+    notes: string;
+    fileId?: string;
+    chartAccountId?: string;
+  }) => {
+    if (!selectedExpense) return;
+
+    const success = await handleManualReconciliationConfirm(selectedExpense.id, data);
+
+    if (success) {
+      setShowManualReconciliation(false);
+      resetState();
     }
   };
 
@@ -96,6 +134,11 @@ export function ReconciliationTable() {
       expense.amount?.toString().includes(term)
     );
   }, [expenses, searchTerm]);
+
+  const filteredInvoices = useMemo(() => {
+    if (!invoices) return [];
+    return filterInvoices(invoices, invoiceSearchTerm);
+  }, [invoices, invoiceSearchTerm, filterInvoices]);
 
   if (expensesLoading || invoicesLoading) {
     return (
@@ -175,6 +218,30 @@ export function ReconciliationTable() {
           </div>
         </div>
       )}
+
+      {/* Invoice Search Dialog */}
+      <InvoiceSearchDialog
+        open={showInvoiceSearch}
+        onOpenChange={setShowInvoiceSearch}
+        selectedExpense={selectedExpense}
+        remainingAmount={remainingAmount}
+        selectedInvoices={selectedInvoices}
+        searchTerm={invoiceSearchTerm}
+        onSearchChange={setInvoiceSearchTerm}
+        filteredInvoices={filteredInvoices}
+        onInvoiceSelect={handleInvoiceSelect}
+        onManualReconciliation={handleManualReconciliation}
+        isLoadingInvoices={invoicesLoading}
+      />
+
+      {/* Manual Reconciliation Dialog */}
+      <ManualReconciliationDialog
+        open={showManualReconciliation}
+        onOpenChange={setShowManualReconciliation}
+        selectedExpense={selectedExpense}
+        chartAccounts={chartAccounts || []}
+        onConfirm={handleManualReconciliationComplete}
+      />
 
       {/* Fixed Adjustment Dialog */}
       <FixedAccountAdjustmentDialog

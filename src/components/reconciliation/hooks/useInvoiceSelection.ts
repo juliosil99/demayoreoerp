@@ -18,14 +18,18 @@ export const useInvoiceSelection = (
     console.log("🔍 useInvoiceSelection - handleInvoiceSelect received:");
     console.log("💰 Expense:", expense);
     console.log("📋 Invoices:", invoices);
-    console.log("📊 Type of invoices:", typeof invoices);
-    console.log("🔢 Is array?", Array.isArray(invoices));
-    console.log("📏 Length:", invoices?.length);
 
     // Validate that invoices is an array
     if (!Array.isArray(invoices)) {
       console.error("❌ useInvoiceSelection - invoices is not an array:", invoices);
       toast.error("Error interno: formato de facturas inválido");
+      return;
+    }
+
+    // If no invoices are selected, just return without opening adjustment dialog
+    if (invoices.length === 0) {
+      setSelectedInvoices([]);
+      setRemainingAmount(0);
       return;
     }
 
@@ -42,15 +46,14 @@ export const useInvoiceSelection = (
     console.log("💲 Total selected amount:", totalSelectedAmount);
     console.log("💰 Remaining amount:", remainingAmount);
 
-    // Always show adjustment dialog for user confirmation
+    // Show adjustment dialog for user confirmation
     if (Math.abs(remainingAmount) > 0.01) {
       const adjustmentType = remainingAmount > 0 ? "expense_excess" : "invoice_excess";
       console.log("⚖️ Adjustment needed, type:", adjustmentType);
       setAdjustmentType(adjustmentType);
       setShowAdjustmentDialog(true);
     } else {
-      console.log("✅ Perfect match, but still showing confirmation dialog");
-      // Even for perfect matches, show confirmation dialog
+      console.log("✅ Perfect match, showing confirmation dialog");
       setAdjustmentType("expense_excess"); // Default type for perfect matches
       setShowAdjustmentDialog(true);
     }
