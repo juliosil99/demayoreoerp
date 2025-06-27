@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -238,7 +237,7 @@ export function ReconciliationTable() {
       <ManualReconciliationDialog
         open={showManualReconciliation}
         onOpenChange={setShowManualReconciliation}
-        selectedExpense={selectedExpense}
+        expense={selectedExpense}
         chartAccounts={chartAccounts || []}
         onConfirm={handleManualReconciliationComplete}
       />
