@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface BatchItem {
   id: string;
@@ -16,6 +17,7 @@ interface BatchItem {
 
 export const useBatchReconciliation = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItems, setSelectedItems] = useState<BatchItem[]>([]);
   const [description, setDescription] = useState("");
@@ -44,6 +46,29 @@ export const useBatchReconciliation = () => {
     return Math.abs(calculateTotal()) < 0.01;
   }, [calculateTotal]);
 
+  const updateInvoicesInBatch = async (batchId: string, invoiceItems: BatchItem[]) => {
+    if (invoiceItems.length === 0) return;
+
+    console.log(`Updating ${invoiceItems.length} invoices for batch ${batchId}`);
+
+    const invoiceIds = invoiceItems.map(item => parseInt(item.id));
+    
+    const { error } = await supabase
+      .from('invoices')
+      .update({ 
+        processed: true,
+        reconciliation_batch_id: batchId
+      })
+      .in('id', invoiceIds);
+
+    if (error) {
+      console.error('Error updating invoices in batch:', error);
+      throw new Error(`Failed to update invoices: ${error.message}`);
+    }
+
+    console.log(`Successfully updated ${invoiceIds.length} invoices in batch ${batchId}`);
+  };
+
   const createBatch = useCallback(async () => {
     if (!user?.id) {
       toast.error("Usuario no autenticado");
@@ -63,6 +88,8 @@ export const useBatchReconciliation = () => {
     setIsCreating(true);
 
     try {
+      console.log('Creating batch reconciliation with items:', selectedItems);
+
       // Generar número de lote
       const { data: batchNumber, error: numberError } = await supabase
         .rpc('generate_batch_number', { user_uuid: user.id });
@@ -84,6 +111,8 @@ export const useBatchReconciliation = () => {
 
       if (batchError) throw batchError;
 
+      console.log(`Created batch ${batchNumber} with ID ${batch.id}`);
+
       // Crear los items del lote
       const batchItems = selectedItems.map(item => ({
         batch_id: batch.id,
@@ -98,6 +127,22 @@ export const useBatchReconciliation = () => {
         .insert(batchItems);
 
       if (itemsError) throw itemsError;
+
+      console.log(`Created ${batchItems.length} batch items`);
+
+      // Actualizar facturas que forman parte del lote
+      const invoiceItems = selectedItems.filter(item => item.type === 'invoice');
+      if (invoiceItems.length > 0) {
+        await updateInvoicesInBatch(batch.id, invoiceItems);
+        console.log(`Updated ${invoiceItems.length} invoices as processed`);
+      }
+
+      // Invalidar queries para refrescar la UI
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["optimized-invoices"] }),
+        queryClient.invalidateQueries({ queryKey: ["unreconciled-expenses"] }),
+        queryClient.invalidateQueries({ queryKey: ["reconciliation-batches"] })
+      ]);
 
       toast.success(`Lote ${batchNumber} creado exitosamente`);
       
@@ -114,7 +159,7 @@ export const useBatchReconciliation = () => {
     } finally {
       setIsCreating(false);
     }
-  }, [user?.id, selectedItems, description, notes, isBalanced, calculateTotal]);
+  }, [user?.id, selectedItems, description, notes, isBalanced, calculateTotal, queryClient]);
 
   const resetBatch = useCallback(() => {
     setSelectedItems([]);
