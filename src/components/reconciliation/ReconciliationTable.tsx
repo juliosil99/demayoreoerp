@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +7,9 @@ import { ReconciliationDialogs } from "./components/ReconciliationDialogs";
 import { useOptimizedExpenses } from "./hooks/useOptimizedExpenses";
 import { useOptimizedInvoices } from "./hooks/useOptimizedInvoices";
 import { useReconciliation } from "./hooks/useReconciliation";
+import { InvoiceSearchDialog } from "./components/InvoiceSearchDialog";
+import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
+import { AccountSelectionDialog } from "./components/AccountSelectionDialog";
 
 export function ReconciliationTable() {
   const [page, setPage] = useState(1);
@@ -41,7 +43,9 @@ export function ReconciliationTable() {
     searchTerm: invoiceSearchTerm,
     setSearchTerm: setInvoiceSearchTerm,
     filterInvoices,
-    handleInvoiceSelect,
+    handleInvoiceToggle,
+    handleReconcileSelected,
+    clearSelection,
     setSelectedExpense,
   } = useReconciliation();
 
@@ -145,27 +149,40 @@ export function ReconciliationTable() {
         </div>
       )}
 
-      {/* All Dialogs */}
-      <ReconciliationDialogs
-        showInvoiceSearch={showInvoiceSearch}
-        setShowInvoiceSearch={setShowInvoiceSearch}
+      {/* Updated Invoice Search Dialog */}
+      <InvoiceSearchDialog
+        open={showInvoiceSearch}
+        onOpenChange={setShowInvoiceSearch}
         selectedExpense={selectedExpense}
         remainingAmount={remainingAmount}
         selectedInvoices={selectedInvoices}
-        invoiceSearchTerm={invoiceSearchTerm}
-        onInvoiceSearchChange={setInvoiceSearchTerm}
+        searchTerm={invoiceSearchTerm}
+        onSearchChange={setInvoiceSearchTerm}
         filteredInvoices={filteredInvoices}
-        onInvoiceSelect={handleInvoiceSelect}
+        onInvoiceToggle={handleInvoiceToggle}
         onManualReconciliation={handleManualReconciliation}
+        onReconcileSelected={handleReconcileSelected}
+        onClearSelection={clearSelection}
         isLoadingInvoices={invoicesLoading}
-        showManualReconciliation={showManualReconciliation}
-        setShowManualReconciliation={setShowManualReconciliation}
+      />
+
+      {/* Manual Reconciliation Dialog */}
+      <ManualReconciliationDialog
+        open={showManualReconciliation}
+        onOpenChange={setShowManualReconciliation}
+        expense={selectedExpense}
         chartAccounts={formattedChartAccounts}
-        onManualReconciliationConfirm={handleManualReconciliationComplete}
-        showAdjustmentDialog={showAdjustmentDialog}
-        setShowAdjustmentDialog={setShowAdjustmentDialog}
-        adjustmentType={adjustmentType}
-        onAdjustmentConfirm={handleAdjustmentConfirm}
+        onConfirm={handleManualReconciliationComplete}
+      />
+
+      {/* Account Selection Dialog */}
+      <AccountSelectionDialog
+        open={showAdjustmentDialog}
+        onOpenChange={setShowAdjustmentDialog}
+        amount={remainingAmount}
+        type={adjustmentType}
+        chartAccounts={formattedChartAccounts}
+        onConfirm={handleAdjustmentConfirm}
       />
     </div>
   );

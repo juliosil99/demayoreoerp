@@ -6,13 +6,15 @@ import { CurrencyBadge } from "../CurrencyBadge";
 
 interface InvoiceListProps {
   invoices: any[];
-  onInvoiceSelect: (invoices: any[]) => void;
+  selectedInvoices: any[];
+  onInvoiceToggle: (invoice: any) => void;
   isLoading?: boolean;
 }
 
 export function InvoiceList({ 
   invoices, 
-  onInvoiceSelect,
+  selectedInvoices,
+  onInvoiceToggle,
   isLoading = false 
 }: InvoiceListProps) {
   
@@ -33,9 +35,14 @@ export function InvoiceList({
     );
   }
 
+  const isInvoiceSelected = (invoice: any) => {
+    return selectedInvoices.some(selected => selected.id === invoice.id);
+  };
+
   return (
     <div className="max-h-96 overflow-y-auto space-y-2">
       {invoices.map((invoice) => {
+        const isSelected = isInvoiceSelected(invoice);
         const isCredit = invoice.invoice_type === 'E';
         const isPayroll = invoice.invoice_type === 'N';
         const invoiceCurrency = invoice.currency || 'MXN';
@@ -46,7 +53,7 @@ export function InvoiceList({
             return {
               icon: Users,
               label: "Nómina",
-              bgColor: "bg-blue-50 border-blue-200",
+              bgColor: isSelected ? "bg-blue-100 border-blue-300" : "bg-blue-50 border-blue-200",
               textColor: "text-blue-700",
               description: "Factura de nómina emitida por la empresa"
             };
@@ -54,7 +61,7 @@ export function InvoiceList({
             return {
               icon: Building2,
               label: "Nota de Crédito",
-              bgColor: "bg-red-50 border-red-200", 
+              bgColor: isSelected ? "bg-red-100 border-red-300" : "bg-red-50 border-red-200", 
               textColor: "text-red-700",
               description: "Nota de crédito"
             };
@@ -62,7 +69,7 @@ export function InvoiceList({
             return {
               icon: FileText,
               label: "Factura",
-              bgColor: "bg-gray-50",
+              bgColor: isSelected ? "bg-green-100 border-green-300" : "bg-gray-50",
               textColor: "text-gray-700",
               description: "Factura regular"
             };
@@ -75,8 +82,10 @@ export function InvoiceList({
         return (
           <Card 
             key={invoice.id} 
-            className={`cursor-pointer transition-colors ${typeInfo.bgColor} hover:bg-gray-100`}
-            onClick={() => onInvoiceSelect([invoice])}
+            className={`cursor-pointer transition-colors border-2 ${typeInfo.bgColor} hover:bg-gray-100 ${
+              isSelected ? 'ring-2 ring-blue-500' : ''
+            }`}
+            onClick={() => onInvoiceToggle(invoice)}
           >
             <CardContent className="p-4">
               <div className="flex justify-between items-start">
@@ -96,6 +105,9 @@ export function InvoiceList({
                         <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
                           {typeInfo.label}
                         </span>
+                      )}
+                      {isSelected && (
+                        <Check className="h-4 w-4 text-green-600" />
                       )}
                     </div>
                     <div className="flex items-center gap-2">

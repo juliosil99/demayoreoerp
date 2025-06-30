@@ -1,5 +1,6 @@
 
 export { useInvoiceSelection } from './useInvoiceSelection';
+export { useMultipleInvoiceSelection } from './useMultipleInvoiceSelection';
 export { useInvoiceAmountCalculator } from './calculation/useInvoiceAmountCalculator';
 export { useCurrencyCalculator } from './calculation/useCurrencyCalculator';
 export { useReconciliation } from './useReconciliation';

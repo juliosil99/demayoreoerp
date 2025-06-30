@@ -6,7 +6,7 @@ import { useAdjustment } from "./useAdjustment";
 import { useManualReconciliation } from "./useManualReconciliation";
 import { useInvoiceSearch } from "./useInvoiceSearch";
 import { useReconciliationProcess } from "./useReconciliationProcess";
-import { useInvoiceSelection } from "./useInvoiceSelection";
+import { useMultipleInvoiceSelection } from "./useMultipleInvoiceSelection";
 import { toast } from "sonner";
 
 export const useReconciliation = () => {
@@ -55,6 +55,28 @@ export const useReconciliation = () => {
   const handleReconcile = useCallback((invoicesToReconcile: any[]) => {
     return rawHandleReconcile(selectedExpense, invoicesToReconcile);
   }, [rawHandleReconcile, selectedExpense]);
+
+  // Use the new multiple invoice selection hook
+  const {
+    currentSelectedInvoices,
+    handleInvoiceToggle,
+    handleReconcileSelected,
+    clearSelection,
+    setCurrentSelectedInvoices
+  } = useMultipleInvoiceSelection(
+    selectedExpense,
+    setSelectedInvoices,
+    setRemainingAmount,
+    setAdjustmentType,
+    setShowAdjustmentDialog,
+    rawHandleReconcile
+  );
+
+  // Sync the current selected invoices with the parent state
+  const syncSelectedInvoices = useCallback((invoices: any[]) => {
+    setSelectedInvoices(invoices);
+    setCurrentSelectedInvoices(invoices);
+  }, [setSelectedInvoices, setCurrentSelectedInvoices]);
 
   const handleAdjustmentConfirm = useCallback(async (accountId: string, notes: string) => {
     if (!selectedExpense || !selectedInvoices.length) {
@@ -133,23 +155,12 @@ export const useReconciliation = () => {
     setShowManualReconciliation(false);
   }, [selectedExpense, rawHandleManualReconciliationConfirm, resetState, setShowManualReconciliation]);
 
-  // Wire up the invoice selection logic
-  const { handleInvoiceSelect } = useInvoiceSelection(
-    selectedExpense,
-    selectedInvoices,
-    setSelectedInvoices,
-    setRemainingAmount,
-    setAdjustmentType,
-    setShowAdjustmentDialog,
-    rawHandleReconcile
-  );
-
   return {
     // Selected items state
     selectedExpense,
     setSelectedExpense,
-    selectedInvoices,
-    setSelectedInvoices,
+    selectedInvoices: currentSelectedInvoices, // Use current selected invoices
+    setSelectedInvoices: syncSelectedInvoices,
     remainingAmount,
     setRemainingAmount,
     
@@ -174,7 +185,9 @@ export const useReconciliation = () => {
     filterInvoices,
     
     // Core reconciliation handlers
-    handleInvoiceSelect,
+    handleInvoiceToggle,
+    handleReconcileSelected,
+    clearSelection,
     handleReconcile,
     resetState,
   };
