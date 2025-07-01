@@ -7,6 +7,7 @@ import { useManualReconciliation } from "./useManualReconciliation";
 import { useInvoiceSearch } from "./useInvoiceSearch";
 import { useReconciliationProcess } from "./useReconciliationProcess";
 import { useMultipleInvoiceSelection } from "./useMultipleInvoiceSelection";
+import { getReconciliationAmount } from "../utils/currencyUtils";
 import { toast } from "sonner";
 
 export const useReconciliation = () => {
@@ -131,7 +132,9 @@ export const useReconciliation = () => {
     setShowManualReconciliation(true);
     
     if (selectedExpense) {
-      setRemainingAmount(selectedExpense.amount);
+      // Use the correct amount for manual reconciliation
+      const reconciliationAmount = getReconciliationAmount(selectedExpense);
+      setRemainingAmount(reconciliationAmount);
     }
   }, [setShowInvoiceSearch, setShowManualReconciliation, setRemainingAmount, selectedExpense]);
 

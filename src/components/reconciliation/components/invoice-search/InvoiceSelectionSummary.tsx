@@ -1,5 +1,6 @@
 
 import { formatCurrency } from "@/utils/formatters";
+import { getReconciliationAmount, getReconciliationDisplayInfo } from "../../utils/currencyUtils";
 import { Info } from "lucide-react";
 
 interface InvoiceSelectionSummaryProps {
@@ -19,18 +20,22 @@ export function InvoiceSelectionSummary({
     return sum + amount;
   }, 0);
 
+  // Get the correct display info for the expense
+  const expenseDisplayInfo = getReconciliationDisplayInfo(selectedExpense);
+  const expenseCurrency = selectedExpense.currency || 'MXN';
+
   return (
     <div className="bg-muted/50 p-3 rounded-md">
       <div className="flex justify-between items-center">
         <div>
           <p className="text-sm font-medium">Facturas seleccionadas: {selectedInvoices.length}</p>
-          <p className="text-sm">Total: {formatCurrency(totalSelectedAmount)}</p>
+          <p className="text-sm">Total: {formatCurrency(totalSelectedAmount)} {expenseCurrency}</p>
         </div>
         <div className="text-right">
           <p className={`text-sm font-medium ${Math.abs(remainingAmount) < 0.01 ? 'text-green-600' : 'text-amber-600'}`}>
             {Math.abs(remainingAmount) < 0.01
               ? 'Montos coinciden exactamente' 
-              : `Restante: ${formatCurrency(remainingAmount)}`}
+              : `Restante: ${formatCurrency(remainingAmount)} ${expenseCurrency}`}
           </p>
           <p className="text-xs text-muted-foreground">
             {Math.abs(remainingAmount) >= 0.01 ? 'Se creará un ajuste contable' : ''}

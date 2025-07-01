@@ -6,6 +6,7 @@ import { InvoiceList } from "./InvoiceList";
 import { InvoiceSelectionSummary } from "./InvoiceSelectionSummary";
 import { SelectedInvoicesList } from "./SelectedInvoicesList";
 import { formatCurrency } from "@/utils/formatters";
+import { getReconciliationDisplayInfo } from "../../utils/currencyUtils";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -48,6 +49,9 @@ export function InvoiceSearchDialog({
   const totalSelectedAmount = selectedInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
   const isExactMatch = Math.abs(remainingAmount) <= 0.01;
 
+  // Get the correct display info for the expense
+  const expenseDisplayInfo = getReconciliationDisplayInfo(selectedExpense);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -59,7 +63,7 @@ export function InvoiceSearchDialog({
             )}
           </DialogTitle>
           <div className="text-sm text-gray-600">
-            Gasto: {selectedExpense.description} - {formatCurrency(selectedExpense.amount)}
+            Gasto: {selectedExpense.description} - {expenseDisplayInfo.displayText}
           </div>
         </DialogHeader>
 

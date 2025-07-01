@@ -1,6 +1,6 @@
-
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { getReconciliationAmount } from "../utils/currencyUtils";
 
 export const useMultipleInvoiceSelection = (
   selectedExpense: any | null,
@@ -47,7 +47,7 @@ export const useMultipleInvoiceSelection = (
       // Update the parent component with the new selection
       setSelectedInvoices(newSelection);
 
-      // Calculate remaining amount with proper credit note handling
+      // Calculate remaining amount with proper credit note handling and correct expense amount
       if (newSelection.length > 0) {
         const totalInvoiceAmount = newSelection.reduce((sum, inv) => {
           const isCredit = inv.invoice_type === 'E';
@@ -58,11 +58,14 @@ export const useMultipleInvoiceSelection = (
           return sum + amount;
         }, 0);
         
-        const remaining = selectedExpense.amount - totalInvoiceAmount;
+        // Use the correct amount for reconciliation (original amount for USD expenses)
+        const expenseAmount = getReconciliationAmount(selectedExpense);
+        const remaining = expenseAmount - totalInvoiceAmount;
         setRemainingAmount(remaining);
 
         console.log("💲 Total selected invoice amount (after credit adjustments):", totalInvoiceAmount);
-        console.log("💰 Expense amount:", selectedExpense.amount);
+        console.log("💰 Expense amount (reconciliation):", expenseAmount);
+        console.log("💰 Expense currency:", selectedExpense.currency || 'MXN');
         console.log("💸 Remaining amount:", remaining);
 
         // Check if it's an exact match (difference <= 0.01)
@@ -94,7 +97,9 @@ export const useMultipleInvoiceSelection = (
       return sum + amount;
     }, 0);
     
-    const remaining = selectedExpense.amount - totalInvoiceAmount;
+    // Use the correct amount for reconciliation
+    const expenseAmount = getReconciliationAmount(selectedExpense);
+    const remaining = expenseAmount - totalInvoiceAmount;
     const isExactMatch = Math.abs(remaining) <= 0.01;
 
     console.log("🔄 Reconciling selected invoices:");
@@ -106,7 +111,8 @@ export const useMultipleInvoiceSelection = (
       is_credit: inv.invoice_type === 'E'
     })));
     console.log("💲 Total calculated amount:", totalInvoiceAmount);
-    console.log("💰 Expense amount:", selectedExpense.amount);
+    console.log("💰 Expense amount (reconciliation):", expenseAmount);
+    console.log("💰 Expense currency:", selectedExpense.currency || 'MXN');
     console.log("💸 Remaining:", remaining);
 
     if (isExactMatch) {
