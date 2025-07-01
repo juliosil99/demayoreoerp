@@ -47,13 +47,21 @@ export const useMultipleInvoiceSelection = (
       // Update the parent component with the new selection
       setSelectedInvoices(newSelection);
 
-      // Calculate remaining amount
+      // Calculate remaining amount with proper credit note handling
       if (newSelection.length > 0) {
-        const totalInvoiceAmount = newSelection.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+        const totalInvoiceAmount = newSelection.reduce((sum, inv) => {
+          const isCredit = inv.invoice_type === 'E';
+          const amount = isCredit ? -inv.total_amount : inv.total_amount;
+          
+          console.log(`🧾 Processing invoice ${inv.id}: type=${inv.invoice_type}, base_amount=${inv.total_amount}, final_amount=${amount}, is_credit=${isCredit}`);
+          
+          return sum + amount;
+        }, 0);
+        
         const remaining = selectedExpense.amount - totalInvoiceAmount;
         setRemainingAmount(remaining);
 
-        console.log("💲 Total selected invoice amount:", totalInvoiceAmount);
+        console.log("💲 Total selected invoice amount (after credit adjustments):", totalInvoiceAmount);
         console.log("💰 Expense amount:", selectedExpense.amount);
         console.log("💸 Remaining amount:", remaining);
 
@@ -79,9 +87,27 @@ export const useMultipleInvoiceSelection = (
       return;
     }
 
-    const totalInvoiceAmount = currentSelectedInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+    // Calculate total with proper credit note handling
+    const totalInvoiceAmount = currentSelectedInvoices.reduce((sum, inv) => {
+      const isCredit = inv.invoice_type === 'E';
+      const amount = isCredit ? -inv.total_amount : inv.total_amount;
+      return sum + amount;
+    }, 0);
+    
     const remaining = selectedExpense.amount - totalInvoiceAmount;
     const isExactMatch = Math.abs(remaining) <= 0.01;
+
+    console.log("🔄 Reconciling selected invoices:");
+    console.log("📊 Invoice breakdown:", currentSelectedInvoices.map(inv => ({
+      id: inv.id,
+      type: inv.invoice_type,
+      base_amount: inv.total_amount,
+      final_amount: inv.invoice_type === 'E' ? -inv.total_amount : inv.total_amount,
+      is_credit: inv.invoice_type === 'E'
+    })));
+    console.log("💲 Total calculated amount:", totalInvoiceAmount);
+    console.log("💰 Expense amount:", selectedExpense.amount);
+    console.log("💸 Remaining:", remaining);
 
     if (isExactMatch) {
       console.log("✅ Perfect match, proceeding with direct reconciliation");
