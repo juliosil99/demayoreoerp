@@ -1,13 +1,13 @@
+
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReconciliationSearch } from "./components/ReconciliationSearch";
 import { ReconciliationExpenseGrid } from "./components/ReconciliationExpenseGrid";
-import { ReconciliationDialogs } from "./components/ReconciliationDialogs";
 import { useOptimizedExpenses } from "./hooks/useOptimizedExpenses";
 import { useOptimizedInvoices } from "./hooks/useOptimizedInvoices";
 import { useReconciliation } from "./hooks/useReconciliation";
-import { InvoiceSearchDialog } from "./components/InvoiceSearchDialog";
+import { InvoiceSearchDialog } from "./components/invoice-search/InvoiceSearchDialog";
 import { ManualReconciliationDialog } from "./components/ManualReconciliationDialog";
 import { AccountSelectionDialog } from "./components/AccountSelectionDialog";
 

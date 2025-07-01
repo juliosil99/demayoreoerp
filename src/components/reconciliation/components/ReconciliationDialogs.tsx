@@ -14,7 +14,7 @@ interface ReconciliationDialogsProps {
   invoiceSearchTerm: string;
   onInvoiceSearchChange: (term: string) => void;
   filteredInvoices: any[];
-  onInvoiceSelect: (invoices: any[]) => void;
+  onInvoiceToggle: (invoice: any) => void;
   onManualReconciliation: () => void;
   isLoadingInvoices: boolean;
 
@@ -35,6 +35,8 @@ interface ReconciliationDialogsProps {
   setShowAdjustmentDialog: (show: boolean) => void;
   adjustmentType: "expense_excess" | "invoice_excess";
   onAdjustmentConfirm: (accountId: string, notes: string) => void;
+  onReconcileSelected: () => void;
+  onClearSelection: () => void;
 }
 
 export function ReconciliationDialogs({
@@ -46,7 +48,7 @@ export function ReconciliationDialogs({
   invoiceSearchTerm,
   onInvoiceSearchChange,
   filteredInvoices,
-  onInvoiceSelect,
+  onInvoiceToggle,
   onManualReconciliation,
   isLoadingInvoices,
   showManualReconciliation,
@@ -57,6 +59,8 @@ export function ReconciliationDialogs({
   setShowAdjustmentDialog,
   adjustmentType,
   onAdjustmentConfirm,
+  onReconcileSelected,
+  onClearSelection,
 }: ReconciliationDialogsProps) {
   return (
     <>
@@ -70,8 +74,10 @@ export function ReconciliationDialogs({
         searchTerm={invoiceSearchTerm}
         onSearchChange={onInvoiceSearchChange}
         filteredInvoices={filteredInvoices}
-        onInvoiceSelect={onInvoiceSelect}
+        onInvoiceToggle={onInvoiceToggle}
         onManualReconciliation={onManualReconciliation}
+        onReconcileSelected={onReconcileSelected}
+        onClearSelection={onClearSelection}
         isLoadingInvoices={isLoadingInvoices}
       />
 
