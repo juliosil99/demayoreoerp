@@ -13,6 +13,8 @@ import { SalesSearch } from "@/components/sales/components/SalesSearch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertCircle, RefreshCw, Bug } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const ROWS_PER_PAGE = 50;
 
@@ -22,34 +24,99 @@ const Receivables = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedChannel, setSelectedChannel] = useState("all");
+  const [showDebug, setShowDebug] = useState(false);
+  const [queryStats, setQueryStats] = useState<{
+    totalRecords: number;
+    oldestDate: string | null;
+    newestDate: string | null;
+    uniqueChannels: number;
+    queryTime: number;
+  } | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: unpaidSales, isLoading } = useQuery({
+  const { data: unpaidSales, isLoading, error } = useQuery({
     queryKey: ["unpaid-sales", startDate, endDate, selectedChannel],
     queryFn: async () => {
-      // Query directly from Sales table for unpaid sales
-      let query = supabase
-        .from("Sales")
-        .select('*')
-        .or('statusPaid.eq.por cobrar,statusPaid.is.null,statusPaid.eq.');
+      const startTime = performance.now();
+      console.log("🔍 [RECEIVABLES] Starting query with filters:", {
+        startDate,
+        endDate,
+        selectedChannel,
+        timestamp: new Date().toISOString()
+      });
 
-      // Apply date filters if provided
-      if (startDate) {
-        query = query.gte('date', startDate);
+      try {
+        // Query with detailed logging
+        let baseQuery = supabase
+          .from("Sales")
+          .select('*');
+
+        // Apply unpaid status filter - more explicit conditions
+        const statusConditions = [
+          'statusPaid.eq.por cobrar',
+          'statusPaid.is.null',
+          'statusPaid.eq.',
+          'statusPaid.eq.""'
+        ];
+        
+        baseQuery = baseQuery.or(statusConditions.join(','));
+
+        // Apply date filters if provided
+        if (startDate) {
+          console.log("📅 [RECEIVABLES] Applying start date filter:", startDate);
+          baseQuery = baseQuery.gte('date', startDate);
+        }
+        if (endDate) {
+          console.log("📅 [RECEIVABLES] Applying end date filter:", endDate);
+          baseQuery = baseQuery.lte('date', endDate);
+        }
+
+        // Apply channel filter if selected
+        if (selectedChannel !== "all") {
+          console.log("📡 [RECEIVABLES] Applying channel filter:", selectedChannel);
+          baseQuery = baseQuery.eq('Channel', selectedChannel);
+        }
+
+        // Add ordering and limit for better performance
+        const { data, error, count } = await baseQuery
+          .order('date', { ascending: false })
+          .limit(10000); // Increased limit
+
+        if (error) {
+          console.error("❌ [RECEIVABLES] Query error:", error);
+          throw error;
+        }
+
+        const endTime = performance.now();
+        const queryTime = endTime - startTime;
+
+        console.log("✅ [RECEIVABLES] Query completed:", {
+          recordsFound: data?.length || 0,
+          queryTime: `${queryTime.toFixed(2)}ms`,
+          hasData: !!data,
+          firstRecord: data?.[0]?.date,
+          lastRecord: data?.[data.length - 1]?.date
+        });
+
+        // Calculate statistics
+        if (data && data.length > 0) {
+          const dates = data.map(sale => sale.date).filter(Boolean).sort();
+          const channels = new Set(data.map(sale => sale.Channel).filter(Boolean));
+          
+          setQueryStats({
+            totalRecords: data.length,
+            oldestDate: dates[dates.length - 1] || null,
+            newestDate: dates[0] || null,
+            uniqueChannels: channels.size,
+            queryTime: Math.round(queryTime)
+          });
+        }
+
+        return data || [];
+      } catch (err) {
+        console.error("💥 [RECEIVABLES] Fatal query error:", err);
+        throw err;
       }
-      if (endDate) {
-        query = query.lte('date', endDate);
-      }
-
-      // Apply channel filter if selected
-      if (selectedChannel !== "all") {
-        query = query.eq('Channel', selectedChannel);
-      }
-
-      const { data, error } = await query.order('date', { ascending: false });
-
-      if (error) throw error;
-      return data;
     },
   });
 
@@ -77,6 +144,23 @@ const Receivables = () => {
   // Reset pagination when filters change
   const handleFiltersChange = () => {
     setCurrentPage(1);
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setStartDate("");
+    setEndDate("");
+    setSelectedChannel("all");
+    setCurrentPage(1);
+    console.log("🧹 [RECEIVABLES] All filters cleared");
+  };
+
+  // Force refresh
+  const forceRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["unpaid-sales"] });
+    toast.info("Datos actualizados");
+    console.log("🔄 [RECEIVABLES] Force refresh triggered");
   };
 
   const markAsPaid = useMutation({
@@ -113,11 +197,90 @@ const Receivables = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Cuentas por Cobrar</h1>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDebug(!showDebug)}
+          >
+            <Bug className="h-4 w-4 mr-2" />
+            Debug
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={forceRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
       </div>
+
+      {/* Debug Panel */}
+      {showDebug && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader>
+            <CardTitle className="text-yellow-800">Panel de Diagnóstico</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <strong>Estado de Consulta:</strong>
+                <ul className="mt-2 space-y-1">
+                  <li>• Loading: {isLoading ? "Sí" : "No"}</li>
+                  <li>• Error: {error ? "Sí" : "No"}</li>
+                  <li>• Datos disponibles: {unpaidSales ? "Sí" : "No"}</li>
+                  <li>• Registros encontrados: {unpaidSales?.length || 0}</li>
+                </ul>
+              </div>
+              <div>
+                <strong>Filtros Activos:</strong>
+                <ul className="mt-2 space-y-1">
+                  <li>• Fecha desde: {startDate || "Sin filtro"}</li>
+                  <li>• Fecha hasta: {endDate || "Sin filtro"}</li>
+                  <li>• Canal: {selectedChannel === "all" ? "Todos" : selectedChannel}</li>
+                  <li>• Búsqueda: {searchTerm || "Sin filtro"}</li>
+                </ul>
+              </div>
+              {queryStats && (
+                <div className="md:col-span-2">
+                  <strong>Estadísticas de Datos:</strong>
+                  <ul className="mt-2 space-y-1">
+                    <li>• Fecha más antigua: {queryStats.oldestDate}</li>
+                    <li>• Fecha más reciente: {queryStats.newestDate}</li>
+                    <li>• Canales únicos: {queryStats.uniqueChannels}</li>
+                    <li>• Tiempo de consulta: {queryStats.queryTime}ms</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+            {error && (
+              <Alert className="mt-4 border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-red-800">
+                  Error: {error.message}
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Filtros de Búsqueda</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Filtros de Búsqueda</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllFilters}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Limpiar Filtros
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -175,9 +338,34 @@ const Receivables = () => {
               </Select>
             </div>
           </div>
-          <div className="text-sm text-muted-foreground">
-            Mostrando {filteredSales?.length || 0} ventas pendientes
+          <div className="flex justify-between items-center text-sm text-muted-foreground">
+            <span>Mostrando {filteredSales?.length || 0} ventas pendientes</span>
+            {queryStats && (
+              <span>
+                Rango: {queryStats.oldestDate} - {queryStats.newestDate} 
+                ({queryStats.totalRecords} total)
+              </span>
+            )}
           </div>
+
+          {/* Warning if no results and filters are applied */}
+          {!isLoading && filteredSales?.length === 0 && (startDate || endDate || selectedChannel !== "all" || searchTerm) && (
+            <Alert className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                No se encontraron ventas con los filtros aplicados. 
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="p-0 h-auto ml-1"
+                >
+                  Limpiar filtros
+                </Button>
+                para ver todas las ventas por cobrar.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
