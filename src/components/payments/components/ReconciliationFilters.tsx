@@ -32,7 +32,7 @@ export function ReconciliationFilters({
   isLoading = false,
   error
 }: ReconciliationFiltersProps) {
-  console.log("ReconciliationFilters render:", { salesChannels, isLoading, error });
+  console.log("ReconciliationFilters render:", { selectedChannel, salesChannels, isLoading, error });
   return (
     <div className="space-y-4">
       <div className="flex justify-between">
