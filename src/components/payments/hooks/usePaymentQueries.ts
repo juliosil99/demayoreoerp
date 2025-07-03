@@ -24,7 +24,7 @@ export function usePaymentQueries() {
       if (error) throw error;
       // Transform data to the format expected by ReconciliationFilters
       return data?.map(channel => ({
-        value: channel.name,
+        value: channel.id,
         label: channel.name
       })) || [];
     },
