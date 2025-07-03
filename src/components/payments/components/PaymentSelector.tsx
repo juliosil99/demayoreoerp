@@ -32,6 +32,7 @@ export function PaymentSelector({
           reference_number,
           sales_channels(name)
         `)
+        .eq("is_reconciled", false)
         .order("date", { ascending: false });
       
       // Apply channel filter if not "all"
