@@ -18,8 +18,9 @@ import { usePaymentReconciliation } from "./hooks/usePaymentReconciliation";
 import { useOptimizedUnreconciledSales } from "./hooks/useOptimizedUnreconciledSales";
 import { DialogActions } from "./components/DialogActions";
 import { BulkReconciliationContent } from "./components/BulkReconciliationContent";
-import { AutoReconciliationPreview } from "./components/AutoReconciliationPreview";
+import { ManualAutoReconciliationDialog } from "./components/ManualAutoReconciliationDialog";
 import { useAutoReconciliation } from "./hooks/useAutoReconciliation";
+import { useManualAutoReconciliation } from "./hooks/useManualAutoReconciliation";
 import type { UnreconciledSale } from "./types/UnreconciledSale";
 
 interface BulkReconciliationDialogProps {
@@ -37,7 +38,8 @@ export function BulkReconciliationDialog({
   const [showAutoReconciliation, setShowAutoReconciliation] = useState(false);
   const { toast } = useToast();
   const { salesChannels, isLoading: queriesLoading, error: queriesError } = useOptimizedPaymentQueries();
-  const { processAutoReconciliation, isProcessing: isAutoProcessing } = useAutoReconciliation();
+  const { detectAutoReconciliationGroups } = useAutoReconciliation();
+  const { processManualReconciliation, isProcessing: isAutoProcessing } = useManualAutoReconciliation();
 
   // Local state for bulk reconciliation (moved from hook)
   const [selectedChannel, setSelectedChannel] = useState("all");
@@ -180,10 +182,12 @@ export function BulkReconciliationDialog({
           </div>
 
           {showAutoReconciliation ? (
-            <AutoReconciliationPreview
+            <ManualAutoReconciliationDialog
               onClose={() => setShowAutoReconciliation(false)}
-              onProcessSelected={(groups) => {
-                processAutoReconciliation(groups);
+              onProcessMatches={async (matches) => {
+                // Get groups data for processing
+                const groups = await detectAutoReconciliationGroups();
+                processManualReconciliation({ matches, groups });
                 setShowAutoReconciliation(false);
                 onOpenChange(false);
               }}
