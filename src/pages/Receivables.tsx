@@ -10,37 +10,74 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { SalesSearch } from "@/components/sales/components/SalesSearch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ROWS_PER_PAGE = 50;
 
 const Receivables = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [selectedChannel, setSelectedChannel] = useState("all");
   const queryClient = useQueryClient();
 
   const { data: unpaidSales, isLoading } = useQuery({
-    queryKey: ["unpaid-sales"],
+    queryKey: ["unpaid-sales", startDate, endDate, selectedChannel],
     queryFn: async () => {
       // Query directly from Sales table for unpaid sales
-      const { data, error } = await supabase
+      let query = supabase
         .from("Sales")
         .select('*')
-        .or('statusPaid.eq.por cobrar,statusPaid.is.null,statusPaid.eq.')
-        .order('date', { ascending: false });
+        .or('statusPaid.eq.por cobrar,statusPaid.is.null,statusPaid.eq.');
+
+      // Apply date filters if provided
+      if (startDate) {
+        query = query.gte('date', startDate);
+      }
+      if (endDate) {
+        query = query.lte('date', endDate);
+      }
+
+      // Apply channel filter if selected
+      if (selectedChannel !== "all") {
+        query = query.eq('Channel', selectedChannel);
+      }
+
+      const { data, error } = await query.order('date', { ascending: false });
 
       if (error) throw error;
       return data;
     },
   });
 
-  // Filter sales based on search term
-  const filteredSales = unpaidSales?.filter(sale =>
-    sale.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Enhanced filtering - search across multiple fields
+  const filteredSales = unpaidSales?.filter(sale => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      sale.orderNumber?.toLowerCase().includes(searchLower) ||
+      sale.productName?.toLowerCase().includes(searchLower) ||
+      sale.Channel?.toLowerCase().includes(searchLower) ||
+      sale.sku?.toLowerCase().includes(searchLower) ||
+      sale.date?.includes(searchTerm)
+    );
+  });
+
+  // Get unique channels for filter dropdown
+  const uniqueChannels = Array.from(new Set(unpaidSales?.map(sale => sale.Channel).filter(Boolean) || []));
 
   const totalPages = Math.ceil((filteredSales?.length || 0) / ROWS_PER_PAGE);
   const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
   const paginatedSales = filteredSales?.slice(startIndex, startIndex + ROWS_PER_PAGE);
+
+  // Reset pagination when filters change
+  const handleFiltersChange = () => {
+    setCurrentPage(1);
+  };
 
   const markAsPaid = useMutation({
     mutationFn: async (saleId: number) => {
@@ -80,12 +117,75 @@ const Receivables = () => {
 
       <Card>
         <CardHeader>
+          <CardTitle>Filtros de Búsqueda</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <Label htmlFor="search">Buscar</Label>
+              <SalesSearch 
+                onSearch={(term) => {
+                  setSearchTerm(term);
+                  handleFiltersChange();
+                }} 
+                placeholder="Buscar por orden, producto, canal, SKU..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="startDate">Fecha Desde</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  handleFiltersChange();
+                }}
+              />
+            </div>
+            <div>
+              <Label htmlFor="endDate">Fecha Hasta</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  handleFiltersChange();
+                }}
+              />
+            </div>
+            <div>
+              <Label htmlFor="channel">Canal</Label>
+              <Select value={selectedChannel} onValueChange={(value) => {
+                setSelectedChannel(value);
+                handleFiltersChange();
+              }}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los canales</SelectItem>
+                  {uniqueChannels.map(channel => (
+                    <SelectItem key={channel} value={channel}>
+                      {channel}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Mostrando {filteredSales?.length || 0} ventas pendientes
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Ventas Pendientes de Pago</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
-            <SalesSearch onSearch={setSearchTerm} />
-          </div>
           {isLoading ? (
             <div>Cargando...</div>
           ) : paginatedSales && paginatedSales.length > 0 ? (
@@ -95,6 +195,7 @@ const Receivables = () => {
                   <TableRow>
                     <TableHead>Fecha</TableHead>
                     <TableHead>No. Orden</TableHead>
+                    <TableHead>SKU</TableHead>
                     <TableHead>Producto</TableHead>
                     <TableHead>Canal</TableHead>
                     <TableHead className="text-right">Monto</TableHead>
@@ -107,6 +208,7 @@ const Receivables = () => {
                     <TableRow key={sale.id}>
                       <TableCell>{sale.date ? format(new Date(sale.date), 'dd/MM/yyyy') : 'N/A'}</TableCell>
                       <TableCell>{sale.orderNumber}</TableCell>
+                      <TableCell className="font-mono text-xs">{sale.sku || 'N/A'}</TableCell>
                       <TableCell>{sale.productName}</TableCell>
                       <TableCell>{sale.Channel || 'N/A'}</TableCell>
                       <TableCell className="text-right">{sale.price ? formatCurrency(sale.price) : 'N/A'}</TableCell>
