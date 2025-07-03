@@ -22,7 +22,11 @@ export function usePaymentQueries() {
         .select("*")
         .eq("is_active", true);
       if (error) throw error;
-      return data;
+      // Transform data to the format expected by ReconciliationFilters
+      return data?.map(channel => ({
+        value: channel.code,
+        label: channel.name
+      })) || [];
     },
   });
 
