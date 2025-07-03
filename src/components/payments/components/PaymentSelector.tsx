@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatDateForDisplay } from "@/utils/dateUtils";
 
 interface PaymentSelectorProps {
   selectedPaymentId?: string;
@@ -65,7 +66,7 @@ export function PaymentSelector({
         {payments?.length ? (
           payments.map((payment) => (
             <SelectItem key={payment.id} value={payment.id}>
-              {new Date(payment.date).toLocaleDateString()} - {payment.reference_number || "Sin referencia"} - ${payment.amount.toFixed(2)} {payment.sales_channels?.name ? `(${payment.sales_channels.name})` : ""}
+              {formatDateForDisplay(payment.date)} - {payment.reference_number || "Sin referencia"} - ${payment.amount.toFixed(2)} {payment.sales_channels?.name ? `(${payment.sales_channels.name})` : ""}
             </SelectItem>
           ))
         ) : (

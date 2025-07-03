@@ -18,6 +18,7 @@ import { usePaymentReconciliation } from "./hooks/usePaymentReconciliation";
 import { DialogActions } from "./components/DialogActions";
 import { BulkReconciliationContent } from "./components/BulkReconciliationContent";
 import type { UnreconciledSale } from "./types/UnreconciledSale";
+import { formatDateForQuery } from "@/utils/dateUtils";
 
 interface BulkReconciliationDialogProps {
   open: boolean;
@@ -97,10 +98,10 @@ export function BulkReconciliationDialog({
 
       // Apply date range filter if provided
       if (dateRange?.from) {
-        query = query.gte("date", dateRange.from.toISOString().split('T')[0]);
+        query = query.gte("date", formatDateForQuery(dateRange.from));
       }
       if (dateRange?.to) {
-        query = query.lte("date", dateRange.to.toISOString().split('T')[0]);
+        query = query.lte("date", formatDateForQuery(dateRange.to));
       }
 
       const { data, error } = await query.order("date", { ascending: false });

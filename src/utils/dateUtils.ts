@@ -26,3 +26,21 @@ export function getLocalDateStart(date: Date): string {
 export function getLocalDateEnd(date: Date): string {
   return formatDateForQuery(date);
 }
+
+/**
+ * Formatea una fecha string de la BD para mostrar en la UI
+ * Maneja fechas sin conversión UTC para evitar cambios de día
+ */
+export function formatDateForDisplay(dateString: string): string {
+  if (!dateString) return '';
+  
+  // Parse the date string as local date (without time zone conversion)
+  const [year, month, day] = dateString.split('T')[0].split('-');
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  
+  return date.toLocaleDateString('es-MX', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+}
