@@ -2681,6 +2681,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          type_channel: string | null
           user_id: string
         }
         Insert: {
@@ -2689,6 +2690,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          type_channel?: string | null
           user_id: string
         }
         Update: {
@@ -2697,6 +2699,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          type_channel?: string | null
           user_id?: string
         }
         Relationships: []

@@ -23,6 +23,7 @@ export default function SalesChannels() {
     name: string;
     code: string;
     is_active: boolean;
+    type_channel: string;
   } | undefined>();
 
   const { data: channels, refetch } = useQuery({
@@ -71,6 +72,7 @@ export default function SalesChannels() {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Código</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -80,6 +82,14 @@ export default function SalesChannels() {
                 <TableRow key={channel.id}>
                   <TableCell>{channel.name}</TableCell>
                   <TableCell>{channel.code}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {channel.type_channel === 'retail_own' ? 'Retail Propio' :
+                       channel.type_channel === 'ecommerce_own' ? 'E-commerce Propio' :
+                       channel.type_channel === 'retail_marketplace' ? 'Retail Terceros' :
+                       'E-commerce Terceros'}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={channel.is_active ? "default" : "secondary"}>
                       {channel.is_active ? "Activo" : "Inactivo"}

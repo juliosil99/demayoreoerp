@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ interface SalesChannelFormData {
   name: string;
   code: string;
   is_active: boolean;
+  type_channel: string;
 }
 
 interface SalesChannelsDialogProps {
@@ -30,6 +32,7 @@ interface SalesChannelsDialogProps {
     name: string;
     code: string;
     is_active: boolean;
+    type_channel: string;
   };
   onSuccess: () => void;
 }
@@ -46,6 +49,7 @@ export function SalesChannelsDialog({
     name: selectedChannel?.name || "",
     code: selectedChannel?.code || "",
     is_active: selectedChannel?.is_active ?? true,
+    type_channel: selectedChannel?.type_channel || "ecommerce_marketplace",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,6 +85,7 @@ export function SalesChannelsDialog({
             name: formData.name,
             code: code,
             is_active: formData.is_active,
+            type_channel: formData.type_channel,
           })
           .eq("id", selectedChannel.id);
 
@@ -98,6 +103,7 @@ export function SalesChannelsDialog({
             name: formData.name,
             code: code,
             is_active: formData.is_active,
+            type_channel: formData.type_channel,
             user_id: user!.id,
           });
 
@@ -158,6 +164,26 @@ export function SalesChannelsDialog({
               }
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="type_channel">Tipo de Canal</Label>
+            <Select
+              value={formData.type_channel}
+              onValueChange={(value) =>
+                setFormData({ ...formData, type_channel: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar tipo de canal" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="retail_own">Retail Propio</SelectItem>
+                <SelectItem value="ecommerce_own">E-commerce Propio</SelectItem>
+                <SelectItem value="retail_marketplace">Retail Terceros</SelectItem>
+                <SelectItem value="ecommerce_marketplace">E-commerce Terceros</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-center space-x-2">

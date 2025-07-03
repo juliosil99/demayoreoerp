@@ -7,6 +7,7 @@ export interface SalesChannelsTable {
     is_active: boolean
     user_id: string
     created_at: string
+    type_channel: string
   }
   Insert: {
     id?: string
@@ -15,6 +16,7 @@ export interface SalesChannelsTable {
     is_active?: boolean
     user_id: string
     created_at?: string
+    type_channel: string
   }
   Update: {
     id?: string
@@ -23,6 +25,7 @@ export interface SalesChannelsTable {
     is_active?: boolean
     user_id?: string
     created_at?: string
+    type_channel?: string
   }
   Relationships: []
 }
