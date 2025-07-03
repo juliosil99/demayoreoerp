@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,11 +46,31 @@ export function SalesChannelsDialog({
   const { user } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState<SalesChannelFormData>({
-    name: selectedChannel?.name || "",
-    code: selectedChannel?.code || "",
-    is_active: selectedChannel?.is_active ?? true,
-    type_channel: selectedChannel?.type_channel || "ecommerce_marketplace",
+    name: "",
+    code: "",
+    is_active: true,
+    type_channel: "ecommerce_marketplace",
   });
+
+  // Update form data when selectedChannel changes
+  useEffect(() => {
+    if (selectedChannel) {
+      setFormData({
+        name: selectedChannel.name,
+        code: selectedChannel.code,
+        is_active: selectedChannel.is_active,
+        type_channel: selectedChannel.type_channel,
+      });
+    } else {
+      // Reset form for new channel
+      setFormData({
+        name: "",
+        code: "",
+        is_active: true,
+        type_channel: "ecommerce_marketplace",
+      });
+    }
+  }, [selectedChannel]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
