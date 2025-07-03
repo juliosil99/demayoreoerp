@@ -52,15 +52,8 @@ const Receivables = () => {
           .from("Sales")
           .select('*', { count: 'exact', head: true });
 
-        // Apply unpaid status filter - more explicit conditions
-        const statusConditions = [
-          'statusPaid.eq.por cobrar',
-          'statusPaid.is.null',
-          'statusPaid.eq.',
-          'statusPaid.eq.""'
-        ];
-        
-        countQuery = countQuery.or(statusConditions.join(','));
+        // Apply unpaid status filter - only NULL values
+        countQuery = countQuery.is('statusPaid', null);
 
         // Apply date filters if provided
         if (startDate) {
@@ -87,7 +80,7 @@ const Receivables = () => {
           .from("Sales")
           .select('*');
 
-        dataQuery = dataQuery.or(statusConditions.join(','));
+        dataQuery = dataQuery.is('statusPaid', null);
 
         // Apply same filters
         if (startDate) {
