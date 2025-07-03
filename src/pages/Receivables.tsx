@@ -222,6 +222,20 @@ const Receivables = () => {
     },
   });
 
+  // Helper function to format dates correctly - treats YYYY-MM-DD as local dates
+  const formatSaleDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    
+    // Si es solo fecha (YYYY-MM-DD), tratar como local para evitar cambios de zona horaria
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateString.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    
+    // Si tiene hora, usar formatInTimeZone
+    return formatInTimeZone(new Date(dateString), 'America/Mexico_City', 'dd/MM/yyyy');
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
@@ -431,7 +445,7 @@ const Receivables = () => {
                 <TableBody>
                   {paginatedSales.map((sale) => (
                     <TableRow key={sale.id}>
-                      <TableCell>{sale.date ? formatInTimeZone(new Date(sale.date), 'America/Mexico_City', 'dd/MM/yyyy') : 'N/A'}</TableCell>
+                      <TableCell>{formatSaleDate(sale.date)}</TableCell>
                       <TableCell>{sale.orderNumber}</TableCell>
                       <TableCell className="font-mono text-xs">{sale.sku || 'N/A'}</TableCell>
                       <TableCell>{sale.productName}</TableCell>
