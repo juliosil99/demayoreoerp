@@ -207,6 +207,15 @@ export function BulkReconciliationDialog({
             </AlertDialogDescription>
           </AlertDialogHeader>
 
+          <div className="flex justify-end gap-2 mb-4">
+            <DialogActions
+              onReconcile={handleReconcile}
+              isVerifying={false}
+              triggerStatus={null}
+              showTriggerCheck={false}
+            />
+          </div>
+
           <BulkReconciliationContent
             selectedChannel={selectedChannel}
             setSelectedChannel={setSelectedChannel}
@@ -229,15 +238,6 @@ export function BulkReconciliationDialog({
             onAdjustmentAdd={addAdjustment}
             onAdjustmentRemove={removeAdjustment}
           />
-
-          <AlertDialogFooter className="mt-4">
-            <DialogActions
-              onReconcile={handleReconcile}
-              isVerifying={false}
-              triggerStatus={null}
-              showTriggerCheck={false}
-            />
-          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
