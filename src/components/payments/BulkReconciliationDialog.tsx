@@ -30,7 +30,7 @@ export function BulkReconciliationDialog({
 }: BulkReconciliationDialogProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { toast } = useToast();
-  const { salesChannels } = usePaymentQueries();
+  const { salesChannels, isLoading: queriesLoading, error: queriesError } = usePaymentQueries();
 
   // Use the custom hook to manage the bulk reconciliation state
   const {
@@ -165,8 +165,9 @@ export function BulkReconciliationDialog({
             selectedSales={selectedSales}
             setSelectedSales={setSelectedSales}
             unreconciled={unreconciled}
-            isLoading={isLoading}
+            isLoading={isLoading || queriesLoading}
             isVerifying={false}
+            error={queriesError}
             triggerStatus={null}
             adjustments={adjustments}
             onAdjustmentAdd={addAdjustment}

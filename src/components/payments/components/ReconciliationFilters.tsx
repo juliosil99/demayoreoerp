@@ -16,6 +16,8 @@ interface ReconciliationFiltersProps {
   onDateRangeChange: (range: DateRange | undefined) => void;
   onReset: () => void;
   salesChannels: any[];
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
 export function ReconciliationFilters({
@@ -26,8 +28,11 @@ export function ReconciliationFilters({
   dateRange,
   onDateRangeChange,
   onReset,
-  salesChannels
+  salesChannels,
+  isLoading = false,
+  error
 }: ReconciliationFiltersProps) {
+  console.log("ReconciliationFilters render:", { salesChannels, isLoading, error });
   return (
     <div className="space-y-4">
       <div className="flex justify-between">
@@ -44,19 +49,37 @@ export function ReconciliationFilters({
           <Select 
             value={selectedChannel} 
             onValueChange={onChannelChange}
+            disabled={isLoading}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Seleccionar canal" />
+              <SelectValue placeholder={
+                isLoading ? "Cargando canales..." : 
+                error ? "Error al cargar canales" :
+                "Seleccionar canal"
+              } />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los canales</SelectItem>
-              {salesChannels.map((channel) => (
-                <SelectItem key={channel.value} value={channel.value}>
-                  {channel.label}
-                </SelectItem>
-              ))}
+              {Array.isArray(salesChannels) && salesChannels.length > 0 ? (
+                salesChannels.map((channel) => (
+                  <SelectItem key={channel.value} value={channel.value}>
+                    {channel.label}
+                  </SelectItem>
+                ))
+              ) : (
+                !isLoading && !error && (
+                  <SelectItem value="none" disabled>
+                    No hay canales disponibles
+                  </SelectItem>
+                )
+              )}
             </SelectContent>
           </Select>
+          {error && (
+            <p className="text-sm text-red-600 mt-1">
+              Error: {error.message}
+            </p>
+          )}
         </div>
         
         <div>

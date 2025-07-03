@@ -38,6 +38,7 @@ interface BulkReconciliationContentProps {
   adjustments: PaymentAdjustment[];
   onAdjustmentAdd: (adjustment: Omit<PaymentAdjustment, 'id'>) => void;
   onAdjustmentRemove: (id: string) => void;
+  error?: Error | null;
 }
 
 export function BulkReconciliationContent({
@@ -59,7 +60,8 @@ export function BulkReconciliationContent({
   triggerStatus,
   adjustments,
   onAdjustmentAdd,
-  onAdjustmentRemove
+  onAdjustmentRemove,
+  error
 }: BulkReconciliationContentProps) {
   const { toast } = useToast();
 
@@ -117,6 +119,8 @@ export function BulkReconciliationContent({
           onDateRangeChange={setDateRange}
           onReset={resetFilters}
           salesChannels={salesChannels || []}
+          isLoading={isLoading}
+          error={error}
         />
 
         <div>
