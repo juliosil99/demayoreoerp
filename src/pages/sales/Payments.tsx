@@ -6,8 +6,10 @@ import { useOptimizedPaymentsQuery } from "./hooks/useOptimizedPaymentsQuery";
 import { usePaymentActions } from "./hooks/usePaymentActions";
 import { PaymentDialogs } from "./components/PaymentDialogs";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 function Payments() {
+  const queryClient = useQueryClient();
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10 });
   const [filters, setFilters] = useState({
     search: '',
@@ -33,8 +35,8 @@ function Payments() {
   };
 
   const refetch = () => {
-    // With react-query, we can invalidate the cache to trigger a refetch
-    // This will be handled by the mutation callbacks in PaymentDialogs
+    queryClient.invalidateQueries({ queryKey: ["optimized-payments"] });
+    queryClient.invalidateQueries({ queryKey: ["optimized-payments-reconciliation"] });
   };
 
   const { handleDelete, handleStatusUpdate, handleReconcile } = usePaymentActions(refetch);

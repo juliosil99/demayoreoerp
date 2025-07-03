@@ -23,6 +23,7 @@ interface OptimizedPayment {
   amount: number;
   reference_number: string | null;
   payment_method: string;
+  status: string;
   is_reconciled: boolean;
   reconciled_amount: number | null;
   reconciled_count: number | null;
@@ -68,6 +69,7 @@ export const useOptimizedPaymentsQuery = (
           amount,
           reference_number,
           payment_method,
+          status,
           is_reconciled,
           reconciled_amount,
           reconciled_count,

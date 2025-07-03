@@ -25,8 +25,8 @@ export function usePaymentStatusUpdate() {
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["payments"] });
-      queryClient.invalidateQueries({ queryKey: ["unreconciled-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["optimized-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["optimized-payments-reconciliation"] });
       
       const statusText = variables.status === 'confirmed' ? 'confirmado' : 'marcado como pendiente';
       toast({
