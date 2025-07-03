@@ -1,7 +1,7 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/utils/formatters";
-import { UnreconciledSale } from "../hooks/useBulkReconciliation";
+import { UnreconciledSale } from "../types/UnreconciledSale";
 
 interface SalesSelectionManagerProps {
   sales: UnreconciledSale[] | undefined;

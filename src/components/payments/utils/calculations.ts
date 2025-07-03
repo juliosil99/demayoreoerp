@@ -1,5 +1,5 @@
 
-import type { UnreconciledSale } from "../hooks/useBulkReconciliation";
+import type { UnreconciledSale } from "../types/UnreconciledSale";
 
 export const calculateTotals = (sales: UnreconciledSale[]) => {
   const subtotal = sales.reduce((sum, sale) => sum + (sale.price || 0), 0);

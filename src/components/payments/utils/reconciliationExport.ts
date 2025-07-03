@@ -1,6 +1,6 @@
 
 import { utils, writeFile } from "xlsx";
-import { UnreconciledSale } from "../hooks/useBulkReconciliation";
+import { UnreconciledSale } from "../types/UnreconciledSale";
 import { formatCurrency } from "@/utils/formatters";
 import { formatDate } from "@/utils/formatters";
 

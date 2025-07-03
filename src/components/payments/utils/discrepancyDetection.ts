@@ -1,5 +1,5 @@
 
-import { UnreconciledSale } from "../hooks/useBulkReconciliation";
+import { UnreconciledSale } from "../types/UnreconciledSale";
 import type { Payment } from "../PaymentForm";
 
 export interface DiscrepancyResult {

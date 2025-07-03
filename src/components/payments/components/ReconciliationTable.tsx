@@ -2,7 +2,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDate, formatCurrency } from "@/utils/formatters";
-import type { UnreconciledSale } from "../hooks/useBulkReconciliation";
+import type { UnreconciledSale } from "../types/UnreconciledSale";
 
 interface ReconciliationTableProps {
   sales: UnreconciledSale[];

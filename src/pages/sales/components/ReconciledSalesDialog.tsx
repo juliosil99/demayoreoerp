@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, formatCardDate } from "@/utils/formatters";
-import { UnreconciledSale } from "@/components/payments/hooks/useBulkReconciliation";
+import { UnreconciledSale } from "@/components/payments/types/UnreconciledSale";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ReconciledSalesDialogProps {

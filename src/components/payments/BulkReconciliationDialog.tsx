@@ -1,5 +1,7 @@
 
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { DateRange } from "react-day-picker";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -12,10 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ReconciliationConfirmDialog } from "./components/ReconciliationConfirmDialog";
 import { usePaymentQueries } from "./hooks/usePaymentQueries";
-import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
 import { usePaymentReconciliation } from "./hooks/usePaymentReconciliation";
 import { DialogActions } from "./components/DialogActions";
 import { BulkReconciliationContent } from "./components/BulkReconciliationContent";
+import type { UnreconciledSale } from "./types/UnreconciledSale";
 
 interface BulkReconciliationDialogProps {
   open: boolean;
@@ -32,20 +34,11 @@ export function BulkReconciliationDialog({
   const { toast } = useToast();
   const { salesChannels, isLoading: queriesLoading, error: queriesError } = usePaymentQueries();
 
-  // Use the custom hook to manage the bulk reconciliation state
-  const {
-    selectedChannel,
-    setSelectedChannel,
-    orderNumbers,
-    setOrderNumbers,
-    selectedPaymentId,
-    setSelectedPaymentId,
-    dateRange,
-    setDateRange,
-    unreconciled,
-    isLoading,
-    resetFilters
-  } = useBulkReconciliation(open);
+  // Local state for bulk reconciliation (moved from hook)
+  const [selectedChannel, setSelectedChannel] = useState("all");
+  const [orderNumbers, setOrderNumbers] = useState("");
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string>();
+  const [dateRange, setDateRange] = useState<DateRange>();
 
   // Use the payment reconciliation hook for adjustments
   const {
@@ -59,13 +52,76 @@ export function BulkReconciliationDialog({
     isReconciling
   } = usePaymentReconciliation();
 
-  // Reset when dialog opens/closes
+  // Reset filters function
+  const resetFilters = () => {
+    setSelectedChannel("all");
+    setOrderNumbers("");
+    setDateRange(undefined);
+    setSelectedPaymentId(undefined);
+  };
+
+  // Fetch unreconciled sales directly in the dialog
+  const { data: unreconciled, isLoading } = useQuery({
+    queryKey: ["unreconciled", selectedChannel, orderNumbers, dateRange, selectedPaymentId],
+    queryFn: async () => {
+      let query = supabase
+        .from("Sales")
+        .select("*")
+        .is("reconciliation_id", null);
+
+      // Apply channel filter if not "all"
+      if (selectedChannel !== "all") {
+        // Get the channel name from the UUID
+        const { data: channelData } = await supabase
+          .from("sales_channels")
+          .select("name")
+          .eq("id", selectedChannel)
+          .single();
+        
+        if (channelData?.name) {
+          query = query.eq("Channel", channelData.name);
+        }
+      }
+
+      // Apply order numbers filter if provided
+      if (orderNumbers) {
+        const orderNumbersList = orderNumbers
+          .split(",")
+          .map((num) => num.trim())
+          .filter(Boolean);
+        
+        if (orderNumbersList.length > 0) {
+          query = query.in("orderNumber", orderNumbersList);
+        }
+      }
+
+      // Apply date range filter if provided
+      if (dateRange?.from) {
+        query = query.gte("date", dateRange.from.toISOString().split('T')[0]);
+      }
+      if (dateRange?.to) {
+        query = query.lte("date", dateRange.to.toISOString().split('T')[0]);
+      }
+
+      const { data, error } = await query.order("date", { ascending: false });
+      if (error) {
+        console.error("Error fetching unreconciled sales:", error);
+        throw error;
+      }
+      
+      // Cast the data to UnreconciledSale[] to ensure type safety
+      return data as unknown as UnreconciledSale[];
+    },
+    enabled: open,
+  });
+
+  // Reset when dialog opens
   useEffect(() => {
     if (open) {
       resetReconciliation();
       resetFilters();
     }
-  }, [open, resetReconciliation, resetFilters]);
+  }, [open, resetReconciliation]);
 
   const handleReconcile = async () => {
     if (!selectedPaymentId) {
