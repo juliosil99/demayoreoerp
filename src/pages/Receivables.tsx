@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -205,7 +206,7 @@ const Receivables = () => {
         .from('Sales')
         .update({ 
           statusPaid: 'cobrado',
-          datePaid: new Date().toISOString()
+          datePaid: formatInTimeZone(new Date(), 'America/Mexico_City', 'yyyy-MM-dd')
         })
         .eq('id', saleId);
 
@@ -430,7 +431,7 @@ const Receivables = () => {
                 <TableBody>
                   {paginatedSales.map((sale) => (
                     <TableRow key={sale.id}>
-                      <TableCell>{sale.date ? format(new Date(sale.date), 'dd/MM/yyyy') : 'N/A'}</TableCell>
+                      <TableCell>{sale.date ? formatInTimeZone(new Date(sale.date), 'America/Mexico_City', 'dd/MM/yyyy') : 'N/A'}</TableCell>
                       <TableCell>{sale.orderNumber}</TableCell>
                       <TableCell className="font-mono text-xs">{sale.sku || 'N/A'}</TableCell>
                       <TableCell>{sale.productName}</TableCell>
