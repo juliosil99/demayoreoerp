@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { PaymentFormDialog } from "./PaymentFormDialog";
 import { BulkReconciliationDialog } from "@/components/payments/BulkReconciliationDialog";
 import { ReconciledSalesDialog } from "./ReconciledSalesDialog";
@@ -11,6 +12,7 @@ interface PaymentDialogsProps {
 }
 
 export function PaymentDialogs({ onReconcile, onRefresh }: PaymentDialogsProps) {
+  const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [reconciliationOpen, setReconciliationOpen] = useState(false);
@@ -30,13 +32,16 @@ export function PaymentDialogs({ onReconcile, onRefresh }: PaymentDialogsProps) 
     setFormOpen(open);
     if (!open) {
       setSelectedPayment(null);
-      // Always refresh when closing the form dialog
-      onRefresh();
+      // Invalidate queries for optimized payments
+      queryClient.invalidateQueries({ queryKey: ["optimized-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["optimized-payments-reconciliation"] });
     }
   };
 
   const handleFormSuccess = () => {
-    onRefresh();
+    // Invalidate relevant queries
+    queryClient.invalidateQueries({ queryKey: ["optimized-payments"] });
+    queryClient.invalidateQueries({ queryKey: ["optimized-payments-reconciliation"] });
   };
 
   const handleViewReconciled = (paymentId: string) => {

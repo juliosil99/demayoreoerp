@@ -65,6 +65,26 @@ export const OPTIMIZED_SELECTS = {
     name,
     type,
     rfc
+  `,
+  
+  PAYMENTS_MINIMAL: `
+    id,
+    date,
+    amount,
+    reference_number,
+    payment_method,
+    is_reconciled,
+    reconciled_amount,
+    reconciled_count,
+    sales_channel_id,
+    account_id
+  `,
+  
+  PAYMENTS_FOR_RECONCILIATION: `
+    id,
+    date,
+    amount,
+    reference_number
   `
 } as const;
 

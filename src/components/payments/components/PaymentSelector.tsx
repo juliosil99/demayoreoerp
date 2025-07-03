@@ -1,6 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useOptimizedPaymentsForReconciliation } from "../hooks/useOptimizedPaymentsForReconciliation";
 import {
   Select,
   SelectContent,
@@ -21,31 +20,7 @@ export function PaymentSelector({
   onPaymentSelect,
   selectedChannel,
 }: PaymentSelectorProps) {
-  const { data: payments, isLoading } = useQuery({
-    queryKey: ["payments-for-reconciliation", selectedChannel],
-    queryFn: async () => {
-      let query = supabase
-        .from("payments")
-        .select(`
-          id,
-          date,
-          amount,
-          reference_number,
-          sales_channels(name)
-        `)
-        .eq("is_reconciled", false)
-        .order("date", { ascending: false });
-      
-      // Apply channel filter if not "all"
-      if (selectedChannel !== "all") {
-        query = query.eq("sales_channel_id", selectedChannel);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: payments, isLoading } = useOptimizedPaymentsForReconciliation(selectedChannel);
 
   if (isLoading) {
     return (

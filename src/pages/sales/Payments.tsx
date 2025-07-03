@@ -2,20 +2,40 @@
 import { Container } from "@/components/ui/container";
 import { PaymentHeader } from "./components/PaymentHeader";
 import { PaymentsContent } from "./components/PaymentsContent";
-import { usePaymentsQuery } from "./hooks/usePaymentsQuery";
+import { useOptimizedPaymentsQuery } from "./hooks/useOptimizedPaymentsQuery";
 import { usePaymentActions } from "./hooks/usePaymentActions";
 import { PaymentDialogs } from "./components/PaymentDialogs";
+import { useState } from "react";
 
 function Payments() {
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10 });
+  const [filters, setFilters] = useState({
+    search: '',
+    date: undefined,
+    paymentMethod: 'all' as const,
+    isReconciled: 'all' as const,
+  });
+
   const {
     payments,
+    totalCount,
     isLoading,
-    pagination,
-    filters,
-    updateFilters,
-    setPagination,
-    refetch,
-  } = usePaymentsQuery();
+    error,
+  } = useOptimizedPaymentsQuery(filters, pagination);
+
+  // Calculate total pages from totalCount
+  const totalPages = Math.max(1, Math.ceil(totalCount / pagination.pageSize));
+  const paginationWithTotal = { ...pagination, totalPages };
+
+  const updateFilters = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when filters change
+  };
+
+  const refetch = () => {
+    // With react-query, we can invalidate the cache to trigger a refetch
+    // This will be handled by the mutation callbacks in PaymentDialogs
+  };
 
   const { handleDelete, handleStatusUpdate, handleReconcile } = usePaymentActions(refetch);
     
@@ -31,7 +51,7 @@ function Payments() {
       <PaymentsContent
         payments={payments}
         isLoading={isLoading}
-        pagination={pagination}
+        pagination={paginationWithTotal}
         filters={filters}
         onUpdateFilters={updateFilters}
         setPagination={setPagination}

@@ -124,9 +124,9 @@ export function usePaymentReconciliation() {
       });
       
       // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ["payments-for-reconciliation"] });
-      queryClient.invalidateQueries({ queryKey: ["unreconciled"] });
-      queryClient.invalidateQueries({ queryKey: ["paymentsData"] });
+      queryClient.invalidateQueries({ queryKey: ["optimized-payments-reconciliation"] });
+      queryClient.invalidateQueries({ queryKey: ["optimized-unreconciled-sales"] });
+      queryClient.invalidateQueries({ queryKey: ["optimized-payments"] });
       
       // Reset state
       resetReconciliation();

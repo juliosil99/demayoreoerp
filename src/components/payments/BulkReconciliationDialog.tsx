@@ -13,8 +13,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ReconciliationConfirmDialog } from "./components/ReconciliationConfirmDialog";
-import { usePaymentQueries } from "./hooks/usePaymentQueries";
+import { useOptimizedPaymentQueries } from "./hooks/useOptimizedPaymentQueries";
 import { usePaymentReconciliation } from "./hooks/usePaymentReconciliation";
+import { useOptimizedUnreconciledSales } from "./hooks/useOptimizedUnreconciledSales";
 import { DialogActions } from "./components/DialogActions";
 import { BulkReconciliationContent } from "./components/BulkReconciliationContent";
 import type { UnreconciledSale } from "./types/UnreconciledSale";
@@ -33,7 +34,7 @@ export function BulkReconciliationDialog({
 }: BulkReconciliationDialogProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { toast } = useToast();
-  const { salesChannels, isLoading: queriesLoading, error: queriesError } = usePaymentQueries();
+  const { salesChannels, isLoading: queriesLoading, error: queriesError } = useOptimizedPaymentQueries();
 
   // Local state for bulk reconciliation (moved from hook)
   const [selectedChannel, setSelectedChannel] = useState("all");
@@ -61,58 +62,11 @@ export function BulkReconciliationDialog({
     setSelectedPaymentId(undefined);
   };
 
-  // Fetch unreconciled sales directly in the dialog
-  const { data: unreconciled, isLoading } = useQuery({
-    queryKey: ["unreconciled", selectedChannel, orderNumbers, dateRange, selectedPaymentId],
-    queryFn: async () => {
-      let query = supabase
-        .from("Sales")
-        .select("*")
-        .is("reconciliation_id", null);
-
-      // Apply channel filter if not "all"
-      if (selectedChannel !== "all") {
-        // Get the channel name from the UUID
-        const { data: channelData } = await supabase
-          .from("sales_channels")
-          .select("name")
-          .eq("id", selectedChannel)
-          .single();
-        
-        if (channelData?.name) {
-          query = query.eq("Channel", channelData.name);
-        }
-      }
-
-      // Apply order numbers filter if provided
-      if (orderNumbers) {
-        const orderNumbersList = orderNumbers
-          .split(",")
-          .map((num) => num.trim())
-          .filter(Boolean);
-        
-        if (orderNumbersList.length > 0) {
-          query = query.in("orderNumber", orderNumbersList);
-        }
-      }
-
-      // Apply date range filter if provided
-      if (dateRange?.from) {
-        query = query.gte("date", formatDateForQuery(dateRange.from));
-      }
-      if (dateRange?.to) {
-        query = query.lte("date", formatDateForQuery(dateRange.to));
-      }
-
-      const { data, error } = await query.order("date", { ascending: false });
-      if (error) {
-        console.error("Error fetching unreconciled sales:", error);
-        throw error;
-      }
-      
-      // Cast the data to UnreconciledSale[] to ensure type safety
-      return data as unknown as UnreconciledSale[];
-    },
+  // Use optimized hook for unreconciled sales
+  const { data: unreconciled, isLoading } = useOptimizedUnreconciledSales({
+    selectedChannel,
+    orderNumbers,
+    dateRange,
     enabled: open,
   });
 
