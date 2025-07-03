@@ -229,7 +229,7 @@ export function useAutoReconciliation() {
   }, []);
 
   const createAutomaticPayments = useCallback(async (groups: AutoReconciliationGroup[]): Promise<AutoReconciliationResult> => {
-    console.log("🔄 [AUTO-RECONCILIATION] Starting createAutomaticPayments with groups:", groups);
+    console.log("🔄 [AUTO-RECONCILIATION] Starting payment search for groups:", groups);
     
     const result: AutoReconciliationResult = {
       successCount: 0,
@@ -242,7 +242,7 @@ export function useAutoReconciliation() {
 
     for (const group of groups) {
       try {
-        console.log("🔍 [AUTO-RECONCILIATION] Processing group:", {
+        console.log("🔍 [AUTO-RECONCILIATION] Searching existing payment for group:", {
           id: group.id,
           date: group.date,
           channel: group.channel,
@@ -250,63 +250,52 @@ export function useAutoReconciliation() {
           salesCount: group.sales.length,
           totalAmount: group.totalAmount
         });
-        // Get current user
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) {
-          throw new Error("Usuario no autenticado");
-        }
 
-        // Create payment record
-        console.log("💳 [AUTO-RECONCILIATION] Creating payment with data:", {
-          date: group.date,
-          amount: group.totalAmount,
-          payment_method: group.paymentMethod,
-          reference_number: `AUTO-${group.date}-${group.channel}`,
-          account_id: 1,
-          notes: `Auto-reconciliación ${group.channel} - ${group.date}`,
-          status: 'confirmed',
-          is_reconciled: true,
-          reconciled_amount: group.totalAmount,
-          reconciled_count: group.sales.length,
-          user_id: userData.user.id
-        });
-
-        const { data: payment, error: paymentError } = await supabase
+        // Search for existing unreconciled payment that matches
+        const { data: existingPayments, error: searchError } = await supabase
           .from("payments")
-          .insert({
-            date: group.date,
-            amount: group.totalAmount,
-            payment_method: group.paymentMethod,
-            reference_number: `AUTO-${group.date}-${group.channel}`,
-            account_id: 1, // Default account, should be configurable
-            notes: `Auto-reconciliación ${group.channel} - ${group.date}`,
-            status: 'confirmed',
-            is_reconciled: true,
-            reconciled_amount: group.totalAmount,
-            reconciled_count: group.sales.length,
-            user_id: userData.user.id
-          })
-          .select("id")
-          .single();
+          .select("id, date, amount, payment_method, is_reconciled")
+          .eq("is_reconciled", false)
+          .eq("amount", group.totalAmount)
+          .gte("date", group.date) // Same date or up to 1 day later
+          .lte("date", new Date(new Date(group.date).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
-        console.log("💳 [AUTO-RECONCILIATION] Payment creation result:", { payment, paymentError });
+        console.log("🔍 [AUTO-RECONCILIATION] Search result:", { existingPayments, searchError });
 
-        if (paymentError || !payment) {
-          console.error("❌ [AUTO-RECONCILIATION] Payment creation failed:", paymentError);
-          throw new Error(`Error creando pago: ${paymentError?.message}`);
+        if (searchError) {
+          throw new Error(`Error buscando pagos existentes: ${searchError.message}`);
         }
 
-        console.log("✅ [AUTO-RECONCILIATION] Payment created successfully with ID:", payment.id);
+        // Filter by payment method compatibility
+        const compatiblePayments = existingPayments?.filter(payment => {
+          const paymentMethodMatch = payment.payment_method === group.paymentMethod || 
+                                   (payment.payment_method === 'cash' && group.paymentMethod === 'efectivo') ||
+                                   (payment.payment_method === 'efectivo' && group.paymentMethod === 'cash');
+          return paymentMethodMatch;
+        }) || [];
 
-        // Update sales with reconciliation
+        console.log("🔍 [AUTO-RECONCILIATION] Compatible payments found:", compatiblePayments);
+
+        if (compatiblePayments.length === 0) {
+          throw new Error(`No se encontró pago correspondiente para ${group.date} por $${group.totalAmount}. Verifica que el pago haya sido registrado correctamente en las cuentas bancarias.`);
+        }
+
+        if (compatiblePayments.length > 1) {
+          console.warn("⚠️ [AUTO-RECONCILIATION] Multiple payments found, using first one:", compatiblePayments[0]);
+        }
+
+        const selectedPayment = compatiblePayments[0];
+        console.log("✅ [AUTO-RECONCILIATION] Using existing payment:", selectedPayment);
+
+        // Update sales with reconciliation to existing payment
         const salesIds = group.sales.map(sale => sale.id);
         console.log("📝 [AUTO-RECONCILIATION] Updating sales with IDs:", salesIds);
-        console.log("📝 [AUTO-RECONCILIATION] Setting reconciliation_id to:", payment.id);
+        console.log("📝 [AUTO-RECONCILIATION] Setting reconciliation_id to:", selectedPayment.id);
 
         const { error: salesError } = await supabase
           .from("Sales")
           .update({
-            reconciliation_id: payment.id,
+            reconciliation_id: selectedPayment.id,
             statusPaid: 'cobrado',
             datePaid: group.date
           })
@@ -316,16 +305,28 @@ export function useAutoReconciliation() {
 
         if (salesError) {
           console.error("❌ [AUTO-RECONCILIATION] Sales update failed:", salesError);
-          // Rollback payment creation
-          console.log("🔄 [AUTO-RECONCILIATION] Rolling back payment creation...");
-          await supabase.from("payments").delete().eq("id", payment.id);
           throw new Error(`Error actualizando ventas: ${salesError.message}`);
         }
 
-        console.log("✅ [AUTO-RECONCILIATION] Sales updated successfully for group:", group.id);
+        // Update payment reconciliation status
+        const { error: paymentUpdateError } = await supabase
+          .from("payments")
+          .update({
+            is_reconciled: true,
+            reconciled_amount: group.totalAmount,
+            reconciled_count: group.sales.length
+          })
+          .eq("id", selectedPayment.id);
+
+        if (paymentUpdateError) {
+          console.error("❌ [AUTO-RECONCILIATION] Payment update failed:", paymentUpdateError);
+          throw new Error(`Error actualizando pago: ${paymentUpdateError.message}`);
+        }
+
+        console.log("✅ [AUTO-RECONCILIATION] Payment reconciled successfully:", selectedPayment.id);
 
         result.successCount++;
-        result.groups.push({ ...group, id: payment.id });
+        result.groups.push({ ...group, id: selectedPayment.id });
 
       } catch (error) {
         console.error(`Error processing group ${group.id}:`, error);
