@@ -54,7 +54,16 @@ export function useBulkReconciliation(open: boolean) {
 
       // Apply channel filter if not "all"
       if (selectedChannel !== "all") {
-        query = query.eq("Channel", selectedChannel);
+        // Get the channel name from the UUID
+        const { data: channelData } = await supabase
+          .from("sales_channels")
+          .select("name")
+          .eq("id", selectedChannel)
+          .single();
+        
+        if (channelData?.name) {
+          query = query.eq("Channel", channelData.name);
+        }
       }
 
       // Apply order numbers filter if provided
