@@ -2312,6 +2312,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_adjustments: {
+        Row: {
+          adjustment_type: string
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          payment_id: string
+          user_id: string
+        }
+        Insert: {
+          adjustment_type: string
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_id: string
+          user_id: string
+        }
+        Update: {
+          adjustment_type?: string
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           account_id: number

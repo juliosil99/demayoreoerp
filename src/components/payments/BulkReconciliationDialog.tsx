@@ -9,9 +9,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { ReconciliationConfirmDialog } from "./components/ReconciliationConfirmDialog";
 import { usePaymentQueries } from "./hooks/usePaymentQueries";
 import { useBulkReconciliation } from "./hooks/useBulkReconciliation";
+import { usePaymentReconciliation } from "./hooks/usePaymentReconciliation";
 import { DialogActions } from "./components/DialogActions";
 import { BulkReconciliationContent } from "./components/BulkReconciliationContent";
 
@@ -27,7 +29,6 @@ export function BulkReconciliationDialog({
   onReconcile,
 }: BulkReconciliationDialogProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [selectedSales, setSelectedSales] = useState<number[]>([]);
   const { toast } = useToast();
   const { salesChannels } = usePaymentQueries();
 
@@ -46,14 +47,27 @@ export function BulkReconciliationDialog({
     resetFilters
   } = useBulkReconciliation(open);
 
-  // Reset selected sales when dialog opens or closes
-  useEffect(() => {
-    if (!open) {
-      setSelectedSales([]);
-    }
-  }, [open]);
+  // Use the payment reconciliation hook for adjustments
+  const {
+    selectedSales,
+    setSelectedSales,
+    adjustments,
+    addAdjustment,
+    removeAdjustment,
+    resetReconciliation,
+    reconcilePayment,
+    isReconciling
+  } = usePaymentReconciliation();
 
-  const handleReconcile = () => {
+  // Reset when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      resetReconciliation();
+      resetFilters();
+    }
+  }, [open, resetReconciliation, resetFilters]);
+
+  const handleReconcile = async () => {
     if (!selectedPaymentId) {
       toast({
         title: "Error",
@@ -72,25 +86,51 @@ export function BulkReconciliationDialog({
       return;
     }
 
-    console.log("Iniciando reconciliación:", {
-      paymentId: selectedPaymentId,
-      salesCount: selectedSales.length,
-      salesIds: selectedSales
-    });
-    
+    // Calculate totals and validate balance
+    const selectedOrdersTotal = unreconciled
+      ? unreconciled
+          .filter(sale => selectedSales.includes(sale.id))
+          .reduce((sum, sale) => sum + (sale.price || 0), 0)
+      : 0;
+
+    const adjustmentsTotal = adjustments.reduce((sum, adj) => sum + adj.amount, 0);
+    const finalTotal = selectedOrdersTotal + adjustmentsTotal;
+
+    // Get payment amount
+    const { data: paymentData } = await supabase
+      .from("payments")
+      .select("amount")
+      .eq("id", selectedPaymentId)
+      .single();
+
+    if (!paymentData) {
+      toast({
+        title: "Error",
+        description: "No se pudo obtener la información del pago.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const difference = Math.abs(finalTotal - paymentData.amount);
+    if (difference >= 0.01) {
+      toast({
+        title: "Error de Balance",
+        description: `La reconciliación no está balanceada. Diferencia: ${difference.toFixed(2)}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setShowConfirmDialog(true);
   };
 
   const confirmReconciliation = async () => {
-    console.log("Confirmando reconciliación masiva:", {
-      salesIds: selectedSales,
-      paymentId: selectedPaymentId
-    });
-    
-    // Realizar la reconciliación
-    onReconcile({ salesIds: selectedSales, paymentId: selectedPaymentId });
-    
-    setShowConfirmDialog(false);
+    if (selectedPaymentId) {
+      reconcilePayment({ salesIds: selectedSales, paymentId: selectedPaymentId });
+      setShowConfirmDialog(false);
+      onOpenChange(false);
+    }
   };
 
   // Calculate total amount from selected sales
@@ -103,7 +143,7 @@ export function BulkReconciliationDialog({
   return (
     <>
       <AlertDialog open={open} onOpenChange={onOpenChange}>
-        <AlertDialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <AlertDialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>Reconciliación Masiva de Ventas</AlertDialogTitle>
             <AlertDialogDescription>
@@ -128,6 +168,9 @@ export function BulkReconciliationDialog({
             isLoading={isLoading}
             isVerifying={false}
             triggerStatus={null}
+            adjustments={adjustments}
+            onAdjustmentAdd={addAdjustment}
+            onAdjustmentRemove={removeAdjustment}
           />
 
           <AlertDialogFooter className="mt-4">
