@@ -30,7 +30,7 @@ interface PaymentMatch {
 
 interface ManualAutoReconciliationDialogProps {
   onClose: () => void;
-  onProcessMatches: (matches: PaymentMatch[]) => void;
+  onProcessMatches: (matches: PaymentMatch[], groups: AutoReconciliationGroup[]) => void;
 }
 
 export function ManualAutoReconciliationDialog({
@@ -412,7 +412,7 @@ export function ManualAutoReconciliationDialog({
             Cancelar
           </Button>
           <Button
-            onClick={() => onProcessMatches(validMatches)}
+            onClick={() => onProcessMatches(validMatches, groups)}
             disabled={!canProcess}
           >
             Procesar Reconciliaciones ({validMatches.length})

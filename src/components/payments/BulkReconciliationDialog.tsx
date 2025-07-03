@@ -184,9 +184,7 @@ export function BulkReconciliationDialog({
           {showAutoReconciliation ? (
             <ManualAutoReconciliationDialog
               onClose={() => setShowAutoReconciliation(false)}
-              onProcessMatches={async (matches) => {
-                // Get groups data for processing
-                const groups = await detectAutoReconciliationGroups();
+              onProcessMatches={(matches, groups) => {
                 processManualReconciliation({ matches, groups });
                 setShowAutoReconciliation(false);
                 onOpenChange(false);
