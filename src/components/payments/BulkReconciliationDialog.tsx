@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ReconciliationConfirmDialog } from "./components/ReconciliationConfirmDialog";
@@ -17,6 +18,8 @@ import { usePaymentReconciliation } from "./hooks/usePaymentReconciliation";
 import { useOptimizedUnreconciledSales } from "./hooks/useOptimizedUnreconciledSales";
 import { DialogActions } from "./components/DialogActions";
 import { BulkReconciliationContent } from "./components/BulkReconciliationContent";
+import { AutoReconciliationPreview } from "./components/AutoReconciliationPreview";
+import { useAutoReconciliation } from "./hooks/useAutoReconciliation";
 import type { UnreconciledSale } from "./types/UnreconciledSale";
 
 interface BulkReconciliationDialogProps {
@@ -31,8 +34,10 @@ export function BulkReconciliationDialog({
   onReconcile,
 }: BulkReconciliationDialogProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showAutoReconciliation, setShowAutoReconciliation] = useState(false);
   const { toast } = useToast();
   const { salesChannels, isLoading: queriesLoading, error: queriesError } = useOptimizedPaymentQueries();
+  const { processAutoReconciliation, isProcessing: isAutoProcessing } = useAutoReconciliation();
 
   // Local state for bulk reconciliation (moved from hook)
   const [selectedChannel, setSelectedChannel] = useState("all");
@@ -70,6 +75,7 @@ export function BulkReconciliationDialog({
     if (open) {
       resetReconciliation();
       resetFilters();
+      setShowAutoReconciliation(false);
     }
   }, [open, resetReconciliation]);
 
@@ -158,6 +164,13 @@ export function BulkReconciliationDialog({
           </AlertDialogHeader>
 
           <div className="flex justify-end gap-2 mb-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowAutoReconciliation(!showAutoReconciliation)}
+              disabled={isAutoProcessing}
+            >
+              {showAutoReconciliation ? "Reconciliación Manual" : "Auto-Reconciliar Canales Propios"}
+            </Button>
             <DialogActions
               onReconcile={handleReconcile}
               isVerifying={false}
@@ -166,26 +179,37 @@ export function BulkReconciliationDialog({
             />
           </div>
 
-          <BulkReconciliationContent
-            selectedChannel={selectedChannel}
-            setSelectedChannel={setSelectedChannel}
-            selectedPaymentMethod={selectedPaymentMethod}
-            setSelectedPaymentMethod={setSelectedPaymentMethod}
-            resetFilters={resetFilters}
-            salesChannels={salesChannels || []}
-            selectedPaymentId={selectedPaymentId}
-            setSelectedPaymentId={setSelectedPaymentId}
-            selectedSales={selectedSales}
-            setSelectedSales={setSelectedSales}
-            unreconciled={unreconciled}
-            isLoading={isLoading || queriesLoading}
-            isVerifying={false}
-            error={queriesError}
-            triggerStatus={null}
-            adjustments={adjustments}
-            onAdjustmentAdd={addAdjustment}
-            onAdjustmentRemove={removeAdjustment}
-          />
+          {showAutoReconciliation ? (
+            <AutoReconciliationPreview
+              onClose={() => setShowAutoReconciliation(false)}
+              onProcessSelected={(groups) => {
+                processAutoReconciliation(groups);
+                setShowAutoReconciliation(false);
+                onOpenChange(false);
+              }}
+            />
+          ) : (
+            <BulkReconciliationContent
+              selectedChannel={selectedChannel}
+              setSelectedChannel={setSelectedChannel}
+              selectedPaymentMethod={selectedPaymentMethod}
+              setSelectedPaymentMethod={setSelectedPaymentMethod}
+              resetFilters={resetFilters}
+              salesChannels={salesChannels || []}
+              selectedPaymentId={selectedPaymentId}
+              setSelectedPaymentId={setSelectedPaymentId}
+              selectedSales={selectedSales}
+              setSelectedSales={setSelectedSales}
+              unreconciled={unreconciled}
+              isLoading={isLoading || queriesLoading}
+              isVerifying={false}
+              error={queriesError}
+              triggerStatus={null}
+              adjustments={adjustments}
+              onAdjustmentAdd={addAdjustment}
+              onAdjustmentRemove={removeAdjustment}
+            />
+          )}
         </AlertDialogContent>
       </AlertDialog>
 
