@@ -37,10 +37,25 @@ export function usePaymentReconciliation() {
     mutationFn: async ({ salesIds, paymentId }: { salesIds: number[], paymentId: string }) => {
       console.log("Starting payment reconciliation:", { salesIds, paymentId, adjustments });
 
-      // Start a transaction-like operation
+      // Get payment date for statusPaid update
+      const { data: paymentData } = await supabase
+        .from("payments")
+        .select("date")
+        .eq("id", paymentId)
+        .single();
+
+      if (!paymentData) {
+        throw new Error("Payment not found");
+      }
+
+      // Update sales with reconciliation data AND payment status
       const { error: salesError } = await supabase
         .from("Sales")
-        .update({ reconciliation_id: paymentId })
+        .update({ 
+          reconciliation_id: paymentId,
+          statusPaid: 'cobrado',
+          datePaid: paymentData.date
+        })
         .in("id", salesIds);
 
       if (salesError) {
