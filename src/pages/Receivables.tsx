@@ -35,21 +35,22 @@ const Receivables = () => {
   const queryClient = useQueryClient();
 
   const { data: unpaidSales, isLoading, error } = useQuery({
-    queryKey: ["unpaid-sales", startDate, endDate, selectedChannel],
+    queryKey: ["unpaid-sales", startDate, endDate, selectedChannel, currentPage],
     queryFn: async () => {
       const startTime = performance.now();
       console.log("🔍 [RECEIVABLES] Starting query with filters:", {
         startDate,
         endDate,
         selectedChannel,
+        currentPage,
         timestamp: new Date().toISOString()
       });
 
       try {
-        // Query with detailed logging
-        let baseQuery = supabase
+        // First get total count
+        let countQuery = supabase
           .from("Sales")
-          .select('*');
+          .select('*', { count: 'exact', head: true });
 
         // Apply unpaid status filter - more explicit conditions
         const statusConditions = [
@@ -59,28 +60,57 @@ const Receivables = () => {
           'statusPaid.eq.""'
         ];
         
-        baseQuery = baseQuery.or(statusConditions.join(','));
+        countQuery = countQuery.or(statusConditions.join(','));
 
         // Apply date filters if provided
         if (startDate) {
-          console.log("📅 [RECEIVABLES] Applying start date filter:", startDate);
-          baseQuery = baseQuery.gte('date', startDate);
+          countQuery = countQuery.gte('date', startDate);
         }
         if (endDate) {
-          console.log("📅 [RECEIVABLES] Applying end date filter:", endDate);
-          baseQuery = baseQuery.lte('date', endDate);
+          countQuery = countQuery.lte('date', endDate);
         }
 
         // Apply channel filter if selected
         if (selectedChannel !== "all") {
-          console.log("📡 [RECEIVABLES] Applying channel filter:", selectedChannel);
-          baseQuery = baseQuery.eq('Channel', selectedChannel);
+          countQuery = countQuery.eq('Channel', selectedChannel);
         }
 
-        // Add ordering and limit for better performance
-        const { data, error, count } = await baseQuery
-          .order('date', { ascending: false })
-          .limit(10000); // Increased limit
+        const { count: totalCount, error: countError } = await countQuery;
+
+        if (countError) {
+          console.error("❌ [RECEIVABLES] Count query error:", countError);
+          throw countError;
+        }
+
+        // Now get the actual data with pagination
+        let dataQuery = supabase
+          .from("Sales")
+          .select('*');
+
+        dataQuery = dataQuery.or(statusConditions.join(','));
+
+        // Apply same filters
+        if (startDate) {
+          console.log("📅 [RECEIVABLES] Applying start date filter:", startDate);
+          dataQuery = dataQuery.gte('date', startDate);
+        }
+        if (endDate) {
+          console.log("📅 [RECEIVABLES] Applying end date filter:", endDate);
+          dataQuery = dataQuery.lte('date', endDate);
+        }
+
+        if (selectedChannel !== "all") {
+          console.log("📡 [RECEIVABLES] Applying channel filter:", selectedChannel);
+          dataQuery = dataQuery.eq('Channel', selectedChannel);
+        }
+
+        // Apply pagination using range
+        const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+        const endIndex = startIndex + ROWS_PER_PAGE - 1;
+
+        const { data, error } = await dataQuery
+          .order('date', { ascending: true }) // Show oldest first to see historical data
+          .range(startIndex, endIndex);
 
         if (error) {
           console.error("❌ [RECEIVABLES] Query error:", error);
@@ -98,21 +128,31 @@ const Receivables = () => {
           lastRecord: data?.[data.length - 1]?.date
         });
 
-        // Calculate statistics
+
+        // Update stats with the total count from database
         if (data && data.length > 0) {
           const dates = data.map(sale => sale.date).filter(Boolean).sort();
           const channels = new Set(data.map(sale => sale.Channel).filter(Boolean));
           
           setQueryStats({
-            totalRecords: data.length,
-            oldestDate: dates[dates.length - 1] || null,
-            newestDate: dates[0] || null,
+            totalRecords: totalCount || 0, // Use the actual total count from database
+            oldestDate: dates[0] || null, // Since we're sorting ascending, first is oldest
+            newestDate: dates[dates.length - 1] || null,
             uniqueChannels: channels.size,
+            queryTime: Math.round(queryTime)
+          });
+        } else if (totalCount !== null) {
+          // Even if no data on this page, show the total count
+          setQueryStats({
+            totalRecords: totalCount,
+            oldestDate: null,
+            newestDate: null,
+            uniqueChannels: 0,
             queryTime: Math.round(queryTime)
           });
         }
 
-        return data || [];
+        return { data: data || [], totalCount: totalCount || 0 };
       } catch (err) {
         console.error("💥 [RECEIVABLES] Fatal query error:", err);
         throw err;
@@ -120,8 +160,8 @@ const Receivables = () => {
     },
   });
 
-  // Enhanced filtering - search across multiple fields
-  const filteredSales = unpaidSales?.filter(sale => {
+  // Enhanced filtering - search across multiple fields (now applied to paginated data)
+  const filteredSales = unpaidSales?.data?.filter(sale => {
     if (!searchTerm) return true;
     
     const searchLower = searchTerm.toLowerCase();
@@ -135,11 +175,13 @@ const Receivables = () => {
   });
 
   // Get unique channels for filter dropdown
-  const uniqueChannels = Array.from(new Set(unpaidSales?.map(sale => sale.Channel).filter(Boolean) || []));
+  const uniqueChannels = Array.from(new Set(unpaidSales?.data?.map(sale => sale.Channel).filter(Boolean) || []));
 
-  const totalPages = Math.ceil((filteredSales?.length || 0) / ROWS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
-  const paginatedSales = filteredSales?.slice(startIndex, startIndex + ROWS_PER_PAGE);
+  // Calculate total pages based on database count, not filtered results
+  const totalPages = Math.ceil((unpaidSales?.totalCount || 0) / ROWS_PER_PAGE);
+  
+  // Since we're doing server-side pagination, we don't slice again
+  const paginatedSales = filteredSales;
 
   // Reset pagination when filters change
   const handleFiltersChange = () => {
@@ -232,7 +274,8 @@ const Receivables = () => {
                   <li>• Loading: {isLoading ? "Sí" : "No"}</li>
                   <li>• Error: {error ? "Sí" : "No"}</li>
                   <li>• Datos disponibles: {unpaidSales ? "Sí" : "No"}</li>
-                  <li>• Registros encontrados: {unpaidSales?.length || 0}</li>
+                  <li>• Registros encontrados: {unpaidSales?.data?.length || 0}</li>
+                  <li>• Total en base de datos: {unpaidSales?.totalCount || 0}</li>
                 </ul>
               </div>
               <div>
