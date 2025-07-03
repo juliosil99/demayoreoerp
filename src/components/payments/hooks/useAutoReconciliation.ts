@@ -100,7 +100,7 @@ export function useAutoReconciliation() {
       const groupsMap = new Map<string, UnreconciledSale[]>();
       
       sales.forEach(sale => {
-        const key = `${sale.date}-${sale.payment_method}-${sale.Channel}`;
+        const key = `${sale.date}__${sale.payment_method}__${sale.Channel}`;
         console.log(`🗂️ [GROUPING] Processing sale ${sale.id}, key: "${key}"`);
         
         if (!groupsMap.has(key)) {
@@ -119,7 +119,7 @@ export function useAutoReconciliation() {
       groupsMap.forEach((salesGroup, key) => {
         console.log(`🔍 [PROCESSING_GROUP] Processing group: "${key}" with ${salesGroup.length} sales`);
         
-        const [date, paymentMethod, channel] = key.split('-');
+        const [date, paymentMethod, channel] = key.split('__');
         const channelInfo = retailOwnChannels.find(c => c.name === channel);
         
         console.log(`📊 [GROUP_INFO] Date: ${date}, PaymentMethod: ${paymentMethod}, Channel: ${channel}`);
