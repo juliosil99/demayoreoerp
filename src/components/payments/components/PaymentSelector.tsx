@@ -36,7 +36,8 @@ export function PaymentSelector({
       
       // Apply channel filter if not "all"
       if (selectedChannel !== "all") {
-        query = query.eq("sales_channel_id", selectedChannel);
+        // Filter by channel name, not UUID
+        query = query.eq("sales_channels.name", selectedChannel);
       }
 
       const { data, error } = await query;

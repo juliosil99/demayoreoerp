@@ -23,7 +23,6 @@ export function useBulkReconciliation(open: boolean) {
 
   // Reset filters when the modal is opened
   const resetFilters = () => {
-    console.log("🔄 Resetting filters...");
     setSelectedChannel("all");
     setOrderNumbers("");
     setDateRange(undefined);
@@ -32,16 +31,10 @@ export function useBulkReconciliation(open: boolean) {
 
   // Reset filters when the modal is opened/closed
   useEffect(() => {
-    console.log("📱 Modal state changed:", { open });
     if (open) {
       resetFilters();
     }
   }, [open]);
-
-  // Log when selectedChannel changes
-  useEffect(() => {
-    console.log("🎯 Channel changed:", { selectedChannel, type: typeof selectedChannel });
-  }, [selectedChannel]);
 
   // Fetch unreconciled sales
   const { data: unreconciled, isLoading } = useQuery({

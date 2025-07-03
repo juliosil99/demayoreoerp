@@ -28,20 +28,6 @@ export function ReconciliationFilters({
   onReset,
   salesChannels
 }: ReconciliationFiltersProps) {
-  console.log("🔍 ReconciliationFilters render:", { 
-    selectedChannel, 
-    salesChannelsCount: salesChannels?.length,
-    salesChannels: salesChannels?.map(c => ({ value: c.value, label: c.label }))
-  });
-
-  const handleChannelChange = (channel: string) => {
-    console.log("🎛️ Channel selection changed:", { 
-      from: selectedChannel, 
-      to: channel,
-      type: typeof channel
-    });
-    onChannelChange(channel);
-  };
   return (
     <div className="space-y-4">
       <div className="flex justify-between">
@@ -57,7 +43,7 @@ export function ReconciliationFilters({
           <Label className="mb-2 block font-medium">Canal</Label>
           <Select 
             value={selectedChannel} 
-            onValueChange={handleChannelChange}
+            onValueChange={onChannelChange}
           >
             <SelectTrigger>
               <SelectValue placeholder="Seleccionar canal" />
