@@ -229,6 +229,8 @@ export function useAutoReconciliation() {
   }, []);
 
   const createAutomaticPayments = useCallback(async (groups: AutoReconciliationGroup[]): Promise<AutoReconciliationResult> => {
+    console.log("🔄 [AUTO-RECONCILIATION] Starting createAutomaticPayments with groups:", groups);
+    
     const result: AutoReconciliationResult = {
       successCount: 0,
       errorCount: 0,
@@ -236,8 +238,18 @@ export function useAutoReconciliation() {
       errors: []
     };
 
+    console.log("📊 [AUTO-RECONCILIATION] Processing", groups.length, "groups");
+
     for (const group of groups) {
       try {
+        console.log("🔍 [AUTO-RECONCILIATION] Processing group:", {
+          id: group.id,
+          date: group.date,
+          channel: group.channel,
+          paymentMethod: group.paymentMethod,
+          salesCount: group.sales.length,
+          totalAmount: group.totalAmount
+        });
         // Get current user
         const { data: userData } = await supabase.auth.getUser();
         if (!userData.user) {
@@ -245,6 +257,20 @@ export function useAutoReconciliation() {
         }
 
         // Create payment record
+        console.log("💳 [AUTO-RECONCILIATION] Creating payment with data:", {
+          date: group.date,
+          amount: group.totalAmount,
+          payment_method: group.paymentMethod,
+          reference_number: `AUTO-${group.date}-${group.channel}`,
+          account_id: 1,
+          notes: `Auto-reconciliación ${group.channel} - ${group.date}`,
+          status: 'confirmed',
+          is_reconciled: true,
+          reconciled_amount: group.totalAmount,
+          reconciled_count: group.sales.length,
+          user_id: userData.user.id
+        });
+
         const { data: payment, error: paymentError } = await supabase
           .from("payments")
           .insert({
@@ -263,12 +289,20 @@ export function useAutoReconciliation() {
           .select("id")
           .single();
 
+        console.log("💳 [AUTO-RECONCILIATION] Payment creation result:", { payment, paymentError });
+
         if (paymentError || !payment) {
+          console.error("❌ [AUTO-RECONCILIATION] Payment creation failed:", paymentError);
           throw new Error(`Error creando pago: ${paymentError?.message}`);
         }
 
+        console.log("✅ [AUTO-RECONCILIATION] Payment created successfully with ID:", payment.id);
+
         // Update sales with reconciliation
         const salesIds = group.sales.map(sale => sale.id);
+        console.log("📝 [AUTO-RECONCILIATION] Updating sales with IDs:", salesIds);
+        console.log("📝 [AUTO-RECONCILIATION] Setting reconciliation_id to:", payment.id);
+
         const { error: salesError } = await supabase
           .from("Sales")
           .update({
@@ -278,11 +312,17 @@ export function useAutoReconciliation() {
           })
           .in("id", salesIds);
 
+        console.log("📝 [AUTO-RECONCILIATION] Sales update result:", { salesError });
+
         if (salesError) {
+          console.error("❌ [AUTO-RECONCILIATION] Sales update failed:", salesError);
           // Rollback payment creation
+          console.log("🔄 [AUTO-RECONCILIATION] Rolling back payment creation...");
           await supabase.from("payments").delete().eq("id", payment.id);
           throw new Error(`Error actualizando ventas: ${salesError.message}`);
         }
+
+        console.log("✅ [AUTO-RECONCILIATION] Sales updated successfully for group:", group.id);
 
         result.successCount++;
         result.groups.push({ ...group, id: payment.id });
@@ -302,15 +342,23 @@ export function useAutoReconciliation() {
 
   const processAutoReconciliationMutation = useMutation({
     mutationFn: async (groups: AutoReconciliationGroup[]) => {
-      console.log("Starting auto-reconciliation process:", groups);
-      return await createAutomaticPayments(groups);
+      console.log("🚀 [AUTO-RECONCILIATION] Starting mutation with groups:", groups);
+      const result = await createAutomaticPayments(groups);
+      console.log("🎯 [AUTO-RECONCILIATION] Mutation completed with result:", result);
+      return result;
     },
     onSuccess: (result) => {
+      console.log("🎉 [AUTO-RECONCILIATION] Mutation success callback - result:", result);
+      console.log("🎉 [AUTO-RECONCILIATION] Success count:", result.successCount);
+      console.log("🎉 [AUTO-RECONCILIATION] Error count:", result.errorCount);
+      console.log("🎉 [AUTO-RECONCILIATION] Errors:", result.errors);
+      
       toast({
         title: "Auto-Reconciliación Completada",
         description: `${result.successCount} grupos procesados exitosamente. ${result.errorCount} errores.`,
       });
       
+      console.log("🔄 [AUTO-RECONCILIATION] Invalidating queries...");
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ["optimized-payments-reconciliation"] });
       queryClient.invalidateQueries({ queryKey: ["optimized-unreconciled-sales"] });
@@ -318,9 +366,10 @@ export function useAutoReconciliation() {
       
       // Reset selection
       setSelectedGroups([]);
+      console.log("✅ [AUTO-RECONCILIATION] Process completed successfully");
     },
     onError: (error) => {
-      console.error("Auto-reconciliation failed:", error);
+      console.error("❌ [AUTO-RECONCILIATION] Mutation failed:", error);
       toast({
         title: "Error en Auto-Reconciliación",
         description: "No se pudo completar el proceso de auto-reconciliación.",
