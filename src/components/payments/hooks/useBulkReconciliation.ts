@@ -17,33 +17,24 @@ export type UnreconciledSale = SalesTable['Row'] & {
 
 export function useBulkReconciliation(open: boolean) {
   const [selectedChannel, setSelectedChannel] = useState("all");
-  console.log("useBulkReconciliation - selectedChannel state:", selectedChannel);
   const [orderNumbers, setOrderNumbers] = useState("");
   const [selectedPaymentId, setSelectedPaymentId] = useState<string>();
   const [dateRange, setDateRange] = useState<DateRange>();
-  const [hasBeenOpened, setHasBeenOpened] = useState(false);
 
-  // Reset filters when the modal is opened
+  // Reset filters function
   const resetFilters = () => {
-    console.log("useBulkReconciliation - resetFilters called");
     setSelectedChannel("all");
     setOrderNumbers("");
     setDateRange(undefined);
     setSelectedPaymentId(undefined);
   };
 
-  // Only reset filters when the modal is first opened, not every time
+  // Reset filters when the modal is closed
   useEffect(() => {
-    console.log("useBulkReconciliation - open changed:", open, "hasBeenOpened:", hasBeenOpened);
-    if (open && !hasBeenOpened) {
-      console.log("useBulkReconciliation - first time opening, resetting filters");
+    if (!open) {
       resetFilters();
-      setHasBeenOpened(true);
-    } else if (!open) {
-      // Reset the flag when modal is closed so filters reset on next open
-      setHasBeenOpened(false);
     }
-  }, [open, hasBeenOpened]);
+  }, [open]);
 
   // Fetch unreconciled sales
   const { data: unreconciled, isLoading } = useQuery({
