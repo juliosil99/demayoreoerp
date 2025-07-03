@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DateRange } from "react-day-picker";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -19,7 +18,6 @@ import { useOptimizedUnreconciledSales } from "./hooks/useOptimizedUnreconciledS
 import { DialogActions } from "./components/DialogActions";
 import { BulkReconciliationContent } from "./components/BulkReconciliationContent";
 import type { UnreconciledSale } from "./types/UnreconciledSale";
-import { formatDateForQuery } from "@/utils/dateUtils";
 
 interface BulkReconciliationDialogProps {
   open: boolean;
@@ -38,9 +36,8 @@ export function BulkReconciliationDialog({
 
   // Local state for bulk reconciliation (moved from hook)
   const [selectedChannel, setSelectedChannel] = useState("all");
-  const [orderNumbers, setOrderNumbers] = useState("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("all");
   const [selectedPaymentId, setSelectedPaymentId] = useState<string>();
-  const [dateRange, setDateRange] = useState<DateRange>();
 
   // Use the payment reconciliation hook for adjustments
   const {
@@ -57,16 +54,14 @@ export function BulkReconciliationDialog({
   // Reset filters function
   const resetFilters = () => {
     setSelectedChannel("all");
-    setOrderNumbers("");
-    setDateRange(undefined);
+    setSelectedPaymentMethod("all");
     setSelectedPaymentId(undefined);
   };
 
   // Use optimized hook for unreconciled sales
   const { data: unreconciled, isLoading } = useOptimizedUnreconciledSales({
     selectedChannel,
-    orderNumbers,
-    dateRange,
+    selectedPaymentMethod,
     enabled: open,
   });
 
@@ -174,10 +169,8 @@ export function BulkReconciliationDialog({
           <BulkReconciliationContent
             selectedChannel={selectedChannel}
             setSelectedChannel={setSelectedChannel}
-            orderNumbers={orderNumbers}
-            setOrderNumbers={setOrderNumbers}
-            dateRange={dateRange}
-            setDateRange={setDateRange}
+            selectedPaymentMethod={selectedPaymentMethod}
+            setSelectedPaymentMethod={setSelectedPaymentMethod}
             resetFilters={resetFilters}
             salesChannels={salesChannels || []}
             selectedPaymentId={selectedPaymentId}

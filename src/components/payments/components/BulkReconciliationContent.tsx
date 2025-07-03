@@ -21,10 +21,8 @@ interface PaymentAdjustment {
 interface BulkReconciliationContentProps {
   selectedChannel: string;
   setSelectedChannel: (channel: string) => void;
-  orderNumbers: string;
-  setOrderNumbers: (orders: string) => void;
-  dateRange: any;
-  setDateRange: (range: any) => void;
+  selectedPaymentMethod: string;
+  setSelectedPaymentMethod: (method: string) => void;
   resetFilters: () => void;
   salesChannels: any[];
   selectedPaymentId: string | undefined;
@@ -44,10 +42,8 @@ interface BulkReconciliationContentProps {
 export function BulkReconciliationContent({
   selectedChannel,
   setSelectedChannel,
-  orderNumbers,
-  setOrderNumbers,
-  dateRange,
-  setDateRange,
+  selectedPaymentMethod,
+  setSelectedPaymentMethod,
   resetFilters,
   salesChannels,
   selectedPaymentId,
@@ -113,10 +109,8 @@ export function BulkReconciliationContent({
         <ReconciliationFilters
           selectedChannel={selectedChannel}
           onChannelChange={setSelectedChannel}
-          orderNumbers={orderNumbers}
-          onOrderNumbersChange={setOrderNumbers}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
+          selectedPaymentMethod={selectedPaymentMethod}
+          onPaymentMethodChange={setSelectedPaymentMethod}
           onReset={resetFilters}
           salesChannels={salesChannels || []}
           isLoading={isLoading}

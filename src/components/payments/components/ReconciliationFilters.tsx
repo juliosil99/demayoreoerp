@@ -1,19 +1,14 @@
 
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DateRange } from "react-day-picker";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { RefreshCw } from "lucide-react";
 
 interface ReconciliationFiltersProps {
   selectedChannel: string;
   onChannelChange: (channel: string) => void;
-  orderNumbers: string;
-  onOrderNumbersChange: (orders: string) => void;
-  dateRange: DateRange | undefined;
-  onDateRangeChange: (range: DateRange | undefined) => void;
+  selectedPaymentMethod: string;
+  onPaymentMethodChange: (method: string) => void;
   onReset: () => void;
   salesChannels: any[];
   isLoading?: boolean;
@@ -23,10 +18,8 @@ interface ReconciliationFiltersProps {
 export function ReconciliationFilters({
   selectedChannel,
   onChannelChange,
-  orderNumbers,
-  onOrderNumbersChange,
-  dateRange,
-  onDateRangeChange,
+  selectedPaymentMethod,
+  onPaymentMethodChange,
   onReset,
   salesChannels,
   isLoading = false,
@@ -43,7 +36,7 @@ export function ReconciliationFilters({
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label className="mb-2 block font-medium">Canal</Label>
           <Select 
@@ -83,21 +76,21 @@ export function ReconciliationFilters({
         </div>
         
         <div>
-          <Label className="mb-2 block font-medium">Números de Orden</Label>
-          <Input
-            placeholder="Ej: ORD-001, ORD-002"
-            value={orderNumbers}
-            onChange={(e) => onOrderNumbersChange(e.target.value)}
-          />
-        </div>
-        
-        <div>
-          <Label className="mb-2 block font-medium">Rango de Fechas</Label>
-          <DatePickerWithRange
-            date={dateRange}
-            setDate={onDateRangeChange}
-            className="w-full"
-          />
+          <Label className="mb-2 block font-medium">Método de Pago</Label>
+          <Select 
+            value={selectedPaymentMethod} 
+            onValueChange={onPaymentMethodChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar método de pago" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los métodos</SelectItem>
+              <SelectItem value="Cash">Efectivo</SelectItem>
+              <SelectItem value="CreditCard">Tarjeta de Crédito</SelectItem>
+              <SelectItem value="Transfer">Transferencia</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>

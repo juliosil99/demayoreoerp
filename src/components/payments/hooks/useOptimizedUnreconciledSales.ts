@@ -1,33 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
-import { DateRange } from "react-day-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { CACHE_CONFIGS, createOptimizedQueryKey } from "@/utils/queryOptimizations";
-import { formatDateForQuery } from "@/utils/dateUtils";
 import type { UnreconciledSale } from "../types/UnreconciledSale";
 
 interface UseOptimizedUnreconciledSalesParams {
   selectedChannel: string;
-  orderNumbers: string;
-  dateRange?: DateRange;
+  selectedPaymentMethod: string;
   enabled: boolean;
 }
 
 export function useOptimizedUnreconciledSales({
   selectedChannel,
-  orderNumbers,
-  dateRange,
+  selectedPaymentMethod,
   enabled
 }: UseOptimizedUnreconciledSalesParams) {
   const { measureQuery } = usePerformanceMonitor();
 
   const queryKey = createOptimizedQueryKey("optimized-unreconciled-sales", {
     selectedChannel,
-    orderNumbers,
-    dateRange: dateRange ? {
-      from: dateRange.from?.toISOString(),
-      to: dateRange.to?.toISOString()
-    } : null
+    selectedPaymentMethod
   });
 
   return useQuery({
@@ -44,7 +36,8 @@ export function useOptimizedUnreconciledSales({
           productName,
           comission,
           retention,
-          shipping
+          shipping,
+          payment_method
         `;
 
         let query = supabase
@@ -66,24 +59,9 @@ export function useOptimizedUnreconciledSales({
           }
         }
 
-        // Apply order numbers filter
-        if (orderNumbers) {
-          const orderNumbersList = orderNumbers
-            .split(",")
-            .map((num) => num.trim())
-            .filter(Boolean);
-          
-          if (orderNumbersList.length > 0) {
-            query = query.in("orderNumber", orderNumbersList);
-          }
-        }
-
-        // Apply date range filter
-        if (dateRange?.from) {
-          query = query.gte("date", formatDateForQuery(dateRange.from));
-        }
-        if (dateRange?.to) {
-          query = query.lte("date", formatDateForQuery(dateRange.to));
+        // Apply payment method filter
+        if (selectedPaymentMethod !== "all") {
+          query = query.eq("payment_method", selectedPaymentMethod);
         }
 
         const { data, error } = await query
