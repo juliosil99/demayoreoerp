@@ -1,7 +1,12 @@
 /**
- * Process report data from balances and expenses
+ * Process report data from balances, expenses, and payment adjustments
  */
-export function processReportData(balances: any[], expenses: any[], targetCurrency: string): Record<string, number> {
+export function processReportData(
+  balances: any[], 
+  expenses: any[], 
+  targetCurrency: string,
+  paymentAdjustments?: any[]
+): Record<string, number> {
   const processedData: Record<string, number> = {};
   
   // Process account balances
@@ -52,7 +57,53 @@ export function processReportData(balances: any[], expenses: any[], targetCurren
     });
   }
 
+  // Process payment adjustments as virtual expenses
+  if (paymentAdjustments) {
+    paymentAdjustments.forEach(adjustment => {
+      const accountName = mapAdjustmentTypeToAccount(adjustment.adjustment_type);
+      const accountType = 'expense'; // All adjustments are expense type
+      const accountKey = `ADJ-${accountName}`;
+      
+      // Convert amount to target currency (adjustments are stored in MXN)
+      const amountInReportCurrency = convertCurrency(
+        adjustment.amount,
+        adjustment.amount,
+        'MXN', // Payment adjustments are always in MXN
+        targetCurrency,
+        1 // Exchange rate is 1 for MXN adjustments
+      );
+      
+      // Add to expense type total
+      if (!processedData[accountType]) {
+        processedData[accountType] = 0;
+      }
+      processedData[accountType] += amountInReportCurrency;
+      
+      // Add to individual account
+      if (!processedData[accountKey]) {
+        processedData[accountKey] = 0;
+      }
+      processedData[accountKey] += amountInReportCurrency;
+    });
+  }
+
   return processedData;
+}
+
+/**
+ * Map adjustment types to expense account names
+ */
+export function mapAdjustmentTypeToAccount(adjustmentType: string): string {
+  const typeMapping: Record<string, string> = {
+    'commission': 'Gastos de Comisión',
+    'shipping': 'Gastos de Envío',
+    'fee': 'Gastos de Comisión',
+    'handling': 'Gastos de Manejo',
+    'tax': 'Gastos Fiscales',
+    'discount': 'Descuentos Aplicados'
+  };
+  
+  return typeMapping[adjustmentType] || 'Gastos Diversos';
 }
 
 /**

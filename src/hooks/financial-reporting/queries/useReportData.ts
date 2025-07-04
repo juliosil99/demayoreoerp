@@ -25,12 +25,13 @@ export function useReportData(
         const periodData = await fetchPeriodData(user.id, periodId, periodType, year, period);
         if (!periodData) throw new Error('Period not found');
 
-        // Get account balances and expenses for current period
+        // Get account balances, expenses, and payment adjustments for current period
         const balances = await fetchAccountBalances(user.id, periodData.id);
         const expenses = await fetchExpenses(user.id, periodData.start_date, periodData.end_date);
+        const paymentAdjustments = await fetchPaymentAdjustments(user.id, periodData.start_date, periodData.end_date);
 
         // Process current period data
-        const currentPeriodData = processReportData(balances, expenses, currency);
+        const currentPeriodData = processReportData(balances, expenses, currency, paymentAdjustments);
 
         const result: ReportData = {
           currentPeriod: {
@@ -57,8 +58,13 @@ export function useReportData(
               prevPeriodData.start_date, 
               prevPeriodData.end_date
             );
+            const prevPaymentAdjustments = await fetchPaymentAdjustments(
+              user.id, 
+              prevPeriodData.start_date, 
+              prevPeriodData.end_date
+            );
 
-            const previousPeriodData = processReportData(prevBalances, prevExpenses, currency);
+            const previousPeriodData = processReportData(prevBalances, prevExpenses, currency, prevPaymentAdjustments);
 
             result.previousPeriod = {
               startDate: prevPeriodData.start_date,
@@ -151,6 +157,24 @@ async function fetchExpenses(userId: string, startDate: string, endDate: string)
     .gte('date', startDate)
     .lte('date', endDate)
     .eq('user_id', userId);
+
+  if (error) throw error;
+  return data;
+}
+
+async function fetchPaymentAdjustments(userId: string, startDate: string, endDate: string) {
+  const { data, error } = await supabase
+    .from('payment_adjustments')
+    .select(`
+      id,
+      adjustment_type,
+      amount,
+      description,
+      payments:payment_id (date)
+    `)
+    .eq('user_id', userId)
+    .gte('payments.date', startDate)
+    .lte('payments.date', endDate);
 
   if (error) throw error;
   return data;
