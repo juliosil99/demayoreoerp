@@ -80,13 +80,34 @@ export function useBulkReconcile() {
 
         console.log("Ventas después de actualizar:", salesAfter);
         
-        // 5. Calcular totales para el pago
-        const totalAmount = salesAfter?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0;
+        // 5. Obtener payment adjustments para este pago
+        const { data: paymentAdjustments, error: adjustmentsError } = await supabase
+          .from('payment_adjustments')
+          .select('amount')
+          .eq('payment_id', paymentId);
+
+        if (adjustmentsError) {
+          console.error("Error obteniendo payment adjustments:", adjustmentsError);
+          throw adjustmentsError;
+        }
+
+        console.log("Payment adjustments encontrados:", paymentAdjustments);
+
+        // 6. Calcular totales para el pago (ventas - adjustments)
+        const salesTotal = salesAfter?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0;
+        const adjustmentsTotal = paymentAdjustments?.reduce((sum, adj) => sum + (adj.amount || 0), 0) || 0;
+        const netAmount = salesTotal - adjustmentsTotal;
+        
+        // Redondear a 2 decimales para evitar problemas de precisión
+        const totalAmount = Math.round(netAmount * 100) / 100;
         const salesCount = salesAfter?.length || 0;
         
-        console.log(`Totales calculados: ${totalAmount} (${salesCount} ventas)`);
+        console.log(`Totales calculados: 
+          - Ventas: ${salesTotal}
+          - Adjustments: ${adjustmentsTotal} 
+          - Monto neto: ${totalAmount} (${salesCount} ventas)`);
         
-        // 6. ACTUALIZAR PAYMENTS: is_reconciled, reconciled_amount, reconciled_count
+        // 7. ACTUALIZAR PAYMENTS: is_reconciled, reconciled_amount, reconciled_count
         console.log("Actualizando pago con datos de reconciliación:");
         const paymentUpdateData = {
           is_reconciled: true,
