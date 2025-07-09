@@ -52,9 +52,9 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       console.log('Fetching dashboard metrics for user:', user.id, 'dates:', startDate, endDate);
 
       const { data, error } = await supabase.rpc('get_dashboard_metrics', {
-        start_date: startDate,
-        end_date: endDate,
-        p_user_id: user.id
+        p_user_id: user.id,
+        p_start_date: startDate,
+        p_end_date: endDate
       });
 
       if (error) {
@@ -90,9 +90,9 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       }
 
       const { data, error } = await supabase.rpc('get_channel_metrics', {
-        start_date: startDate,
-        end_date: endDate,
-        p_user_id: user.id
+        p_user_id: user.id,
+        p_start_date: startDate,
+        p_end_date: endDate
       });
 
       if (error) {
@@ -126,9 +126,9 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       }
 
       const { data, error } = await supabase.rpc('get_sales_chart_data', {
-        start_date: startDate,
-        end_date: endDate,
-        p_user_id: user.id
+        p_user_id: user.id,
+        p_start_date: startDate,
+        p_end_date: endDate
       });
 
       if (error) {
@@ -159,9 +159,9 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       }
 
       const { data, error } = await supabase.rpc('get_channel_distribution', {
-        start_date: startDate,
-        end_date: endDate,
-        p_user_id: user.id
+        p_user_id: user.id,
+        p_start_date: startDate,
+        p_end_date: endDate
       });
 
       if (error) {

@@ -24,9 +24,9 @@ export const processChannelMetrics = async (currentChannelData: any[], dateRange
 
   // Fetch previous period channel metrics
   const { data: prevChannelData, error: prevChannelError } = await supabase.rpc('get_channel_metrics', {
-    start_date: formatDateForQuery(prevPeriodStart),
-    end_date: formatDateForQuery(prevPeriodEnd),
-    p_user_id: user.id
+    p_user_id: user.id,
+    p_start_date: formatDateForQuery(prevPeriodStart),
+    p_end_date: formatDateForQuery(prevPeriodEnd)
   });
 
   if (prevChannelError) {

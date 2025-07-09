@@ -29,9 +29,9 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
 
       // Call the SQL function with parameters in correct order
       const { data, error } = await supabase.rpc('get_channel_distribution', {
-        start_date: fromDate,
-        end_date: toDate,
-        p_user_id: user.id
+        p_user_id: user.id,
+        p_start_date: fromDate,
+        p_end_date: toDate
       });
       
       if (error) {

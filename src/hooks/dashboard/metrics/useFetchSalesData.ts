@@ -32,8 +32,8 @@ export const useFetchSalesData = () => {
       // Fetch current period metrics using SQL function
       const { data: currentMetrics, error: currentError } = await supabase.rpc('get_dashboard_metrics', {
         p_user_id: user.id,
-        start_date: fromDate,
-        end_date: toDate
+        p_start_date: fromDate,
+        p_end_date: toDate
       });
       
       if (currentError) {
@@ -55,8 +55,8 @@ export const useFetchSalesData = () => {
 
       const { data: prevMetrics, error: prevError } = await supabase.rpc('get_dashboard_metrics', {
         p_user_id: user.id,
-        start_date: formatDateForQuery(prevPeriodStart),
-        end_date: formatDateForQuery(prevPeriodEnd)
+        p_start_date: formatDateForQuery(prevPeriodStart),
+        p_end_date: formatDateForQuery(prevPeriodEnd)
       });
 
       if (prevError) {
@@ -71,8 +71,8 @@ export const useFetchSalesData = () => {
       // Generate chart data using SQL function
       const { data: chartDataResults, error: chartError } = await supabase.rpc('get_sales_chart_data', {
         p_user_id: user.id,
-        start_date: fromDate,
-        end_date: toDate
+        p_start_date: fromDate,
+        p_end_date: toDate
       });
 
       if (chartError) {
@@ -84,8 +84,8 @@ export const useFetchSalesData = () => {
       // Fetch channel metrics using the new SQL function
       const { data: channelMetricsResults, error: channelMetricsError } = await supabase.rpc('get_channel_metrics', {
         p_user_id: user.id,
-        start_date: fromDate,
-        end_date: toDate
+        p_start_date: fromDate,
+        p_end_date: toDate
       });
 
       if (channelMetricsError) {
