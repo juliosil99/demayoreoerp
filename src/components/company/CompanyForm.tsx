@@ -12,7 +12,6 @@ import { CompanyNameField } from "./form-fields/CompanyNameField";
 import { RFCField } from "./form-fields/RFCField";
 import { PostalCodeField } from "./form-fields/PostalCodeField";
 import { TaxRegimeField } from "./form-fields/TaxRegimeField";
-import { checkRFCExists } from "@/hooks/company/utils/rfcChecker";
 import { AddressField } from "./form-fields/AddressField";
 import { PhoneField } from "./form-fields/PhoneField";
 
@@ -41,44 +40,63 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
   const onSubmit = async (data: CompanyFormData) => {
     setIsLoading(true);
     try {
-      // Verificar RFC solo si es nuevo registro o si cambió el RFC
-      if (!isEditing || (defaultValues && defaultValues.rfc !== data.rfc)) {
-        const rfcExists = await checkRFCExists(data.rfc, userId);
-        if (rfcExists) {
-          toast.error("Ya tienes una empresa registrada con este RFC");
-          setIsLoading(false);
-          return;
-        }
-      }
-
       if (isEditing) {
-        const { error } = await supabase
-          .from("companies")
-          .update(data)
-          .eq("user_id", userId)
-          .select();
+        // Usar función atómica para actualizar empresa
+        const { data: result, error } = await supabase.rpc('update_company_data', {
+          p_nombre: data.nombre,
+          p_rfc: data.rfc,
+          p_codigo_postal: data.codigo_postal,
+          p_regimen_fiscal: data.regimen_fiscal,
+          p_direccion: data.direccion || null,
+          p_telefono: data.telefono || null,
+          p_user_id: userId
+        });
 
         if (error) {
-          toast.error(error.code === '23505' 
-            ? "El RFC ya está registrado en el sistema"
-            : "Error al actualizar la información");
+          toast.error("Error al actualizar la información");
+          return;
+        }
+
+        const updateResult = result?.[0];
+        if (!updateResult?.success) {
+          const errorMessages = {
+            'RFC_EXISTS': 'Ya tienes una empresa registrada con este RFC',
+            'DUPLICATE_RFC': 'El RFC ya está registrado en el sistema',
+            'UNAUTHORIZED': 'No autorizado para realizar esta acción',
+            'UNKNOWN_ERROR': updateResult?.error_message || 'Error desconocido'
+          };
+          toast.error(errorMessages[updateResult?.error_code as keyof typeof errorMessages] || 'Error al actualizar la información');
           return;
         }
         
         toast.success("¡Información actualizada exitosamente!");
       } else {
-        const { error } = await supabase
-          .from("companies")
-          .insert([{
-            ...data,
-            user_id: userId,
-          }])
-          .select();
+        // Usar función atómica para crear empresa
+        const { data: result, error } = await supabase.rpc('create_company_with_user', {
+          p_nombre: data.nombre,
+          p_rfc: data.rfc,
+          p_codigo_postal: data.codigo_postal,
+          p_regimen_fiscal: data.regimen_fiscal,
+          p_direccion: data.direccion || null,
+          p_telefono: data.telefono || null,
+          p_user_id: userId
+        });
 
         if (error) {
-          toast.error(error.code === '23505'
-            ? "El RFC ya está registrado en el sistema"
-            : "Error al guardar la información");
+          toast.error("Error al crear la empresa");
+          return;
+        }
+
+        const createResult = result?.[0];
+        if (!createResult?.success) {
+          const errorMessages = {
+            'RFC_EXISTS': 'Ya tienes una empresa registrada con este RFC',
+            'DUPLICATE_COMPANY': 'Ya existe una empresa con este RFC en el sistema',
+            'UNAUTHORIZED': 'No autorizado para realizar esta acción',
+            'DATABASE_ERROR': 'Error en la base de datos',
+            'UNKNOWN_ERROR': createResult?.error_message || 'Error desconocido'
+          };
+          toast.error(errorMessages[createResult?.error_code as keyof typeof errorMessages] || 'Error al crear la empresa');
           return;
         }
 
@@ -88,7 +106,7 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
       onSubmitSuccess?.();
       navigate("/dashboard");
     } catch (error) {
-      // Silently catch
+      toast.error("Error inesperado. Intenta nuevamente.");
     } finally {
       setIsLoading(false);
     }
