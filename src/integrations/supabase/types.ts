@@ -3078,40 +3078,6 @@ export type Database = {
         Args: { user_uuid: string; year_param: number }
         Returns: undefined
       }
-      create_company_with_user: {
-        Args: {
-          p_nombre: string
-          p_rfc: string
-          p_codigo_postal: string
-          p_regimen_fiscal: string
-          p_direccion?: string
-          p_telefono?: string
-          p_user_id?: string
-        }
-        Returns: {
-          success: boolean
-          company_id: string
-          error_code: string
-          error_message: string
-        }[]
-      }
-      create_company_with_user_simple: {
-        Args: {
-          p_nombre: string
-          p_rfc: string
-          p_codigo_postal: string
-          p_regimen_fiscal: string
-          p_direccion?: string
-          p_telefono?: string
-          p_user_id?: string
-        }
-        Returns: {
-          success: boolean
-          company_id: string
-          error_code: string
-          error_message: string
-        }[]
-      }
       create_daily_periods_for_month: {
         Args: { user_uuid: string; year_param: number; month_param: number }
         Returns: undefined
@@ -3262,15 +3228,6 @@ export type Database = {
           action_statement: string
         }[]
       }
-      log_company_creation_event: {
-        Args: {
-          company_id: string
-          user_id: string
-          event_type: string
-          details?: string
-        }
-        Returns: undefined
-      }
       mark_expired_invitations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -3282,22 +3239,6 @@ export type Database = {
       process_existing_invoices: {
         Args: Record<PropertyKey, never>
         Returns: undefined
-      }
-      update_company_data: {
-        Args: {
-          p_nombre: string
-          p_rfc: string
-          p_codigo_postal: string
-          p_regimen_fiscal: string
-          p_direccion?: string
-          p_telefono?: string
-          p_user_id?: string
-        }
-        Returns: {
-          success: boolean
-          error_code: string
-          error_message: string
-        }[]
       }
     }
     Enums: {
