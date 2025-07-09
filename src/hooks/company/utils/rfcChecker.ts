@@ -8,20 +8,27 @@ import { supabase } from "@/lib/supabase";
  * @returns true if the RFC exists for this user, false otherwise
  */
 export async function checkRFCExists(rfc: string, userId: string): Promise<boolean> {
-  console.log("🔍 Checking if RFC exists for user:", rfc, userId);
+  console.log("🔍 DEBUG: Checking if RFC exists");
+  console.log("📋 RFC:", rfc);
+  console.log("👤 User ID:", userId);
   
   const { data, error } = await supabase
     .from("companies")
-    .select("rfc")
+    .select("rfc, user_id, id, nombre")
     .eq("rfc", rfc)
     .eq("user_id", userId)
     .maybeSingle();
+
+  console.log("💾 Supabase query result:");
+  console.log("✅ Data:", data);
+  console.log("❌ Error:", error);
 
   if (error) {
     console.error("❌ Error checking RFC:", error);
     return false;
   }
 
-  console.log("✅ RFC check result:", data);
-  return data !== null;
+  const exists = data !== null;
+  console.log("🎯 RFC exists for this user:", exists);
+  return exists;
 }
