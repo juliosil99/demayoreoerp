@@ -40,7 +40,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
   const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : null;
 
   // Optimized main metrics query using RPC function
-  const { data: metricsData, isLoading: metricsLoading } = useQuery({
+  const { data: metricsData, isLoading: metricsLoading, error: metricsError } = useQuery({
     queryKey: ['optimized-dashboard-metrics', startDate, endDate],
     queryFn: async (): Promise<OptimizedDashboardMetrics> => {
       // Get current user
@@ -49,14 +49,20 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
         throw new Error('User not authenticated');
       }
 
+      console.log('Fetching dashboard metrics for user:', user.id, 'dates:', startDate, endDate);
+
       const { data, error } = await supabase.rpc('get_dashboard_metrics', {
-        p_user_id: user.id,
         start_date: startDate,
-        end_date: endDate
+        end_date: endDate,
+        p_user_id: user.id
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Dashboard metrics error:', error);
+        throw error;
+      }
       
+      console.log('Dashboard metrics response:', data);
       const result = data?.[0];
       return {
         totalRevenue: Number(result?.order_revenue || 0),
@@ -67,8 +73,10 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
         totalRecords: Number(result?.orders || 0)
       };
     },
+    enabled: !!(startDate && endDate), // Only run when dates are available
     staleTime: 5 * 60 * 1000, // 5 minutes cache
     gcTime: 30 * 60 * 1000, // 30 minutes garbage collection
+    retry: 1, // Only retry once on error
   });
 
   // Optimized channel metrics query
@@ -82,15 +90,18 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       }
 
       const { data, error } = await supabase.rpc('get_channel_metrics', {
-        p_user_id: user.id,
         start_date: startDate,
-        end_date: endDate
+        end_date: endDate,
+        p_user_id: user.id
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Channel metrics error:', error);
+        throw error;
+      }
       
       return data?.map((item: any) => ({
-        name: item.name,
+        name: item.channel,
         revenue: Number(item.revenue),
         orders: Number(item.orders),
         aov: Number(item.aov),
@@ -98,8 +109,10 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
         marginPercentage: Number(item.margin_percentage)
       })) || [];
     },
+    enabled: !!(startDate && endDate),
     staleTime: 10 * 60 * 1000, // 10 minutes cache
     gcTime: 30 * 60 * 1000,
+    retry: 1,
   });
 
   // Optimized chart data query
@@ -113,21 +126,26 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       }
 
       const { data, error } = await supabase.rpc('get_sales_chart_data', {
-        p_user_id: user.id,
         start_date: startDate,
-        end_date: endDate
+        end_date: endDate,
+        p_user_id: user.id
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Chart data error:', error);
+        throw error;
+      }
       
       return data?.map((item: any) => ({
-        date: item.sale_date,
-        sales: Number(item.daily_revenue),
-        orders: Number(item.daily_orders)
+        date: item.date,
+        sales: Number(item.sales),
+        orders: 0 // Default since new function doesn't return orders
       })) || [];
     },
+    enabled: !!(startDate && endDate),
     staleTime: 10 * 60 * 1000, // 10 minutes cache
     gcTime: 30 * 60 * 1000,
+    retry: 1,
   });
 
   // Optimized channel distribution query
@@ -141,22 +159,27 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       }
 
       const { data, error } = await supabase.rpc('get_channel_distribution', {
-        p_user_id: user.id,
         start_date: startDate,
-        end_date: endDate
+        end_date: endDate,
+        p_user_id: user.id
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Channel distribution error:', error);
+        throw error;
+      }
       
       return data?.map((item: any) => ({
         channel: item.channel,
-        uniqueOrders: Number(item.unique_orders),
-        totalRevenue: Number(item.total_revenue),
-        totalRecords: Number(item.total_records)
+        uniqueOrders: 0, // Default since new function doesn't return orders
+        totalRevenue: Number(item.value),
+        totalRecords: Number(item.percentage)
       })) || [];
     },
+    enabled: !!(startDate && endDate),
     staleTime: 10 * 60 * 1000, // 10 minutes cache
     gcTime: 30 * 60 * 1000,
+    retry: 1,
   });
 
   const isLoading = metricsLoading || channelLoading || chartLoading || distributionLoading;

@@ -24,9 +24,9 @@ export const processChannelMetrics = async (currentChannelData: any[], dateRange
 
   // Fetch previous period channel metrics
   const { data: prevChannelData, error: prevChannelError } = await supabase.rpc('get_channel_metrics', {
-    p_user_id: user.id,
     start_date: formatDateForQuery(prevPeriodStart),
-    end_date: formatDateForQuery(prevPeriodEnd)
+    end_date: formatDateForQuery(prevPeriodEnd),
+    p_user_id: user.id
   });
 
   if (prevChannelError) {
@@ -37,16 +37,16 @@ export const processChannelMetrics = async (currentChannelData: any[], dateRange
   const prevDataMap = new Map();
   if (prevChannelData) {
     prevChannelData.forEach((item: any) => {
-      prevDataMap.set(item.name, item);
+      prevDataMap.set(item.channel, item);
     });
   }
 
   // Process current data and calculate changes
   const processedMetrics: ChannelMetrics[] = currentChannelData.map((current: any) => {
-    const previous = prevDataMap.get(current.name);
+    const previous = prevDataMap.get(current.channel);
     
     return {
-      name: current.name,
+      name: current.channel,
       revenue: Number(current.revenue || 0),
       orders: Number(current.orders || 0),
       aov: Number(current.aov || 0),
@@ -65,7 +65,7 @@ export const processChannelMetrics = async (currentChannelData: any[], dateRange
 
 export const generateChartDataFromSQL = (sqlResults: any[]): ChartDataPoint[] => {
   return sqlResults.map(result => ({
-    date: result.sale_date,
-    sales: Number(result.daily_revenue || 0)
+    date: result.date,
+    sales: Number(result.sales || 0)
   })).sort((a, b) => a.date.localeCompare(b.date));
 };

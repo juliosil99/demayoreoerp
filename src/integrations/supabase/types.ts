@@ -3163,7 +3163,7 @@ export type Database = {
         Returns: string
       }
       get_channel_distribution: {
-        Args: { start_date?: string; end_date?: string; p_user_id?: string }
+        Args: { start_date: string; end_date: string; p_user_id: string }
         Returns: {
           channel: string
           value: number
@@ -3178,9 +3178,9 @@ export type Database = {
         }[]
       }
       get_channel_metrics: {
-        Args: { start_date?: string; end_date?: string; p_user_id?: string }
+        Args: { start_date: string; end_date: string; p_user_id: string }
         Returns: {
-          name: string
+          channel: string
           revenue: number
           orders: number
           aov: number
@@ -3203,7 +3203,7 @@ export type Database = {
         Returns: Database["public"]["CompositeTypes"]["crm_conversation_preview_type"][]
       }
       get_dashboard_metrics: {
-        Args: { start_date?: string; end_date?: string; p_user_id?: string }
+        Args: { start_date: string; end_date: string; p_user_id: string }
         Returns: {
           order_revenue: number
           ad_spend: number
@@ -3222,7 +3222,7 @@ export type Database = {
         }[]
       }
       get_sales_chart_data: {
-        Args: { start_date?: string; end_date?: string; p_user_id?: string }
+        Args: { start_date: string; end_date: string; p_user_id: string }
         Returns: {
           date: string
           sales: number

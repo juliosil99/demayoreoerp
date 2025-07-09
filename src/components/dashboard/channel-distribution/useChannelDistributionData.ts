@@ -27,11 +27,11 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
         throw new Error('User not authenticated');
       }
 
-      // Call the SQL function with simplified parameters
+      // Call the SQL function with parameters in correct order
       const { data, error } = await supabase.rpc('get_channel_distribution', {
-        p_user_id: user.id,
         start_date: fromDate,
-        end_date: toDate
+        end_date: toDate,
+        p_user_id: user.id
       });
       
       if (error) {
@@ -57,11 +57,11 @@ const processChannelSQLResults = (sqlResults: any[]): ChannelData[] => {
     return [];
   }
 
-  // Convert SQL results to ChannelData format
+  // Convert SQL results to ChannelData format (using new RPC format)
   const channelData = sqlResults.map(result => ({
     channel: result.channel || "Sin Canal",
-    count: Number(result.unique_orders || 0),
-    value: Number(result.total_revenue || 0)
+    count: 0, // New RPC doesn't return order count
+    value: Number(result.value || 0)
   }));
 
   // Take top 6 channels and group the rest as "Otros"
