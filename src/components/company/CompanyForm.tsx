@@ -39,7 +39,14 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
 
   const onSubmit = async (data: CompanyFormData) => {
     setIsLoading(true);
+    
     try {
+      console.log('🏢 Starting company registration/update process...', { 
+        isEditing, 
+        rfc: data.rfc,
+        userId 
+      });
+      
       if (isEditing) {
         // Usar función atómica para actualizar empresa
         const { data: result, error } = await supabase.rpc('update_company_data', {
@@ -52,16 +59,22 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
           p_user_id: userId
         });
 
+        console.log('📝 Update company result:', { result, error });
+
         if (error) {
-          toast.error("Error al actualizar la información");
+          console.error('❌ Error updating company:', error);
+          toast.error(`Error al actualizar: ${error.message}`);
           return;
         }
 
         const updateResult = result?.[0];
+        console.log('📋 Update result details:', updateResult);
+        
         if (!updateResult?.success) {
+          console.error('❌ Update failed:', updateResult);
           const errorMessages = {
             'RFC_EXISTS': 'Ya tienes una empresa registrada con este RFC',
-            'DUPLICATE_RFC': 'El RFC ya está registrado en el sistema',
+            'DUPLICATE_RFC': 'El RFC ya está registrado en el sistema',  
             'UNAUTHORIZED': 'No autorizado para realizar esta acción',
             'UNKNOWN_ERROR': updateResult?.error_message || 'Error desconocido'
           };
@@ -69,9 +82,18 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
           return;
         }
         
+        console.log('✅ Company updated successfully');
         toast.success("¡Información actualizada exitosamente!");
       } else {
-        // Usar función atómica para crear empresa
+        // Usar función atómica para crear empresa - logging detallado
+        console.log('🆕 Creating company with data:', {
+          nombre: data.nombre,
+          rfc: data.rfc,
+          codigo_postal: data.codigo_postal,
+          regimen_fiscal: data.regimen_fiscal,
+          user_id: userId
+        });
+
         const { data: result, error } = await supabase.rpc('create_company_with_user_simple', {
           p_nombre: data.nombre,
           p_rfc: data.rfc,
@@ -82,13 +104,25 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
           p_user_id: userId
         });
 
+        console.log('🏢 Create company raw result:', { result, error });
+
         if (error) {
-          toast.error("Error al crear la empresa");
+          console.error('❌ Supabase RPC error:', error);
+          toast.error(`Error de base de datos: ${error.message}`);
           return;
         }
 
-        const createResult = result?.[0];
+        if (!result || result.length === 0) {
+          console.error('❌ No result returned from RPC');
+          toast.error("No se recibió respuesta del servidor");
+          return;
+        }
+
+        const createResult = result[0];
+        console.log('📋 Create result details:', createResult);
+        
         if (!createResult?.success) {
+          console.error('❌ Company creation failed:', createResult);
           const errorMessages = {
             'RFC_EXISTS': 'Ya tienes una empresa registrada con este RFC',
             'DUPLICATE_COMPANY': 'Ya existe una empresa con este RFC en el sistema',
@@ -96,17 +130,23 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
             'DATABASE_ERROR': 'Error en la base de datos',
             'UNKNOWN_ERROR': createResult?.error_message || 'Error desconocido'
           };
-          toast.error(errorMessages[createResult?.error_code as keyof typeof errorMessages] || 'Error al crear la empresa');
+          const message = errorMessages[createResult?.error_code as keyof typeof errorMessages] || 'Error al crear la empresa';
+          toast.error(message);
           return;
         }
 
-        toast.success("¡Empresa registrada exitosamente!");
+        console.log('✅ Company created successfully with ID:', createResult.company_id);
+        toast.success("¡Empresa registrada exitosamente! Redirigiendo...");
       }
       
-      onSubmitSuccess?.();
-      navigate("/dashboard");
+      // Small delay before navigation to show success message
+      setTimeout(() => {
+        onSubmitSuccess?.();
+        navigate("/dashboard");
+      }, 1000);
     } catch (error) {
-      toast.error("Error inesperado. Intenta nuevamente.");
+      console.error('💥 Unexpected error in company form:', error);
+      toast.error(`Error inesperado: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setIsLoading(false);
     }

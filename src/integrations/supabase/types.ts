@@ -3262,6 +3262,15 @@ export type Database = {
           action_statement: string
         }[]
       }
+      log_company_creation_event: {
+        Args: {
+          company_id: string
+          user_id: string
+          event_type: string
+          details?: string
+        }
+        Returns: undefined
+      }
       mark_expired_invitations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
