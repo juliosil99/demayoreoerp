@@ -72,7 +72,7 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
         toast.success("¡Información actualizada exitosamente!");
       } else {
         // Usar función atómica para crear empresa
-        const { data: result, error } = await supabase.rpc('create_company_with_user', {
+        const { data: result, error } = await supabase.rpc('create_company_with_user_simple', {
           p_nombre: data.nombre,
           p_rfc: data.rfc,
           p_codigo_postal: data.codigo_postal,
