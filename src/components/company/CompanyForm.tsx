@@ -43,9 +43,9 @@ export function CompanyForm({ defaultValues, isEditing, userId, onSubmitSuccess 
     try {
       // Verificar RFC solo si es nuevo registro o si cambió el RFC
       if (!isEditing || (defaultValues && defaultValues.rfc !== data.rfc)) {
-        const rfcExists = await checkRFCExists(data.rfc);
+        const rfcExists = await checkRFCExists(data.rfc, userId);
         if (rfcExists) {
-          toast.error("El RFC ya está registrado en el sistema");
+          toast.error("Ya tienes una empresa registrada con este RFC");
           setIsLoading(false);
           return;
         }
