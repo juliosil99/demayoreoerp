@@ -3163,12 +3163,13 @@ export type Database = {
         Returns: string
       }
       get_channel_distribution: {
-        Args: { p_start_date?: string; p_end_date?: string }
+        Args:
+          | { p_start_date?: string; p_end_date?: string }
+          | { start_date?: string; end_date?: string; p_user_id?: string }
         Returns: {
           channel: string
-          unique_orders: number
-          total_revenue: number
-          total_records: number
+          value: number
+          percentage: number
         }[]
       }
       get_channel_income_by_period: {
@@ -3179,7 +3180,9 @@ export type Database = {
         }[]
       }
       get_channel_metrics: {
-        Args: { p_start_date?: string; p_end_date?: string }
+        Args:
+          | { p_start_date?: string; p_end_date?: string }
+          | { start_date?: string; end_date?: string; p_user_id?: string }
         Returns: {
           name: string
           revenue: number
@@ -3187,6 +3190,11 @@ export type Database = {
           aov: number
           contribution_margin: number
           margin_percentage: number
+          revenue_change: number
+          orders_change: number
+          aov_change: number
+          contribution_margin_change: number
+          margin_percentage_change: number
         }[]
       }
       get_crm_conversation_previews: {
@@ -3199,22 +3207,33 @@ export type Database = {
         Returns: Database["public"]["CompositeTypes"]["crm_conversation_preview_type"][]
       }
       get_dashboard_metrics: {
-        Args: { p_start_date?: string; p_end_date?: string }
+        Args:
+          | { p_start_date?: string; p_end_date?: string }
+          | { start_date?: string; end_date?: string; p_user_id?: string }
         Returns: {
-          total_revenue: number
-          total_orders: number
-          total_profit: number
+          order_revenue: number
+          ad_spend: number
+          mer: number
           aov: number
+          orders: number
+          contribution_margin: number
           margin_percentage: number
-          total_records: number
+          revenue_change: number
+          ad_spend_change: number
+          mer_change: number
+          aov_change: number
+          orders_change: number
+          contribution_margin_change: number
+          margin_percentage_change: number
         }[]
       }
       get_sales_chart_data: {
-        Args: { p_start_date?: string; p_end_date?: string }
+        Args:
+          | { p_start_date?: string; p_end_date?: string }
+          | { start_date?: string; end_date?: string; p_user_id?: string }
         Returns: {
-          sale_date: string
-          daily_revenue: number
-          daily_orders: number
+          date: string
+          sales: number
         }[]
       }
       get_state_distribution: {
