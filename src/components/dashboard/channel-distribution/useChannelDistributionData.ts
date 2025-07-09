@@ -21,10 +21,17 @@ export const useChannelDistributionData = (dateRange?: DateRange) => {
         toDate = formatDateForQuery(dateRange.to);
       }
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       // Call the SQL function with simplified parameters
       const { data, error } = await supabase.rpc('get_channel_distribution', {
-        p_start_date: fromDate,
-        p_end_date: toDate
+        p_user_id: user.id,
+        start_date: fromDate,
+        end_date: toDate
       });
       
       if (error) {

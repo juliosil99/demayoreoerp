@@ -16,10 +16,17 @@ export const processChannelMetrics = async (currentChannelData: any[], dateRange
   const prevPeriodEnd = subDays(dateRange.from, 1);
   const prevPeriodStart = subDays(prevPeriodEnd, daysDiff - 1);
 
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
   // Fetch previous period channel metrics
   const { data: prevChannelData, error: prevChannelError } = await supabase.rpc('get_channel_metrics', {
-    p_start_date: formatDateForQuery(prevPeriodStart),
-    p_end_date: formatDateForQuery(prevPeriodEnd)
+    p_user_id: user.id,
+    start_date: formatDateForQuery(prevPeriodStart),
+    end_date: formatDateForQuery(prevPeriodEnd)
   });
 
   if (prevChannelError) {

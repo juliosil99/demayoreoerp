@@ -43,21 +43,28 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
   const { data: metricsData, isLoading: metricsLoading } = useQuery({
     queryKey: ['optimized-dashboard-metrics', startDate, endDate],
     queryFn: async (): Promise<OptimizedDashboardMetrics> => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase.rpc('get_dashboard_metrics', {
-        p_start_date: startDate,
-        p_end_date: endDate
+        p_user_id: user.id,
+        start_date: startDate,
+        end_date: endDate
       });
 
       if (error) throw error;
       
       const result = data?.[0];
       return {
-        totalRevenue: Number(result?.total_revenue || 0),
-        totalOrders: Number(result?.total_orders || 0),
-        totalProfit: Number(result?.total_profit || 0),
+        totalRevenue: Number(result?.order_revenue || 0),
+        totalOrders: Number(result?.orders || 0),
+        totalProfit: Number(result?.contribution_margin || 0),
         aov: Number(result?.aov || 0),
         marginPercentage: Number(result?.margin_percentage || 0),
-        totalRecords: Number(result?.total_records || 0)
+        totalRecords: Number(result?.orders || 0)
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes cache
@@ -68,9 +75,16 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
   const { data: channelMetrics, isLoading: channelLoading } = useQuery({
     queryKey: ['optimized-channel-metrics', startDate, endDate],
     queryFn: async (): Promise<ChannelMetric[]> => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase.rpc('get_channel_metrics', {
-        p_start_date: startDate,
-        p_end_date: endDate
+        p_user_id: user.id,
+        start_date: startDate,
+        end_date: endDate
       });
 
       if (error) throw error;
@@ -92,9 +106,16 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
   const { data: chartData, isLoading: chartLoading } = useQuery({
     queryKey: ['optimized-sales-chart', startDate, endDate],
     queryFn: async (): Promise<ChartDataPoint[]> => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase.rpc('get_sales_chart_data', {
-        p_start_date: startDate,
-        p_end_date: endDate
+        p_user_id: user.id,
+        start_date: startDate,
+        end_date: endDate
       });
 
       if (error) throw error;
@@ -113,9 +134,16 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
   const { data: channelDistribution, isLoading: distributionLoading } = useQuery({
     queryKey: ['optimized-channel-distribution', startDate, endDate],
     queryFn: async (): Promise<ChannelDistribution[]> => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data, error } = await supabase.rpc('get_channel_distribution', {
-        p_start_date: startDate,
-        p_end_date: endDate
+        p_user_id: user.id,
+        start_date: startDate,
+        end_date: endDate
       });
 
       if (error) throw error;

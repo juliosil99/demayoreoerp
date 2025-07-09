@@ -23,10 +23,17 @@ export const useFetchSalesData = () => {
       const fromDate = formatDateForQuery(dateRange.from);
       const toDate = formatDateForQuery(dateRange.to);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       // Fetch current period metrics using SQL function
       const { data: currentMetrics, error: currentError } = await supabase.rpc('get_dashboard_metrics', {
-        p_start_date: fromDate,
-        p_end_date: toDate
+        p_user_id: user.id,
+        start_date: fromDate,
+        end_date: toDate
       });
       
       if (currentError) {
@@ -47,8 +54,9 @@ export const useFetchSalesData = () => {
       const prevPeriodStart = subDays(prevPeriodEnd, daysDiff - 1);
 
       const { data: prevMetrics, error: prevError } = await supabase.rpc('get_dashboard_metrics', {
-        p_start_date: formatDateForQuery(prevPeriodStart),
-        p_end_date: formatDateForQuery(prevPeriodEnd)
+        p_user_id: user.id,
+        start_date: formatDateForQuery(prevPeriodStart),
+        end_date: formatDateForQuery(prevPeriodEnd)
       });
 
       if (prevError) {
@@ -62,8 +70,9 @@ export const useFetchSalesData = () => {
       
       // Generate chart data using SQL function
       const { data: chartDataResults, error: chartError } = await supabase.rpc('get_sales_chart_data', {
-        p_start_date: fromDate,
-        p_end_date: toDate
+        p_user_id: user.id,
+        start_date: fromDate,
+        end_date: toDate
       });
 
       if (chartError) {
@@ -74,8 +83,9 @@ export const useFetchSalesData = () => {
       
       // Fetch channel metrics using the new SQL function
       const { data: channelMetricsResults, error: channelMetricsError } = await supabase.rpc('get_channel_metrics', {
-        p_start_date: fromDate,
-        p_end_date: toDate
+        p_user_id: user.id,
+        start_date: fromDate,
+        end_date: toDate
       });
 
       if (channelMetricsError) {
@@ -86,10 +96,10 @@ export const useFetchSalesData = () => {
       const channelMetrics = await processChannelMetrics(channelMetricsResults || [], dateRange);
 
       const result = {
-        orderRevenue: Number(current.total_revenue || 0),
-        contributionMargin: Number(current.total_profit || 0),
+        orderRevenue: Number(current.order_revenue || 0),
+        contributionMargin: Number(current.contribution_margin || 0),
         marginPercentage: Number(current.margin_percentage || 0),
-        orders: Number(current.total_orders || 0),
+        orders: Number(current.orders || 0),
         aov: Number(current.aov || 0),
         
         // Set defaults for metrics we can't calculate without additional data
@@ -107,7 +117,7 @@ export const useFetchSalesData = () => {
         yesterdaySales: 0,
         unreconciled: 0,
         receivablesPending: 0,
-        salesCount: Number(current.total_records || 0),
+        salesCount: Number(current.orders || 0),
         unreconciledCount: 0,
         receivablesCount: 0
       };
