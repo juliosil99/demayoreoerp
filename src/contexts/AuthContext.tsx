@@ -31,7 +31,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       const adminStatus = !!data;
-      console.log('🔐 Admin status actualizado:', { userId, adminStatus });
       setIsAdmin(adminStatus);
       
     } catch (error) {

@@ -17,7 +17,12 @@ export type PermissionName =
   | 'can_view_invoices'
   | 'can_manage_invoices'
   | 'can_view_reconciliation'
-  | 'can_manage_reconciliation';
+  | 'can_manage_reconciliation'
+  | 'can_view_receivables'
+  | 'can_view_users'
+  | 'can_view_crm'
+  | 'can_view_forecasting'
+  | 'can_view_accounting';
 
 export function usePermissions() {
   const { user, isAdmin } = useAuth();
@@ -32,7 +37,6 @@ export function usePermissions() {
 
       // Si es admin según AuthContext, dar todos los permisos
       if (isAdmin) {
-        console.log('🔐 Usuario es admin, otorgando todos los permisos:', { userId: user.id, isAdmin });
         const allPermissions: Record<PermissionName, boolean> = {
           'can_view_dashboard': true,
           'can_view_sales': true,
@@ -47,13 +51,17 @@ export function usePermissions() {
           'can_view_invoices': true,
           'can_manage_invoices': true,
           'can_view_reconciliation': true,
-          'can_manage_reconciliation': true
+          'can_manage_reconciliation': true,
+          'can_view_receivables': true,
+          'can_view_users': true,
+          'can_view_crm': true,
+          'can_view_forecasting': true,
+          'can_view_accounting': true
         };
         return allPermissions;
       }
 
-      // Inicializar con todos los permisos en false
-      console.log('🔐 Usuario no es admin, cargando permisos granulares:', { userId: user.id, isAdmin });
+      // Inicializar con todos los permisos en false para usuarios no admin
       const userPermissions: Record<PermissionName, boolean> = {
         'can_view_dashboard': false,
         'can_view_sales': false,
@@ -68,7 +76,12 @@ export function usePermissions() {
         'can_view_invoices': false,
         'can_manage_invoices': false,
         'can_view_reconciliation': false,
-        'can_manage_reconciliation': false
+        'can_manage_reconciliation': false,
+        'can_view_receivables': false,
+        'can_view_users': false,
+        'can_view_crm': false,
+        'can_view_forecasting': false,
+        'can_view_accounting': false
       };
 
       try {
@@ -118,12 +131,9 @@ export function usePermissions() {
 
   const hasPermission = (permission: PermissionName): boolean => {
     if (isAdmin) {
-      console.log('🔐 hasPermission: Admin tiene acceso a', permission);
       return true;
     }
-    const hasAccess = permissions?.[permission] || false;
-    console.log('🔐 hasPermission:', { permission, hasAccess, isAdmin, permissions });
-    return hasAccess;
+    return permissions?.[permission] || false;
   };
 
   const canAccess = (permission: PermissionName): boolean => {
