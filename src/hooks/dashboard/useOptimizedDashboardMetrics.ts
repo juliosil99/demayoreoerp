@@ -101,7 +101,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       }
       
       return data?.map((item: any) => ({
-        name: item.channel,
+        name: item.channel_name,
         revenue: Number(item.revenue),
         orders: Number(item.orders),
         aov: Number(item.aov),
