@@ -13,6 +13,36 @@ export const processImportData = async (
   let successCount = 0, errorCount = 0;
   const newFailedImports: FailedImport[] = [];
 
+  // Get the user's company_id first
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  // Get company_id from company_users or companies table
+  const { data: companyData } = await supabase
+    .from("company_users")
+    .select("company_id")
+    .eq("user_id", user.id)
+    .single();
+
+  let company_id: string;
+  if (companyData) {
+    company_id = companyData.company_id;
+  } else {
+    // If not in company_users, check if user owns a company
+    const { data: ownedCompany } = await supabase
+      .from("companies")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+    
+    if (!ownedCompany) {
+      throw new Error("Usuario no pertenece a ninguna empresa");
+    }
+    company_id = ownedCompany.id;
+  }
+
   for (let index = 0; index < salesRows.length; index++) {
     const row = salesRows[index];
     try {
@@ -22,7 +52,7 @@ export const processImportData = async (
       
       console.log(`Processing row ${index + 2}:`, row);
       
-      const salesData = transformSalesRowToDbFormat(row);
+      const salesData = transformSalesRowToDbFormat(row, company_id) as any;
       console.log(`Transformed data for row ${index + 2}:`, salesData);
       
       const validation = validateSalesRow(salesData);

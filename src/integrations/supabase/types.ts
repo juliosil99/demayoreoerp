@@ -2584,6 +2584,7 @@ export type Database = {
           Channel: string | null
           city: string | null
           comission: number | null
+          company_id: string
           cost: number | null
           created_at: string
           date: string | null
@@ -2615,6 +2616,7 @@ export type Database = {
           Channel?: string | null
           city?: string | null
           comission?: number | null
+          company_id: string
           cost?: number | null
           created_at?: string
           date?: string | null
@@ -2646,6 +2648,7 @@ export type Database = {
           Channel?: string | null
           city?: string | null
           comission?: number | null
+          company_id?: string
           cost?: number | null
           created_at?: string
           date?: string | null
@@ -2673,6 +2676,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_sales_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "Sales_reconciliation_id_fkey"
             columns: ["reconciliation_id"]
@@ -3071,6 +3081,10 @@ export type Database = {
       }
       can_access_company_user: {
         Args: { user_id: string; company_id: string }
+        Returns: boolean
+      }
+      can_access_sales_data: {
+        Args: { sales_company_id: string }
         Returns: boolean
       }
       clean_duplicate_expenses: {

@@ -26,12 +26,14 @@ export interface SalesBase {
   statusPaid: string | null  // Keeping camelCase to match database
   supplierName: string | null  // Keeping camelCase to match database
   paymentType?: string | null  // Making this optional with the ? symbol
+  company_id: string  // New required field for company-based access control
+  user_id?: string  // Keeping user_id field
   created_at?: string
 }
 
 export interface SalesTable {
   Row: SalesBase & { id: number, created_at: string }
-  Insert: Partial<SalesBase & { id?: number, created_at?: string }>
+  Insert: Partial<SalesBase> & { company_id: string } & { id?: number, created_at?: string }
   Update: Partial<SalesBase & { id?: number, created_at?: string }>
   Relationships: []
 }

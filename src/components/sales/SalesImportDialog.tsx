@@ -75,6 +75,36 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
     setShowFailures(false);
 
     try {
+      // Get the user's company_id first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Usuario no autenticado");
+      }
+
+      // Get company_id from company_users or companies table
+      const { data: companyData } = await supabase
+        .from("company_users")
+        .select("company_id")
+        .eq("user_id", user.id)
+        .single();
+
+      let company_id: string;
+      if (companyData) {
+        company_id = companyData.company_id;
+      } else {
+        // If not in company_users, check if user owns a company
+        const { data: ownedCompany } = await supabase
+          .from("companies")
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
+        
+        if (!ownedCompany) {
+          throw new Error("Usuario no pertenece a ninguna empresa");
+        }
+        company_id = ownedCompany.id;
+      }
+
       const salesRows = await processFile(file);
       let successCount = 0, errorCount = 0;
       const newFailedImports: FailedImport[] = [];
@@ -84,8 +114,8 @@ export function SalesImportDialog({ isOpen, onOpenChange, onImportSuccess }: Sal
         console.log("Processing row:", row); // Debug log
         
         try {
-          // Transform the row data to match the database schema
-          const salesData: Partial<SalesBase> = transformSalesRowToDbFormat(row);
+          // Transform the row data to match the database schema with company_id
+          const salesData = transformSalesRowToDbFormat(row, company_id) as SalesBase & { company_id: string };
           
           // Validate the transformed data
           const validation = validateSalesRow(salesData);

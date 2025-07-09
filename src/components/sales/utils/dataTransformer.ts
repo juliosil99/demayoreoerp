@@ -27,7 +27,7 @@ const toSafeStatus = (value: any): string | null => {
   return status === "paid" || status === "cobrado" || status === "pagado" ? "paid" : "pending";
 };
 
-export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<SalesBase> => {
+export const transformSalesRowToDbFormat = (row: Record<string, any>, company_id?: string): Partial<SalesBase> => {
   console.log('Raw row data:', row); // Debug log to see incoming data
 
   // Create the object with explicit property names matching the database schema
@@ -61,6 +61,11 @@ export const transformSalesRowToDbFormat = (row: Record<string, any>): Partial<S
     retention: toSafeNumber(row.Retención || row.retention),
     shipping: toSafeNumber(row.Envío || row.shipping),
   };
+
+  // Add company_id if provided
+  if (company_id) {
+    transformedData.company_id = company_id;
+  }
 
   console.log('Transformed data:', transformedData); // Debug log to verify transformation
   
