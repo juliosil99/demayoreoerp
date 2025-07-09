@@ -1,12 +1,12 @@
-import { Bell, Settings, LogOut, User, Building2, Palette, Sun, Moon, Laptop, Settings2 } from "lucide-react";
+import { Settings, LogOut, User, Building2, Palette, Sun, Moon, Laptop, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import React, { useState } from "react";
 import { NotificationCenter } from "@/components/crm/notifications";
+import { CompanySelector } from "./CompanySelector";
 
 interface HeaderProps {
   children?: React.ReactNode;
@@ -17,71 +17,21 @@ type Theme = "light" | "dark" | "blue";
 export function Header({
   children
 }: HeaderProps) {
-  const {
-    signOut,
-    user
-  } = useAuth();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("theme") as Theme || "light";
     }
     return "light";
   });
-  const [companyName, setCompanyName] = useState<string | null>("Goco ERP");
 
-  useEffect(() => {
+  React.useEffect(() => {
     const root = window.document.documentElement;
     root.setAttribute("data-theme", theme);
     localStorage.setItem("theme", theme);
   }, [theme]);
-
-  // Fetch company information when component mounts
-  useEffect(() => {
-    const fetchCompanyInfo = async () => {
-      if (!user?.id) return;
-      
-      try {
-        // First check if the user has a company they created
-        const { data: ownCompany, error: ownCompanyError } = await supabase
-          .from("companies")
-          .select("nombre")
-          .eq("user_id", user.id)
-          .maybeSingle();
-          
-        if (ownCompany?.nombre) {
-          setCompanyName(ownCompany.nombre);
-          return;
-        }
-        
-        // If no company created by user, check if they are part of a company
-        const { data: companyUser, error: companyUserError } = await supabase
-          .from("company_users")
-          .select("company_id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-          
-        if (companyUser?.company_id) {
-          const { data: company } = await supabase
-            .from("companies")
-            .select("nombre")
-            .eq("id", companyUser.company_id)
-            .maybeSingle();
-            
-          if (company?.nombre) {
-            setCompanyName(company.nombre);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching company info:", error);
-      }
-    };
-    
-    fetchCompanyInfo();
-  }, [user]);
 
   const handleSignOut = async () => {
     try {
@@ -100,7 +50,7 @@ export function Header({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {children}
-          <h1 className="text-lg font-medium text-foreground">{companyName}</h1>
+          <CompanySelector />
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <NotificationCenter />

@@ -7,6 +7,7 @@ import { useUserInvitations } from "../hooks/useUserInvitations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCompany } from "@/contexts/CompanyContext";
 
 interface Company {
   id: string;
@@ -20,6 +21,7 @@ export function InviteUserForm() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const { inviteUser, isInviting } = useUserInvitations();
   const { user } = useAuth();
+  const { activeCompany, availableCompanies } = useCompany();
 
   useEffect(() => {
     const loadUserCompanies = async () => {
@@ -35,17 +37,32 @@ export function InviteUserForm() {
 
         if (adminError) throw adminError;
         
-        if (adminCompanies && adminCompanies.length > 0) {
-          const formattedCompanies = adminCompanies.map((item: any) => ({
-            id: item.companies.id,
-            nombre: item.companies.nombre
-          }));
-          
-          setCompanies(formattedCompanies);
-          
-          // Set the first company as default if no company is selected
-          if (!companyId && formattedCompanies.length > 0) {
-            setCompanyId(formattedCompanies[0].id);
+        // Also check if user owns companies directly
+        const { data: ownedCompanies, error: ownedError } = await supabase
+          .from("companies")
+          .select("id, nombre")
+          .eq("user_id", user.id);
+
+        if (ownedError) throw ownedError;
+
+        const allCompanies = [
+          ...(ownedCompanies || []),
+          ...(adminCompanies?.map((item: any) => item.companies) || []).filter(Boolean)
+        ];
+
+        // Remove duplicates
+        const uniqueCompanies = allCompanies.filter((company, index, self) => 
+          index === self.findIndex(c => c.id === company.id)
+        );
+        
+        setCompanies(uniqueCompanies);
+        
+        // Set active company as default or first available
+        if (!companyId) {
+          if (activeCompany && uniqueCompanies.find(c => c.id === activeCompany.id)) {
+            setCompanyId(activeCompany.id);
+          } else if (uniqueCompanies.length > 0) {
+            setCompanyId(uniqueCompanies[0].id);
           }
         }
       } catch (error: any) {
@@ -54,7 +71,7 @@ export function InviteUserForm() {
     };
 
     loadUserCompanies();
-  }, [user]);
+  }, [user, activeCompany]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

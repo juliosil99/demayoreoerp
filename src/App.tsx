@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { CompanyProvider } from '@/contexts/CompanyContext';
 import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { PathBasedProtectedRoute } from '@/components/auth/PathBasedProtectedRoute';
@@ -54,7 +55,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
+        <CompanyProvider>
+          <Router>
           <div className="min-h-screen bg-background">
             <Routes>
               <Route path="/login" element={<Login />} />
@@ -319,7 +321,8 @@ function App() {
             
             <Toaster />
           </div>
-        </Router>
+          </Router>
+        </CompanyProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
