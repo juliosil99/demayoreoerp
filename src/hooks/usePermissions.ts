@@ -24,7 +24,7 @@ export function usePermissions() {
   const queryClient = useQueryClient();
 
   const { data: permissions, isLoading } = useQuery({
-    queryKey: ["simplified-user-permissions", user?.id],
+    queryKey: ["simplified-user-permissions", user?.id, isAdmin],
     queryFn: async () => {
       if (!user?.id) {
         return {};
@@ -32,6 +32,7 @@ export function usePermissions() {
 
       // Si es admin según AuthContext, dar todos los permisos
       if (isAdmin) {
+        console.log('🔐 Usuario es admin, otorgando todos los permisos:', { userId: user.id, isAdmin });
         const allPermissions: Record<PermissionName, boolean> = {
           'can_view_dashboard': true,
           'can_view_sales': true,
@@ -52,6 +53,7 @@ export function usePermissions() {
       }
 
       // Inicializar con todos los permisos en false
+      console.log('🔐 Usuario no es admin, cargando permisos granulares:', { userId: user.id, isAdmin });
       const userPermissions: Record<PermissionName, boolean> = {
         'can_view_dashboard': false,
         'can_view_sales': false,
@@ -110,15 +112,18 @@ export function usePermissions() {
   // Función para invalidar manualmente el caché de permisos
   const invalidatePermissions = () => {
     queryClient.invalidateQueries({ 
-      queryKey: ["simplified-user-permissions", user?.id] 
+      queryKey: ["simplified-user-permissions", user?.id, isAdmin] 
     });
   };
 
   const hasPermission = (permission: PermissionName): boolean => {
     if (isAdmin) {
+      console.log('🔐 hasPermission: Admin tiene acceso a', permission);
       return true;
     }
-    return permissions?.[permission] || false;
+    const hasAccess = permissions?.[permission] || false;
+    console.log('🔐 hasPermission:', { permission, hasAccess, isAdmin, permissions });
+    return hasAccess;
   };
 
   const canAccess = (permission: PermissionName): boolean => {
