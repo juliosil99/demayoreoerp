@@ -16,6 +16,7 @@ interface DashboardMetrics {
   aovChange?: number;
   ordersChange?: number;
   contributionMargin?: number;
+  contributionMarginChange?: number;
   marginPercentage?: number;
   marginPercentageChange?: number;
   [key: string]: any;
@@ -39,9 +40,12 @@ export const MainMetricsSection = ({ metrics }: MainMetricsSectionProps) => {
         changeType={hasData && (metrics.revenueChange || 0) > 0 ? "positive" : "negative"}
       />
       <MetricCard
-        title="Sales Velocity"
-        value="Sin datos"
+        title="Margen de Contribución"
+        value={hasData ? formatCurrency(metrics.contributionMargin || 0) : "Sin datos"}
         icon={TrendingUp}
+        change={hasData ? metrics.contributionMarginChange : undefined}
+        changeLabel={hasData && (metrics.contributionMarginChange || 0) > 0 ? "incremento" : "disminución"}
+        changeType={hasData && (metrics.contributionMarginChange || 0) > 0 ? "positive" : "negative"}
       />
       <MetricCard
         title="Margen porcentual"
