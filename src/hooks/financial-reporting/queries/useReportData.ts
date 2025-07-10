@@ -25,13 +25,14 @@ export function useReportData(
         const periodData = await fetchPeriodData(user.id, periodId, periodType, year, period);
         if (!periodData) throw new Error('Period not found');
 
-        // Get account balances, expenses, and payment adjustments for current period
+        // Get account balances, expenses, sales, and payment adjustments for current period
         const balances = await fetchAccountBalances(user.id, periodData.id);
         const expenses = await fetchExpenses(user.id, periodData.start_date, periodData.end_date);
+        const sales = await fetchSales(user.id, periodData.start_date, periodData.end_date);
         const paymentAdjustments = await fetchPaymentAdjustments(user.id, periodData.start_date, periodData.end_date);
 
         // Process current period data
-        const currentPeriodData = processReportData(balances, expenses, currency, paymentAdjustments);
+        const currentPeriodData = processReportData(balances, expenses, currency, paymentAdjustments, sales);
 
         const result: ReportData = {
           currentPeriod: {
@@ -58,13 +59,18 @@ export function useReportData(
               prevPeriodData.start_date, 
               prevPeriodData.end_date
             );
+            const prevSales = await fetchSales(
+              user.id, 
+              prevPeriodData.start_date, 
+              prevPeriodData.end_date
+            );
             const prevPaymentAdjustments = await fetchPaymentAdjustments(
               user.id, 
               prevPeriodData.start_date, 
               prevPeriodData.end_date
             );
 
-            const previousPeriodData = processReportData(prevBalances, prevExpenses, currency, prevPaymentAdjustments);
+            const previousPeriodData = processReportData(prevBalances, prevExpenses, currency, prevPaymentAdjustments, prevSales);
 
             result.previousPeriod = {
               startDate: prevPeriodData.start_date,
@@ -175,6 +181,29 @@ async function fetchPaymentAdjustments(userId: string, startDate: string, endDat
     .eq('user_id', userId)
     .gte('payments.date', startDate)
     .lte('payments.date', endDate);
+
+  if (error) throw error;
+  return data;
+}
+
+async function fetchSales(userId: string, startDate: string, endDate: string) {
+  const { data, error } = await supabase
+    .from('Sales')
+    .select(`
+      id,
+      price,
+      cost,
+      Quantity,
+      Channel,
+      productName,
+      sku,
+      comission,
+      retention,
+      shipping
+    `)
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .eq('user_id', userId);
 
   if (error) throw error;
   return data;

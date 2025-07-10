@@ -5,7 +5,8 @@ export function processReportData(
   balances: any[], 
   expenses: any[], 
   targetCurrency: string,
-  paymentAdjustments?: any[]
+  paymentAdjustments?: any[],
+  sales?: any[]
 ): Record<string, number> {
   const processedData: Record<string, number> = {};
   
@@ -85,6 +86,39 @@ export function processReportData(
       }
       processedData[accountKey] += amountInReportCurrency;
     });
+  }
+
+  // Process sales data
+  if (sales) {
+    let totalRevenue = 0;
+    let totalCostOfSales = 0;
+    let totalCommissions = 0;
+    let totalShipping = 0;
+
+    sales.forEach(sale => {
+      const revenue = Number(sale.price) || 0;
+      const cost = Number(sale.cost) || 0;
+      const commission = Number(sale.comission) || 0;
+      const shipping = Number(sale.shipping) || 0;
+
+      totalRevenue += revenue;
+      totalCostOfSales += cost;
+      totalCommissions += commission;
+      totalShipping += shipping;
+    });
+
+    // Add to processed data
+    processedData['income'] = (processedData['income'] || 0) + totalRevenue;
+    processedData['revenue'] = totalRevenue;
+    processedData['cost_of_sales'] = totalCostOfSales;
+    processedData['commission_expenses'] = totalCommissions;
+    processedData['shipping_expenses'] = totalShipping;
+
+    // Add individual sales categories
+    processedData['501-Ventas'] = totalRevenue;
+    processedData['601-Costo de Ventas'] = totalCostOfSales;
+    processedData['602-Gastos de Comisión'] = totalCommissions;
+    processedData['603-Gastos de Envío'] = totalShipping;
   }
 
   return processedData;

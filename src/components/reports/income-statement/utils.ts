@@ -1,4 +1,3 @@
-
 import { ReportData } from "@/types/financial-reporting";
 import { FormattedReportData } from "./types";
 
@@ -25,7 +24,8 @@ export const prepareReportData = (reportData?: ReportData): FormattedReportData 
       },
       expenses: {
         'Costo de Ventas': 0,
-        'Gastos Operativos': 0,
+        'Gastos de Comisión': 0,
+        'Gastos de Envío': 0,
         'Gastos Administrativos': 0,
         'Total Gastos': 0
       },
@@ -39,25 +39,31 @@ export const prepareReportData = (reportData?: ReportData): FormattedReportData 
 
   const currentPeriodData = reportData.currentPeriod.data;
   
-  // Extract revenue accounts
+  // Extract revenue accounts - use real sales data
   const revenue = {
-    'Ventas': currentPeriodData['revenue'] || 0,
-    'Servicios': currentPeriodData['service_revenue'] || 0
+    'Ventas': currentPeriodData['revenue'] || currentPeriodData['501-Ventas'] || 0,
+    'Servicios': currentPeriodData['service_revenue'] || currentPeriodData['502-Servicios'] || 0
   };
   revenue['Total Ingresos'] = Object.values(revenue).reduce((sum, val) => sum + Number(val), 0);
 
-  // Extract expense accounts
+  // Extract expense accounts - use real expense data
+  const costOfSales = currentPeriodData['cost_of_sales'] || currentPeriodData['601-Costo de Ventas'] || 0;
+  const commissionExpenses = currentPeriodData['commission_expenses'] || currentPeriodData['602-Gastos de Comisión'] || 0;
+  const shippingExpenses = currentPeriodData['shipping_expenses'] || currentPeriodData['603-Gastos de Envío'] || 0;
+  const adminExpenses = currentPeriodData['expense'] || 0; // From real expenses table
+  
   const expenses = {
-    'Costo de Ventas': currentPeriodData['cost_of_sales'] || 0,
-    'Gastos Operativos': currentPeriodData['operating_expenses'] || 0,
-    'Gastos Administrativos': currentPeriodData['administrative_expenses'] || 0
+    'Costo de Ventas': costOfSales,
+    'Gastos de Comisión': commissionExpenses,
+    'Gastos de Envío': shippingExpenses,
+    'Gastos Administrativos': adminExpenses
   };
   expenses['Total Gastos'] = Object.values(expenses).reduce((sum, val) => sum + Number(val), 0);
 
   // Calculate summary figures
   const summary = {
     'Utilidad Bruta': revenue['Total Ingresos'] - expenses['Costo de Ventas'],
-    'Utilidad Operativa': revenue['Total Ingresos'] - expenses['Costo de Ventas'] - expenses['Gastos Operativos'],
+    'Utilidad Operativa': revenue['Total Ingresos'] - expenses['Costo de Ventas'] - expenses['Gastos de Comisión'] - expenses['Gastos de Envío'],
     'Utilidad Neta': revenue['Total Ingresos'] - expenses['Total Gastos']
   };
 
@@ -72,36 +78,42 @@ export const getPreviousValueHelper = (reportData: ReportData | undefined, secti
   
   if (section === 'revenue') {
     if (item === 'Total Ingresos') {
-      value = (prevData['revenue'] || 0) + (prevData['service_revenue'] || 0);
+      value = (prevData['revenue'] || prevData['501-Ventas'] || 0) + (prevData['service_revenue'] || prevData['502-Servicios'] || 0);
     } else if (item === 'Ventas') {
-      value = prevData['revenue'] || 0;
+      value = prevData['revenue'] || prevData['501-Ventas'] || 0;
     } else if (item === 'Servicios') {
-      value = prevData['service_revenue'] || 0;
+      value = prevData['service_revenue'] || prevData['502-Servicios'] || 0;
     }
   } else if (section === 'expenses') {
+    const prevCostOfSales = prevData['cost_of_sales'] || prevData['601-Costo de Ventas'] || 0;
+    const prevCommissions = prevData['commission_expenses'] || prevData['602-Gastos de Comisión'] || 0;
+    const prevShipping = prevData['shipping_expenses'] || prevData['603-Gastos de Envío'] || 0;
+    const prevAdmin = prevData['expense'] || 0;
+    
     if (item === 'Total Gastos') {
-      value = (prevData['cost_of_sales'] || 0) + 
-              (prevData['operating_expenses'] || 0) + 
-              (prevData['administrative_expenses'] || 0);
+      value = prevCostOfSales + prevCommissions + prevShipping + prevAdmin;
     } else if (item === 'Costo de Ventas') {
-      value = prevData['cost_of_sales'] || 0;
-    } else if (item === 'Gastos Operativos') {
-      value = prevData['operating_expenses'] || 0;
+      value = prevCostOfSales;
+    } else if (item === 'Gastos de Comisión') {
+      value = prevCommissions;
+    } else if (item === 'Gastos de Envío') {
+      value = prevShipping;
     } else if (item === 'Gastos Administrativos') {
-      value = prevData['administrative_expenses'] || 0;
+      value = prevAdmin;
     }
   } else if (section === 'summary') {
-    // Recalculate summary values for previous period
-    const prevRevenue = (prevData['revenue'] || 0) + (prevData['service_revenue'] || 0);
-    const prevCostOfSales = prevData['cost_of_sales'] || 0;
-    const prevOpEx = prevData['operating_expenses'] || 0;
-    const prevAdminEx = prevData['administrative_expenses'] || 0;
-    const prevTotalExpenses = prevCostOfSales + prevOpEx + prevAdminEx;
+    // Recalculate summary values for previous period using real data
+    const prevRevenue = (prevData['revenue'] || prevData['501-Ventas'] || 0) + (prevData['service_revenue'] || prevData['502-Servicios'] || 0);
+    const prevCostOfSales = prevData['cost_of_sales'] || prevData['601-Costo de Ventas'] || 0;
+    const prevCommissions = prevData['commission_expenses'] || prevData['602-Gastos de Comisión'] || 0;
+    const prevShipping = prevData['shipping_expenses'] || prevData['603-Gastos de Envío'] || 0;
+    const prevAdmin = prevData['expense'] || 0;
+    const prevTotalExpenses = prevCostOfSales + prevCommissions + prevShipping + prevAdmin;
     
     if (item === 'Utilidad Bruta') {
       value = prevRevenue - prevCostOfSales;
     } else if (item === 'Utilidad Operativa') {
-      value = prevRevenue - prevCostOfSales - prevOpEx;
+      value = prevRevenue - prevCostOfSales - prevCommissions - prevShipping;
     } else if (item === 'Utilidad Neta') {
       value = prevRevenue - prevTotalExpenses;
     }
