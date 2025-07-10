@@ -32,7 +32,7 @@ const checkDuplicateUUID = async (uuid: string | null) => {
   }
 };
 
-export const processInvoiceFile = async (file: File, xmlContent: string) => {
+export const processInvoiceFile = async (file: File, xmlContent: string, userId: string) => {
   console.log(`🔄 Starting invoice processing for file: ${file.name}`);
   
   try {
@@ -115,7 +115,8 @@ export const processInvoiceFile = async (file: File, xmlContent: string) => {
       total_amount: cfdiData.total_amount,
       uuid: cfdiData.uuid,
       version: cfdiData.version,
-      status: 'completed'
+      status: 'completed',
+      user_id: userId
     };
 
     console.log(`💾 Invoice data to insert for ${file.name}:`, {

@@ -1,18 +1,20 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useUserCompany } from "@/hooks/useUserCompany";
 import { usePermissions } from "@/hooks/usePermissions";
 
 export const useOptimizedInvoices = () => {
+  const { user } = useAuth();
   const { data: userCompany } = useUserCompany();
   const { hasPermission } = usePermissions();
   const canViewReconciliation = hasPermission('can_view_reconciliation');
 
   return useQuery({
-    queryKey: ["optimized-unreconciled-invoices", userCompany?.id],
+    queryKey: ["optimized-unreconciled-invoices", user?.id, userCompany?.id],
     queryFn: async () => {
-      if (!userCompany?.id || !canViewReconciliation) {
+      if (!user || !userCompany?.id || !canViewReconciliation) {
         return [];
       }
       
@@ -75,7 +77,7 @@ export const useOptimizedInvoices = () => {
       
       return filteredInvoices;
     },
-    enabled: !!userCompany?.id && canViewReconciliation,
+    enabled: !!user && !!userCompany?.id && canViewReconciliation,
     staleTime: 60000, // 1 minute
     gcTime: 5 * 60 * 1000, // 5 minutes
   });

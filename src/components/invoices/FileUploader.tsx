@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/contexts/AuthContext";
 import { processInvoiceFile } from "@/utils/invoice-processor";
 
 export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void }) => {
+  const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentFile, setCurrentFile] = useState<string>("");
@@ -17,6 +19,12 @@ export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void 
       const files = event.target.files;
       if (!files || files.length === 0) {
         console.log("📄 No files selected for upload");
+        return;
+      }
+
+      if (!user?.id) {
+        console.error("❌ User not authenticated");
+        toast.error("Error de autenticación. Por favor inicia sesión nuevamente.");
         return;
       }
 
@@ -57,7 +65,7 @@ export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void 
           }
 
           console.log(`📄 Processing invoice file ${fileIndex}: ${file.name}`);
-          const result = await processInvoiceFile(file, xmlContent);
+          const result = await processInvoiceFile(file, xmlContent, user.id);
           
           console.log(`📄 Processing result for ${file.name}:`, {
             success: result.success,

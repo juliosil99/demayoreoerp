@@ -1762,6 +1762,7 @@ export type Database = {
           subtotal: number | null
           tax_amount: number | null
           total_amount: number | null
+          user_id: string
           uuid: string | null
           version: string | null
           xml_content: string | null
@@ -1809,6 +1810,7 @@ export type Database = {
           subtotal?: number | null
           tax_amount?: number | null
           total_amount?: number | null
+          user_id: string
           uuid?: string | null
           version?: string | null
           xml_content?: string | null
@@ -1856,6 +1858,7 @@ export type Database = {
           subtotal?: number | null
           tax_amount?: number | null
           total_amount?: number | null
+          user_id?: string
           uuid?: string | null
           version?: string | null
           xml_content?: string | null

@@ -1,5 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import { getReconciledInvoiceIds } from "./services/reconciliationService";
 import { buildInvoiceQuery } from "./services/invoiceQueryBuilder";
 import { transformInvoices } from "./services/invoiceTransformer";
@@ -14,9 +15,10 @@ export const useOptimizedInvoices = ({
   itemsPerPage,
   filters
 }: UseOptimizedInvoicesOptions): OptimizedInvoicesResult => {
+  const { user } = useAuth();
   
   const { data, isLoading, error } = useQuery({
-    queryKey: ['optimized-invoices', page, itemsPerPage, filters],
+    queryKey: ['optimized-invoices', user?.id, page, itemsPerPage, filters],
     queryFn: async () => {
       
       // Always get the list of reconciled invoice IDs to determine reconciliation status correctly
@@ -56,6 +58,7 @@ export const useOptimizedInvoices = ({
     staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh
     gcTime: 5 * 60 * 1000, // 5 minutes - cache retention
     refetchOnWindowFocus: false,
+    enabled: !!user, // Only run query when user is authenticated
   });
 
   return {
