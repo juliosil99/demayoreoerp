@@ -44,3 +44,14 @@ export function formatDateForDisplay(dateString: string): string {
     day: '2-digit'
   });
 }
+
+/**
+ * Crea un objeto Date a partir de una fecha string de la BD sin conversión de zona horaria
+ */
+export function parseDateFromDB(dateString: string): Date {
+  if (!dateString) return new Date();
+  
+  // Parse the date string as local date (without time zone conversion)
+  const [year, month, day] = dateString.split('T')[0].split('-');
+  return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+}

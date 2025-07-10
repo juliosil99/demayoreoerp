@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { FinancialPeriod, FinancialPeriodType } from "@/types/financial-reporting";
 import { format } from "date-fns";
+import { parseDateFromDB } from "@/utils/dateUtils";
 
 interface PeriodSelectorProps {
   periodType: FinancialPeriodType;
@@ -28,7 +29,7 @@ export function PeriodSelector({
 }: PeriodSelectorProps) {
   // Format period label for display
   const formatPeriodLabel = (period: FinancialPeriod) => {
-    const startDate = new Date(period.start_date);
+    const startDate = parseDateFromDB(period.start_date);
     
     if (period.period_type === 'day') {
       return `${format(startDate, 'dd/MM/yyyy')}`;

@@ -2,6 +2,7 @@
 import * as React from "react";
 import { FinancialPeriod } from "@/types/financial-reporting";
 import { format } from "date-fns";
+import { parseDateFromDB } from "@/utils/dateUtils";
 
 interface PeriodInfoProps {
   period: FinancialPeriod;
@@ -10,7 +11,7 @@ interface PeriodInfoProps {
 export function PeriodInfo({ period }: PeriodInfoProps) {
   // Format period label for display
   const formatPeriodLabel = (period: FinancialPeriod) => {
-    const startDate = new Date(period.start_date);
+    const startDate = parseDateFromDB(period.start_date);
     
     if (period.period_type === 'day') {
       return `${format(startDate, 'dd/MM/yyyy')}`;
@@ -36,7 +37,7 @@ export function PeriodInfo({ period }: PeriodInfoProps) {
       </p>
       <p className="text-sm">
         <span className="font-medium">Fechas: </span>
-        {format(new Date(period.start_date), 'dd/MM/yyyy')} - {format(new Date(period.end_date), 'dd/MM/yyyy')}
+        {format(parseDateFromDB(period.start_date), 'dd/MM/yyyy')} - {format(parseDateFromDB(period.end_date), 'dd/MM/yyyy')}
       </p>
     </div>
   );

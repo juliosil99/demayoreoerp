@@ -4,13 +4,14 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { DateRangeInfoProps } from "../types";
+import { parseDateFromDB } from "@/utils/dateUtils";
 
 export const DateRangeInfo: React.FC<DateRangeInfoProps> = ({ reportData, onExport }) => {
   const getDateRangeText = () => {
     if (!reportData?.currentPeriod) return "";
 
-    const startDate = new Date(reportData.currentPeriod.startDate);
-    const endDate = new Date(reportData.currentPeriod.endDate);
+    const startDate = parseDateFromDB(reportData.currentPeriod.startDate);
+    const endDate = parseDateFromDB(reportData.currentPeriod.endDate);
     
     return `${format(startDate, 'dd/MM/yyyy')} - ${format(endDate, 'dd/MM/yyyy')}`;
   };
