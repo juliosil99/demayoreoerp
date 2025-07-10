@@ -9,8 +9,9 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
+import { Pencil, Download, FileText } from "lucide-react";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import { downloadTransferInvoice } from "./utils/transferInvoiceUtils";
 
 // Define the TransferRow interface directly
 interface TransferRow {
@@ -27,6 +28,10 @@ interface TransferRow {
   from_account?: { name: string };
   to_account?: { name: string };
   created_at?: string;
+  invoice_file_path?: string;
+  invoice_filename?: string;
+  invoice_content_type?: string;
+  invoice_size?: number;
   // For backward compatibility
   amount?: number;
 }
@@ -55,6 +60,7 @@ export function TransfersList({ transfers, isLoading, onEditTransfer }: Transfer
                   <TableHead>De</TableHead>
                   <TableHead>A</TableHead>
                   <TableHead className="text-right">Monto</TableHead>
+                  <TableHead className="text-center">Comprobante</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -66,6 +72,23 @@ export function TransfersList({ transfers, isLoading, onEditTransfer }: Transfer
                     <TableCell>{transfer.to_account?.name}</TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(transfer.amount_from || transfer.amount || 0)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {transfer.invoice_file_path ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <FileText className="h-4 w-4 text-green-600" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => downloadTransferInvoice(transfer.invoice_file_path!)}
+                            title={`Descargar ${transfer.invoice_filename}`}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Sin comprobante</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button 

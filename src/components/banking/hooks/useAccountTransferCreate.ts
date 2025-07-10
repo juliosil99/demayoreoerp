@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserCompany } from "@/hooks/useUserCompany";
 import { TransferFormData } from "../transfer-form/types";
+import { uploadTransferInvoice } from "../utils/transferInvoiceUtils";
 
 export function useAccountTransferCreate() {
   const { user } = useAuth();
@@ -29,6 +30,20 @@ export function useAccountTransferCreate() {
         throw new Error("No company found for user");
       }
 
+      // Handle invoice upload if file is provided
+      let invoiceData = {};
+      if (data.invoice_file && user?.id) {
+        const uploadResult = await uploadTransferInvoice(data.invoice_file, user.id);
+        if (uploadResult) {
+          invoiceData = {
+            invoice_file_path: uploadResult.path,
+            invoice_filename: uploadResult.filename,
+            invoice_content_type: uploadResult.contentType,
+            invoice_size: uploadResult.size
+          };
+        }
+      }
+
       const { error } = await supabase
         .from("account_transfers")
         .insert({
@@ -43,7 +58,8 @@ export function useAccountTransferCreate() {
           user_id: user?.id,
           company_id: userCompany.id,
           // For backward compatibility, also set the amount field
-          amount: parseFloat(data.amount_from)
+          amount: parseFloat(data.amount_from),
+          ...invoiceData
         });
       if (error) throw error;
     },

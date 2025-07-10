@@ -20,6 +20,10 @@ interface TransferRow {
   from_account?: { name: string };
   to_account?: { name: string };
   created_at?: string;
+  invoice_file_path?: string;
+  invoice_filename?: string;
+  invoice_content_type?: string;
+  invoice_size?: number;
 }
 
 export function useAccountTransfersList() {
@@ -44,6 +48,10 @@ export function useAccountTransfersList() {
           user_id,
           company_id,
           created_at,
+          invoice_file_path,
+          invoice_filename,
+          invoice_content_type,
+          invoice_size,
           from_account:bank_accounts!fk_from_account(name),
           to_account:bank_accounts!account_transfers_to_account_id_fkey(name)
         `)

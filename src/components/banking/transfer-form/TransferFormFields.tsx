@@ -4,6 +4,7 @@ import { DateAmountFields } from "./DateAmountFields";
 import { AccountSelect } from "./AccountSelect";
 import { ExchangeRateCard } from "./ExchangeRateCard";
 import { ReferenceFields } from "./ReferenceFields";
+import { InvoiceUpload } from "./InvoiceUpload";
 import { Account, TransferFormData } from "./types";
 
 interface TransferFormFieldsProps {
@@ -98,6 +99,8 @@ export function TransferFormFields({
       />
 
       <ReferenceFields formData={formData} setFormData={setFormData} />
+      
+      <InvoiceUpload formData={formData} setFormData={setFormData} />
     </>
   );
 }

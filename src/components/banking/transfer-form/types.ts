@@ -17,6 +17,9 @@ export interface TransferFormData {
   exchange_rate: string;
   reference_number: string;
   notes: string;
+  invoice_file?: File;
+  invoice_filename?: string;
+  invoice_file_path?: string;
 }
 
 export interface FormFieldProps {

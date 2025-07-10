@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { TransferFormData } from "../transfer-form/types";
+import { uploadTransferInvoice, deleteTransferInvoice } from "../utils/transferInvoiceUtils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Transfer {
   id: string;
@@ -17,12 +19,17 @@ interface Transfer {
   exchange_rate?: number;
   reference_number?: string;
   notes?: string;
+  invoice_file_path?: string;
+  invoice_filename?: string;
+  invoice_content_type?: string;
+  invoice_size?: number;
 }
 
 export function useTransferEdit(
   transfer: Transfer | null,
   onClose: () => void
 ) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<TransferFormData>({
     date: "",
@@ -51,6 +58,8 @@ export function useTransferEdit(
         exchange_rate: String(exchangeRate),
         reference_number: transfer.reference_number || "",
         notes: transfer.notes || "",
+        invoice_file_path: transfer.invoice_file_path || undefined,
+        invoice_filename: transfer.invoice_filename || undefined,
       });
     }
   }, [transfer]);
@@ -58,6 +67,43 @@ export function useTransferEdit(
   const updateTransfer = useMutation({
     mutationFn: async () => {
       if (!transfer) return;
+
+      // Handle new invoice upload
+      let invoiceData = {};
+      if (formData.invoice_file && user?.id) {
+        // Delete old invoice if exists
+        if (transfer.invoice_file_path) {
+          try {
+            await deleteTransferInvoice(transfer.invoice_file_path);
+          } catch (error) {
+            console.warn('Failed to delete old invoice:', error);
+          }
+        }
+
+        // Upload new invoice
+        const uploadResult = await uploadTransferInvoice(formData.invoice_file, user.id);
+        if (uploadResult) {
+          invoiceData = {
+            invoice_file_path: uploadResult.path,
+            invoice_filename: uploadResult.filename,
+            invoice_content_type: uploadResult.contentType,
+            invoice_size: uploadResult.size
+          };
+        }
+      } else if (!formData.invoice_filename && transfer.invoice_file_path) {
+        // User removed the invoice
+        try {
+          await deleteTransferInvoice(transfer.invoice_file_path);
+        } catch (error) {
+          console.warn('Failed to delete invoice:', error);
+        }
+        invoiceData = {
+          invoice_file_path: null,
+          invoice_filename: null,
+          invoice_content_type: null,
+          invoice_size: null
+        };
+      }
 
       const { error } = await supabase
         .from("account_transfers")
@@ -71,7 +117,8 @@ export function useTransferEdit(
           reference_number: formData.reference_number || null,
           notes: formData.notes || null,
           // For backward compatibility, also update the amount field
-          amount: parseFloat(formData.amount_from)
+          amount: parseFloat(formData.amount_from),
+          ...invoiceData
         })
         .eq("id", transfer.id);
 

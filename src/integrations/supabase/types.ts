@@ -70,6 +70,10 @@ export type Database = {
           exchange_rate: number
           from_account_id: number
           id: string
+          invoice_content_type: string | null
+          invoice_file_path: string | null
+          invoice_filename: string | null
+          invoice_size: number | null
           notes: string | null
           reference_number: string | null
           status: string | null
@@ -86,6 +90,10 @@ export type Database = {
           exchange_rate?: number
           from_account_id: number
           id?: string
+          invoice_content_type?: string | null
+          invoice_file_path?: string | null
+          invoice_filename?: string | null
+          invoice_size?: number | null
           notes?: string | null
           reference_number?: string | null
           status?: string | null
@@ -102,6 +110,10 @@ export type Database = {
           exchange_rate?: number
           from_account_id?: number
           id?: string
+          invoice_content_type?: string | null
+          invoice_file_path?: string | null
+          invoice_filename?: string | null
+          invoice_size?: number | null
           notes?: string | null
           reference_number?: string | null
           status?: string | null
