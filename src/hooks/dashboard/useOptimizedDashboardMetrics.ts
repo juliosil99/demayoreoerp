@@ -39,9 +39,11 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
   const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : null;
   const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : null;
 
+  console.log('useOptimizedDashboardMetrics - Date Range:', { startDate, endDate });
+
   // Optimized main metrics query using RPC function
   const { data: metricsData, isLoading: metricsLoading, error: metricsError } = useQuery({
-    queryKey: ['optimized-dashboard-metrics', startDate, endDate],
+    queryKey: ['optimized-dashboard-metrics', 'user', startDate, endDate],
     queryFn: async (): Promise<OptimizedDashboardMetrics> => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -62,9 +64,11 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
         throw error;
       }
       
-      console.log('Dashboard metrics response:', data);
+      console.log('Dashboard metrics RAW response:', data);
       const result = data?.[0];
-      return {
+      console.log('Dashboard metrics PROCESSED result:', result);
+      
+      const processedMetrics = {
         totalRevenue: Number(result?.order_revenue || 0),
         totalOrders: Number(result?.orders || 0),
         totalProfit: Number(result?.contribution_margin || 0),
@@ -72,6 +76,9 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
         marginPercentage: Number(result?.margin_percentage || 0),
         totalRecords: Number(result?.orders || 0)
       };
+      
+      console.log('Dashboard metrics FINAL processed:', processedMetrics);
+      return processedMetrics;
     },
     enabled: !!(startDate && endDate), // Only run when dates are available
     staleTime: 5 * 60 * 1000, // 5 minutes cache
@@ -81,7 +88,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
 
   // Optimized channel metrics query
   const { data: channelMetrics, isLoading: channelLoading } = useQuery({
-    queryKey: ['optimized-channel-metrics', startDate, endDate],
+    queryKey: ['optimized-channel-metrics', 'user', startDate, endDate],
     queryFn: async (): Promise<ChannelMetric[]> => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -100,14 +107,22 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
         throw error;
       }
       
-      return data?.map((item: any) => ({
-        name: item.channel,
-        revenue: Number(item.revenue),
-        orders: Number(item.orders),
-        aov: Number(item.aov),
-        contributionMargin: Number(item.contribution_margin),
-        marginPercentage: Number(item.margin_percentage)
-      })) || [];
+      console.log('Channel metrics RAW response:', data);
+      
+      const processedChannels = data?.map((item: any) => {
+        console.log('Processing channel item:', item);
+        return {
+          name: item.channel_name, // Fixed: was item.channel, should be item.channel_name
+          revenue: Number(item.revenue),
+          orders: Number(item.orders),
+          aov: Number(item.aov),
+          contributionMargin: Number(item.contribution_margin),
+          marginPercentage: Number(item.margin_percentage)
+        };
+      }) || [];
+      
+      console.log('Channel metrics FINAL processed:', processedChannels);
+      return processedChannels;
     },
     enabled: !!(startDate && endDate),
     staleTime: 10 * 60 * 1000, // 10 minutes cache
@@ -117,7 +132,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
 
   // Optimized chart data query
   const { data: chartData, isLoading: chartLoading } = useQuery({
-    queryKey: ['optimized-sales-chart', startDate, endDate],
+    queryKey: ['optimized-sales-chart', 'user', startDate, endDate],
     queryFn: async (): Promise<ChartDataPoint[]> => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -136,11 +151,16 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
         throw error;
       }
       
-      return data?.map((item: any) => ({
+      console.log('Chart data RAW response:', data);
+      
+      const processedChart = data?.map((item: any) => ({
         date: item.date,
         sales: Number(item.sales),
         orders: 0 // Default since new function doesn't return orders
       })) || [];
+      
+      console.log('Chart data FINAL processed:', processedChart);
+      return processedChart;
     },
     enabled: !!(startDate && endDate),
     staleTime: 10 * 60 * 1000, // 10 minutes cache
@@ -150,7 +170,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
 
   // Optimized channel distribution query
   const { data: channelDistribution, isLoading: distributionLoading } = useQuery({
-    queryKey: ['optimized-channel-distribution', startDate, endDate],
+    queryKey: ['optimized-channel-distribution', 'user', startDate, endDate],
     queryFn: async (): Promise<ChannelDistribution[]> => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -169,12 +189,17 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
         throw error;
       }
       
-      return data?.map((item: any) => ({
-        channel: item.channel,
+      console.log('Channel distribution RAW response:', data);
+      
+      const processedDistribution = data?.map((item: any) => ({
+        channel: item.channel_name, // Fixed: should be channel_name not channel
         uniqueOrders: 0, // Default since new function doesn't return orders
         totalRevenue: Number(item.value),
         totalRecords: Number(item.percentage)
       })) || [];
+      
+      console.log('Channel distribution FINAL processed:', processedDistribution);
+      return processedDistribution;
     },
     enabled: !!(startDate && endDate),
     staleTime: 10 * 60 * 1000, // 10 minutes cache
@@ -183,6 +208,14 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
   });
 
   const isLoading = metricsLoading || channelLoading || chartLoading || distributionLoading;
+
+  console.log('useOptimizedDashboardMetrics FINAL RETURN:', {
+    metricsData,
+    channelMetrics: channelMetrics || [],
+    chartData: chartData || [],
+    channelDistribution: channelDistribution || [],
+    isLoading
+  });
 
   return {
     metricsData,

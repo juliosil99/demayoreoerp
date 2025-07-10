@@ -3234,6 +3234,10 @@ export type Database = {
           change_percentage: number
         }[]
       }
+      get_user_company_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       has_company_permission: {
         Args: { user_id: string; permission_type: string }
         Returns: boolean

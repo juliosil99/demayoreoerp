@@ -16,7 +16,13 @@ export function useOptimizedMainDashboard(dateRange: DateRange | undefined) {
 
   // Calculate combined metrics using only pre-aggregated data
   const combinedMetrics = useMemo(() => {
-    if (!metricsData) return null;
+    console.log('useOptimizedMainDashboard - Raw metricsData:', metricsData);
+    console.log('useOptimizedMainDashboard - Raw channelMetrics:', channelMetrics);
+    
+    if (!metricsData) {
+      console.log('useOptimizedMainDashboard - No metricsData, returning null');
+      return null;
+    }
 
     // Transform channel metrics to include change properties
     const transformedChannelMetrics: ChannelMetrics[] = (channelMetrics || []).map(channel => ({
@@ -38,7 +44,7 @@ export function useOptimizedMainDashboard(dateRange: DateRange | undefined) {
     const contributionMargin = metricsData.totalProfit;
     const contributionMarginChange = 0; // Would need historical comparison
     
-    return {
+    const finalResult = {
       // Main metrics from optimized SQL functions
       orderRevenue: metricsData.totalRevenue,
       orders: metricsData.totalOrders,
@@ -71,6 +77,9 @@ export function useOptimizedMainDashboard(dateRange: DateRange | undefined) {
       unreconciledCount: 0,
       receivablesCount: 0
     };
+    
+    console.log('useOptimizedMainDashboard - FINAL result:', finalResult);
+    return finalResult;
   }, [metricsData, chartData, channelMetrics]);
 
   return {
