@@ -2,6 +2,7 @@ import * as React from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 type AuthContextType = {
   session: Session | null;
@@ -19,6 +20,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = React.useState<Session | null>(null);
   const [user, setUser] = React.useState<User | null>(null);
   const [isAdmin, setIsAdmin] = React.useState(false);
+  const queryClient = useQueryClient();
+  const prevUserIdRef = React.useRef<string | null>(null);
 
   const checkAdminStatus = async (userId: string) => {
     try {
@@ -53,6 +56,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const currentUserId = session?.user?.id;
+      const previousUserId = prevUserIdRef.current;
+
+      // Check if user changed
+      if (currentUserId !== previousUserId) {
+        console.log('🔄 User changed from', previousUserId, 'to', currentUserId);
+        // Invalidate all dashboard-related queries when user changes
+        queryClient.invalidateQueries({ 
+          predicate: (query) => {
+            const queryKey = query.queryKey[0] as string;
+            return queryKey?.includes('optimized-dashboard') || 
+                   queryKey?.includes('optimized-channel') || 
+                   queryKey?.includes('optimized-sales');
+          }
+        });
+        prevUserIdRef.current = currentUserId || null;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -74,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [queryClient]);
 
   const signIn = async (email: string, password: string) => {
     const { error, data } = await supabase.auth.signInWithPassword({
@@ -109,11 +130,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    console.log('🚪 Signing out user:', user?.id);
+    
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('❌ Sign out error:', error);
       throw error;
     }
+    
+    // Clear all cached data to prevent data bleeding
+    queryClient.clear();
+    prevUserIdRef.current = null;
+    
     setSession(null);
     setUser(null);
     setIsAdmin(false);

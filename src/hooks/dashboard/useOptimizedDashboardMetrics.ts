@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface OptimizedDashboardMetrics {
   totalRevenue: number;
@@ -36,18 +37,18 @@ interface ChannelDistribution {
 }
 
 export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
+  const { user } = useAuth();
   const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : null;
   const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : null;
 
   console.log('useOptimizedDashboardMetrics - Date Range:', { startDate, endDate });
+  console.log('useOptimizedDashboardMetrics - User:', user?.id);
 
   // Optimized main metrics query using RPC function
   const { data: metricsData, isLoading: metricsLoading, error: metricsError } = useQuery({
-    queryKey: ['optimized-dashboard-metrics', startDate, endDate],
+    queryKey: ['optimized-dashboard-metrics', user?.id, startDate, endDate],
     queryFn: async (): Promise<OptimizedDashboardMetrics> => {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
@@ -80,7 +81,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       console.log('Dashboard metrics FINAL processed:', processedMetrics);
       return processedMetrics;
     },
-    enabled: !!(startDate && endDate), // Only run when dates are available
+    enabled: !!(user?.id && startDate && endDate), // Only run when user is authenticated and dates are available
     staleTime: 5 * 60 * 1000, // 5 minutes cache
     gcTime: 30 * 60 * 1000, // 30 minutes garbage collection
     retry: 1, // Only retry once on error
@@ -88,11 +89,9 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
 
   // Optimized channel metrics query
   const { data: channelMetrics, isLoading: channelLoading } = useQuery({
-    queryKey: ['optimized-channel-metrics', startDate, endDate],
+    queryKey: ['optimized-channel-metrics', user?.id, startDate, endDate],
     queryFn: async (): Promise<ChannelMetric[]> => {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
@@ -124,7 +123,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       console.log('Channel metrics FINAL processed:', processedChannels);
       return processedChannels;
     },
-    enabled: !!(startDate && endDate),
+    enabled: !!(user?.id && startDate && endDate),
     staleTime: 10 * 60 * 1000, // 10 minutes cache
     gcTime: 30 * 60 * 1000,
     retry: 1,
@@ -132,11 +131,9 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
 
   // Optimized chart data query
   const { data: chartData, isLoading: chartLoading } = useQuery({
-    queryKey: ['optimized-sales-chart', startDate, endDate],
+    queryKey: ['optimized-sales-chart', user?.id, startDate, endDate],
     queryFn: async (): Promise<ChartDataPoint[]> => {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
@@ -162,7 +159,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       console.log('Chart data FINAL processed:', processedChart);
       return processedChart;
     },
-    enabled: !!(startDate && endDate),
+    enabled: !!(user?.id && startDate && endDate),
     staleTime: 10 * 60 * 1000, // 10 minutes cache
     gcTime: 30 * 60 * 1000,
     retry: 1,
@@ -170,11 +167,9 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
 
   // Optimized channel distribution query
   const { data: channelDistribution, isLoading: distributionLoading } = useQuery({
-    queryKey: ['optimized-channel-distribution', startDate, endDate],
+    queryKey: ['optimized-channel-distribution', user?.id, startDate, endDate],
     queryFn: async (): Promise<ChannelDistribution[]> => {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
@@ -201,7 +196,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
       console.log('Channel distribution FINAL processed:', processedDistribution);
       return processedDistribution;
     },
-    enabled: !!(startDate && endDate),
+    enabled: !!(user?.id && startDate && endDate),
     staleTime: 10 * 60 * 1000, // 10 minutes cache
     gcTime: 30 * 60 * 1000,
     retry: 1,
