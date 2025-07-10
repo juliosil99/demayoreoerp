@@ -4,10 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { StateData } from "./utils";
 import { DateRange } from "react-day-picker";
 import { formatDateForQuery } from "@/utils/dateUtils";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useStateDistributionData = (dateRange?: DateRange) => {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ["salesStateDistribution", dateRange?.from, dateRange?.to],
+    queryKey: ["salesStateDistribution", user?.id, dateRange?.from, dateRange?.to],
     queryFn: async () => {
       let fromDate = null;
       let toDate = null;
@@ -21,8 +24,9 @@ export const useStateDistributionData = (dateRange?: DateRange) => {
         toDate = formatDateForQuery(dateRange.to);
       }
       
-      // Call the SQL function with simplified parameters
+      // Call the SQL function with user_id and date parameters
       const { data, error } = await supabase.rpc('get_state_distribution', {
+        p_user_id: user?.id,
         p_start_date: fromDate,
         p_end_date: toDate
       });
@@ -40,7 +44,8 @@ export const useStateDistributionData = (dateRange?: DateRange) => {
     staleTime: 3 * 60 * 1000, // 3 minutos de cache para distribución de estados
     gcTime: 10 * 60 * 1000, // 10 minutos en garbage collection
     refetchOnMount: false, // No refetch al montar si hay datos en cache
-    retry: 2
+    retry: 2,
+    enabled: !!user // Only run query when user is authenticated
   });
 };
 

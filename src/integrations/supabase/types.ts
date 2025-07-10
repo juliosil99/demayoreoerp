@@ -3217,11 +3217,11 @@ export type Database = {
         }[]
       }
       get_state_distribution: {
-        Args: { p_start_date?: string; p_end_date?: string }
+        Args: { p_user_id: string; p_start_date: string; p_end_date: string }
         Returns: {
           state: string
-          total_revenue: number
           total_records: number
+          total_revenue: number
         }[]
       }
       get_top_skus_by_units: {
