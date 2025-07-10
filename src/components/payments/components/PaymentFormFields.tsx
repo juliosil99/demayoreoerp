@@ -120,11 +120,7 @@ export function PaymentFormFields({
                     {channel.label || channel.name}
                   </SelectItem>
                 ))
-              ) : (
-                <SelectItem value="" disabled>
-                  No hay canales disponibles
-                </SelectItem>
-              )}
+              ) : null}
             </SelectContent>
           </Select>
         </div>
