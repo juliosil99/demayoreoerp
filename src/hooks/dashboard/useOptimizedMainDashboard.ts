@@ -16,11 +16,7 @@ export function useOptimizedMainDashboard(dateRange: DateRange | undefined) {
 
   // Calculate combined metrics using only pre-aggregated data
   const combinedMetrics = useMemo(() => {
-    console.log('useOptimizedMainDashboard - Raw metricsData:', metricsData);
-    console.log('useOptimizedMainDashboard - Raw channelMetrics:', channelMetrics);
-    
     if (!metricsData) {
-      console.log('useOptimizedMainDashboard - No metricsData, returning null');
       return null;
     }
 
@@ -78,7 +74,6 @@ export function useOptimizedMainDashboard(dateRange: DateRange | undefined) {
       receivablesCount: 0
     };
     
-    console.log('useOptimizedMainDashboard - FINAL result:', finalResult);
     return finalResult;
   }, [metricsData, chartData, channelMetrics]);
 

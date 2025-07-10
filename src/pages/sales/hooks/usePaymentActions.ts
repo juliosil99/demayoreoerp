@@ -23,11 +23,8 @@ export function usePaymentActions(onRefresh: () => void) {
   };
   
   const handleReconcile = async ({ salesIds, paymentId }: { salesIds: number[], paymentId: string }) => {
-    console.log(`Ejecutando reconciliación: ${salesIds.length} ventas con pago ${paymentId}`);
-    
     try {
       const result = await bulkReconcile({ salesIds, paymentId });
-      console.log("Reconciliación exitosa:", result);
       
       // Refrescar los datos después de la reconciliación
       onRefresh();
@@ -38,10 +35,9 @@ export function usePaymentActions(onRefresh: () => void) {
       });
       
     } catch (error) {
-      console.error("Error en reconciliación:", error);
       toast({
         title: "Error de reconciliación",
-        description: "No se pudo completar la reconciliación. Consulta la consola para más detalles.",
+        description: "No se pudo completar la reconciliación.",
         variant: "destructive",
       });
     }

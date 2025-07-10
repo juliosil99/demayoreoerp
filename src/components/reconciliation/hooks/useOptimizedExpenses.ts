@@ -26,8 +26,6 @@ export const useOptimizedExpenses = ({
         return { data: [], count: 0, hasMore: false };
       }
       
-      console.log(`🔍 Fetching optimized expenses - Page ${page}, Size ${pageSize}`);
-      
       // Get all users from the same company (optimized)
       const { data: companyUsers, error: companyUsersError } = await supabase
         .from("company_users")
@@ -85,14 +83,6 @@ export const useOptimizedExpenses = ({
       }
       
       const hasMore = count ? offset + pageSize < count : false;
-      
-      console.log(`📊 Optimized expenses fetched:`, {
-        page,
-        pageSize,
-        returned: data?.length || 0,
-        total: count || 0,
-        hasMore
-      });
       
       return { 
         data: data || [], 

@@ -17,8 +17,7 @@ export function useBulkReconcile() {
     mutationFn: async ({ salesIds, paymentId }: BulkReconcileParams) => {
       if (!user) throw new Error("User not authenticated");
 
-      console.log("=== INICIANDO RECONCILIACIÓN MASIVA ===");
-      console.log(`Reconciliando ${salesIds.length} ventas con pago ID: ${paymentId}`);
+      // Starting bulk reconciliation process
       
       try {
         // 1. Obtener detalles del pago
@@ -29,11 +28,10 @@ export function useBulkReconcile() {
           .single();
 
         if (paymentError) {
-          console.error("Error obteniendo pago:", paymentError);
           throw paymentError;
         }
 
-        console.log("Pago antes de reconciliación:", payment);
+        // Payment retrieved for reconciliation
         
         // 2. Verificar ventas antes de la actualización
         const { data: salesBefore, error: salesBeforeError } = await supabase
@@ -42,14 +40,10 @@ export function useBulkReconcile() {
           .in('id', salesIds);
 
         if (salesBeforeError) {
-          console.error("Error obteniendo ventas:", salesBeforeError);
           throw salesBeforeError;
         }
-
-        console.log("Ventas antes de actualizar:", salesBefore);
         
         // 3. ACTUALIZAR SALES: reconciliation_id, statusPaid, datePaid
-        console.log("Actualizando ventas con reconciliation_id:", paymentId);
         const { data: salesUpdateResult, error: salesError } = await supabase
           .from('Sales')
           .update({ 
@@ -61,11 +55,8 @@ export function useBulkReconcile() {
           .select('id, price, statusPaid, reconciliation_id, datePaid');
 
         if (salesError) {
-          console.error("Error actualizando ventas:", salesError);
           throw salesError;
         }
-        
-        console.log("Resultado actualización ventas:", salesUpdateResult);
         
         // 4. Verificar que las ventas se actualizaron correctamente
         const { data: salesAfter, error: salesAfterError } = await supabase
@@ -74,11 +65,8 @@ export function useBulkReconcile() {
           .in('id', salesIds);
 
         if (salesAfterError) {
-          console.error("Error verificando ventas actualizadas:", salesAfterError);
           throw salesAfterError;
         }
-
-        console.log("Ventas después de actualizar:", salesAfter);
         
         // 5. Obtener payment adjustments para este pago
         const { data: paymentAdjustments, error: adjustmentsError } = await supabase
@@ -87,11 +75,8 @@ export function useBulkReconcile() {
           .eq('payment_id', paymentId);
 
         if (adjustmentsError) {
-          console.error("Error obteniendo payment adjustments:", adjustmentsError);
           throw adjustmentsError;
         }
-
-        console.log("Payment adjustments encontrados:", paymentAdjustments);
 
         // 6. Calcular totales para el pago (ventas - adjustments)
         const salesTotal = salesAfter?.reduce((sum, sale) => sum + (sale.price || 0), 0) || 0;
@@ -102,19 +87,12 @@ export function useBulkReconcile() {
         const totalAmount = Math.round(netAmount * 100) / 100;
         const salesCount = salesAfter?.length || 0;
         
-        console.log(`Totales calculados: 
-          - Ventas: ${salesTotal}
-          - Adjustments: ${adjustmentsTotal} 
-          - Monto neto: ${totalAmount} (${salesCount} ventas)`);
-        
         // 7. ACTUALIZAR PAYMENTS: is_reconciled, reconciled_amount, reconciled_count
-        console.log("Actualizando pago con datos de reconciliación:");
         const paymentUpdateData = {
           is_reconciled: true,
           reconciled_amount: totalAmount,
           reconciled_count: salesCount
         };
-        console.log("Datos a actualizar en pago:", paymentUpdateData);
         
         const { data: updatedPayment, error: updateError } = await supabase
           .from('payments')
@@ -123,11 +101,8 @@ export function useBulkReconcile() {
           .select('id, is_reconciled, reconciled_amount, reconciled_count');
 
         if (updateError) {
-          console.error("Error actualizando pago:", updateError);
           throw updateError;
         }
-        
-        console.log("Pago actualizado:", updatedPayment);
 
         // 7. Verificación final
         const { data: finalPayment, error: finalPaymentError } = await supabase
@@ -137,9 +112,7 @@ export function useBulkReconcile() {
           .single();
           
         if (finalPaymentError) {
-          console.error("Error en verificación final del pago:", finalPaymentError);
-        } else {
-          console.log("Estado final del pago:", finalPayment);
+          // Verification error logged
         }
 
         // 8. Verificar ventas finales
@@ -149,12 +122,10 @@ export function useBulkReconcile() {
           .in('id', salesIds);
           
         if (finalSalesError) {
-          console.error("Error en verificación final de ventas:", finalSalesError);
-        } else {
-          console.log("Estado final de ventas:", finalSales);
+          // Verification error logged
         }
         
-        console.log("=== RECONCILIACIÓN COMPLETADA EXITOSAMENTE ===");
+        // Reconciliation completed successfully
         
         return { 
           success: true,
@@ -164,13 +135,10 @@ export function useBulkReconcile() {
           updated_payment: updatedPayment
         };
       } catch (error) {
-        console.error("=== ERROR EN RECONCILIACIÓN ===", error);
         throw error;
       }
     },
     onSuccess: (data) => {
-      console.log("Mutation onSuccess - Invalidando consultas y mostrando toast");
-      
       // Invalidar todas las consultas relacionadas
       queryClient.invalidateQueries({ queryKey: ["payments"] });
       queryClient.invalidateQueries({ queryKey: ["unreconciled"] });
@@ -179,17 +147,9 @@ export function useBulkReconcile() {
       toast.success(
         `Reconciliación exitosa: ${data.reconciled_count} ventas por $${data.reconciled_amount.toLocaleString()}`
       );
-      
-      console.log("Reconciliación completada:", {
-        ventas_actualizadas: data.updated_sales?.length,
-        pago_actualizado: data.updated_payment?.[0]?.id,
-        monto_total: data.reconciled_amount,
-        cantidad_ventas: data.reconciled_count
-      });
     },
     onError: (error) => {
-      console.error("Error en mutation de reconciliación:", error);
-      toast.error("Error al reconciliar las ventas. Revisa la consola para más detalles.");
+      toast.error("Error al reconciliar las ventas.");
     }
   });
 }

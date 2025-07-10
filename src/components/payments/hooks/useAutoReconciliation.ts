@@ -32,7 +32,7 @@ export function useAutoReconciliation() {
 
   const detectAutoReconciliationGroups = useCallback(async (): Promise<AutoReconciliationGroup[]> => {
     try {
-      console.log("🔍 [AUTO-RECONCILIATION DEBUG] Starting detection process...");
+      // Auto-reconciliation detection started
       
       // Get sales channels with type information
       const { data: channels } = await supabase
@@ -84,11 +84,7 @@ export function useAutoReconciliation() {
         .not("date", "is", null)
         .not("price", "is", null);
 
-      console.log("💰 [SALES] Unreconciled sales found:", sales);
-      console.log("💰 [SALES_COUNT] Total unreconciled sales:", sales?.length || 0);
-
       if (!sales || sales.length === 0) {
-        console.log("❌ [SALES] No unreconciled sales found");
         return [];
       }
 
@@ -260,7 +256,7 @@ export function useAutoReconciliation() {
           .gte("date", group.date) // Same date or up to 1 day later
           .lte("date", new Date(new Date(group.date).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
-        console.log("🔍 [AUTO-RECONCILIATION] Search result:", { existingPayments, searchError });
+        // Payment search completed
 
         if (searchError) {
           throw new Error(`Error buscando pagos existentes: ${searchError.message}`);
@@ -274,7 +270,7 @@ export function useAutoReconciliation() {
           return paymentMethodMatch;
         }) || [];
 
-        console.log("🔍 [AUTO-RECONCILIATION] Compatible payments found:", compatiblePayments);
+        // Compatible payments filtered
 
         if (compatiblePayments.length === 0) {
           throw new Error(`No se encontró pago correspondiente para ${group.date} por $${group.totalAmount}. Verifica que el pago haya sido registrado correctamente en las cuentas bancarias.`);
@@ -301,7 +297,7 @@ export function useAutoReconciliation() {
           })
           .in("id", salesIds);
 
-        console.log("📝 [AUTO-RECONCILIATION] Sales update result:", { salesError });
+        // Sales update completed
 
         if (salesError) {
           console.error("❌ [AUTO-RECONCILIATION] Sales update failed:", salesError);
@@ -323,7 +319,7 @@ export function useAutoReconciliation() {
           throw new Error(`Error actualizando pago: ${paymentUpdateError.message}`);
         }
 
-        console.log("✅ [AUTO-RECONCILIATION] Payment reconciled successfully:", selectedPayment.id);
+        // Payment reconciled successfully
 
         result.successCount++;
         result.groups.push({ ...group, id: selectedPayment.id });
@@ -343,16 +339,10 @@ export function useAutoReconciliation() {
 
   const processAutoReconciliationMutation = useMutation({
     mutationFn: async (groups: AutoReconciliationGroup[]) => {
-      console.log("🚀 [AUTO-RECONCILIATION] Starting mutation with groups:", groups);
       const result = await createAutomaticPayments(groups);
-      console.log("🎯 [AUTO-RECONCILIATION] Mutation completed with result:", result);
       return result;
     },
     onSuccess: (result) => {
-      console.log("🎉 [AUTO-RECONCILIATION] Mutation success callback - result:", result);
-      console.log("🎉 [AUTO-RECONCILIATION] Success count:", result.successCount);
-      console.log("🎉 [AUTO-RECONCILIATION] Error count:", result.errorCount);
-      console.log("🎉 [AUTO-RECONCILIATION] Errors:", result.errors);
       
       toast({
         title: "Auto-Reconciliación Completada",

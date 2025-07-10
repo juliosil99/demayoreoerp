@@ -28,8 +28,7 @@ export function useManualAutoReconciliation() {
 
   const processManualReconciliation = useMutation({
     mutationFn: async ({ matches, groups }: { matches: PaymentMatch[], groups: AutoReconciliationGroup[] }) => {
-      console.log("🔄 [MANUAL-AUTO-RECONCILIATION] Starting manual reconciliation process...");
-      console.log("📊 [MANUAL-AUTO-RECONCILIATION] Processing", matches.length, "matches");
+      // Starting manual reconciliation process
 
       const results = {
         successCount: 0,
@@ -82,7 +81,7 @@ export function useManualAutoReconciliation() {
             throw new Error(`Error updating payment: ${paymentUpdateError.message}`);
           }
 
-          console.log("✅ [MANUAL-AUTO-RECONCILIATION] Successfully reconciled payment:", match.paymentId);
+          // Payment reconciled successfully
           results.successCount++;
 
         } catch (error) {
@@ -98,7 +97,6 @@ export function useManualAutoReconciliation() {
       return results;
     },
     onSuccess: (results) => {
-      console.log("🎉 [MANUAL-AUTO-RECONCILIATION] Process completed:", results);
       
       if (results.successCount > 0) {
         toast({

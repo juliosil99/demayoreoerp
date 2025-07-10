@@ -27,16 +27,7 @@ interface MainMetricsSectionProps {
 }
 
 export const MainMetricsSection = ({ metrics }: MainMetricsSectionProps) => {
-  console.log('MainMetricsSection - Received metrics:', metrics);
-  
   const hasData = (metrics.orderRevenue || 0) > 0 || (metrics.orders || 0) > 0;
-  
-  console.log('MainMetricsSection - Has data:', hasData, {
-    orderRevenue: metrics.orderRevenue,
-    orders: metrics.orders,
-    contributionMargin: metrics.contributionMargin,
-    aov: metrics.aov
-  });
   
   return (
     <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">

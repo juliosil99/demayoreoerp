@@ -19,7 +19,6 @@ export const useOptimizedInvoices = () => {
       }
       
       const companyRfc = userCompany.rfc;
-      console.log("🔍 Optimized Invoice Query - Company RFC:", companyRfc);
       
       // Get reconciled invoice IDs from expense_invoice_relations
       const { data: reconciledInvoiceIds, error: relationError } = await supabase
@@ -31,7 +30,6 @@ export const useOptimizedInvoices = () => {
       }
       
       const reconciledIds = reconciledInvoiceIds?.map(rel => rel.invoice_id) || [];
-      console.log("🔗 Reconciled invoice IDs from relations:", reconciledIds.length);
 
       // Build the main query to get unreconciled invoices only
       let query = supabase
@@ -59,8 +57,6 @@ export const useOptimizedInvoices = () => {
         throw error;
       }
 
-      console.log("📊 Total invoices found:", allInvoices?.length || 0);
-      
       // Additional filtering for payroll invoices and processed status
       const filteredInvoices = allInvoices?.filter(invoice => {
         // For payroll invoices (type N), include both processed and unprocessed if they're issued by the company
@@ -72,8 +68,6 @@ export const useOptimizedInvoices = () => {
         // For other invoices, only include unprocessed ones
         return !invoice.processed && !invoice.manually_reconciled && !invoice.reconciliation_batch_id;
       }) || [];
-
-      console.log("🎯 Final filtered unreconciled invoices:", filteredInvoices.length);
       
       return filteredInvoices;
     },
