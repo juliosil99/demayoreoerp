@@ -60,7 +60,7 @@ export function useExpenseQueries() {
       const { data, error } = await supabase
         .from("chart_of_accounts")
         .select("*")
-        .eq("user_id", userId)
+        .or(`is_global.eq.true,user_id.eq.${userId}`)
         .in("account_type", ["expense", "asset", "liability"])
         .order('code');
 
