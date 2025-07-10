@@ -1,12 +1,19 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function usePaymentQueries() {
+  const { user } = useAuth();
+
   const { data: bankAccounts, isLoading: bankAccountsLoading, error: bankAccountsError } = useQuery({
-    queryKey: ["bankAccounts"],
+    queryKey: ["bankAccounts", user?.id],
     queryFn: async () => {
-      console.log("Fetching bank accounts...");
+      if (!user?.id) {
+        console.log("No authenticated user, skipping bank accounts query");
+        return [];
+      }
+      console.log("Fetching bank accounts for user:", user.id);
       const { data, error } = await supabase
         .from("bank_accounts")
         .select("*");
@@ -17,12 +24,17 @@ export function usePaymentQueries() {
       console.log("Bank accounts fetched:", data);
       return data;
     },
+    enabled: !!user?.id,
   });
 
   const { data: salesChannels, isLoading: salesChannelsLoading, error: salesChannelsError } = useQuery({
-    queryKey: ["salesChannels"],
+    queryKey: ["salesChannels", user?.id],
     queryFn: async () => {
-      console.log("Fetching sales channels...");
+      if (!user?.id) {
+        console.log("No authenticated user, skipping sales channels query");
+        return [];
+      }
+      console.log("Fetching sales channels for user:", user.id);
       const { data, error } = await supabase
         .from("sales_channels")
         .select("*")
@@ -42,6 +54,7 @@ export function usePaymentQueries() {
       console.log("Transformed sales channels:", transformedData);
       return transformedData;
     },
+    enabled: !!user?.id,
   });
 
   return {
