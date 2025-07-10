@@ -3223,11 +3223,36 @@ export type Database = {
           margin_percentage: number
         }[]
       }
+      get_expenses_summary: {
+        Args: { p_user_id: string; p_start_date: string; p_end_date: string }
+        Returns: {
+          account_code: string
+          account_name: string
+          account_type: string
+          total_amount: number
+        }[]
+      }
+      get_payment_adjustments_summary: {
+        Args: { p_user_id: string; p_start_date: string; p_end_date: string }
+        Returns: {
+          adjustment_type: string
+          total_amount: number
+        }[]
+      }
       get_sales_chart_data: {
         Args: { p_user_id: string; p_start_date: string; p_end_date: string }
         Returns: {
           date: string
           sales: number
+        }[]
+      }
+      get_sales_summary: {
+        Args: { p_user_id: string; p_start_date: string; p_end_date: string }
+        Returns: {
+          total_revenue: number
+          total_cost: number
+          total_commission: number
+          total_shipping: number
         }[]
       }
       get_state_distribution: {

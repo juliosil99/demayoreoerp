@@ -27,94 +27,53 @@ export function processReportData(
     });
   }
 
-  // Process expenses with currency handling
+  // Process aggregated expenses data
   if (expenses) {
     expenses.forEach(expense => {
-      if (expense.chart_of_accounts) {
-        const accountType = expense.chart_of_accounts.account_type;
-        const accountKey = `${expense.chart_of_accounts.code}-${expense.chart_of_accounts.name}`;
-        
-        // Calculate amount in target currency, preserving sign for refunds
-        const amountInReportCurrency = convertCurrency(
-          expense.amount,
-          expense.original_amount,
-          expense.currency,
-          targetCurrency,
-          expense.exchange_rate
-        );
-        
-        // Add to account type total, respecting the sign
-        if (!processedData[accountType]) {
-          processedData[accountType] = 0;
-        }
-        processedData[accountType] += amountInReportCurrency;
-        
-        // Add to individual account
-        if (!processedData[accountKey]) {
-          processedData[accountKey] = 0;
-        }
-        processedData[accountKey] += amountInReportCurrency;
+      const accountType = expense.account_type;
+      const accountKey = `${expense.account_code}-${expense.account_name}`;
+      const amount = Number(expense.total_amount) || 0;
+      
+      // Add to account type total
+      if (!processedData[accountType]) {
+        processedData[accountType] = 0;
       }
+      processedData[accountType] += amount;
+      
+      // Add to individual account
+      processedData[accountKey] = amount;
     });
   }
 
-  // Process payment adjustments as virtual expenses
+  // Process aggregated payment adjustments data
   if (paymentAdjustments) {
     paymentAdjustments.forEach(adjustment => {
       const accountName = mapAdjustmentTypeToAccount(adjustment.adjustment_type);
       const accountType = 'expense'; // All adjustments are expense type
       const accountKey = `ADJ-${accountName}`;
-      
-      // Convert amount to target currency (adjustments are stored in MXN)
-      const amountInReportCurrency = convertCurrency(
-        adjustment.amount,
-        adjustment.amount,
-        'MXN', // Payment adjustments are always in MXN
-        targetCurrency,
-        1 // Exchange rate is 1 for MXN adjustments
-      );
+      const amount = Number(adjustment.total_amount) || 0;
       
       // Add to expense type total
       if (!processedData[accountType]) {
         processedData[accountType] = 0;
       }
-      processedData[accountType] += amountInReportCurrency;
+      processedData[accountType] += amount;
       
       // Add to individual account
       if (!processedData[accountKey]) {
         processedData[accountKey] = 0;
       }
-      processedData[accountKey] += amountInReportCurrency;
+      processedData[accountKey] += amount;
     });
   }
 
-  // Process sales data
-  if (sales) {
-    console.log('📊 Processing sales data:', { salesCount: sales.length });
-    
-    let totalRevenue = 0;
-    let totalCostOfSales = 0;
-    let totalCommissions = 0;
-    let totalShipping = 0;
-
-    sales.forEach(sale => {
-      const revenue = Number(sale.price) || 0;
-      const cost = Number(sale.cost) || 0;
-      const commission = Number(sale.comission) || 0;
-      const shipping = Number(sale.shipping) || 0;
-
-      totalRevenue += revenue;
-      totalCostOfSales += cost;
-      totalCommissions += commission;
-      totalShipping += shipping;
-    });
-
-    console.log('📊 Sales totals calculated:', {
-      totalRevenue,
-      totalCostOfSales,
-      totalCommissions,
-      totalShipping
-    });
+  // Process aggregated sales data
+  if (sales && sales.length > 0) {
+    const salesData = sales[0]; // Single aggregated record
+    const totalRevenue = Number(salesData.total_revenue) || 0;
+    const totalCostOfSales = Number(salesData.total_cost) || 0;
+    const totalCommissions = Number(salesData.total_commission) || 0;
+    const totalShipping = Number(salesData.total_shipping) || 0;
 
     // Add to processed data
     processedData['income'] = (processedData['income'] || 0) + totalRevenue;
@@ -128,11 +87,6 @@ export function processReportData(
     processedData['601-Costo de Ventas'] = totalCostOfSales;
     processedData['602-Gastos de Comisión'] = totalCommissions;
     processedData['603-Gastos de Envío'] = totalShipping;
-
-    console.log('📊 Final processed data keys:', Object.keys(processedData));
-    console.log('📊 Revenue in processed data:', processedData['revenue'], processedData['501-Ventas']);
-  } else {
-    console.log('❌ No sales data provided to process');
   }
 
   return processedData;

@@ -149,105 +149,36 @@ async function fetchAccountBalances(userId: string, periodId: string) {
 }
 
 async function fetchExpenses(userId: string, startDate: string, endDate: string) {
-  console.log('💸 Fetching expenses data:', { userId, startDate, endDate });
-  
-  const { data, error } = await supabase
-    .from('expenses')
-    .select(`
-      id,
-      amount,
-      original_amount,
-      currency,
-      exchange_rate,
-      chart_account_id,
-      date,
-      chart_of_accounts:chart_account_id (name, account_type, code)
-    `)
-    .gte('date', startDate)
-    .lte('date', endDate)
-    .eq('user_id', userId);
-
-  if (error) {
-    console.error('❌ Error fetching expenses:', error);
-    throw error;
-  }
-  
-  console.log('💸 Expenses data fetched:', { 
-    count: data?.length || 0, 
-    totalExpenses: data?.reduce((sum, expense) => sum + (Number(expense.amount) || 0), 0) || 0,
-    dateRange: { startDate, endDate }
+  const { data, error } = await supabase.rpc('get_expenses_summary', {
+    p_user_id: userId,
+    p_start_date: startDate,
+    p_end_date: endDate
   });
-  
-  return data;
+
+  if (error) throw error;
+  return data || [];
 }
 
 async function fetchPaymentAdjustments(userId: string, startDate: string, endDate: string) {
-  const { data, error } = await supabase
-    .from('payment_adjustments')
-    .select(`
-      id,
-      adjustment_type,
-      amount,
-      description,
-      payments:payment_id (date)
-    `)
-    .eq('user_id', userId)
-    .gte('payments.date', startDate)
-    .lte('payments.date', endDate);
+  const { data, error } = await supabase.rpc('get_payment_adjustments_summary', {
+    p_user_id: userId,
+    p_start_date: startDate,
+    p_end_date: endDate
+  });
 
   if (error) throw error;
-  return data;
+  return data || [];
 }
 
 async function fetchSales(userId: string, startDate: string, endDate: string) {
-  console.log('🔍 Fetching sales data:', { userId, startDate, endDate });
-  
-  // Get user's company_id for proper filtering
-  const { data: userCompany, error: companyError } = await supabase
-    .from('companies')
-    .select('id')
-    .eq('user_id', userId)
-    .single();
-
-  if (companyError || !userCompany) {
-    console.error('❌ Error getting user company:', companyError);
-    return [];
-  }
-
-  console.log('🏢 Using company_id:', userCompany.id);
-
-  const { data, error } = await supabase
-    .from('Sales')
-    .select(`
-      id,
-      price,
-      cost,
-      Quantity,
-      Channel,
-      productName,
-      sku,
-      comission,
-      retention,
-      shipping,
-      date
-    `)
-    .gte('date', startDate)
-    .lte('date', endDate)
-    .eq('company_id', userCompany.id);
-
-  if (error) {
-    console.error('❌ Error fetching sales:', error);
-    throw error;
-  }
-  
-  console.log('💰 Sales data fetched:', { 
-    count: data?.length || 0, 
-    totalRevenue: data?.reduce((sum, sale) => sum + (Number(sale.price) || 0), 0) || 0,
-    dateRange: { startDate, endDate },
-    sampleSales: data?.slice(0, 3)
+  const { data, error } = await supabase.rpc('get_sales_summary', {
+    p_user_id: userId,
+    p_start_date: startDate,
+    p_end_date: endDate
   });
-  
-  return data;
+
+  if (error) throw error;
+  return data || [];
 }
 
 export default useReportData;
