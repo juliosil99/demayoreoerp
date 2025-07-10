@@ -26,6 +26,11 @@ export function PaymentFormFields({
   bankAccounts,
   salesChannels,
 }: PaymentFormFieldsProps) {
+  // Debug logs
+  console.log("PaymentFormFields - bankAccounts:", bankAccounts);
+  console.log("PaymentFormFields - salesChannels:", salesChannels);
+  console.log("PaymentFormFields - salesChannels type:", typeof salesChannels);
+  console.log("PaymentFormFields - salesChannels length:", salesChannels?.length);
   // Handle toggling return/refund state
   const handleReturnToggle = (checked: boolean) => {
     const currentAmount = parseFloat(formData.amount) || 0;
@@ -109,11 +114,17 @@ export function PaymentFormFields({
               <SelectValue placeholder="Seleccionar canal" />
             </SelectTrigger>
             <SelectContent>
-              {salesChannels?.map((channel) => (
-                <SelectItem key={channel.id} value={channel.id}>
-                  {channel.name}
+              {salesChannels && salesChannels.length > 0 ? (
+                salesChannels.map((channel) => (
+                  <SelectItem key={channel.value || channel.id} value={channel.value || channel.id}>
+                    {channel.label || channel.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="" disabled>
+                  No hay canales disponibles
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>
