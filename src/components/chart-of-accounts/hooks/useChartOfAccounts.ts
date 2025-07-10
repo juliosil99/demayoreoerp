@@ -14,19 +14,23 @@ export interface Account {
   is_group: boolean;
   level: number;
   path: string;
+  is_global: boolean;
+  user_id: string | null;
 }
 
 export function useChartOfAccounts(userId: string | undefined) {
   return useQuery<Account[], Error>({
-    queryKey: ['chart-of-accounts'],
+    queryKey: ['chart-of-accounts', userId],
     queryFn: async () => {
       if (!userId) {
         throw new Error("User not authenticated");
       }
+      
+      // Get both global accounts and user-specific accounts
       const { data, error } = await supabase
         .from('chart_of_accounts')
         .select('*')
-        .eq('user_id', userId)
+        .or(`is_global.eq.true,user_id.eq.${userId}`)
         .order('path');
       
       if (error) {

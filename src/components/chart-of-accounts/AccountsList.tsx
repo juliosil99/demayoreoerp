@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronDown, Pencil, Trash2, MoreHorizontal } from "lucide-react";
+import { ChevronRight, ChevronDown, Pencil, Trash2, MoreHorizontal, Globe, Badge } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -20,6 +20,8 @@ interface Account {
   is_group: boolean;
   level: number;
   path: string;
+  is_global: boolean;
+  user_id: string | null;
 }
 
 interface AccountsListProps {
@@ -63,9 +65,17 @@ export function AccountsList({
             </button>
           )}
           {!hasChildren && <div className="w-5 md:w-6" />}
-          <span className="flex-1 truncate text-sm">
-            <span className="font-medium">{account.code}</span> - <span className="hidden sm:inline">{account.name}</span><span className="sm:hidden">{account.name.length > 15 ? account.name.substring(0, 15) + '...' : account.name}</span>
-          </span>
+          <div className="flex items-center gap-2 flex-1 truncate text-sm">
+            <span className="font-medium">{account.code}</span> - 
+            <span className="hidden sm:inline">{account.name}</span>
+            <span className="sm:hidden">{account.name.length > 15 ? account.name.substring(0, 15) + '...' : account.name}</span>
+            {account.is_global && (
+              <div className="flex items-center gap-1">
+                <Globe className="h-3 w-3 text-blue-500" />
+                <span className="text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded">Global</span>
+              </div>
+            )}
+          </div>
           
           {isMobile ? (
             <DropdownMenu>
@@ -75,34 +85,51 @@ export function AccountsList({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEditAccount(account)}>
-                  <Pencil className="h-3.5 w-3.5 mr-2" />
-                  Editar
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onDeleteAccount(account)} className="text-red-600">
-                  <Trash2 className="h-3.5 w-3.5 mr-2" />
-                  Eliminar
-                </DropdownMenuItem>
+                {!account.is_global ? (
+                  <>
+                    <DropdownMenuItem onClick={() => onEditAccount(account)}>
+                      <Pencil className="h-3.5 w-3.5 mr-2" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDeleteAccount(account)} className="text-red-600">
+                      <Trash2 className="h-3.5 w-3.5 mr-2" />
+                      Eliminar
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <DropdownMenuItem disabled>
+                    <Globe className="h-3.5 w-3.5 mr-2 text-blue-500" />
+                    Cuenta global (no editable)
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <div className="flex gap-1 md:gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onEditAccount(account)}
-              >
-                <Pencil className="h-3.5 w-3.5 md:h-4 md:w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onDeleteAccount(account)}
-              >
-                <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
-              </Button>
+              {!account.is_global ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => onEditAccount(account)}
+                  >
+                    <Pencil className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => onDeleteAccount(account)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  </Button>
+                </>
+              ) : (
+                <div className="text-xs text-muted-foreground px-2">
+                  Solo lectura
+                </div>
+              )}
             </div>
           )}
         </div>

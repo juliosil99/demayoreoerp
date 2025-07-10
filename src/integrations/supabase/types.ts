@@ -632,6 +632,7 @@ export type Database = {
           code: string
           created_at: string | null
           id: string
+          is_global: boolean | null
           is_group: boolean | null
           level: number
           name: string
@@ -639,7 +640,7 @@ export type Database = {
           path: string | null
           sat_code: string | null
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           account_type: string
@@ -647,6 +648,7 @@ export type Database = {
           code: string
           created_at?: string | null
           id?: string
+          is_global?: boolean | null
           is_group?: boolean | null
           level: number
           name: string
@@ -654,7 +656,7 @@ export type Database = {
           path?: string | null
           sat_code?: string | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           account_type?: string
@@ -662,6 +664,7 @@ export type Database = {
           code?: string
           created_at?: string | null
           id?: string
+          is_global?: boolean | null
           is_group?: boolean | null
           level?: number
           name?: string
@@ -669,7 +672,7 @@ export type Database = {
           path?: string | null
           sat_code?: string | null
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {

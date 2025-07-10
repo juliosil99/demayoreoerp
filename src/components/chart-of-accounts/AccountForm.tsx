@@ -46,6 +46,7 @@ export function AccountForm({ onClose, account, parentAccounts }: AccountFormPro
       const data = {
         ...formData,
         user_id: user.id,
+        is_global: false, // All user-created accounts are personal, not global
       };
 
       let result;
