@@ -5,8 +5,10 @@ import { ProductSearchResult } from "@/types/product-search";
 import { toast } from "@/components/ui/use-toast";
 import { downloadInvoiceFile } from "@/utils/invoiceDownload";
 import { generateInvoicePdf } from "@/services/invoicePdfService";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useProductSearch = () => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(
     new Date(new Date().setMonth(new Date().getMonth() - 3))
@@ -15,7 +17,7 @@ export const useProductSearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
   
   const { data: products = [], isLoading, refetch } = useQuery({
-    queryKey: ["product-search", searchQuery, startDate, endDate],
+    queryKey: ["product-search", user?.id, searchQuery, startDate, endDate],
     queryFn: async () => {
       if (!searchQuery) return [];
 
@@ -91,7 +93,7 @@ export const useProductSearch = () => {
         return [];
       }
     },
-    enabled: !!searchQuery,
+    enabled: !!user && !!searchQuery,
   });
 
   const handleSearch = useCallback(() => {
