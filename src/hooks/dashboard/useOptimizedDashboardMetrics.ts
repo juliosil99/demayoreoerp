@@ -43,7 +43,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
 
   // Optimized main metrics query using RPC function
   const { data: metricsData, isLoading: metricsLoading, error: metricsError } = useQuery({
-    queryKey: ['optimized-dashboard-metrics', 'user', startDate, endDate],
+    queryKey: ['optimized-dashboard-metrics', startDate, endDate],
     queryFn: async (): Promise<OptimizedDashboardMetrics> => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -88,7 +88,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
 
   // Optimized channel metrics query
   const { data: channelMetrics, isLoading: channelLoading } = useQuery({
-    queryKey: ['optimized-channel-metrics', 'user', startDate, endDate],
+    queryKey: ['optimized-channel-metrics', startDate, endDate],
     queryFn: async (): Promise<ChannelMetric[]> => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -132,7 +132,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
 
   // Optimized chart data query
   const { data: chartData, isLoading: chartLoading } = useQuery({
-    queryKey: ['optimized-sales-chart', 'user', startDate, endDate],
+    queryKey: ['optimized-sales-chart', startDate, endDate],
     queryFn: async (): Promise<ChartDataPoint[]> => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -170,7 +170,7 @@ export function useOptimizedDashboardMetrics(dateRange: DateRange | undefined) {
 
   // Optimized channel distribution query
   const { data: channelDistribution, isLoading: distributionLoading } = useQuery({
-    queryKey: ['optimized-channel-distribution', 'user', startDate, endDate],
+    queryKey: ['optimized-channel-distribution', startDate, endDate],
     queryFn: async (): Promise<ChannelDistribution[]> => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
