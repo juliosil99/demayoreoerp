@@ -90,6 +90,8 @@ export function processReportData(
 
   // Process sales data
   if (sales) {
+    console.log('📊 Processing sales data:', { salesCount: sales.length });
+    
     let totalRevenue = 0;
     let totalCostOfSales = 0;
     let totalCommissions = 0;
@@ -107,6 +109,13 @@ export function processReportData(
       totalShipping += shipping;
     });
 
+    console.log('📊 Sales totals calculated:', {
+      totalRevenue,
+      totalCostOfSales,
+      totalCommissions,
+      totalShipping
+    });
+
     // Add to processed data
     processedData['income'] = (processedData['income'] || 0) + totalRevenue;
     processedData['revenue'] = totalRevenue;
@@ -119,6 +128,11 @@ export function processReportData(
     processedData['601-Costo de Ventas'] = totalCostOfSales;
     processedData['602-Gastos de Comisión'] = totalCommissions;
     processedData['603-Gastos de Envío'] = totalShipping;
+
+    console.log('📊 Final processed data keys:', Object.keys(processedData));
+    console.log('📊 Revenue in processed data:', processedData['revenue'], processedData['501-Ventas']);
+  } else {
+    console.log('❌ No sales data provided to process');
   }
 
   return processedData;

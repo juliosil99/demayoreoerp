@@ -16,6 +16,7 @@ export const calculateChange = (current: number, previous?: number) => {
 
 export const prepareReportData = (reportData?: ReportData): FormattedReportData => {
   if (!reportData || !reportData.currentPeriod) {
+    console.log('❌ No report data available for formatting');
     return {
       revenue: {
         'Ventas': 0,
@@ -38,6 +39,12 @@ export const prepareReportData = (reportData?: ReportData): FormattedReportData 
   }
 
   const currentPeriodData = reportData.currentPeriod.data;
+  console.log('🎯 Report data keys available:', Object.keys(currentPeriodData));
+  console.log('🎯 Revenue values:', {
+    revenue: currentPeriodData['revenue'],
+    ventas: currentPeriodData['501-Ventas'],
+    income: currentPeriodData['income']
+  });
   
   // Extract revenue accounts - use real sales data
   const revenue = {
@@ -66,6 +73,8 @@ export const prepareReportData = (reportData?: ReportData): FormattedReportData 
     'Utilidad Operativa': revenue['Total Ingresos'] - expenses['Costo de Ventas'] - expenses['Gastos de Comisión'] - expenses['Gastos de Envío'],
     'Utilidad Neta': revenue['Total Ingresos'] - expenses['Total Gastos']
   };
+
+  console.log('📊 Final formatted data:', { revenue, expenses, summary });
 
   return { revenue, expenses, summary };
 };
