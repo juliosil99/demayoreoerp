@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PayableFormData } from "../types/payableTypes";
 import { generateRecurringPayables } from "./useRecurringPayables";
+import { formatDateForQuery } from "@/utils/dateUtils";
 
 export interface UpdatePayableParams {
   id: string;
@@ -17,7 +18,7 @@ export function useUpdatePayable() {
   return useMutation({
     mutationFn: async ({ id, data, updateSeries = false }: UpdatePayableParams) => {
       const dueDate = new Date(data.due_date);
-      const dueDateString = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`;
+      const dueDateString = formatDateForQuery(dueDate);
       
       // Update the original payable
       const { error } = await supabase
@@ -34,7 +35,7 @@ export function useUpdatePayable() {
           recurrence_pattern: data.recurrence_pattern,
           recurrence_day: data.recurrence_day,
           recurrence_end_date: data.recurrence_end_date 
-            ? new Date(data.recurrence_end_date).toISOString().split('T')[0]
+            ? formatDateForQuery(new Date(data.recurrence_end_date))
             : null
         })
         .eq('id', id);

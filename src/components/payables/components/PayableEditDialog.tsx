@@ -13,6 +13,7 @@ import { AccountPayable } from "@/types/payables";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { dialogLogger } from "@/utils/dialogLogger";
+import { parseDateFromDB } from "@/utils/dateUtils";
 
 interface PayableEditDialogProps {
   payable: AccountPayable | null;
@@ -57,25 +58,13 @@ export function PayableEditDialog({ payable, onClose, onSubmit, isSubmitting }: 
   const getInitialData = (): PayableFormData | undefined => {
     if (!payable) return undefined;
 
-    // Create a date at noon to avoid timezone issues
-    const dueDate = new Date(payable.due_date);
-    const fixedDueDate = new Date(
-      dueDate.getFullYear(),
-      dueDate.getMonth(),
-      dueDate.getDate(),
-      12, 0, 0
-    );
+    // Use parseDateFromDB to avoid timezone issues
+    const fixedDueDate = parseDateFromDB(payable.due_date);
 
     // Create end date if exists
     let endDate = null;
     if (payable.recurrence_end_date) {
-      const rawEndDate = new Date(payable.recurrence_end_date);
-      endDate = new Date(
-        rawEndDate.getFullYear(),
-        rawEndDate.getMonth(),
-        rawEndDate.getDate(),
-        12, 0, 0
-      );
+      endDate = parseDateFromDB(payable.recurrence_end_date);
     }
 
     return {
