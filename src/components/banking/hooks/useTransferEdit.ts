@@ -151,7 +151,7 @@ export function useTransferEdit(
     onSuccess: () => {
       toast.success("Transferencia actualizada con éxito");
       queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
-      queryClient.invalidateQueries({ queryKey: ["account-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["account-transfers"] });
       queryClient.invalidateQueries({ queryKey: ["available-invoices"] });
       onClose();
     },
