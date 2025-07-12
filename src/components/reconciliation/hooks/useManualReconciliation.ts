@@ -1,31 +1,15 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useChartOfAccounts } from "@/components/chart-of-accounts/hooks/useChartOfAccounts";
 
 export const useManualReconciliation = (userId: string | undefined) => {
   const [showManualReconciliation, setShowManualReconciliation] = useState(false);
   const queryClient = useQueryClient();
 
-  // Fetch chart of accounts for manual reconciliation
-  const { data: chartAccounts } = useQuery({
-    queryKey: ["chart-accounts-basic"],
-    queryFn: async () => {
-      if (!userId) return [];
-      
-      const { data, error } = await supabase
-        .from('chart_of_accounts')
-        .select('id, name, code, account_type')
-        .eq('user_id', userId)
-        .order('code');
-      
-      if (error) {
-        throw error;
-      }
-      return data;
-    },
-    enabled: !!userId,
-  });
+  // Use the centralized chart of accounts hook that includes global accounts
+  const { data: chartAccounts } = useChartOfAccounts(userId);
 
   const handleManualReconciliationConfirm = async (
     expenseId: string,

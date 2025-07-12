@@ -20,12 +20,12 @@ export const useAdjustment = (userId: string | undefined) => {
       
       console.log(`Creating adjustment: type=${type}, accountId=${chartAccountId}, amount=${amount}`);
       
-      // Verify that the chart account exists and belongs to the user
+      // Verify that the chart account exists and is accessible to the user (including global accounts)
       const { data: chartAccount, error: accountError } = await supabase
         .from("chart_of_accounts")
-        .select("id, code, name")
+        .select("id, code, name, is_global, user_id")
         .eq("id", chartAccountId)
-        .eq("user_id", userId)
+        .or(`is_global.eq.true,user_id.eq.${userId}`)
         .single();
 
       if (accountError || !chartAccount) {
