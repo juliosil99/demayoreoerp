@@ -76,6 +76,7 @@ export type Database = {
           invoice_size: number | null
           notes: string | null
           reference_number: string | null
+          selected_invoice_id: number | null
           status: string | null
           to_account_id: number
           user_id: string
@@ -96,6 +97,7 @@ export type Database = {
           invoice_size?: number | null
           notes?: string | null
           reference_number?: string | null
+          selected_invoice_id?: number | null
           status?: string | null
           to_account_id: number
           user_id: string
@@ -116,6 +118,7 @@ export type Database = {
           invoice_size?: number | null
           notes?: string | null
           reference_number?: string | null
+          selected_invoice_id?: number | null
           status?: string | null
           to_account_id?: number
           user_id?: string
@@ -133,6 +136,13 @@ export type Database = {
             columns: ["from_account_id"]
             isOneToOne: false
             referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_transfers_selected_invoice_id_fkey"
+            columns: ["selected_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {

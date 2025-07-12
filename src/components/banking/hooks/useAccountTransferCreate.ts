@@ -61,6 +61,7 @@ export function useAccountTransferCreate() {
           company_id: userCompany.id,
           // For backward compatibility, also set the amount field
           amount: parseFloat(data.amount_from),
+          selected_invoice_id: data.selected_invoice_id || null,
           ...invoiceData
         });
       if (error) throw error;
@@ -81,6 +82,7 @@ export function useAccountTransferCreate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
       queryClient.invalidateQueries({ queryKey: ["account-transfers"] });
+      queryClient.invalidateQueries({ queryKey: ["available-invoices"] });
       toast.success("Transferencia realizada con éxito");
       setFormData({
         date: format(new Date(), 'yyyy-MM-dd'),

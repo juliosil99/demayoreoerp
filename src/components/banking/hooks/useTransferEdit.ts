@@ -121,6 +121,7 @@ export function useTransferEdit(
           notes: formData.notes || null,
           // For backward compatibility, also update the amount field
           amount: parseFloat(formData.amount_from),
+          selected_invoice_id: formData.selected_invoice_id || null,
           ...invoiceData
         })
         .eq("id", transfer.id);
@@ -151,6 +152,7 @@ export function useTransferEdit(
       toast.success("Transferencia actualizada con éxito");
       queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
       queryClient.invalidateQueries({ queryKey: ["account-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["available-invoices"] });
       onClose();
     },
     onError: (error) => {
