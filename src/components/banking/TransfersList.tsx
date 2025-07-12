@@ -37,6 +37,7 @@ interface TransferRow {
     total_amount: number | null;
     uuid: string | null;
     filename: string;
+    file_path: string;
   };
   created_at?: string;
   invoice_file_path?: string;
@@ -106,7 +107,7 @@ export function TransfersList({ transfers, isLoading, onEditTransfer }: Transfer
                             onClick={async () => {
                               const { data } = supabase.storage
                                 .from('invoices')
-                                .getPublicUrl(transfer.selected_invoice!.filename);
+                                .getPublicUrl(transfer.selected_invoice!.file_path);
                               window.open(data.publicUrl, '_blank');
                             }}
                             title={`Ver factura ${transfer.selected_invoice.invoice_number || transfer.selected_invoice.issuer_name}`}

@@ -27,6 +27,7 @@ interface TransferRow {
     total_amount: number | null;
     uuid: string | null;
     filename: string;
+    file_path: string;
   };
   created_at?: string;
   invoice_file_path?: string;
@@ -70,7 +71,8 @@ export function useAccountTransfersList() {
             issuer_name,
             total_amount,
             uuid,
-            filename
+            filename,
+            file_path
           )
         `)
         .eq("user_id", user?.id)
