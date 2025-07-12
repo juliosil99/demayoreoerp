@@ -20,6 +20,7 @@ export interface TransferFormData {
   invoice_file?: File;
   invoice_filename?: string;
   invoice_file_path?: string;
+  selected_invoice_id?: number;
 }
 
 export interface FormFieldProps {

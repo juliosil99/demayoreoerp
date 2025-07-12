@@ -23,6 +23,7 @@ interface Transfer {
   invoice_filename?: string;
   invoice_content_type?: string;
   invoice_size?: number;
+  selected_invoice_id?: number;
 }
 
 export function useTransferEdit(
@@ -40,6 +41,7 @@ export function useTransferEdit(
     exchange_rate: "1",
     reference_number: "",
     notes: "",
+    selected_invoice_id: undefined,
   });
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export function useTransferEdit(
         notes: transfer.notes || "",
         invoice_file_path: transfer.invoice_file_path || undefined,
         invoice_filename: transfer.invoice_filename || undefined,
+        selected_invoice_id: transfer.selected_invoice_id || undefined,
       });
     }
   }, [transfer]);
@@ -123,6 +126,26 @@ export function useTransferEdit(
         .eq("id", transfer.id);
 
       if (error) throw error;
+
+      // Handle invoice selection changes
+      const previousInvoiceId = transfer.selected_invoice_id;
+      const currentInvoiceId = formData.selected_invoice_id;
+
+      // If previous invoice exists and current is different, mark previous as unprocessed
+      if (previousInvoiceId && previousInvoiceId !== currentInvoiceId) {
+        await supabase
+          .from("invoices")
+          .update({ processed: false })
+          .eq("id", previousInvoiceId);
+      }
+
+      // If current invoice exists and is different from previous, mark as processed
+      if (currentInvoiceId && currentInvoiceId !== previousInvoiceId) {
+        await supabase
+          .from("invoices")
+          .update({ processed: true })
+          .eq("id", currentInvoiceId);
+      }
     },
     onSuccess: () => {
       toast.success("Transferencia actualizada con éxito");

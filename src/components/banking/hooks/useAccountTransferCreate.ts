@@ -22,6 +22,7 @@ export function useAccountTransferCreate() {
     exchange_rate: "1",
     reference_number: "",
     notes: "",
+    selected_invoice_id: undefined,
   });
 
   const createTransfer = useMutation({
@@ -44,6 +45,7 @@ export function useAccountTransferCreate() {
         }
       }
 
+      // Insert the transfer
       const { error } = await supabase
         .from("account_transfers")
         .insert({
@@ -62,6 +64,19 @@ export function useAccountTransferCreate() {
           ...invoiceData
         });
       if (error) throw error;
+
+      // If a selected invoice is provided, mark it as processed
+      if (data.selected_invoice_id) {
+        const { error: invoiceError } = await supabase
+          .from("invoices")
+          .update({ processed: true })
+          .eq("id", data.selected_invoice_id);
+        
+        if (invoiceError) {
+          console.error("Error marking invoice as processed:", invoiceError);
+          // Don't throw here since the transfer was created successfully
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bank-accounts"] });
@@ -76,6 +91,7 @@ export function useAccountTransferCreate() {
         exchange_rate: "1",
         reference_number: "",
         notes: "",
+        selected_invoice_id: undefined,
       });
     },
     onError: (error) => {
