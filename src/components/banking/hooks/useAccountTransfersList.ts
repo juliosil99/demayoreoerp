@@ -17,8 +17,17 @@ interface TransferRow {
   user_id: string;
   status: string;
   company_id: string;
+  selected_invoice_id: number | null;
   from_account?: { name: string };
   to_account?: { name: string };
+  selected_invoice?: {
+    id: number;
+    invoice_number: string | null;
+    issuer_name: string | null;
+    total_amount: number | null;
+    uuid: string | null;
+    filename: string;
+  };
   created_at?: string;
   invoice_file_path?: string;
   invoice_filename?: string;
@@ -47,13 +56,22 @@ export function useAccountTransfersList() {
           status,
           user_id,
           company_id,
+          selected_invoice_id,
           created_at,
           invoice_file_path,
           invoice_filename,
           invoice_content_type,
           invoice_size,
           from_account:bank_accounts!fk_from_account(name),
-          to_account:bank_accounts!account_transfers_to_account_id_fkey(name)
+          to_account:bank_accounts!account_transfers_to_account_id_fkey(name),
+          selected_invoice:invoices!account_transfers_selected_invoice_id_fkey(
+            id,
+            invoice_number,
+            issuer_name,
+            total_amount,
+            uuid,
+            filename
+          )
         `)
         .eq("user_id", user?.id)
         .order("date", { ascending: false });

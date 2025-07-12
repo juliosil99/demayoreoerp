@@ -9,9 +9,10 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Download, FileText } from "lucide-react";
+import { Pencil, Download, FileText, Receipt } from "lucide-react";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { downloadTransferInvoice } from "./utils/transferInvoiceUtils";
+import { supabase } from "@/lib/supabase";
 
 // Define the TransferRow interface directly
 interface TransferRow {
@@ -25,8 +26,18 @@ interface TransferRow {
   notes: string | null;
   user_id: string;
   status: string;
+  company_id: string;
+  selected_invoice_id: number | null;
   from_account?: { name: string };
   to_account?: { name: string };
+  selected_invoice?: {
+    id: number;
+    invoice_number: string | null;
+    issuer_name: string | null;
+    total_amount: number | null;
+    uuid: string | null;
+    filename: string;
+  };
   created_at?: string;
   invoice_file_path?: string;
   invoice_filename?: string;
@@ -85,6 +96,26 @@ export function TransfersList({ transfers, isLoading, onEditTransfer }: Transfer
                           >
                             <Download className="h-4 w-4" />
                           </Button>
+                        </div>
+                      ) : transfer.selected_invoice ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <Receipt className="h-4 w-4 text-blue-600" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={async () => {
+                              const { data } = supabase.storage
+                                .from('invoices')
+                                .getPublicUrl(transfer.selected_invoice!.filename);
+                              window.open(data.publicUrl, '_blank');
+                            }}
+                            title={`Ver factura ${transfer.selected_invoice.invoice_number || transfer.selected_invoice.issuer_name}`}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <span className="text-xs text-muted-foreground">
+                            {transfer.selected_invoice.invoice_number || transfer.selected_invoice.issuer_name}
+                          </span>
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-sm">Sin comprobante</span>
